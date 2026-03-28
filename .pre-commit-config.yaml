@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://json.schemastore.org/pre-commit-config.json
+repos:
+  - repo: local
+    hooks:
+      # - id: format
+      #   name: Format
+      #   language: system
+      #   entry: bazel run //:format --
+      #   files: .*
+      - id: gazelle
+        name: Gazelle
+        language: system
+        entry: bazel test //:gazelle.check
+        files: .*
+        pass_filenames: false
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.12.0
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]

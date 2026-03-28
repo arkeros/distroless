@@ -1,0 +1,48 @@
+--- a/build_proto/BUILD.bazel	2026-03-28 11:21:20
++++ b/build_proto/BUILD.bazel	2026-03-28 11:21:31
+@@ -1,40 +1,12 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library")
+-load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+-load("@rules_proto//proto:defs.bzl", "proto_library")
+-load("//build:build_defs.bzl", "go_proto_checkedin_test")
+ 
+-# gazelle:exclude build.gen.pb.go
+-
+-# build.proto is copied from Bazel 6.0.0
+-# https://github.com/bazelbuild/bazel/blob/6.0.0/src/main/protobuf/build.proto
+-
+-go_proto_checkedin_test(
+-    src = "build.gen.pb.go",
+-    allowed_diffs = ["^[[:space:]]*//.*protoc"],
+-)
+-
+-proto_library(
+-    name = "blaze_query_proto",
+-    srcs = ["build.proto"],
+-    visibility = ["//visibility:public"],
+-)
+-
+-go_proto_library(
+-    name = "build_proto_go_proto",
+-    importpath = "github.com/bazelbuild/buildtools/build_proto",
+-    proto = ":blaze_query_proto",
+-    visibility = ["//visibility:public"],
+-)
+-
+ go_library(
+     name = "build_proto",
+-    embed = [":build_proto_go_proto"],
++    srcs = ["build.gen.pb.go"],
+     importpath = "github.com/bazelbuild/buildtools/build_proto",
+     visibility = ["//visibility:public"],
++    deps = [
++        "@org_golang_google_protobuf//reflect/protoreflect",
++        "@org_golang_google_protobuf//runtime/protoimpl",
++    ],
+ )
+-
+-alias(
+-    name = "go_default_library",
+-    actual = ":build_proto",
+-    visibility = ["//visibility:public"],
+-)

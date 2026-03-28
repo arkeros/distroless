@@ -1,0 +1,14 @@
+import %workspace%/bazel/defaults.bazelrc
+
+# Avoid overloading the remote cache with tar outputs.
+# See https://github.com/bazel-contrib/tar.bzl/blob/main/README.md#remote-cache-and-rbe
+common --modify_execution_info=Tar=+no-remote-cache
+
+# Don't build protoc from the cc_binary, it's slow and spammy when cache miss
+common --@protobuf//bazel/toolchains:prefer_prebuilt_protoc
+common --incompatible_python_disallow_native_rules
+
+# Allow user-specific overrides for this repository
+# in a git-ignored file.
+# Should be at the end of this file so that users can override anything above.
+try-import %workspace%/.bazelrc.user

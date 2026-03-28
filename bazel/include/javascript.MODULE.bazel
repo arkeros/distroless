@@ -1,0 +1,64 @@
+bazel_dep(name = "rules_nodejs", version = "6.7.3")
+bazel_dep(name = "aspect_rules_js", version = "2.9.2")
+bazel_dep(name = "aspect_rules_ts", version = "3.8.7")
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node.toolchain(
+    node_version = "24.13.0",
+)
+use_repo(node, "nodejs_toolchains")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependency = True)
+npm.npm_translate_lock(
+    name = "npm",
+    bins = {
+        # derived from "bin" attribute in node_modules/typescript/package.json
+        "typescript": [
+            "tsc=./bin/tsc",
+            "tsserver=./bin/tsserver",
+        ],
+        # Relay compiler (Rust native binary with Node.js launcher)
+        "relay-compiler": [
+            "relay-compiler=./cli.js",
+        ],
+    },
+    generate_bzl_library_targets = True,
+    lifecycle_hooks_envs = {
+        "*": [
+            "aspect_test_id=testc",
+            "BUILD_VERSION=1",
+        ],
+        # Without APPDATA environment variable, sharp install will fail because of the binary can not
+        # be copied to ~/.npm folder which is readonly for bazel.
+        "sharp": [
+            "APPDATA=.",
+            "npm_config_platform=linux",
+            "npm_config_arch=arm64",
+            "SHARP_INSTALL_FORCE=1",
+        ],
+    },
+    npmrc = "//:.npmrc",
+    patch_args = {
+        "*": ["-p1"],
+    },
+    pnpm_lock = "//:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+use_repo(npm, "npm")
+
+pnpm = use_extension("@aspect_rules_js//npm:extensions.bzl", "pnpm")
+pnpm.pnpm(
+    name = "pnpm",
+    pnpm_version = "10.12.1",
+)
+
+# Allows developers to use the matching pnpm version, for example:
+# bazel run -- @pnpm --dir /home/runner/work/rules_js/rules_js install
+use_repo(pnpm, "pnpm")
+
+rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "ext", dev_dependency = True)
+rules_ts_ext.deps(
+    # This keeps the TypeScript version in-sync with the editor, which is typically best.
+    ts_version_from = "//:package.json",
+)
+use_repo(rules_ts_ext, "npm_typescript")

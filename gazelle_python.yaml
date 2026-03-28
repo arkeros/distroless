@@ -1,0 +1,21 @@
+# GENERATED FILE - DO NOT EDIT!
+#
+# To update this file, run:
+#   bazel run //:gazelle_python_manifest.update
+
+---
+manifest:
+  modules_mapping:
+    absl: absl_py
+    adbc_driver_duckdb: duckdb
+    duckdb: duckdb
+    iniconfig: iniconfig
+    packaging: packaging
+    pluggy: pluggy
+    py: pytest
+    pygments: pygments
+    pytest: pytest
+    ruamel.yaml: ruamel_yaml
+  pip_repository:
+    name: pip
+integrity: e4e4508bd1f86014b2aa564271a6ab179eb1bd2e7b8cd8399dcee4dd2fbcea21

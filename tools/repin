@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# After adding a new third-party dependency, developers should run this script.
+set -o errexit -o nounset -o pipefail
+
+SCRIPT_DIR="$(realpath "$(dirname "$0")")"
+WORKSPACE_DIR="$(dirname "$SCRIPT_DIR")"
+
+bazel run @multitool//tools/multitool -- --lockfile="$SCRIPT_DIR/tools.lock.json" update
+
+echo "→ Emptying existing requirements files..."
+echo -n "" > "$WORKSPACE_DIR/requirements_macos.txt"
+echo -n "" > "$WORKSPACE_DIR/requirements_linux.txt"
+
+echo "→ Regenerating macOS requirements..."
+bazel run @@//:generate_requirements_macos_txt
+
+echo "→ Regenerating Linux requirements..."
+bazel run @@//:generate_requirements_linux_txt
+
+echo "→ Updating gazelle_python.yaml manifest..."
+bazel run //:gazelle_python_manifest.update

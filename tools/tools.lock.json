@@ -1,0 +1,120 @@
+{
+  "$schema": "https://raw.githubusercontent.com/theoremlp/rules_multitool/main/lockfile.schema.json",
+  "kubectl": {
+    "binaries": [
+      {
+        "kind": "file",
+        "url": "https://dl.k8s.io/release/v1.34.3/bin/linux/amd64/kubectl",
+        "sha256": "ab60ca5f0fd60c1eb81b52909e67060e3ba0bd27e55a8ac147cbc2172ff14212",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "file",
+        "url": "https://dl.k8s.io/release/v1.34.3/bin/darwin/arm64/kubectl",
+        "sha256": "e51367d2107d605f4edd7c2fb25897b0c0695a7de1a9f9d04cd6c9356b890b14",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://dl.k8s.io/release/v1.34.3/bin/darwin/amd64/kubectl",
+        "sha256": "657afbd0e653c4ce3af1b5a645a4eaba282cf8eb2bcda7191ff60866e50e4d7f",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
+  },
+  "multitool": {
+    "binaries": [
+      {
+        "kind": "archive",
+        "url": "https://github.com/theoremlp/multitool/releases/download/v0.9.0/multitool-x86_64-unknown-linux-gnu.tar.xz",
+        "file": "multitool-x86_64-unknown-linux-gnu/multitool",
+        "sha256": "34dc5968dad458a4050ebde58e484ebb7c624a119e4031347683eeb80922e6df",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/theoremlp/multitool/releases/download/v0.9.0/multitool-aarch64-apple-darwin.tar.xz",
+        "file": "multitool-aarch64-apple-darwin/multitool",
+        "sha256": "8f5e0cd033b0fcc128c762f8d527110433523da378619cecf40e91c1df5c0686",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/theoremlp/multitool/releases/download/v0.9.0/multitool-x86_64-apple-darwin.tar.xz",
+        "file": "multitool-x86_64-apple-darwin/multitool",
+        "sha256": "abde3bbbd49a09d33048e1f55cc9a8aa5dd61a13493a0b1bd5ffc2c56e5bf837",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
+  },
+  "prek": {
+    "binaries": [
+      {
+        "kind": "archive",
+        "url": "https://github.com/j178/prek/releases/download/v0.3.8/prek-aarch64-unknown-linux-gnu.tar.gz",
+        "file": "prek-aarch64-unknown-linux-gnu/prek",
+        "sha256": "e2119993923e9bdc28aca11f89361197f8c70648cb016bb6103379445e21758a",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/j178/prek/releases/download/v0.3.8/prek-x86_64-unknown-linux-gnu.tar.gz",
+        "file": "prek-x86_64-unknown-linux-gnu/prek",
+        "sha256": "80ec6adb9f1883344de52cb943d371ecfd25340c4a6b5b81e2600d27e246cfa1",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/j178/prek/releases/download/v0.3.8/prek-aarch64-apple-darwin.tar.gz",
+        "file": "prek-aarch64-apple-darwin/prek",
+        "sha256": "702fde4399fafb054ce85d0a64367689e3668b6475d732c4a46aae50cec0a4be",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/j178/prek/releases/download/v0.3.8/prek-x86_64-apple-darwin.tar.gz",
+        "file": "prek-x86_64-apple-darwin/prek",
+        "sha256": "010198daf4e99a76d03a911973320542ffd7a04091cf7e86c60ac861187577f6",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
+  },
+  "starpls": {
+    "binaries": [
+      {
+        "kind": "archive",
+        "url": "https://github.com/withered-magic/starpls/releases/download/v0.1.22/starpls-linux-aarch64.tar.gz",
+        "file": "starpls",
+        "sha256": "8a1c249c1ad2ae42e253eb02fcb4952faf8dbb01188266e580af2080b8cdc98b",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/withered-magic/starpls/releases/download/v0.1.22/starpls-linux-amd64.tar.gz",
+        "file": "starpls",
+        "sha256": "7111cd5389bac480f05ee20adbc638337ebaa06f340f478501497b65112f897f",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/withered-magic/starpls/releases/download/v0.1.22/starpls-darwin-arm64.tar.gz",
+        "file": "starpls",
+        "sha256": "15320c409f55f50ac052221a29eed269a3278ed67de7c5b2462f58bfae07a3fa",
+        "os": "macos",
+        "cpu": "arm64"
+      }
+    ]
+  }
+}

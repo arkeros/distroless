@@ -1,7 +1,7 @@
 # GENERATED FILE - DO NOT EDIT!
 #
 # To update this file, run:
-#   bazel run //:gazelle_python_manifest.update
+#   bazel run //python:gazelle_python_manifest.update
 
 ---
 manifest:
@@ -18,4 +18,4 @@ manifest:
     ruamel.yaml: ruamel_yaml
   pip_repository:
     name: pip
-integrity: e4e4508bd1f86014b2aa564271a6ab179eb1bd2e7b8cd8399dcee4dd2fbcea21
+integrity: 97b92603933029b1fcaadbcd0d2b8b1e66950236ebfabb297625388c00e36e71

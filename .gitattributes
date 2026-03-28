@@ -1,8 +1,8 @@
 CLAUDE.md rules-lint-ignored=true
-gazelle_python.yaml linguist-generated=true
+python/gazelle_python.yaml linguist-generated=true
 pnpm-lock.yaml linguist-generated=true
-requirements_linux.txt linguist-generated=true
-requirements_macos.txt linguist-generated=true
+python/requirements_linux.txt linguist-generated=true
+python/requirements_macos.txt linguist-generated=true
 MODULE.bazel.lock linguist-generated=true
 go.sum linguist-generated=true
 **/*_pb.d.ts linguist-generated=true

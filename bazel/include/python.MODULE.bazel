@@ -15,7 +15,7 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 pip.parse(
     hub_name = "pip",
     python_version = "3.14",
-    requirements_darwin = "//:requirements_macos.txt",
-    requirements_linux = "//:requirements_linux.txt",
+    requirements_darwin = "//python:requirements_macos.txt",
+    requirements_linux = "//python:requirements_linux.txt",
 )
 use_repo(pip, "pip")

@@ -9,14 +9,14 @@ WORKSPACE_DIR="$(dirname "$SCRIPT_DIR")"
 bazel run @multitool//tools/multitool -- --lockfile="$SCRIPT_DIR/tools.lock.json" update
 
 echo "→ Emptying existing requirements files..."
-echo -n "" > "$WORKSPACE_DIR/requirements_macos.txt"
-echo -n "" > "$WORKSPACE_DIR/requirements_linux.txt"
+echo -n "" > "$WORKSPACE_DIR/python/requirements_macos.txt"
+echo -n "" > "$WORKSPACE_DIR/python/requirements_linux.txt"
 
 echo "→ Regenerating macOS requirements..."
-bazel run @@//:generate_requirements_macos_txt
+bazel run @@//python:generate_requirements_macos_txt
 
 echo "→ Regenerating Linux requirements..."
-bazel run @@//:generate_requirements_linux_txt
+bazel run @@//python:generate_requirements_linux_txt
 
 echo "→ Updating gazelle_python.yaml manifest..."
-bazel run //:gazelle_python_manifest.update
+bazel run //python:gazelle_python_manifest.update

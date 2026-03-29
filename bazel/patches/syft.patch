@@ -1,0 +1,491 @@
+diff -ruN syft-orig/syft/pkg/cataloger/BUILD.bazel syft-patched/syft/pkg/cataloger/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/BUILD.bazel	2026-01-02 11:39:57
+@@ -3,6 +3,43 @@
+ go_library(
+     name = "cataloger",
+     srcs = ["capabilities.go"],
++    embedsrcs = [
++        "//syft/pkg/cataloger/ai:capabilities.yaml",
++        "//syft/pkg/cataloger/alpine:capabilities.yaml",
++        "//syft/pkg/cataloger/arch:capabilities.yaml",
++        "//syft/pkg/cataloger/binary:capabilities.yaml",
++        "//syft/pkg/cataloger/bitnami:capabilities.yaml",
++        "//syft/pkg/cataloger/conda:capabilities.yaml",
++        "//syft/pkg/cataloger/cpp:capabilities.yaml",
++        "//syft/pkg/cataloger/dart:capabilities.yaml",
++        "//syft/pkg/cataloger/debian:capabilities.yaml",
++        "//syft/pkg/cataloger/dotnet:capabilities.yaml",
++        "//syft/pkg/cataloger/elixir:capabilities.yaml",
++        "//syft/pkg/cataloger/erlang:capabilities.yaml",
++        "//syft/pkg/cataloger/gentoo:capabilities.yaml",
++        "//syft/pkg/cataloger/githubactions:capabilities.yaml",
++        "//syft/pkg/cataloger/golang:capabilities.yaml",
++        "//syft/pkg/cataloger/haskell:capabilities.yaml",
++        "//syft/pkg/cataloger/homebrew:capabilities.yaml",
++        "//syft/pkg/cataloger/java:capabilities.yaml",
++        "//syft/pkg/cataloger/javascript:capabilities.yaml",
++        "//syft/pkg/cataloger/kernel:capabilities.yaml",
++        "//syft/pkg/cataloger/lua:capabilities.yaml",
++        "//syft/pkg/cataloger/nix:capabilities.yaml",
++        "//syft/pkg/cataloger/ocaml:capabilities.yaml",
++        "//syft/pkg/cataloger/php:capabilities.yaml",
++        "//syft/pkg/cataloger/python:capabilities.yaml",
++        "//syft/pkg/cataloger/r:capabilities.yaml",
++        "//syft/pkg/cataloger/redhat:capabilities.yaml",
++        "//syft/pkg/cataloger/ruby:capabilities.yaml",
++        "//syft/pkg/cataloger/rust:capabilities.yaml",
++        "//syft/pkg/cataloger/sbom:capabilities.yaml",
++        "//syft/pkg/cataloger/snap:capabilities.yaml",
++        "//syft/pkg/cataloger/swift:capabilities.yaml",
++        "//syft/pkg/cataloger/swipl:capabilities.yaml",
++        "//syft/pkg/cataloger/terraform:capabilities.yaml",
++        "//syft/pkg/cataloger/wordpress:capabilities.yaml",
++    ],
+     importpath = "github.com/anchore/syft/syft/pkg/cataloger",
+     visibility = ["//visibility:public"],
+     deps = ["//internal/capabilities"],
+diff -ruN syft-orig/syft/pkg/cataloger/ai/BUILD.bazel syft-patched/syft/pkg/cataloger/ai/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/ai/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/ai/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "ai",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/alpine/BUILD.bazel syft-patched/syft/pkg/cataloger/alpine/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/alpine/BUILD.bazel	2026-01-02 11:38:41
++++ syft-patched/syft/pkg/cataloger/alpine/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "alpine",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/arch/BUILD.bazel syft-patched/syft/pkg/cataloger/arch/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/arch/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/arch/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "arch",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/binary/BUILD.bazel syft-patched/syft/pkg/cataloger/binary/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/binary/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/binary/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "binary",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/bitnami/BUILD.bazel syft-patched/syft/pkg/cataloger/bitnami/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/bitnami/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/bitnami/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "bitnami",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/conda/BUILD.bazel syft-patched/syft/pkg/cataloger/conda/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/conda/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/conda/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "conda",
+     srcs = ["cataloger.go"],
+diff -ruN syft-orig/syft/pkg/cataloger/cpp/BUILD.bazel syft-patched/syft/pkg/cataloger/cpp/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/cpp/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/cpp/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "cpp",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/dart/BUILD.bazel syft-patched/syft/pkg/cataloger/dart/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/dart/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/dart/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "dart",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/debian/BUILD.bazel syft-patched/syft/pkg/cataloger/debian/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/debian/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/debian/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "debian",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/dotnet/BUILD.bazel syft-patched/syft/pkg/cataloger/dotnet/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/dotnet/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/dotnet/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "dotnet",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/elixir/BUILD.bazel syft-patched/syft/pkg/cataloger/elixir/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/elixir/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/elixir/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "elixir",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/erlang/BUILD.bazel syft-patched/syft/pkg/cataloger/erlang/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/erlang/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/erlang/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "erlang",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/gentoo/BUILD.bazel syft-patched/syft/pkg/cataloger/gentoo/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/gentoo/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/gentoo/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "gentoo",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/githubactions/BUILD.bazel syft-patched/syft/pkg/cataloger/githubactions/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/githubactions/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/githubactions/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "githubactions",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/golang/BUILD.bazel syft-patched/syft/pkg/cataloger/golang/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/golang/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/golang/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "golang",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/haskell/BUILD.bazel syft-patched/syft/pkg/cataloger/haskell/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/haskell/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/haskell/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "haskell",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/homebrew/BUILD.bazel syft-patched/syft/pkg/cataloger/homebrew/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/homebrew/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/homebrew/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "homebrew",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/internal/cpegenerate/BUILD.bazel syft-patched/syft/pkg/cataloger/internal/cpegenerate/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/internal/cpegenerate/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/internal/cpegenerate/BUILD.bazel	2026-01-02 11:40:17
+@@ -22,6 +22,9 @@
+         "vendors_from_url.go",
+         "wordpress.go",
+     ],
++    embedsrcs = [
++        "//syft/pkg/cataloger/internal/cpegenerate/dictionary:data/cpe-index.json",
++    ],
+     importpath = "github.com/anchore/syft/syft/pkg/cataloger/internal/cpegenerate",
+     visibility = ["//syft/pkg/cataloger:__subpackages__"],
+     deps = [
+diff -ruN syft-orig/syft/pkg/cataloger/internal/cpegenerate/dictionary/BUILD.bazel syft-patched/syft/pkg/cataloger/internal/cpegenerate/dictionary/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/internal/cpegenerate/dictionary/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/internal/cpegenerate/dictionary/BUILD.bazel	2026-01-02 11:40:33
+@@ -1,5 +1,7 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library")
+ 
++exports_files(["data/cpe-index.json"])
++
+ go_library(
+     name = "dictionary",
+     srcs = ["types.go"],
+diff -ruN syft-orig/syft/pkg/cataloger/java/BUILD.bazel syft-patched/syft/pkg/cataloger/java/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/java/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/java/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "java",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/javascript/BUILD.bazel syft-patched/syft/pkg/cataloger/javascript/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/javascript/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/javascript/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "javascript",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/kernel/BUILD.bazel syft-patched/syft/pkg/cataloger/kernel/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/kernel/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/kernel/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "kernel",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/lua/BUILD.bazel syft-patched/syft/pkg/cataloger/lua/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/lua/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/lua/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "lua",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/nix/BUILD.bazel syft-patched/syft/pkg/cataloger/nix/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/nix/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/nix/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "nix",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/ocaml/BUILD.bazel syft-patched/syft/pkg/cataloger/ocaml/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/ocaml/BUILD.bazel	2026-01-02 11:38:41
++++ syft-patched/syft/pkg/cataloger/ocaml/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "ocaml",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/php/BUILD.bazel syft-patched/syft/pkg/cataloger/php/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/php/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/php/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "php",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/python/BUILD.bazel syft-patched/syft/pkg/cataloger/python/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/python/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/python/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "python",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/r/BUILD.bazel syft-patched/syft/pkg/cataloger/r/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/r/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/r/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "r",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/redhat/BUILD.bazel syft-patched/syft/pkg/cataloger/redhat/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/redhat/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/redhat/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "redhat",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/ruby/BUILD.bazel syft-patched/syft/pkg/cataloger/ruby/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/ruby/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/ruby/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "ruby",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/rust/BUILD.bazel syft-patched/syft/pkg/cataloger/rust/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/rust/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/rust/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "rust",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/sbom/BUILD.bazel syft-patched/syft/pkg/cataloger/sbom/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/sbom/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/sbom/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "sbom",
+     srcs = ["cataloger.go"],
+diff -ruN syft-orig/syft/pkg/cataloger/snap/BUILD.bazel syft-patched/syft/pkg/cataloger/snap/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/snap/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/snap/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "snap",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/swift/BUILD.bazel syft-patched/syft/pkg/cataloger/swift/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/swift/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/swift/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "swift",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/swipl/BUILD.bazel syft-patched/syft/pkg/cataloger/swipl/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/swipl/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/swipl/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "swipl",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/terraform/BUILD.bazel syft-patched/syft/pkg/cataloger/terraform/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/terraform/BUILD.bazel	2026-01-02 11:38:41
++++ syft-patched/syft/pkg/cataloger/terraform/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "terraform",
+     srcs = [
+diff -ruN syft-orig/syft/pkg/cataloger/wordpress/BUILD.bazel syft-patched/syft/pkg/cataloger/wordpress/BUILD.bazel
+--- syft-orig/syft/pkg/cataloger/wordpress/BUILD.bazel	2026-01-02 11:38:42
++++ syft-patched/syft/pkg/cataloger/wordpress/BUILD.bazel	2026-01-04 11:12:29
+@@ -1,5 +1,8 @@
+ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+ 
++exports_files(["capabilities.yaml"])
++
++
+ go_library(
+     name = "wordpress",
+     srcs = [

@@ -4,6 +4,19 @@ import %workspace%/bazel/defaults.bazelrc
 # See https://github.com/bazel-contrib/tar.bzl/blob/main/README.md#remote-cache-and-rbe
 common --modify_execution_info=Tar=+no-remote-cache
 
+build --aspects=@syft.bzl//syft:defs.bzl%syft_sbom_aspect
+build --aspects=@grype.bzl//grype:defs.bzl%grype_aspect
+build --@grype.bzl//grype:database=@grype_database
+build --@grype.bzl//grype:fail_on_severity=high
+build --sandbox_add_mount_pair=/tmp
+
+common --modify_execution_info=GrypeScan=+no-remote
+
+build --workspace_status_command=bazel/workspace_status.sh
+
+# Skip tests that require Linux (e.g. container_structure_test with glibc symlinks)
+test --test_tag_filters=-no-local
+
 # Don't build protoc from the cc_binary, it's slow and spammy when cache miss
 common --@protobuf//bazel/toolchains:prefer_prebuilt_protoc
 common --incompatible_python_disallow_native_rules

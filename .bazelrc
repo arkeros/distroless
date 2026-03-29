@@ -1,3 +1,6 @@
+# https://www.buildbuddy.io/blog/how-bazel-7-0-makes-your-builds-faster/
+startup --digest_function=BLAKE3
+
 import %workspace%/bazel/defaults.bazelrc
 
 # Avoid overloading the remote cache with tar outputs.
@@ -14,8 +17,6 @@ common --modify_execution_info=GrypeScan=+no-remote
 
 build --workspace_status_command=bazel/workspace_status.sh
 
-# Skip tests that require Linux (e.g. container_structure_test with glibc symlinks)
-test:macos --test_tag_filters=-no-local
 
 # Don't build protoc from the cc_binary, it's slow and spammy when cache miss
 common --@protobuf//bazel/toolchains:prefer_prebuilt_protoc

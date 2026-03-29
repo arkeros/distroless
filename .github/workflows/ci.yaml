@@ -47,6 +47,7 @@ jobs:
       contents: read
       id-token: write
       packages: write
+      attestations: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -74,11 +75,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push images
+      - name: Push and attest images
         run: |
           set -euxo pipefail
-          TARGETS=$(bazel query 'kind("image_push rule", //...)' --output=label | tr '\n' ' ')
+          TARGETS=$(bazel query 'kind("image_push rule", //...)' --output=label)
           for TARGET in $TARGETS; do
             bazel run "$TARGET"
-            echo "Pushed $TARGET"
+
+            MANIFEST=$(bazel cquery "$TARGET" --output=files --output_groups=deploy_manifest)
+            bazel build --output_groups=deploy_manifest "$TARGET"
+            REGISTRY=$(jq -r '.operations[0].registry' "$MANIFEST")
+            REPOSITORY=$(jq -r '.operations[0].repository' "$MANIFEST")
+            DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
+            IMAGE_NAME="${REGISTRY}/${REPOSITORY}"
+
+            IMAGE_TARGET=$(bazel query "labels(image, $TARGET)" --output=label)
+            bazel build --output_groups=sbom "$IMAGE_TARGET"
+            SBOM_FILE=$(bazel cquery "$IMAGE_TARGET" --output=files --output_groups=sbom)
+
+            gh attestation create \
+              --subject-name "$IMAGE_NAME" \
+              --subject-digest "$DIGEST" \
+              --push-to-registry
+
+            gh attestation create \
+              --subject-name "$IMAGE_NAME" \
+              --subject-digest "$DIGEST" \
+              --sbom-path "$SBOM_FILE" \
+              --push-to-registry
           done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

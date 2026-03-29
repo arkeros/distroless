@@ -23,6 +23,7 @@ jobs:
           bazelisk-version: v1.27.0
           bazelrc: |
             common --config=ci
+            build --stamp
 
       - name: Test
         run: bazel test //...

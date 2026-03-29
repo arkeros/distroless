@@ -15,9 +15,14 @@ monorepo_version=$(
 # Short version without build metadata. For example, 2025.34.0.
 monorepo_short_version="${monorepo_version%%+*}"
 
+# Image repository compatible monrepo version. For example, 2025.34.0-201b9a8.
+# OCI registries do not allow `+` characters in tags so we swap with `-`.
+monorepo_image_tag_version="${monorepo_version//+/-}"
+
 cat <<EOF
 STABLE_GIT_COMMIT ${git_commit}
 STABLE_GIT_SHORT_COMMIT ${git_commit:0:8}
 STABLE_MONOREPO_VERSION ${monorepo_version}
 STABLE_MONOREPO_SHORT_VERSION ${monorepo_short_version}
+STABLE_MONOREPO_IMAGE_TAG_VERSION ${monorepo_image_tag_version}
 EOF

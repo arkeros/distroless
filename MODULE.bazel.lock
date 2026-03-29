@@ -479,6 +479,65 @@
         }
       }
     },
+    "@@aspect_rules_py+//uv/private/tomltool:extension.bzl%tomltool": {
+      "general": {
+        "bzlTransitiveDigest": "9vt5DM848gBSxQ0T+sjZbTbMJJV0ZXAd7Mx89jwI3Yc=",
+        "usagesDigest": "tjvxKH1kGH8p25YnsJXWGlEXUtfmcvSKHUtTKCM1HYs=",
+        "recordedInputs": [
+          "REPO_MAPPING:aspect_rules_py+,bazel_tools bazel_tools"
+        ],
+        "generatedRepoSpecs": {
+          "toml2json_aarch64_osx_libsystem": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_file",
+            "attributes": {
+              "url": "https://github.com/hermeticbuild/toml2json/releases/download/v0.0.23/toml2json_darwin_arm64",
+              "sha256": "6d9ac7a19c738771233192db058f74af1e6963e78147adef68d3463b6736fdd1",
+              "executable": true
+            }
+          },
+          "toml2json_x86_64_osx_libsystem": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_file",
+            "attributes": {
+              "url": "https://github.com/hermeticbuild/toml2json/releases/download/v0.0.23/toml2json_darwin_amd64",
+              "sha256": "3fad1d4314fec5074b635ba3e5b31d578e2539137a017092bf364672a3c9676a",
+              "executable": true
+            }
+          },
+          "toml2json_aarch64_linux_gnu": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_file",
+            "attributes": {
+              "url": "https://github.com/hermeticbuild/toml2json/releases/download/v0.0.23/toml2json_linux_arm64",
+              "sha256": "c64706324f99ad7109c62ef9475c58a6a7c6efc2f9c5fa1ce7750eb0cd9e8d02",
+              "executable": true
+            }
+          },
+          "toml2json_x86_64_linux_gnu": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_file",
+            "attributes": {
+              "url": "https://github.com/hermeticbuild/toml2json/releases/download/v0.0.23/toml2json_linux_amd64",
+              "sha256": "fa7ce4deb4292a3ee93f4e47726ced6bb4e8483205e43e8daa4b05a4b77ec286",
+              "executable": true
+            }
+          },
+          "toml2json_x86_64_windows_msvc": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_file",
+            "attributes": {
+              "url": "https://github.com/hermeticbuild/toml2json/releases/download/v0.0.23/toml2json_windows_amd64.exe",
+              "sha256": "bbc61cd6a081e490223b44f33003cb02e00301306d84fcba0cb3eaee8fb70396",
+              "executable": true
+            }
+          },
+          "toml2json_aarch64_windows_msvc": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_file",
+            "attributes": {
+              "url": "https://github.com/hermeticbuild/toml2json/releases/download/v0.0.23/toml2json_windows_arm64.exe",
+              "sha256": "00a7101da6260926e8c23af3b802f82d3f820054fae3d86c29886545f5985a92",
+              "executable": true
+            }
+          }
+        }
+      }
+    },
     "@@aspect_rules_ts+//ts:extensions.bzl%ext": {
       "general": {
         "bzlTransitiveDigest": "mgipZzBrc3b7BdA8UsakMd4W6/9h6+GDAUZpx2grCJ4=",
@@ -765,6 +824,61 @@
             "attributes": {
               "url": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.4_2026-03-27T00:34:41Z_1774593488.tar.zst",
               "sha256": "d45900c3b29e383ed88a78b377768edc62f87803ee503e83a6aec755aa0d5a0e"
+            }
+          }
+        }
+      }
+    },
+    "@@protobuf+//python/dist:system_python.bzl%system_python_extension": {
+      "general": {
+        "bzlTransitiveDigest": "qh0n9IrXU/xS94wxKQrG1J63zrLkA1Wy2Y3BQxptPcI=",
+        "usagesDigest": "AF5a9lHFrJtHw1GTt3jJOs7ZYl1+N2bkn1LbPFLoguA=",
+        "recordedInputs": [],
+        "generatedRepoSpecs": {
+          "system_python": {
+            "repoRuleId": "@@protobuf+//python/dist:system_python.bzl%system_python",
+            "attributes": {
+              "minimum_python_version": "3.9"
+            }
+          }
+        }
+      }
+    },
+    "@@pybind11_bazel+//:internal_configure.bzl%internal_configure_extension": {
+      "general": {
+        "bzlTransitiveDigest": "06cynZ1bCvvy8zHPrrDlXq+Z68xmjctHpfFxi+zEpJY=",
+        "usagesDigest": "D1r3lfzMuUBFxgG8V6o0bQTLMk3GkaGOaPzw53wrwyw=",
+        "recordedInputs": [
+          "REPO_MAPPING:pybind11_bazel+,bazel_tools bazel_tools",
+          "FILE:@@pybind11_bazel+//MODULE.bazel e6f4c20442eaa7c90d7190d8dc539d0ab422f95c65a57cc59562170c58ae3d34"
+        ],
+        "generatedRepoSpecs": {
+          "pybind11": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "build_file": "@@pybind11_bazel+//:pybind11-BUILD.bazel",
+              "strip_prefix": "pybind11-2.12.0",
+              "urls": [
+                "https://github.com/pybind/pybind11/archive/v2.12.0.zip"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "@@rules_android+//bzlmod_extensions:apksig.bzl%apksig_extension": {
+      "general": {
+        "bzlTransitiveDigest": "KrgiB8lWxqVdbipL9YIYOuGjS80xlZIM/EBvUg8SVd0=",
+        "usagesDigest": "0FXD4PX+vQ/jVne2oV4v3Cw5Mc9DZQ4yTcoRkAjj/X4=",
+        "recordedInputs": [
+          "REPO_MAPPING:rules_android+,bazel_tools bazel_tools"
+        ],
+        "generatedRepoSpecs": {
+          "apksig": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "url": "https://android.googlesource.com/platform/tools/apksig/+archive/24e3075e68ebe17c0b529bb24bfda819db5e2f3b.tar.gz",
+              "build_file": "@@rules_android+//bzlmod_extensions:apksig.BUILD"
             }
           }
         }

@@ -17,6 +17,14 @@ common --modify_execution_info=GrypeScan=+no-remote
 
 build --workspace_status_command=bazel/workspace_status.sh
 
+# Remote cache (GCS)
+build:gcs --remote_cache=https://storage.googleapis.com/bazel-senku-remote-cache
+build:gcs --google_default_credentials
+build:gcs --remote_cache_compression
+build:gcs --remote_cache_async
+
+# CI includes GCS remote cache
+build:ci --config=gcs
 
 # Don't build protoc from the cc_binary, it's slow and spammy when cache miss
 common --@protobuf//bazel/toolchains:prefer_prebuilt_protoc

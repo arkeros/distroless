@@ -6,3 +6,9 @@
 .bazelrc.user
 
 node_modules/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan

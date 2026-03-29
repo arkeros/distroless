@@ -22,5 +22,10 @@ git_override(
     remote = "https://github.com/arkeros/lazy_bazel_env.bzl.git",
 )
 
+single_version_override(
+    module_name = "rules_android",
+    version = "0.7.1",
+)
+
 jq_toolchains = use_extension("@jq.bzl//jq:extensions.bzl", "toolchains")
 use_repo(jq_toolchains, "jq_toolchains")

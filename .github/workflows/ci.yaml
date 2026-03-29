@@ -50,6 +50,8 @@ jobs:
       id-token: write
       packages: write
       attestations: write
+    outputs:
+      matrix: ${{ steps.meta.outputs.matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -79,10 +81,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push and attest images
+      - name: Push images and collect metadata
+        id: meta
         run: |
           set -euxo pipefail
           TARGETS=$(bazel query 'kind("image_push rule", //...)' --output=label)
+          MATRIX="[]"
           for TARGET in $TARGETS; do
             bazel run "$TARGET"
 
@@ -91,22 +95,51 @@ jobs:
             REGISTRY=$(jq -r '.operations[0].registry' "$MANIFEST")
             REPOSITORY=$(jq -r '.operations[0].repository' "$MANIFEST")
             DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
-            IMAGE_NAME="${REGISTRY}/${REPOSITORY}"
 
             IMAGE_TARGET=$(bazel query "labels(image, $TARGET)" --output=label)
             bazel build --output_groups=sbom "$IMAGE_TARGET"
             SBOM_FILE=$(bazel cquery "$IMAGE_TARGET" --output=files --output_groups=sbom)
+            cp "$SBOM_FILE" "/tmp/$(basename "$SBOM_FILE")"
 
-            gh attestation create \
-              --subject-name "$IMAGE_NAME" \
-              --subject-digest "$DIGEST" \
-              --push-to-registry
-
-            gh attestation create \
-              --subject-name "$IMAGE_NAME" \
-              --subject-digest "$DIGEST" \
-              --sbom-path "$SBOM_FILE" \
-              --push-to-registry
+            MATRIX=$(echo "$MATRIX" | jq -c --arg image "${REGISTRY}/${REPOSITORY}" --arg digest "$DIGEST" --arg sbom "$(basename "$SBOM_FILE")" '. + [{"image": $image, "digest": $digest, "sbom": $sbom}]')
           done
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sboms
+          path: /tmp/*.spdx.json
+
+  attest:
+    name: Attest ${{ matrix.image }}
+    if: github.event_name == 'push'
+    needs: [push]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      packages: write
+      attestations: write
+      artifact-metadata: write
+    strategy:
+      matrix: ${{ fromJSON(needs.push.outputs.matrix) }}
+    steps:
+      - name: Download SBOMs
+        uses: actions/download-artifact@v4
+        with:
+          name: sboms
+
+      - name: Attest provenance
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ matrix.image }}
+          subject-digest: ${{ matrix.digest }}
+          push-to-registry: true
+
+      - name: Attest SBOM
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ matrix.image }}
+          subject-digest: ${{ matrix.digest }}
+          sbom-path: ${{ matrix.sbom }}
+          push-to-registry: true

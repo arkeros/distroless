@@ -124,6 +124,13 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(needs.push.outputs.matrix) }}
     steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download SBOMs
         uses: actions/download-artifact@v4
         with:

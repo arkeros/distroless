@@ -29,6 +29,8 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.15.0
         with:
           bazelisk-version: v1.27.0
+          bazelisk-cache: true
+          repository-cache: true
           bazelrc: |
             common --config=ci
 
@@ -64,6 +66,8 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.15.0
         with:
           bazelisk-version: v1.27.0
+          bazelisk-cache: true
+          repository-cache: true
           bazelrc: |
             common --config=ci
             build --stamp

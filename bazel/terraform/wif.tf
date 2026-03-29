@@ -43,3 +43,9 @@ resource "google_storage_bucket_iam_member" "cache_admin" {
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.github_actions.email}"
 }
+
+resource "google_storage_bucket_iam_member" "tfstate_admin" {
+  bucket = "senku-prod-terraform-state"
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.github_actions.email}"
+}

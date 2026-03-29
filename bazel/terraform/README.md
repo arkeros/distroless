@@ -13,6 +13,9 @@ gcloud storage buckets create gs://senku-prod-terraform-state --location=US --un
 
 ## Apply
 
+First apply must be run locally since the GitHub Actions SA doesn't have
+the IAM roles it needs until Terraform creates them.
+
 ```bash
 terraform init
 terraform apply

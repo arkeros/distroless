@@ -1,6 +1,8 @@
 ---
 name: CI
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -35,3 +37,48 @@ jobs:
 
       - name: Build
         run: bazel build //...
+
+  push:
+    name: Push images
+    if: github.event_name == 'push'
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-version: v1.27.0
+          bazelrc: |
+            common --config=ci
+            build --stamp
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push images
+        run: |
+          set -euxo pipefail
+          TARGETS=$(bazel query 'kind("image_push rule", //...)' --output=label | tr '\n' ' ')
+          for TARGET in $TARGETS; do
+            bazel run "$TARGET"
+            echo "Pushed $TARGET"
+          done

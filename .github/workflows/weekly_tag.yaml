@@ -10,6 +10,8 @@ on:
     - cron: "0 23 * * 0"
 jobs:
   tagger:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       # Use %G which is ISO week year instead of %Y so that we don't roll the week over to `01` before we roll the

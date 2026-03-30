@@ -34,7 +34,7 @@ jobs:
           service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.12.2
 

@@ -22,8 +22,26 @@ common:gcs --google_default_credentials
 common:gcs --remote_cache_compression
 common:gcs --remote_cache_async
 
-# CI includes GCS remote cache
-common:ci --config=gcs
+# Remote cache (BuildBuddy)
+# Set API key in .bazelrc.user: common:buildbuddy --remote_header=x-buildbuddy-api-key=YOUR_KEY
+common:buildbuddy --remote_cache=grpcs://remote.buildbuddy.io
+common:buildbuddy --remote_cache_compression
+common:buildbuddy --remote_cache_async
+common:buildbuddy --remote_timeout=1200
+common:buildbuddy --grpc_keepalive_time=360s
+common:buildbuddy --grpc_keepalive_timeout=360s
+common:buildbuddy --bes_results_url=https://app.buildbuddy.io/invocation/
+common:buildbuddy --bes_backend=grpcs://remote.buildbuddy.io
+common:buildbuddy --remote_build_event_upload=minimal
+common:buildbuddy --nolegacy_important_outputs
+common:buildbuddy --noslim_profile
+common:buildbuddy --experimental_profile_include_target_label
+common:buildbuddy --experimental_profile_include_primary_output
+build:buildbuddy --@rules_img//img/settings:push_strategy=lazy
+build:buildbuddy --@rules_img//img/settings:remote_cache=grpcs://remote.buildbuddy.io
+
+# CI includes BuildBuddy remote cache
+common:ci --config=buildbuddy
 
 # Don't build protoc from the cc_binary, it's slow and spammy when cache miss
 common --@protobuf//bazel/toolchains:prefer_prebuilt_protoc

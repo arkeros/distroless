@@ -101,7 +101,8 @@ jobs:
             SBOM_FILE=$(bazel cquery "$IMAGE_TARGET" --output=files --output_groups=sbom)
             cp "$SBOM_FILE" "/tmp/$(basename "$SBOM_FILE")"
 
-            MATRIX=$(echo "$MATRIX" | jq -c --arg image "${REGISTRY}/${REPOSITORY}" --arg digest "$DIGEST" --arg sbom "$(basename "$SBOM_FILE")" '. + [{"image": $image, "digest": $digest, "sbom": $sbom}]')
+            TAG=$(jq -r '.operations[0].tags[] | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+(-debug)?$"))' "$MANIFEST")
+            MATRIX=$(echo "$MATRIX" | jq -c --arg image "${REGISTRY}/${REPOSITORY}" --arg tag "$TAG" --arg digest "$DIGEST" --arg sbom "$(basename "$SBOM_FILE")" '. + [{"image": $image, "tag": $tag, "digest": $digest, "sbom": $sbom}]')
           done
           echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
 
@@ -112,7 +113,7 @@ jobs:
           path: /tmp/*.spdx.json
 
   attest:
-    name: Attest ${{ matrix.image }}
+    name: Attest ${{ matrix.image }}:${{ matrix.tag }}
     if: github.event_name == 'push'
     needs: [push]
     runs-on: ubuntu-latest

@@ -13,7 +13,6 @@ build --@grype.bzl//grype:database=@grype_database
 build --@grype.bzl//grype:fail_on_severity=high
 build --sandbox_add_mount_pair=/tmp
 
-common --modify_execution_info=GrypeScan=+no-remote
 
 build --workspace_status_command=bazel/workspace_status.sh
 

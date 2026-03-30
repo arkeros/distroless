@@ -13,6 +13,7 @@
   "automergeStrategy": "squash",
   "dependencyDashboardOSVVulnerabilitySummary": "all",
   "commitMessagePrefix": "chore(deps):",
+  "recreateWhen": "always",
   "ignorePaths": [
     ".github/renovate.json"
   ],

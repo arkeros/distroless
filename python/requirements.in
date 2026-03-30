@@ -1,4 +1,5 @@
 absl-py
+blake3
 duckdb
 pytest
 ruamel.yaml

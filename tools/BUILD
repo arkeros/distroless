@@ -1,9 +1,11 @@
+load("@aspect_rules_py//py:defs.bzl", "py_binary", "py_library")
 load("@gazelle//:go_tools.bzl", "GO_TOOLS")
 load("@lazy_bazel_env.bzl//:defs.bzl", "lazy_bazel_env")
 load("@multitool//:tools.bzl", MULTITOOLS = "TOOLS")
 
 # Tools found in this package
 LOCAL_TOOLS = [
+    "b3sum",
 ]
 
 # Tools found at @[toolname]
@@ -44,4 +46,18 @@ lazy_bazel_env(
         t: "//tools:" + t
         for t in LOCAL_TOOLS
     } | GO_TOOLS,
+)
+
+py_binary(
+    name = "b3sum",
+    srcs = ["b3sum.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@pip//blake3"],
+)
+
+py_library(
+    name = "tools",
+    srcs = ["b3sum.py"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@pip//blake3"],
 )

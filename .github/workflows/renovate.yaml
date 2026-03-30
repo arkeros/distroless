@@ -1,0 +1,31 @@
+name: Renovate
+on:
+  schedule:
+    # Run every hour during business hours (9am-5pm Europe/Madrid, Mon-Fri)
+    # UTC: 7am-3pm (summer) or 8am-4pm (winter). Using 7am-4pm to cover both.
+    - cron: '0 7-15 * * 1-5'
+  workflow_dispatch:
+concurrency:
+  group: renovate
+  cancel-in-progress: true
+jobs:
+  renovate:
+    name: Renovate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v43.0.10
+        with:
+          configurationFile: .github/renovate.json
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          LOG_LEVEL: debug
+          RENOVATE_ONBOARDING: "false"
+          RENOVATE_ALLOWED_COMMANDS: '["^\\./tools/repin$", "^bazel mod tidy$", "^pnpm install --lockfile-only$"]'

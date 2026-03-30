@@ -1,0 +1,66 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":disablePrControls"],
+  "timezone": "Europe/Madrid",
+  "schedule": ["every weekday after 9am before 5pm"],
+  "branchConcurrentLimit": 10,
+  "prHourlyLimit": 10,
+  "dependencyDashboard": true,
+  "automerge": false,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
+  "commitMessagePrefix": "chore(deps):",
+  "ignorePaths": [".github/renovate.json"],
+  "pip_requirements": {
+    "fileMatch": ["python/requirements.in"]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["bazel"],
+      "postUpgradeTasks": {
+        "commands": ["bazel mod tidy"],
+        "fileFilters": ["MODULE.bazel.lock"],
+        "executionMode": "update"
+      }
+    },
+    {
+      "matchManagers": ["bazelisk"],
+      "postUpgradeTasks": {
+        "commands": ["bazel mod tidy"],
+        "fileFilters": ["MODULE.bazel.lock"],
+        "executionMode": "update"
+      }
+    },
+    {
+      "matchManagers": ["bazel-module"],
+      "postUpgradeTasks": {
+        "commands": ["bazel mod tidy"],
+        "fileFilters": ["MODULE.bazel.lock"],
+        "executionMode": "update"
+      }
+    },
+    {
+      "matchManagers": ["pip_requirements"],
+      "rangeStrategy": "bump",
+      "postUpgradeTasks": {
+        "commands": ["./tools/repin", "bazel mod tidy"],
+        "fileFilters": [
+          "python/requirements_linux.txt",
+          "python/requirements_macos.txt",
+          "gazelle_python.yaml",
+          "MODULE.bazel.lock"
+        ],
+        "executionMode": "update"
+      }
+    },
+    {
+      "matchManagers": ["npm"],
+      "postUpgradeTasks": {
+        "commands": ["pnpm install --lockfile-only", "bazel mod tidy"],
+        "fileFilters": ["pnpm-lock.yaml", "MODULE.bazel.lock"],
+        "executionMode": "update"
+      }
+    }
+  ]
+}

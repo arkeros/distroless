@@ -33,6 +33,7 @@ modules_mapping(
 
 gazelle_python_manifest(
     name = "gazelle_python_manifest",
+    manifest = "//:gazelle_python.yaml",
     modules_mapping = ":modules_map",
     pip_repository_name = "pip",
     requirements = ":requirements_linux.txt",

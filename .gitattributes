@@ -1,5 +1,5 @@
 CLAUDE.md rules-lint-ignored=true
-python/gazelle_python.yaml linguist-generated=true
+gazelle_python.yaml linguist-generated=true
 pnpm-lock.yaml linguist-generated=true
 python/requirements_linux.txt linguist-generated=true
 python/requirements_macos.txt linguist-generated=true

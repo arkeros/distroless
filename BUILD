@@ -1,6 +1,8 @@
 load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary", "gazelle_test")
 load("@rules_python_gazelle_plugin//:def.bzl", "GAZELLE_PYTHON_RUNTIME_DEPS")
 
+exports_files(["gazelle_python.yaml"])
+
 # Ignore the node_modules dir
 # gazelle:exclude node_modules
 # Ignore Claude Code worktrees

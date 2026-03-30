@@ -8,6 +8,7 @@ manifest:
   modules_mapping:
     absl: absl_py
     adbc_driver_duckdb: duckdb
+    blake3: blake3
     duckdb: duckdb
     iniconfig: iniconfig
     packaging: packaging
@@ -18,4 +19,4 @@ manifest:
     ruamel.yaml: ruamel_yaml
   pip_repository:
     name: pip
-integrity: 97b92603933029b1fcaadbcd0d2b8b1e66950236ebfabb297625388c00e36e71
+integrity: 1c652123afae814d45363167ab77c7f416ecfca54b9c41ca3b870fc3a2aaa648

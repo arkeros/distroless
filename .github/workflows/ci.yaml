@@ -49,7 +49,6 @@ jobs:
       contents: read
       id-token: write
       packages: write
-      attestations: write
     outputs:
       matrix: ${{ steps.meta.outputs.matrix }}
     steps:
@@ -91,26 +90,21 @@ jobs:
             bazel run "$TARGET"
 
             MANIFEST=$(bazel cquery "$TARGET" --output=files --output_groups=deploy_manifest)
-            bazel build --output_groups=deploy_manifest "$TARGET"
+            bazel build --output_groups=deploy_manifest --remote_download_outputs=all "$TARGET"
             REGISTRY=$(jq -r '.operations[0].registry' "$MANIFEST")
             REPOSITORY=$(jq -r '.operations[0].repository' "$MANIFEST")
             DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
 
             IMAGE_TARGET=$(bazel query "labels(image, $TARGET)" --output=label)
-            bazel build --output_groups=sbom "$IMAGE_TARGET"
+            bazel build --output_groups=sbom --remote_download_outputs=all "$IMAGE_TARGET"
             SBOM_FILE=$(bazel cquery "$IMAGE_TARGET" --output=files --output_groups=sbom)
-            cp "$SBOM_FILE" "/tmp/$(basename "$SBOM_FILE")"
-
             TAG=$(jq -r '.operations[0].tags[] | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+(-debug)?$"))' "$MANIFEST")
-            MATRIX=$(echo "$MATRIX" | jq -c --arg image "${REGISTRY}/${REPOSITORY}" --arg tag "$TAG" --arg digest "$DIGEST" --arg sbom "$(basename "$SBOM_FILE")" '. + [{"image": $image, "tag": $tag, "digest": $digest, "sbom": $sbom}]')
+            SBOM_HASH=$(sha256sum "$SBOM_FILE" | cut -d' ' -f1)
+            SBOM_GCS="gs://bazel-senku-remote-cache/cas/$SBOM_HASH"
+
+            MATRIX=$(echo "$MATRIX" | jq -c --arg image "${REGISTRY}/${REPOSITORY}" --arg tag "$TAG" --arg digest "$DIGEST" --arg sbom "$SBOM_GCS" '. + [{"image": $image, "tag": $tag, "digest": $digest, "sbom": $sbom}]')
           done
           echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload SBOMs
-        uses: actions/upload-artifact@v4
-        with:
-          name: sboms
-          path: /tmp/*.spdx.json
 
   attest:
     name: Attest ${{ matrix.image }}:${{ matrix.tag }}
@@ -122,10 +116,15 @@ jobs:
       id-token: write
       packages: write
       attestations: write
-      artifact-metadata: write
     strategy:
       matrix: ${{ fromJSON(needs.push.outputs.matrix) }}
     steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -133,10 +132,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download SBOMs
-        uses: actions/download-artifact@v4
-        with:
-          name: sboms
+      - name: Download SBOM
+        run: gcloud storage cp "${{ matrix.sbom }}" sbom.spdx.json
 
       - name: Attest provenance
         uses: actions/attest@v4
@@ -150,5 +147,5 @@ jobs:
         with:
           subject-name: ${{ matrix.image }}
           subject-digest: ${{ matrix.digest }}
-          sbom-path: ${{ matrix.sbom }}
+          sbom-path: sbom.spdx.json
           push-to-registry: true

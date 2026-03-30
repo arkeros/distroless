@@ -55,6 +55,15 @@
       }
     },
     {
+      "matchManagers": ["gomod"],
+      "postUpgradeTasks": {
+        "commands": ["bazel mod tidy"],
+        "fileFilters": ["bazel/include/go.MODULE.bazel", "MODULE.bazel.lock"],
+        "executionMode": "update"
+      },
+      "postUpdateOptions": ["goModTidy"]
+    },
+    {
       "matchManagers": ["npm"],
       "postUpgradeTasks": {
         "commands": ["pnpm install --lockfile-only", "bazel mod tidy"],

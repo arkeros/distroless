@@ -2,6 +2,8 @@ This is a monorepo with bazel.
 
 use red green TDD
 
+After adding a new Python dependency, run `.tools/repin` to update lock files.
+
 # git
 
 for commits use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format:

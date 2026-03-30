@@ -1,9 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":disablePrControls"
-  ],
+  "extends": ["config:recommended"],
   "timezone": "Europe/Madrid",
   "schedule": [
     "every weekday after 9am before 5pm"

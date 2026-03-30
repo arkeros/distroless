@@ -18,7 +18,7 @@ include("//bazel/include:multitool.MODULE.bazel")
 
 git_override(
     module_name = "lazy_bazel_env.bzl",
-    commit = "55685e5",
+    commit = "ac7a013ecd76450797ecea93fb3ab65958257736",
     remote = "https://github.com/arkeros/lazy_bazel_env.bzl.git",
 )
 

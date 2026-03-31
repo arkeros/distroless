@@ -28,7 +28,17 @@ apt.install(
     lock = "@@//distroless:debian13.lock.json",
     manifest = "//distroless:debian13.yaml",
 )
-use_repo(apt, "debian13")
+apt.install(
+    name = "nginx_stable",
+    lock = "@@//distroless:nginx-stable.lock.json",
+    manifest = "//distroless:nginx-stable.yaml",
+)
+apt.install(
+    name = "nginx_mainline",
+    lock = "@@//distroless:nginx-mainline.lock.json",
+    manifest = "//distroless:nginx-mainline.yaml",
+)
+use_repo(apt, "debian13", "nginx_stable", "nginx_mainline")
 
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database")
 grype_db.database(

@@ -7,6 +7,16 @@ bazel_dep(name = "grype.bzl", version = "0.1.0")
 
 bazel_dep(name = "container_structure_test", version = "1.22.1", dev_dependency = True)
 
+single_version_override(
+    module_name = "rules_distroless",
+    patch_strip = 1,
+    patches = [
+        "//bazel/patches:rules_distroless_version_sort.patch",
+        "//bazel/patches:rules_distroless_virtual_provides.patch",
+    ],
+    version = "0.6.2",
+)
+
 register_toolchains("//bazel/toolchains/grype")
 
 register_toolchains("//bazel/toolchains/syft")

@@ -7,12 +7,12 @@ import (
 )
 
 type Package struct {
-	Arch    string `json:"arch"`
-	Key     string `json:"key"`
-	Name    string `json:"name"`
-	SHA256  string `json:"sha256"`
+	Arch    string   `json:"arch"`
+	Key     string   `json:"key"`
+	Name    string   `json:"name"`
+	SHA256  string   `json:"sha256"`
 	URLs    []string `json:"urls"`
-	Version string `json:"version"`
+	Version string   `json:"version"`
 }
 
 type LockFile struct {

@@ -99,13 +99,11 @@ Target naming: `nginx_{mainline,stable}[_debug]_{root,nonroot}_{amd64,arm64}_deb
 
 ## Updating
 
-The nginx.org repo is not a Debian snapshot, so the lock file resolver picks the oldest version. After regenerating lock files, manually update the nginx entries to the latest version:
+The nginx.org repo is not a Debian snapshot, so the available package set can
+change over time. Regenerate the lock files when updating nginx manifests or
+refreshing the channel to capture the latest published package versions:
 
 ```bash
-# Regenerate (will resolve to oldest version)
 bazel run @nginx_stable//:lock
 bazel run @nginx_mainline//:lock
-
-# Then update the nginx package entries in the lock files
-# to point to the latest version with correct SHA256
 ```

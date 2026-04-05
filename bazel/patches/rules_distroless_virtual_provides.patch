@@ -1,0 +1,79 @@
+diff --git a/apt/private/apt_deb_repository.bzl b/apt/private/apt_deb_repository.bzl
+index 95657f5..6bcc325 100644
+--- a/apt/private/apt_deb_repository.bzl
++++ b/apt/private/apt_deb_repository.bzl
+@@ -125,6 +125,7 @@ def _add_package(state, package):
+                 (package["Architecture"], virtual["name"]),
+                 [],
+             )
++            found_provider = False
+ 
+             # If multiple versions of a package expose the same virtual package,
+             # we should only keep a single reference for the one with greater
+@@ -140,8 +141,11 @@ def _add_package(state, package):
+                     ):
+                         providers[i] = (package, virtual["version"])
+ 
+-                    # Return since we found the same package + version.
+-                    return
++                    found_provider = True
++                    break
++
++            if found_provider:
++                continue
+ 
+             # Otherwise, first time encountering package.
+             providers.append((package, virtual["version"]))
+diff --git a/apt/tests/resolution_test.bzl b/apt/tests/resolution_test.bzl
+index 7fd3302..8df2800 100644
+--- a/apt/tests/resolution_test.bzl
++++ b/apt/tests/resolution_test.bzl
+@@ -255,6 +255,42 @@ def _resolve_aliases(ctx):
+ 
+ resolve_aliases_test = unittest.make(_resolve_aliases)
+ 
++def _resolve_latest_self_provided_package_test(ctx):
++    env = unittest.begin(ctx)
++
++    idx = _make_index()
++
++    idx.add_package(
++        package = "nginx",
++        version = "1.28.0-1~trixie",
++        provides = "httpd, nginx, nginx-r1.28.0",
++    )
++    idx.add_package(
++        package = "nginx",
++        version = "1.28.3-1~trixie",
++        provides = "httpd, nginx, nginx-r1.28.3",
++    )
++
++    (root_package, _, _) = idx.resolution.resolve_all(
++        name = "nginx",
++        version = "",
++        arch = _test_arch,
++    )
++    asserts.equals(env, "nginx", root_package["Package"])
++    asserts.equals(env, "1.28.3-1~trixie", root_package["Version"])
++
++    (virtual_package, _, _) = idx.resolution.resolve_all(
++        name = "httpd",
++        version = "",
++        arch = _test_arch,
++    )
++    asserts.equals(env, "nginx", virtual_package["Package"])
++    asserts.equals(env, "1.28.3-1~trixie", virtual_package["Version"])
++
++    return unittest.end(env)
++
++resolve_latest_self_provided_package_test = unittest.make(_resolve_latest_self_provided_package_test)
++
+ def _resolve_circular_deps_test(ctx):
+     env = unittest.begin(ctx)
+ 
+@@ -324,4 +360,5 @@ def resolution_tests():
+     resolve_optionals_test(name = _TEST_SUITE_PREFIX + "resolve_optionals")
+     resolve_architecture_specific_packages_test(name = _TEST_SUITE_PREFIX + "resolve_architectures_specific")
+     resolve_aliases_test(name = _TEST_SUITE_PREFIX + "resolve_aliases")
++    resolve_latest_self_provided_package_test(name = _TEST_SUITE_PREFIX + "resolve_latest_self_provided_package")
+     resolve_circular_deps_test(name = _TEST_SUITE_PREFIX + "parse_circular")

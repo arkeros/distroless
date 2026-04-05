@@ -16,21 +16,35 @@ After that, `knife` is available from the repo root.
 
 ## Usage
 
-### deb versions
+### apt versions
 
-Display package versions from a Debian lock file:
+Display package versions from an apt lock file:
 
 ```bash
-knife debian versions oci/distroless/debian13.lock.json
+knife apt versions oci/distroless/debian13.lock.json
 ```
 
 Filter by architecture:
 
 ```bash
-knife debian versions --arch amd64 oci/distroless/debian13.lock.json
+knife apt versions --arch amd64 oci/distroless/debian13.lock.json
 ```
 
-### grype-db update
+### apt update
+
+Update Debian snapshot timestamps in a manifest YAML file:
+
+```bash
+knife apt update oci/distroless/debian13.yaml
+```
+
+This command:
+
+1. Fetches the latest snapshot timestamps from snapshot.debian.org
+2. Updates all source URLs in the YAML file with the new timestamps
+3. Prints a reminder to regenerate the lockfile
+
+### grype update
 
 Update the grype vulnerability database to the latest version:
 
@@ -44,31 +58,16 @@ This command:
 2. Updates `bazel/include/oci.MODULE.bazel` with the new URL and SHA256
 3. Runs `bazel mod tidy` to update the lockfile
 
-### snapshots update
-
-Update Debian snapshot timestamps in a manifest YAML file:
-
-```bash
-knife snapshots update oci/distroless/debian13.yaml
-```
-
-This command:
-
-1. Fetches the latest snapshot timestamps from snapshot.debian.org
-2. Updates all source URLs in the YAML file with the new timestamps
-3. Prints a reminder to regenerate the lockfile
-
 ## Architecture
 
 Commands use a noun-based package structure:
 
-- `cmd/debian/` - `debian` noun (verbs: `versions`)
+- `cmd/apt/` - `apt` noun (verbs: `update`, `versions`)
 - `cmd/grype/` - `grype` noun (verbs: `update`)
-- `cmd/snapshots/` - `snapshots` noun (verbs: `update`)
 
 Shared libraries:
 
 - `bazel/pkg/grypedb` - grype database MODULE.bazel updater (via buildtools AST)
 - `bazel/pkg/mod` - `bazel mod tidy` helper
-- `oci/distroless/debian/lockfile` - Debian lock file parsing
+- `oci/distroless/debian/lockfile` - apt lock file parsing
 - `oci/distroless/debian/snapshot` - manifest parsing and snapshot fetching

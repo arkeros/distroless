@@ -3,6 +3,13 @@ on:
   workflow_dispatch: # Allow manual trigger
   schedule:
     - cron: '0 16 * * *' # Run every day at 4PM UTC (after daily snapshots ~14:30 UTC)
+
+env:
+  MANIFESTS: >-
+    oci/distroless/debian13.yaml
+    oci/distroless/nginx/nginx-stable.yaml
+    oci/distroless/nginx/nginx-mainline.yaml
+
 jobs:
   update-debian-packages:
     name: Update Debian packages
@@ -19,32 +26,20 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.15.0
         with:
           bazelisk-cache: true
-      - name: Get current snapshot info
-        id: current-snapshot
-        run: |
-          # Extract current snapshot timestamp from debian13.yaml
-          CURRENT_SNAPSHOT=$(grep -oP '\d{8}T\d{6}Z' oci/distroless/debian13.yaml | head -1)
-          echo "current_snapshot=${CURRENT_SNAPSHOT}" >> $GITHUB_OUTPUT
-      - name: Update Debian packages using knife
+      - name: Update and lock all manifests
         id: update-packages
         run: |
-          # Run the update command (use absolute path since bazel run changes cwd)
-          bazel run //bazel/cmd/knife -- snapshots update $PWD/oci/distroless/debian13.yaml
-
-          # Regenerate the lockfile
-          bazel run @debian13//:lock
-
-          # Get the new snapshot info
-          NEW_SNAPSHOT=$(grep -oP '\d{8}T\d{6}Z' oci/distroless/debian13.yaml | head -1)
-          echo "new_snapshot=${NEW_SNAPSHOT}" >> $GITHUB_OUTPUT
+          for manifest in $MANIFESTS; do
+            bazel run //bazel/cmd/knife -- apt update "$PWD/$manifest"
+            repo=$(basename "$manifest" .yaml | tr '-' '_')
+            bazel run "@${repo}//:lock"
+          done
 
           # Check if update occurred
-          if [ "${{ steps.current-snapshot.outputs.current_snapshot }}" != "${NEW_SNAPSHOT}" ]; then
+          if [ -n "$(git diff --name-only)" ]; then
             echo "update_needed=true" >> $GITHUB_OUTPUT
-            echo "Debian packages updated to snapshot ${NEW_SNAPSHOT}"
           else
             echo "update_needed=false" >> $GITHUB_OUTPUT
-            echo "Debian packages are already up to date"
           fi
       - name: Create Pull Request
         if: steps.update-packages.outputs.update_needed == 'true'
@@ -52,23 +47,12 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}
-          commit-message: |
-            chore: update debian packages
-
-            Update Debian packages to snapshot ${{ steps.update-packages.outputs.new_snapshot }}
+          commit-message: 'chore: update debian packages'
           branch: update-debian-packages
           delete-branch: true
           title: 'chore: update debian packages'
           body: |
-            ## Update Debian Packages
-
-            This PR updates the Debian packages to the latest snapshot.
-
-            ### Changes
-            - **New Snapshot**: ${{ steps.update-packages.outputs.new_snapshot }}
-
-            ### Previous Version
-            - **Previous Snapshot**: ${{ steps.current-snapshot.outputs.current_snapshot }}
+            This PR updates apt packages and lockfiles for all distroless manifests.
 
             ---
 

@@ -9,7 +9,7 @@ exports_files(["gazelle_python.yaml"])
 # gazelle:exclude .claude
 # Prefer generated BUILD files to be called BUILD over BUILD.bazel
 # gazelle:build_file_name BUILD,BUILD.bazel
-# gazelle:prefix github.com/arkeros/astrograde
+# gazelle:prefix github.com/arkeros/senku
 # Use new style for go_naming_convention https://github.com/bazelbuild/bazel-gazelle/issues/5#issuecomment-636056748
 # gazelle:go_naming_convention import
 #

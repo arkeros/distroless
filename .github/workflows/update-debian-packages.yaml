@@ -1,0 +1,84 @@
+name: Update Debian Packages
+on:
+  workflow_dispatch: # Allow manual trigger
+  schedule:
+    - cron: '0 16 * * *' # Run every day at 4PM UTC (after daily snapshots ~14:30 UTC)
+jobs:
+  update-debian-packages:
+    name: Update Debian packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to push the updates
+      pull-requests: write # to open Pull requests
+    outputs:
+      pr-number: ${{ steps.create-pr.outputs.pull-request-number }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set up Bazelisk
+        uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-cache: true
+      - name: Get current snapshot info
+        id: current-snapshot
+        run: |
+          # Extract current snapshot timestamp from debian13.yaml
+          CURRENT_SNAPSHOT=$(grep -oP '\d{8}T\d{6}Z' oci/distroless/debian13.yaml | head -1)
+          echo "current_snapshot=${CURRENT_SNAPSHOT}" >> $GITHUB_OUTPUT
+      - name: Update Debian packages using knife
+        id: update-packages
+        run: |
+          # Run the update command (use absolute path since bazel run changes cwd)
+          bazel run //bazel/cmd/knife -- snapshots update $PWD/oci/distroless/debian13.yaml
+
+          # Regenerate the lockfile
+          bazel run @debian13//:lock
+
+          # Get the new snapshot info
+          NEW_SNAPSHOT=$(grep -oP '\d{8}T\d{6}Z' oci/distroless/debian13.yaml | head -1)
+          echo "new_snapshot=${NEW_SNAPSHOT}" >> $GITHUB_OUTPUT
+
+          # Check if update occurred
+          if [ "${{ steps.current-snapshot.outputs.current_snapshot }}" != "${NEW_SNAPSHOT}" ]; then
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+            echo "Debian packages updated to snapshot ${NEW_SNAPSHOT}"
+          else
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+            echo "Debian packages are already up to date"
+          fi
+      - name: Create Pull Request
+        if: steps.update-packages.outputs.update_needed == 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+          commit-message: |
+            chore: update debian packages
+
+            Update Debian packages to snapshot ${{ steps.update-packages.outputs.new_snapshot }}
+          branch: update-debian-packages
+          delete-branch: true
+          title: 'chore: update debian packages'
+          body: |
+            ## Update Debian Packages
+
+            This PR updates the Debian packages to the latest snapshot.
+
+            ### Changes
+            - **New Snapshot**: ${{ steps.update-packages.outputs.new_snapshot }}
+
+            ### Previous Version
+            - **Previous Snapshot**: ${{ steps.current-snapshot.outputs.current_snapshot }}
+
+            ---
+
+            This PR was automatically created by the [Update Debian Packages](.github/workflows/update-debian-packages.yaml) workflow.
+          labels: |
+            dependencies
+            automated
+          assignees: ${{ github.repository_owner }}
+      - name: Enable auto-merge
+        if: steps.update-packages.outputs.update_needed == 'true' && steps.create-pr.outputs.pull-request-number != ''
+        run: gh pr merge --auto --squash "${{ steps.create-pr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}

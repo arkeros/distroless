@@ -1,0 +1,18 @@
+--- a/google/devtools/build/v1/BUILD.bazel
++++ b/google/devtools/build/v1/BUILD.bazel
+@@ -165,15 +165,6 @@
+     transport = "grpc",
+ )
+
+-py_test(
+-    name = "build_py_gapic_test",
+-    srcs = [
+-        "build_py_gapic_pytest.py",
+-        "build_py_gapic_test.py",
+-    ],
+-    legacy_create_init = False,
+-    deps = [":build_py_gapic"],
+-)
+
+ # Open Source Packages
+ py_gapic_assembly_pkg(

@@ -1,4 +1,4 @@
-This is a monorepo with bazel.
+This is a monorepo with bazel. Use `bazel run` and `bazel build` and `bazel test`, instead of `go test`.
 
 use red green TDD
 

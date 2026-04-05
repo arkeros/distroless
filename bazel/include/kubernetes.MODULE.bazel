@@ -1,0 +1,31 @@
+bazel_dep(name = "kustomize.bzl", version = "0.1.0")
+bazel_dep(name = "kubeconform.bzl", version = "0.0.0")
+bazel_dep(name = "helm.bzl", version = "0.0.0")
+
+git_override(
+    module_name = "kustomize.bzl",
+    commit = "922b808",
+    remote = "https://github.com/arkeros/kustomize.bzl.git",
+)
+
+git_override(
+    module_name = "kubeconform.bzl",
+    commit = "0694013bbc560c20e40056f572cf1b0a86b15118",
+    remote = "https://github.com/arkeros/kubeconform.bzl.git",
+)
+
+git_override(
+    module_name = "helm.bzl",
+    commit = "0096782",
+    remote = "https://github.com/arkeros/helm.bzl.git",
+)
+
+register_toolchains("//bazel/toolchains/kustomize")
+
+register_toolchains("//bazel/toolchains/kubeconform")
+
+register_toolchains("//bazel/toolchains/helm")
+
+kubeconform = use_extension("@kubeconform.bzl//kubeconform:extensions.bzl", "kubeconform")
+kubeconform.kubernetes_schemas(kubernetes_version = "1.34.3")
+use_repo(kubeconform, "kubernetes_schemas")

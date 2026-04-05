@@ -1,0 +1,7 @@
+schemaVersion: 2.0.0
+metadataTest:
+  user: '0'
+  workdir: '/'
+  envVars:
+    - key: PATH
+      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin

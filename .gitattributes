@@ -5,6 +5,7 @@ python/requirements_linux.txt linguist-generated=true
 python/requirements_macos.txt linguist-generated=true
 MODULE.bazel.lock linguist-generated=true
 go.sum linguist-generated=true
+**/*.generated.tf linguist-generated=true
 **/*_pb.d.ts linguist-generated=true
 **/*_connect.d.ts linguist-generated=true
 **/*.lock.json linguist-generated=true

@@ -1,0 +1,13 @@
+schemaVersion: 2.0.0
+metadataTest:
+  entrypoint: ['/usr/bin/bash']
+fileExistenceTests:
+  - name: 'bash exists'
+    path: '/usr/bin/bash'
+    shouldExist: true
+  - name: 'sed exists'
+    path: '/bin/sed'
+    shouldExist: true
+  - name: 'grep exists'
+    path: '/bin/grep'
+    shouldExist: true

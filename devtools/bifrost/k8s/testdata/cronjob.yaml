@@ -1,0 +1,31 @@
+apiVersion: bifrost.apotema.cloud/v1alpha1
+kind: CronJob
+metadata:
+  name: analytics-data-export
+spec:
+  image: data-export
+  args:
+    - sync
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+  secretFiles:
+    - secret: data-export-env
+      path: /run/secrets/env.json
+  schedule:
+    cron: "0 12 * * *"
+    timeZone: Europe/Madrid
+  job:
+    parallelism: 1
+    completions: 1
+    maxRetries: 3
+    timeoutSeconds: 600
+  gcp:
+    projectId: senku-prod
+    projectNumber: "874944788122"
+    region: europe-west1
+    cloudScheduler:
+      retryCount: 3
+  kubernetes:
+    namespace: jobs

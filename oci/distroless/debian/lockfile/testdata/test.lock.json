@@ -1,0 +1,40 @@
+{
+	"packages": [
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "base-files_13.8-p-deb13u4_amd64",
+			"name": "base-files",
+			"sha256": "abc123",
+			"urls": ["https://snapshot.debian.org/archive/debian/20260320T143128Z/pool/main/b/base-files/base-files_13.8+deb13u4_amd64.deb"],
+			"version": "13.8+deb13u4"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libc6_2.41-12-p-deb13u2_amd64",
+			"name": "libc6",
+			"sha256": "def456",
+			"urls": ["https://snapshot.debian.org/archive/debian/20260320T143128Z/pool/main/g/glibc/libc6_2.41-12+deb13u2_amd64.deb"],
+			"version": "2.41-12+deb13u2"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [],
+			"key": "base-files_13.8-p-deb13u4_arm64",
+			"name": "base-files",
+			"sha256": "ghi789",
+			"urls": ["https://snapshot.debian.org/archive/debian/20260320T143128Z/pool/main/b/base-files/base-files_13.8+deb13u4_arm64.deb"],
+			"version": "13.8+deb13u4"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [],
+			"key": "libc6_2.41-12-p-deb13u2_arm64",
+			"name": "libc6",
+			"sha256": "jkl012",
+			"urls": ["https://snapshot.debian.org/archive/debian/20260320T143128Z/pool/main/g/glibc/libc6_2.41-12+deb13u2_arm64.deb"],
+			"version": "2.41-12+deb13u2"
+		}
+	]
+}

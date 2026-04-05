@@ -1,0 +1,24 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-certificates.crt
+fileExistenceTests:
+  - name: 'ca-certificates'
+    path: '/etc/ssl/certs/ca-certificates.crt'
+    shouldExist: true
+  - name: 'passwd'
+    path: '/etc/passwd'
+    shouldExist: true
+  - name: 'group'
+    path: '/etc/group'
+    shouldExist: true
+  - name: 'os-release'
+    path: '/etc/os-release'
+    shouldExist: true
+  - name: 'tmp dir'
+    path: '/tmp'
+    shouldExist: true
+  - name: 'no shell'
+    path: '/bin/sh'
+    shouldExist: false

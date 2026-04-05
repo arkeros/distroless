@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: write
+    outputs:
+      matrix: ${{ steps.meta.outputs.matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -36,36 +39,12 @@ jobs:
       - name: Build
         run: bazel build //...
 
-  push:
-    name: Push images
-    if: github.event_name == 'push'
-    needs: [build]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      matrix: ${{ steps.meta.outputs.matrix }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: v1.27.0
-          bazelisk-cache: true
-          repository-cache: true
-          external-cache: true
-          cache-save: false
-          bazelrc: |
-            common --config=ci
-            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
-            build --stamp
+      - name: Enable stamping
+        if: github.event_name == 'push'
+        run: echo "build --stamp" >> .bazelrc
 
       - name: Login to GHCR
+        if: github.event_name == 'push'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -73,6 +52,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push images and collect metadata
+        if: github.event_name == 'push'
         id: meta
         run: |
           set -euxo pipefail
@@ -97,7 +77,7 @@ jobs:
   attest:
     name: Attest ${{ matrix.image }}:${{ matrix.tag }}
     if: github.event_name == 'push'
-    needs: [push]
+    needs: [build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -105,7 +85,7 @@ jobs:
       packages: write
       attestations: write
     strategy:
-      matrix: ${{ fromJSON(needs.push.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.build.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -151,3 +131,132 @@ jobs:
           subject-digest: ${{ matrix.digest }}
           sbom-path: sbom.spdx.json
           push-to-registry: true
+
+  terraform:
+    name: ${{ github.event_name == 'push' && 'Apply' || 'Plan' }} (${{ matrix.dir }})
+    needs: [build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    strategy:
+      matrix:
+        dir:
+          - bazel/terraform
+          - oci/deploy/terraform
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.12.2
+
+      - name: Init
+        run: terraform init
+
+      - name: Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        continue-on-error: true
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = `<!-- tf-plan:${{ matrix.dir }} -->`;
+            const output = ${{ toJSON(steps.plan.outputs.stdout) }};
+            const body = `${marker}\n### Terraform Plan (\`${{ matrix.dir }}\`)\n\`\`\`\n${output.substring(0, 60000)}\n\`\`\``;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const existing = comments.find(c => c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body
+              });
+            }
+
+      - name: Plan status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Apply
+        if: github.event_name == 'push'
+        run: terraform apply -auto-approve tfplan
+
+  deploy:
+    name: Deploy ${{ matrix.service }}
+    if: github.event_name == 'push'
+    needs: [build, terraform, attest]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      matrix:
+        service: [registry]
+        include:
+          - service: registry
+            target: //oci/deploy:k8s
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          bazelisk-cache: true
+          repository-cache: true
+          external-cache: true
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+            build --stamp
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+
+      - name: Render manifests
+        id: render
+        run: |
+          set -euxo pipefail
+          bazel build ${{ matrix.target }}
+          echo "path=$(bazel cquery --output=files ${{ matrix.target }})" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          metadata: ${{ steps.render.outputs.path }}

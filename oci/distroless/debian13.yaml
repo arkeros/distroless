@@ -1,0 +1,55 @@
+#  Anytime this file is changed, the lockfile needs to be regenerated.
+#
+#  To generate the trixie.lock.json run the following command
+#
+#     bazel run @trixie//:lock
+version: 1
+sources:
+  - channel: trixie main contrib
+    urls:
+      - https://snapshot-cloudflare.debian.org/archive/debian/20260320T143128Z
+      - https://snapshot.debian.org/archive/debian/20260320T143128Z
+  - channel: trixie-security main
+    url: https://snapshot-cloudflare.debian.org/archive/debian-security/20260320T001422Z
+  - channel: trixie-updates main
+    url: https://snapshot-cloudflare.debian.org/archive/debian/20260320T143128Z/
+archs:
+  - amd64
+  - arm64
+packages:
+  - base-files
+  - netbase
+  - tzdata
+  - media-types
+  - busybox-static
+  - rust-coreutils
+  - libselinux1
+  - libpcre2-8-0
+  - libstdc++6
+  - direnv
+  - libc-bin
+  - ca-certificates
+  - bash
+  - sed
+  - grep
+  - mawk
+  - libbz2-1.0
+  - libdb5.3
+  - libexpat1
+  - liblzma5
+  - libsqlite3-0
+  - libuuid1
+  - libncursesw6
+  - libtinfo6
+  - zlib1g
+  - libcom-err2
+  - libcrypt1
+  - libgssapi-krb5-2
+  - libk5crypto3
+  - libkeyutils1
+  - libkrb5-3
+  - libkrb5support0
+  - libnsl2
+  - libreadline8
+  - libtirpc3
+  - libffi8

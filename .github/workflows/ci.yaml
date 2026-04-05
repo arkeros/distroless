@@ -254,7 +254,7 @@ jobs:
         run: |
           set -euxo pipefail
           bazel build ${{ matrix.target }}
-          echo "path=$(bazel cquery --output=files ${{ matrix.target }})" >> "$GITHUB_OUTPUT"
+          echo "path=$(realpath $(bazel cquery --output=files ${{ matrix.target }}))" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2

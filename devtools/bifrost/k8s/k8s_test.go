@@ -61,6 +61,22 @@ func TestRenderService(t *testing.T) {
 	}
 }
 
+func TestRenderServiceRequiresKubernetes(t *testing.T) {
+	t.Parallel()
+
+	spec, err := loadSpecFixture("service_cloudrun_only.yaml")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	_, err = Render(spec)
+	if err == nil {
+		t.Fatal("Render() should return error when kubernetes is not set")
+	}
+	if !strings.Contains(err.Error(), "kubernetes") {
+		t.Fatalf("error should mention kubernetes, got: %v", err)
+	}
+}
+
 func TestRenderCronJob(t *testing.T) {
 	t.Parallel()
 

@@ -98,7 +98,7 @@ type Spec struct {
 	Schedule           ScheduleSpec                `json:"schedule,omitempty"`
 	Job                JobSpec                     `json:"job,omitempty"`
 	GCP                GCPSpec                     `json:"gcp"`
-	Kubernetes         KubernetesSpec              `json:"kubernetes,omitempty"`
+	Kubernetes         *KubernetesSpec             `json:"kubernetes,omitempty"`
 }
 
 type GCPSpec struct {
@@ -255,11 +255,13 @@ func (s *Workload) Validate() error {
 	default:
 		return fmt.Errorf("spec.gcp.cloudRun.ingress %q is not valid, must be one of: all, internal, internal-and-cloud-load-balancing", s.Spec.GCP.CloudRun.Ingress)
 	}
-	if s.Spec.Kubernetes.ServiceType == "" {
-		s.Spec.Kubernetes.ServiceType = "ClusterIP"
-	}
-	if s.Spec.Kubernetes.Namespace == "" {
-		s.Spec.Kubernetes.Namespace = "default"
+	if s.Spec.Kubernetes != nil {
+		if s.Spec.Kubernetes.ServiceType == "" {
+			s.Spec.Kubernetes.ServiceType = "ClusterIP"
+		}
+		if s.Spec.Kubernetes.Namespace == "" {
+			s.Spec.Kubernetes.Namespace = "default"
+		}
 	}
 	if s.Spec.Autoscaling.MinReplicas < 0 {
 		return fmt.Errorf("spec.autoscaling.min must be greater than or equal to zero")

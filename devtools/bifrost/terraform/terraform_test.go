@@ -42,6 +42,31 @@ func TestRenderService(t *testing.T) {
 	}
 }
 
+func TestRenderServiceCloudRunOnly(t *testing.T) {
+	t.Parallel()
+
+	spec, err := loadSpecFixture("service_cloudrun_only.yaml")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	got, err := Render(spec)
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	output := string(got)
+	// Should still create the service account
+	if !strings.Contains(output, `resource "google_service_account" "svc_registry" {`) {
+		t.Fatalf("output missing service account resource\n%s", output)
+	}
+	// Should NOT create workload identity binding
+	if strings.Contains(output, "workload_identity") {
+		t.Fatalf("output should not contain workload identity binding for cloudrun-only service\n%s", output)
+	}
+	if strings.Contains(output, "svc.id.goog") {
+		t.Fatalf("output should not contain svc.id.goog for cloudrun-only service\n%s", output)
+	}
+}
+
 func TestRenderCronJob(t *testing.T) {
 	t.Parallel()
 

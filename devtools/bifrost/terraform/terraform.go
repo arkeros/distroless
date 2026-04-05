@@ -27,14 +27,7 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	kubernetesServiceAccountName := spec.Metadata.Name
-	namespace := spec.Spec.Kubernetes.Namespace
 	serviceAccountResourceName := terraformIdentifier(accountID)
-	workloadIdentityResourceName := terraformIdentifier(accountID + "_workload_identity")
-	serviceAccountTraversal, err := traversalForExpr("google_service_account." + serviceAccountResourceName + ".name")
-	if err != nil {
-		return nil, err
-	}
 
 	file := hclwrite.NewEmptyFile()
 	body := file.Body()
@@ -45,16 +38,26 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 	serviceAccountBody.SetAttributeValue("account_id", cty.StringVal(accountID))
 	serviceAccountBody.SetAttributeValue("display_name", cty.StringVal("Runtime identity for "+spec.Metadata.Name))
 
-	body.AppendNewline()
+	if spec.Spec.Kubernetes != nil {
+		kubernetesServiceAccountName := spec.Metadata.Name
+		namespace := spec.Spec.Kubernetes.Namespace
+		workloadIdentityResourceName := terraformIdentifier(accountID + "_workload_identity")
+		serviceAccountTraversal, err := traversalForExpr("google_service_account." + serviceAccountResourceName + ".name")
+		if err != nil {
+			return nil, err
+		}
 
-	workloadIdentityBlock := body.AppendNewBlock("resource", []string{"google_service_account_iam_member", workloadIdentityResourceName})
-	workloadIdentityBody := workloadIdentityBlock.Body()
-	workloadIdentityBody.SetAttributeTraversal("service_account_id", serviceAccountTraversal)
-	workloadIdentityBody.SetAttributeValue("role", cty.StringVal("roles/iam.workloadIdentityUser"))
-	workloadIdentityBody.SetAttributeValue(
-		"member",
-		cty.StringVal(fmt.Sprintf("serviceAccount:%s.svc.id.goog[%s/%s]", projectID, namespace, kubernetesServiceAccountName)),
-	)
+		body.AppendNewline()
+
+		workloadIdentityBlock := body.AppendNewBlock("resource", []string{"google_service_account_iam_member", workloadIdentityResourceName})
+		workloadIdentityBody := workloadIdentityBlock.Body()
+		workloadIdentityBody.SetAttributeTraversal("service_account_id", serviceAccountTraversal)
+		workloadIdentityBody.SetAttributeValue("role", cty.StringVal("roles/iam.workloadIdentityUser"))
+		workloadIdentityBody.SetAttributeValue(
+			"member",
+			cty.StringVal(fmt.Sprintf("serviceAccount:%s.svc.id.goog[%s/%s]", projectID, namespace, kubernetesServiceAccountName)),
+		)
+	}
 
 	return hclwrite.Format(file.Bytes()), nil
 }
@@ -65,14 +68,7 @@ func renderCronJob(spec bifrost.Workload) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	kubernetesServiceAccountName := spec.Metadata.Name
-	namespace := spec.Spec.Kubernetes.Namespace
 	runtimeResourceName := terraformIdentifier(runtimeAccountID)
-	workloadIdentityResourceName := terraformIdentifier(runtimeAccountID + "_workload_identity")
-	runtimeServiceAccountTraversal, err := traversalForExpr("google_service_account." + runtimeResourceName + ".name")
-	if err != nil {
-		return nil, err
-	}
 	schedulerAccountID, err := bifrost.DefaultServiceAccountAccountID("sch-", spec.Metadata.Name)
 	if err != nil {
 		return nil, err
@@ -92,16 +88,26 @@ func renderCronJob(spec bifrost.Workload) ([]byte, error) {
 	runtimeServiceAccountBody.SetAttributeValue("account_id", cty.StringVal(runtimeAccountID))
 	runtimeServiceAccountBody.SetAttributeValue("display_name", cty.StringVal("Runtime identity for "+spec.Metadata.Name))
 
-	body.AppendNewline()
+	if spec.Spec.Kubernetes != nil {
+		kubernetesServiceAccountName := spec.Metadata.Name
+		namespace := spec.Spec.Kubernetes.Namespace
+		workloadIdentityResourceName := terraformIdentifier(runtimeAccountID + "_workload_identity")
+		runtimeServiceAccountTraversal, err := traversalForExpr("google_service_account." + runtimeResourceName + ".name")
+		if err != nil {
+			return nil, err
+		}
 
-	workloadIdentityBlock := body.AppendNewBlock("resource", []string{"google_service_account_iam_member", workloadIdentityResourceName})
-	workloadIdentityBody := workloadIdentityBlock.Body()
-	workloadIdentityBody.SetAttributeTraversal("service_account_id", runtimeServiceAccountTraversal)
-	workloadIdentityBody.SetAttributeValue("role", cty.StringVal("roles/iam.workloadIdentityUser"))
-	workloadIdentityBody.SetAttributeValue(
-		"member",
-		cty.StringVal(fmt.Sprintf("serviceAccount:%s.svc.id.goog[%s/%s]", projectID, namespace, kubernetesServiceAccountName)),
-	)
+		body.AppendNewline()
+
+		workloadIdentityBlock := body.AppendNewBlock("resource", []string{"google_service_account_iam_member", workloadIdentityResourceName})
+		workloadIdentityBody := workloadIdentityBlock.Body()
+		workloadIdentityBody.SetAttributeTraversal("service_account_id", runtimeServiceAccountTraversal)
+		workloadIdentityBody.SetAttributeValue("role", cty.StringVal("roles/iam.workloadIdentityUser"))
+		workloadIdentityBody.SetAttributeValue(
+			"member",
+			cty.StringVal(fmt.Sprintf("serviceAccount:%s.svc.id.goog[%s/%s]", projectID, namespace, kubernetesServiceAccountName)),
+		)
+	}
 
 	body.AppendNewline()
 

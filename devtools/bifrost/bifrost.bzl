@@ -68,7 +68,10 @@ def bifrost_service(
             [{"secret": "my-secret", "path": "/run/secrets/env.json"}].
         probes: Optional probe paths dict. Example: {"startupPath": "/healthz", "livenessPath": "/healthz"}.
         autoscaling: Optional autoscaling dict. Example: {"min": 0, "max": 5, "concurrency": 100}.
-        kubernetes: Optional Kubernetes config dict. Example: {"namespace": "prod", "serviceType": "LoadBalancer"}.
+        kubernetes: Optional Kubernetes config dict. When set, enables k8s manifest
+            generation and Workload Identity IAM bindings in Terraform. When omitted,
+            only Cloud Run and plain service account Terraform are generated.
+            Example: {"namespace": "prod", "serviceType": "LoadBalancer"}.
         checked_in: Optional dict mapping render targets to checked-in output paths.
             For each mapped target, the macro creates a `write_source_file` update
             target named `:<name>_<target>_update` and adds a generated-file header

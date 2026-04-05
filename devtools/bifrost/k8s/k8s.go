@@ -20,6 +20,9 @@ import (
 )
 
 func Render(spec bifrost.Workload) ([]byte, error) {
+	if spec.Spec.Kubernetes == nil {
+		return nil, fmt.Errorf("spec.kubernetes is required for k8s rendering")
+	}
 	switch spec.Kind {
 	case bifrost.KindService:
 		return renderService(spec)

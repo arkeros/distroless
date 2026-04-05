@@ -45,6 +45,9 @@ func TestParseServiceSpecAppliesDefaults(t *testing.T) {
 	if got, want := spec.Spec.Autoscaling.TargetCPUUtilization, int32(80); got != want {
 		t.Fatalf("spec.Spec.Autoscaling.TargetCPUUtilization = %d, want %d", got, want)
 	}
+	if spec.Spec.Kubernetes == nil {
+		t.Fatal("spec.Spec.Kubernetes should not be nil when kubernetes is set")
+	}
 	if got, want := spec.Spec.Kubernetes.ServiceType, "ClusterIP"; got != want {
 		t.Fatalf("spec.Spec.Kubernetes.ServiceType = %q, want %q", got, want)
 	}

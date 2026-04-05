@@ -20,7 +20,6 @@ bifrost_service(
         "region": "europe-west3",
     },
     image_push = "//oci/cmd/registry:image_push",
-    kubernetes = {},
     port = 8080,
     probes = {
         "startupPath": "/v2/",
@@ -36,6 +35,10 @@ bifrost_service(
             "memory": "256Mi",
         },
     },
+    targets = [
+        "cloudrun",
+        "terraform",
+    ],
     visibility = ["//visibility:public"],
 )
 

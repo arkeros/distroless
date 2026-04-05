@@ -7,7 +7,7 @@ Current outputs:
 - `Service`:
   - Cloud Run Knative YAML
   - Kubernetes `ServiceAccount` + `Deployment` + `HorizontalPodAutoscaler` + `Service`
-  - Terraform for runtime identity (`google_service_account` and GKE Workload Identity binding)
+  - Terraform for runtime identity (`google_service_account`, plus GKE Workload Identity binding when `kubernetes` is set)
 - `CronJob`:
   - Cloud Run `run.googleapis.com/v1 Job` YAML
   - Kubernetes `ServiceAccount` + `CronJob`
@@ -99,8 +99,8 @@ bifrost_service(
             "ingress": "all",
         },
     },
-    kubernetes = {},
 )
+
 ```
 
 The macro emits JSON because Starlark can serialize JSON safely with the built-in `json` module. `bifrost render` consumes that generated JSON the same way it consumes a hand-written YAML or JSON file.
@@ -203,7 +203,7 @@ Identity is rendered differently by target:
 
 - Cloud Run uses the GSA directly
 - Kubernetes uses a KSA named after the service and annotates it for GKE Workload Identity
-- Terraform creates the GSA and the `roles/iam.workloadIdentityUser` binding
+- Terraform creates the GSA, and when `kubernetes` is set, also creates the `roles/iam.workloadIdentityUser` binding
 
 ### Shared Autoscaling
 
@@ -274,7 +274,7 @@ It does not set fixed `Deployment.spec.replicas`; horizontal scaling is owned by
 For **Services**:
 
 - `google_service_account` — runtime identity
-- `google_service_account_iam_member` — GKE Workload Identity binding
+- `google_service_account_iam_member` — GKE Workload Identity binding (only when `spec.kubernetes` is set)
 
 For **CronJobs**, it additionally emits:
 
@@ -303,8 +303,8 @@ Defaults are used for low-risk operational knobs:
 
 - Cloud Run ingress defaults to `all`
 - Cloud Run execution environment defaults to `gen2`
-- Kubernetes service type defaults to `ClusterIP`
-- Kubernetes namespace defaults to `default`
+- Kubernetes service type defaults to `ClusterIP` (when `kubernetes` is set)
+- Kubernetes namespace defaults to `default` (when `kubernetes` is set)
 - autoscaling fills in `concurrency` and CPU target defaults
 - requests default to limits when omitted
 

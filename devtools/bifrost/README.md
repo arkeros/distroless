@@ -2,6 +2,13 @@
 
 `bifrost` is a bridge between developer intent and platform-native infrastructure. Like Bifröst in Norse mythology, it connects different worlds: a small workload API on one side, and Knative, Kubernetes, and Terraform artifacts on the other. The goal is to give developers a simpler and more stable authoring surface, improve portability across targets, and make cross-domain integration easier, while still producing native outputs for each platform.
 
+The tools use the familiar `<context> <noun> <verb>` style of CLI interactions. For example, to render a service from a YAML file, you would run:
+
+```bash
+bifrost k8s render -f ./service.yaml
+bifrost terraform render -f ./service.yaml
+```
+
 Current outputs:
 
 - `Service`:
@@ -26,9 +33,9 @@ After that, `bifrost` is available from the repo root.
 Render from an existing service spec:
 
 ```bash
-bifrost render cloudrun -f ./service.yaml
-bifrost render k8s -f ./service.yaml
-bifrost render terraform -f ./service.json
+bifrost cloudrun render -f ./service.yaml
+bifrost k8s render -f ./service.yaml
+bifrost terraform render -f ./service.json
 ```
 
 `bifrost` accepts either YAML or JSON input.
@@ -103,7 +110,7 @@ bifrost_service(
 
 ```
 
-The macro emits JSON because Starlark can serialize JSON safely with the built-in `json` module. `bifrost render` consumes that generated JSON the same way it consumes a hand-written YAML or JSON file.
+The macro emits JSON because Starlark can serialize JSON safely with the built-in `json` module. `bifrost <target> render` consumes that generated JSON the same way it consumes a hand-written YAML or JSON file.
 
 ### Digest-Pinned Images
 
@@ -247,7 +254,7 @@ That coupling is intentional in this repo:
 
 ### Cloud Run
 
-`bifrost render cloudrun` emits a Knative `serving.knative.dev/v1 Service` for Cloud Run deploys.
+`bifrost cloudrun render` emits a Knative `serving.knative.dev/v1 Service` for Cloud Run deploys.
 
 It carries:
 
@@ -258,7 +265,7 @@ It carries:
 
 ### Kubernetes
 
-`bifrost render k8s` emits:
+`bifrost k8s render` emits:
 
 - `ServiceAccount`
 - `Deployment`
@@ -269,7 +276,7 @@ It does not set fixed `Deployment.spec.replicas`; horizontal scaling is owned by
 
 ### Terraform
 
-`bifrost render terraform` is intentionally narrow. It emits supporting infrastructure, not the workload itself.
+`bifrost terraform render` is intentionally narrow. It emits supporting infrastructure, not the workload itself.
 
 For **Services**:
 

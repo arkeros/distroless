@@ -6,10 +6,7 @@ go_library(
     importpath = "github.com/arkeros/senku/devtools/bifrost/cli",
     visibility = ["//visibility:private"],
     deps = [
-        "//devtools/bifrost/api",
-        "//devtools/bifrost/cloudrun",
-        "//devtools/bifrost/k8s",
-        "//devtools/bifrost/terraform",
+        "//devtools/bifrost/cli/cmd",
     ],
 )
 

@@ -9,8 +9,8 @@ sources:
     url: https://nginx.org/packages/mainline/debian
   - channel: trixie main
     urls:
-      - https://snapshot-cloudflare.debian.org/archive/debian/20260406T022441Z
-      - https://snapshot.debian.org/archive/debian/20260406T022441Z
+      - https://snapshot-cloudflare.debian.org/archive/debian/20260406T144517Z
+      - https://snapshot.debian.org/archive/debian/20260406T144517Z
   - channel: trixie-security main
     url: https://snapshot-cloudflare.debian.org/archive/debian-security/20260405T205725Z
 archs:

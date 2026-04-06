@@ -18,5 +18,8 @@ go_test(
     srcs = ["terraform_test.go"],
     data = glob(["testdata/**"]),
     embed = [":terraform"],
-    deps = ["//devtools/bifrost/api"],
+    deps = [
+        "//devtools/bifrost/api",
+        "//testing/golden",
+    ],
 )

@@ -19,5 +19,8 @@ go_test(
     srcs = ["cloudrun_test.go"],
     data = glob(["testdata/**"]),
     embed = [":cloudrun"],
-    deps = ["//devtools/bifrost/api"],
+    deps = [
+        "//devtools/bifrost/api",
+        "//testing/golden",
+    ],
 )

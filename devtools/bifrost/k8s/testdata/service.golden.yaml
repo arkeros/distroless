@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: svc-registry@senku-prod.iam.gserviceaccount.com
+  name: registry
+  namespace: default
+---
+apiVersion: v1
+data:
+  latest: JHtnY3BzbTovLy9wcm9qZWN0cy9zZW5rdS1wcm9kL3NlY3JldHMvcmVnaXN0cnktZW52L3ZlcnNpb25zL2xhdGVzdH0=
+kind: Secret
+metadata:
+  name: registry-env-71bb3ea30f
+  namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: registry
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: registry
+    spec:
+      containers:
+      - args:
+        - --upstream=ghcr.io
+        - --repository-prefix=arkeros/senku
+        image: registry
+        livenessProbe:
+          httpGet:
+            path: /v2/
+            port: 8080
+        name: app
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+            memory: 256Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        startupProbe:
+          httpGet:
+            path: /v2/
+            port: 8080
+        volumeMounts:
+        - mountPath: /run/secrets
+          name: registry-env-71bb3ea30f
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: registry
+      volumes:
+      - name: registry-env-71bb3ea30f
+        secret:
+          items:
+          - key: latest
+            path: env.json
+          secretName: registry-env-71bb3ea30f
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: registry
+  namespace: default
+spec:
+  maxReplicas: 3
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 80
+        type: Utilization
+    type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: registry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: default
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: registry
+  type: ClusterIP

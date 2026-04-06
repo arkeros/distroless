@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: crj-analytics-data-export@senku-prod.iam.gserviceaccount.com
+  name: analytics-data-export
+  namespace: jobs
+---
+apiVersion: v1
+data:
+  latest: JHtnY3BzbTovLy9wcm9qZWN0cy9zZW5rdS1wcm9kL3NlY3JldHMvZGF0YS1leHBvcnQtZW52L3ZlcnNpb25zL2xhdGVzdH0=
+kind: Secret
+metadata:
+  name: data-export-env-4badae36a3
+  namespace: jobs
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: analytics-data-export
+  namespace: jobs
+spec:
+  jobTemplate:
+    metadata: {}
+    spec:
+      activeDeadlineSeconds: 600
+      backoffLimit: 3
+      completions: 1
+      parallelism: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: analytics-data-export
+        spec:
+          containers:
+          - args:
+            - sync
+            image: data-export
+            name: app
+            resources:
+              limits:
+                cpu: "1"
+                memory: 512Mi
+              requests:
+                cpu: "1"
+                memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+            volumeMounts:
+            - mountPath: /run/secrets
+              name: data-export-env-4badae36a3
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          serviceAccountName: analytics-data-export
+          volumes:
+          - name: data-export-env-4badae36a3
+            secret:
+              items:
+              - key: latest
+                path: env.json
+              secretName: data-export-env-4badae36a3
+  schedule: 0 12 * * *
+  timeZone: Europe/Madrid

@@ -1,0 +1,42 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  labels:
+    cloud.googleapis.com/location: europe-west1
+  name: analytics-data-export
+  namespace: "874944788122"
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      parallelism: 1
+      taskCount: 1
+      template:
+        spec:
+          containers:
+          - args:
+            - sync
+            image: data-export
+            name: app
+            resources:
+              limits:
+                cpu: "1"
+                memory: 512Mi
+              requests:
+                cpu: "1"
+                memory: 512Mi
+            volumeMounts:
+            - mountPath: /run/secrets
+              name: data-export-env
+          maxRetries: 3
+          serviceAccountName: crj-analytics-data-export@senku-prod.iam.gserviceaccount.com
+          timeoutSeconds: "600"
+          volumes:
+          - name: data-export-env
+            secret:
+              items:
+              - key: latest
+                path: env.json
+              secretName: data-export-env

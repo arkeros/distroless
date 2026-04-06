@@ -22,5 +22,8 @@ go_test(
     srcs = ["k8s_test.go"],
     data = glob(["testdata/**"]),
     embed = [":k8s"],
-    deps = ["//devtools/bifrost/api"],
+    deps = [
+        "//devtools/bifrost/api",
+        "//testing/golden",
+    ],
 )

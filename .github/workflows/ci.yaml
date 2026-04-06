@@ -253,7 +253,7 @@ jobs:
         id: render
         run: |
           set -euxo pipefail
-          bazel build ${{ matrix.target }}
+          bazel build --remote_download_outputs=all ${{ matrix.target }}
           echo "path=$(realpath $(bazel cquery --output=files ${{ matrix.target }}))" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Cloud Run

@@ -257,6 +257,6 @@ jobs:
           echo "path=$(realpath $(bazel cquery --output=files ${{ matrix.target }}))" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
+        uses: google-github-actions/deploy-cloudrun@v3
         with:
           metadata: ${{ steps.render.outputs.path }}

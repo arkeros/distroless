@@ -6,8 +6,8 @@
 name: Weekly Monorepo Tag
 on:
   schedule:
-    # Mondays at midnight CET (23:00 UTC Sunday)
-    - cron: "0 23 * * 0"
+    # Mondays at 00:00 UTC
+    - cron: "0 0 * * 1"
 jobs:
   tagger:
     permissions:
@@ -19,7 +19,7 @@ jobs:
       # the days December 29–31, 2025, belong to week 1 of 2026)
       - name: tag HEAD with date +%G.%-V
         run: |
-          curl --request POST \
+          curl --fail --request POST \
               --url https://api.github.com/repos/${{ github.repository }}/git/refs \
               --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
               --data @- << EOF

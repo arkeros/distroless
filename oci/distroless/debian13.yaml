@@ -7,12 +7,12 @@ version: 1
 sources:
   - channel: trixie main contrib
     urls:
-      - https://snapshot-cloudflare.debian.org/archive/debian/20260405T143615Z
-      - https://snapshot.debian.org/archive/debian/20260405T143615Z
+      - https://snapshot-cloudflare.debian.org/archive/debian/20260406T022441Z
+      - https://snapshot.debian.org/archive/debian/20260406T022441Z
   - channel: trixie-security main
-    url: https://snapshot-cloudflare.debian.org/archive/debian-security/20260405T152029Z
+    url: https://snapshot-cloudflare.debian.org/archive/debian-security/20260405T205725Z
   - channel: trixie-updates main
-    url: https://snapshot-cloudflare.debian.org/archive/debian/20260405T143615Z/
+    url: https://snapshot-cloudflare.debian.org/archive/debian/20260406T022441Z/
 archs:
   - amd64
   - arm64

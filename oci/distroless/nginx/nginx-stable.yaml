@@ -9,10 +9,10 @@ sources:
     url: https://nginx.org/packages/debian
   - channel: trixie main
     urls:
-      - https://snapshot-cloudflare.debian.org/archive/debian/20260320T143128Z
-      - https://snapshot.debian.org/archive/debian/20260320T143128Z
+      - https://snapshot-cloudflare.debian.org/archive/debian/20260406T022441Z
+      - https://snapshot.debian.org/archive/debian/20260406T022441Z
   - channel: trixie-security main
-    url: https://snapshot-cloudflare.debian.org/archive/debian-security/20260320T001422Z
+    url: https://snapshot-cloudflare.debian.org/archive/debian-security/20260405T205725Z
 archs:
   - amd64
   - arm64

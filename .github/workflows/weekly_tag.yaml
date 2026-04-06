@@ -5,6 +5,7 @@
 # Follows https://blog.aspect.build/versioning-releases-from-a-monorepo
 name: Weekly Monorepo Tag
 on:
+  workflow_dispatch:
   schedule:
     # Mondays at 00:00 UTC
     - cron: "0 0 * * 1"

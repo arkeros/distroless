@@ -20,6 +20,9 @@ spec:
       - args:
         - --upstream=ghcr.io
         - --repository-prefix=arkeros/senku
+        env:
+        - name: LOG_LEVEL
+          value: info
         image: registry
         livenessProbe:
           httpGet:

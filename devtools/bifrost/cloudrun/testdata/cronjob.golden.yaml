@@ -18,6 +18,9 @@ spec:
           containers:
           - args:
             - sync
+            env:
+            - name: LOG_LEVEL
+              value: info
             image: data-export
             name: app
             resources:

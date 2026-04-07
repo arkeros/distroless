@@ -91,6 +91,7 @@ type Spec struct {
 	ServiceAccountName string                      `json:"serviceAccountName,omitempty"`
 	Args               []string                    `json:"args,omitempty"`
 	Port               int32                       `json:"port,omitempty"`
+	Env                map[string]string            `json:"env,omitempty"`
 	Resources          corev1.ResourceRequirements `json:"resources"`
 	SecretFiles        []SecretFile                `json:"secretFiles,omitempty"`
 	Probes             ProbeSpec                   `json:"probes,omitempty"`

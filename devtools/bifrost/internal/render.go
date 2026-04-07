@@ -2,6 +2,7 @@ package internal
 
 import (
 	"path"
+	"sort"
 
 	bifrost "github.com/arkeros/senku/devtools/bifrost/api"
 	corev1 "k8s.io/api/core/v1"
@@ -67,6 +68,7 @@ func ContainerForSpec(spec bifrost.Spec, volumeMounts []corev1.VolumeMount, incl
 		Name:         "app",
 		Image:        spec.Image,
 		Args:         SlicesClone(spec.Args),
+		Env:          envVarsFromMap(spec.Env),
 		Resources:    resources,
 		VolumeMounts: volumeMounts,
 	}
@@ -80,6 +82,22 @@ func ContainerForSpec(spec bifrost.Spec, volumeMounts []corev1.VolumeMount, incl
 		container.LivenessProbe = httpGetProbe(spec.Probes.LivenessPath, spec.Port)
 	}
 	return container
+}
+
+func envVarsFromMap(env map[string]string) []corev1.EnvVar {
+	if len(env) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(env))
+	for k := range env {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	vars := make([]corev1.EnvVar, len(keys))
+	for i, k := range keys {
+		vars[i] = corev1.EnvVar{Name: k, Value: env[k]}
+	}
+	return vars
 }
 
 func httpGetProbe(path string, port int32) *corev1.Probe {

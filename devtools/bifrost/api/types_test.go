@@ -310,6 +310,36 @@ func TestValidate_CloudRunIngress(t *testing.T) {
 	}
 }
 
+func TestValidate_Env(t *testing.T) {
+	t.Parallel()
+
+	env := validEnvironment()
+	tests := []struct {
+		name    string
+		envVars map[string]string
+		wantErr bool
+	}{
+		{"valid", map[string]string{"FOO": "bar"}, false},
+		{"multiple valid", map[string]string{"FOO": "bar", "BAZ": "qux"}, false},
+		{"nil env", nil, false},
+		{"empty map", map[string]string{}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			w := validWorkload()
+			w.Spec.Env = tt.envVars
+			err := w.Validate(env)
+			if tt.wantErr && err == nil {
+				t.Fatal("expected error, got nil")
+			}
+			if !tt.wantErr && err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
 func TestValidate_SecretFiles(t *testing.T) {
 	t.Parallel()
 

@@ -34,6 +34,8 @@ spec:
         - --upstream=ghcr.io
         - --repository-prefix=arkeros/senku
         env:
+        - name: LOG_LEVEL
+          value: info
         - name: PORT
           value: "8080"
         image: registry

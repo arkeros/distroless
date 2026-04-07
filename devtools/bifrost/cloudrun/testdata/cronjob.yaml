@@ -6,6 +6,8 @@ spec:
   image: data-export
   args:
     - sync
+  env:
+    LOG_LEVEL: info
   resources:
     limits:
       cpu: 1000m

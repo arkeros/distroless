@@ -23,7 +23,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":k8s"],
     deps = [
-        "//devtools/bifrost/api",
+        "//devtools/bifrost/testing",
         "//testing/golden",
     ],
 )

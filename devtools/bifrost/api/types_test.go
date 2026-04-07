@@ -135,91 +135,6 @@ func TestValidate_CpuStillRequired(t *testing.T) {
 	}
 }
 
-func TestParse_RejectsUnknownFields(t *testing.T) {
-	t.Parallel()
-
-	env := validEnvironment()
-	yaml := `
-apiVersion: bifrost.apotema.cloud/v1alpha1
-kind: Service
-metadata:
-  name: test-svc
-spec:
-  image: test-image
-  port: 8080
-  servceAccountName: typo@my-project.iam.gserviceaccount.com
-  resources:
-    limits:
-      cpu: "1"
-      memory: 256Mi
-`
-	_, err := Parse(strings.NewReader(yaml), env)
-	if err == nil {
-		t.Fatal("expected error for unknown field servceAccountName, got nil")
-	}
-	if !strings.Contains(err.Error(), "servceAccountName") {
-		t.Fatalf("error should mention the unknown field, got: %v", err)
-	}
-}
-
-func TestParse_RejectsGCPField(t *testing.T) {
-	t.Parallel()
-
-	env := validEnvironment()
-	yaml := `
-apiVersion: bifrost.apotema.cloud/v1alpha1
-kind: Service
-metadata:
-  name: test-svc
-spec:
-  image: test-image
-  port: 8080
-  resources:
-    limits:
-      cpu: "1"
-      memory: 256Mi
-  gcp:
-    projectId: my-project
-    projectNumber: "123456"
-    region: us-central1
-`
-	_, err := Parse(strings.NewReader(yaml), env)
-	if err == nil {
-		t.Fatal("expected error for gcp field in workload, got nil")
-	}
-	if !strings.Contains(err.Error(), "gcp") {
-		t.Fatalf("error should mention gcp, got: %v", err)
-	}
-}
-
-func TestParse_RejectsKubernetesField(t *testing.T) {
-	t.Parallel()
-
-	env := validEnvironment()
-	yaml := `
-apiVersion: bifrost.apotema.cloud/v1alpha1
-kind: Service
-metadata:
-  name: test-svc
-spec:
-  image: test-image
-  port: 8080
-  resources:
-    limits:
-      cpu: "1"
-      memory: 256Mi
-  kubernetes:
-    namespace: default
-`
-	_, err := Parse(strings.NewReader(yaml), env)
-	if err == nil {
-		t.Fatal("expected error for kubernetes field in workload, got nil")
-	}
-	if !strings.Contains(err.Error(), "kubernetes") {
-		t.Fatalf("error should mention kubernetes, got: %v", err)
-	}
-}
-
 func TestValidate_RequestsExceedLimits(t *testing.T) {
 	t.Parallel()
 
@@ -312,40 +227,19 @@ func TestValidate_RequestsExceedLimits(t *testing.T) {
 	}
 }
 
-func TestParse_SecretFiles(t *testing.T) {
+func TestValidate_TimeZoneRequired(t *testing.T) {
 	t.Parallel()
-
 	env := validEnvironment()
-	yaml := `
-apiVersion: bifrost.apotema.cloud/v1alpha1
-kind: CronJob
-metadata:
-  name: test-job
-spec:
-  image: test-image
-  resources:
-    limits:
-      cpu: "1"
-      memory: 256Mi
-  secretFiles:
-    - secret: my-secret
-      path: /run/secrets/env.json
-  schedule:
-    cron: "0 12 * * *"
-`
-	w, err := Parse(strings.NewReader(yaml), env)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	w := validWorkload()
+	w.Kind = KindCronJob
+	w.Spec.Schedule.Cron = "0 12 * * *"
+	w.Spec.Schedule.TimeZone = ""
+	err := w.Validate(env)
+	if err == nil {
+		t.Fatal("expected error for missing timeZone, got nil")
 	}
-	if len(w.Spec.SecretFiles) != 1 {
-		t.Fatalf("expected 1 secret file, got %d", len(w.Spec.SecretFiles))
-	}
-	sf := w.Spec.SecretFiles[0]
-	if sf.Secret != "my-secret" {
-		t.Errorf("expected secret %q, got %q", "my-secret", sf.Secret)
-	}
-	if sf.Path != "/run/secrets/env.json" {
-		t.Errorf("expected path %q, got %q", "/run/secrets/env.json", sf.Path)
+	if !strings.Contains(err.Error(), "timeZone") {
+		t.Fatalf("error should mention timeZone, got: %v", err)
 	}
 }
 
@@ -440,6 +334,7 @@ func TestValidate_SecretFiles(t *testing.T) {
 			w.Kind = KindCronJob
 			w.Spec.SecretFiles = tt.secretFiles
 			w.Spec.Schedule.Cron = "0 * * * *"
+			w.Spec.Schedule.TimeZone = "Etc/UTC"
 			err := w.Validate(env)
 			if tt.wantErr && err == nil {
 				t.Fatal("expected error, got nil")

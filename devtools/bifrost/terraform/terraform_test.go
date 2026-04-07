@@ -1,41 +1,16 @@
 package terraform
 
 import (
-	"os"
-	"strings"
 	"testing"
 
-	bifrost "github.com/arkeros/senku/devtools/bifrost/api"
+	btesting "github.com/arkeros/senku/devtools/bifrost/testing"
 	"github.com/arkeros/senku/testing/golden"
 )
-
-func loadFixtures(workloadName, envName string) (bifrost.Workload, bifrost.Environment, error) {
-	envData, err := os.ReadFile("testdata/" + envName)
-	if err != nil {
-		return bifrost.Workload{}, bifrost.Environment{}, err
-	}
-	env, err := bifrost.ParseEnvironment(strings.NewReader(string(envData)))
-	if err != nil {
-		return bifrost.Workload{}, bifrost.Environment{}, err
-	}
-	data, err := os.ReadFile("testdata/" + workloadName)
-	if err != nil {
-		return bifrost.Workload{}, bifrost.Environment{}, err
-	}
-	w, err := bifrost.Parse(strings.NewReader(string(data)), env)
-	if err != nil {
-		return bifrost.Workload{}, bifrost.Environment{}, err
-	}
-	return w, env, nil
-}
 
 func TestRenderService(t *testing.T) {
 	t.Parallel()
 
-	spec, env, err := loadFixtures("service.yaml", "environment.yaml")
-	if err != nil {
-		t.Fatalf("load error = %v", err)
-	}
+	spec, env := btesting.LoadFixtures(t, "testdata/service.yaml", "testdata/environment.yaml")
 	got, err := Render(spec, env)
 	if err != nil {
 		t.Fatalf("Render() error = %v", err)
@@ -46,10 +21,7 @@ func TestRenderService(t *testing.T) {
 func TestRenderServiceCloudRunOnly(t *testing.T) {
 	t.Parallel()
 
-	spec, env, err := loadFixtures("service_cloudrun_only.yaml", "environment_cloudrun_only.yaml")
-	if err != nil {
-		t.Fatalf("load error = %v", err)
-	}
+	spec, env := btesting.LoadFixtures(t, "testdata/service_cloudrun_only.yaml", "testdata/environment_cloudrun_only.yaml")
 	got, err := Render(spec, env)
 	if err != nil {
 		t.Fatalf("Render() error = %v", err)
@@ -60,10 +32,7 @@ func TestRenderServiceCloudRunOnly(t *testing.T) {
 func TestRenderCronJob(t *testing.T) {
 	t.Parallel()
 
-	spec, env, err := loadFixtures("cronjob.yaml", "environment.yaml")
-	if err != nil {
-		t.Fatalf("load error = %v", err)
-	}
+	spec, env := btesting.LoadFixtures(t, "testdata/cronjob.yaml", "testdata/environment.yaml")
 	got, err := Render(spec, env)
 	if err != nil {
 		t.Fatalf("Render() error = %v", err)

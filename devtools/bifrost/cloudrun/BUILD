@@ -20,7 +20,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":cloudrun"],
     deps = [
-        "//devtools/bifrost/api",
+        "//devtools/bifrost/testing",
         "//testing/golden",
     ],
 )

@@ -254,6 +254,9 @@ func (s *Workload) Validate(env Environment) error {
 		if strings.TrimSpace(s.Spec.Schedule.Cron) == "" {
 			return fmt.Errorf("spec.schedule.cron is required for kind %q", KindCronJob)
 		}
+		if strings.TrimSpace(s.Spec.Schedule.TimeZone) == "" {
+			return fmt.Errorf("spec.schedule.timeZone is required for kind %q", KindCronJob)
+		}
 		if s.Spec.Job.Parallelism <= 0 {
 			s.Spec.Job.Parallelism = 1
 		}

@@ -7,7 +7,6 @@ spec:
   args:
     - --upstream=ghcr.io
     - --repository-prefix=arkeros/senku
-  port: 8080
   resources:
     requests:
       cpu: 250m

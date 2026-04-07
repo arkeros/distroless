@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"path"
 	"sort"
+	"strconv"
 
 	bifrost "github.com/arkeros/senku/devtools/bifrost/api"
 	"github.com/arkeros/senku/devtools/bifrost/internal"
@@ -75,7 +76,7 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 				},
 				Spec: podSpecWithSecurityContext(corev1.PodSpec{
 					ServiceAccountName: kubernetesServiceAccountName,
-					Containers:         []corev1.Container{containerWithSecurityContext(internal.ContainerForSpec(spec.Spec, resolved.mounts, true, true))},
+					Containers:         []corev1.Container{containerWithSecurityContext(withPortEnv(internal.ContainerForSpec(spec.Spec, resolved.mounts, true, true), spec.Spec.Port))},
 					Volumes:            resolved.volumes,
 				}),
 			},
@@ -412,6 +413,16 @@ func int32Ptr(v int32) *int32 {
 
 func stringPtr(v string) *string {
 	return &v
+}
+
+func withPortEnv(c corev1.Container, port int32) corev1.Container {
+	if port > 0 {
+		c.Env = append(c.Env, corev1.EnvVar{
+			Name:  "PORT",
+			Value: strconv.FormatInt(int64(port), 10),
+		})
+	}
+	return c
 }
 
 func podSpecWithSecurityContext(spec corev1.PodSpec) corev1.PodSpec {

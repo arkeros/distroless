@@ -53,7 +53,7 @@ func TestValidate_Port(t *testing.T) {
 		{"valid port", 8080, false},
 		{"min valid port", 1, false},
 		{"max valid port", 65535, false},
-		{"zero port", 0, true},
+		{"zero port defaults to 8080", 0, false},
 		{"negative port", -1, true},
 		{"port above 65535", 65536, true},
 	}
@@ -73,6 +73,19 @@ func TestValidate_Port(t *testing.T) {
 				t.Fatalf("error should mention spec.port, got: %v", err)
 			}
 		})
+	}
+}
+
+func TestValidate_PortDefaultsTo8080(t *testing.T) {
+	t.Parallel()
+	env := validEnvironment()
+	w := validWorkload()
+	w.Spec.Port = 0
+	if err := w.Validate(env); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if w.Spec.Port != 8080 {
+		t.Fatalf("expected port to default to 8080, got %d", w.Spec.Port)
 	}
 }
 

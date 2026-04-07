@@ -22,7 +22,6 @@ bifrost_service(
         },
     },
     image_push = "//oci/cmd/registry:image_push",
-    port = 8080,
     probes = {
         "startupPath": "/v2/",
         "livenessPath": "/v2/",

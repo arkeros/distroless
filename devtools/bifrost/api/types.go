@@ -183,6 +183,9 @@ func (s *Workload) Validate(env Environment) error {
 	} else if saProjectID != projectID {
 		return fmt.Errorf("spec.serviceAccountName project %q does not match environment gcp.projectId %q", saProjectID, projectID)
 	}
+	if s.Kind == KindService && s.Spec.Port == 0 {
+		s.Spec.Port = 8080
+	}
 	if s.Kind == KindService && (s.Spec.Port < 1 || s.Spec.Port > 65535) {
 		return fmt.Errorf("spec.port must be between 1 and 65535")
 	}

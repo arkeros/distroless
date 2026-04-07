@@ -33,6 +33,9 @@ spec:
       - args:
         - --upstream=ghcr.io
         - --repository-prefix=arkeros/senku
+        env:
+        - name: PORT
+          value: "8080"
         image: registry
         livenessProbe:
           httpGet:

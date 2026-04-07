@@ -116,8 +116,8 @@ def _bifrost_workload(
 
 def bifrost_service(
         name,
-        port,
         resources,
+        port = 8080,
         environment = None,
         environment_file = None,
         image = None,

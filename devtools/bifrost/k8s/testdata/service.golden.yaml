@@ -47,10 +47,8 @@ spec:
         resources:
           limits:
             cpu: "1"
-            memory: 256Mi
           requests:
             cpu: 250m
-            memory: 256Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -99,6 +97,24 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: registry
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: registry
+  namespace: jobs
+spec:
+  resourcePolicy:
+    containerPolicies:
+    - containerName: app
+      controlledResources:
+      - memory
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: registry
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
 ---
 apiVersion: v1
 kind: Service

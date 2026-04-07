@@ -158,6 +158,35 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 		return nil, err
 	}
 
+	vpa := map[string]any{
+		"apiVersion": "autoscaling.k8s.io/v1",
+		"kind":       "VerticalPodAutoscaler",
+		"metadata": map[string]any{
+			"name":      spec.Metadata.Name,
+			"namespace": namespace,
+		},
+		"spec": map[string]any{
+			"targetRef": map[string]any{
+				"apiVersion": "apps/v1",
+				"kind":       "Deployment",
+				"name":       spec.Metadata.Name,
+			},
+			"updatePolicy": map[string]any{
+				"updateMode": "InPlaceOrRecreate",
+			},
+			"resourcePolicy": map[string]any{
+				"containerPolicies": []map[string]any{{
+					"containerName":       "app",
+					"controlledResources": []string{"memory"},
+				}},
+			},
+		},
+	}
+	vpaYAML, err := internal.MarshalManifest(vpa)
+	if err != nil {
+		return nil, err
+	}
+
 	var out bytes.Buffer
 	out.Write(serviceAccountYAML)
 	out.WriteString("---\n")
@@ -165,6 +194,8 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 	out.Write(deployYAML)
 	out.WriteString("---\n")
 	out.Write(hpaYAML)
+	out.WriteString("---\n")
+	out.Write(vpaYAML)
 	out.WriteString("---\n")
 	out.Write(serviceYAML)
 	return out.Bytes(), nil

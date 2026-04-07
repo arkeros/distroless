@@ -89,6 +89,52 @@ func TestValidate_PortDefaultsTo8080(t *testing.T) {
 	}
 }
 
+func TestValidate_MemoryOptional(t *testing.T) {
+	t.Parallel()
+	env := validEnvironment()
+	w := Workload{
+		APIVersion: APIVersion,
+		Kind:       KindService,
+		Metadata:   ObjectMeta{Name: "test-svc"},
+		Spec: Spec{
+			Image: "test-image",
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("1"),
+				},
+			},
+		},
+	}
+	if err := w.Validate(env); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, ok := w.Spec.Resources.Limits[corev1.ResourceMemory]; ok {
+		t.Fatal("expected memory limit to be absent when not specified")
+	}
+}
+
+func TestValidate_CpuStillRequired(t *testing.T) {
+	t.Parallel()
+	env := validEnvironment()
+	w := Workload{
+		APIVersion: APIVersion,
+		Kind:       KindService,
+		Metadata:   ObjectMeta{Name: "test-svc"},
+		Spec: Spec{
+			Image: "test-image",
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("256Mi"),
+				},
+			},
+		},
+	}
+	err := w.Validate(env)
+	if err == nil {
+		t.Fatal("expected error for missing cpu, got nil")
+	}
+}
+
 func TestParse_RejectsUnknownFields(t *testing.T) {
 	t.Parallel()
 

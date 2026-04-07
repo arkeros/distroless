@@ -11,7 +11,7 @@ def _to_camel_case(s):
 def _bifrost_workload(
         name,
         kind,
-        resources,
+        resources = None,
         environment = None,
         environment_file = None,
         image = None,
@@ -55,7 +55,9 @@ def _bifrost_workload(
     else:
         env_label = environment_file
 
-    spec = {"image": image or name, "resources": resources}
+    spec = {"image": image or name}
+    if resources != None:
+        spec["resources"] = resources
     for key, value in kwargs.items():
         if value != None:
             spec[_to_camel_case(key)] = value
@@ -116,7 +118,7 @@ def _bifrost_workload(
 
 def bifrost_service(
         name,
-        resources,
+        resources = None,
         port = 8080,
         environment = None,
         environment_file = None,

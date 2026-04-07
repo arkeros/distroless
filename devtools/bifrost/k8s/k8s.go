@@ -19,27 +19,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func Render(spec bifrost.Workload) ([]byte, error) {
-	if spec.Spec.Kubernetes == nil {
-		return nil, fmt.Errorf("spec.kubernetes is required for k8s rendering")
+func Render(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
+	if env.Spec.Kubernetes == nil {
+		return nil, fmt.Errorf("environment kubernetes is required for k8s rendering")
 	}
 	switch spec.Kind {
 	case bifrost.KindService:
-		return renderService(spec)
+		return renderService(spec, env)
 	case bifrost.KindCronJob:
-		return renderCronJob(spec)
+		return renderCronJob(spec, env)
 	default:
 		return nil, fmt.Errorf("unsupported kind %q", spec.Kind)
 	}
 }
 
-func renderService(spec bifrost.Workload) ([]byte, error) {
+func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
 	labels := map[string]string{
 		"app.kubernetes.io/name": spec.Metadata.Name,
 	}
-	namespace := spec.Spec.Kubernetes.Namespace
+	gcp := env.Spec.GCP
+	namespace := env.Spec.Kubernetes.Namespace
 	kubernetesServiceAccountName := spec.Metadata.Name
-	resolved := resolveSecretFiles(spec.Spec.GCP.ProjectID, spec.Spec.SecretFiles)
+	resolved := resolveSecretFiles(gcp.ProjectID, spec.Spec.SecretFiles)
 
 	serviceAccount := corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
@@ -125,7 +126,7 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 			Namespace: namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			Type:     corev1.ServiceType(spec.Spec.Kubernetes.ServiceType),
+			Type:     corev1.ServiceType(env.Spec.Kubernetes.ServiceType),
 			Selector: labels,
 			Ports: []corev1.ServicePort{{
 				Name:       "http",
@@ -139,7 +140,7 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	secretsYAML, err := secretManifests(spec.Spec.GCP.ProjectID, namespace, spec.Spec.SecretFiles)
+	secretsYAML, err := secretManifests(gcp.ProjectID, namespace, spec.Spec.SecretFiles)
 	if err != nil {
 		return nil, err
 	}
@@ -168,13 +169,14 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-func renderCronJob(spec bifrost.Workload) ([]byte, error) {
+func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
 	labels := map[string]string{
 		"app.kubernetes.io/name": spec.Metadata.Name,
 	}
-	namespace := spec.Spec.Kubernetes.Namespace
+	gcp := env.Spec.GCP
+	namespace := env.Spec.Kubernetes.Namespace
 	kubernetesServiceAccountName := spec.Metadata.Name
-	resolved := resolveSecretFiles(spec.Spec.GCP.ProjectID, spec.Spec.SecretFiles)
+	resolved := resolveSecretFiles(gcp.ProjectID, spec.Spec.SecretFiles)
 	parallelism := spec.Spec.Job.Parallelism
 	completions := spec.Spec.Job.Completions
 	maxRetries := spec.Spec.Job.MaxRetries
@@ -234,7 +236,7 @@ func renderCronJob(spec bifrost.Workload) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	secretsYAML, err := secretManifests(spec.Spec.GCP.ProjectID, namespace, spec.Spec.SecretFiles)
+	secretsYAML, err := secretManifests(gcp.ProjectID, namespace, spec.Spec.SecretFiles)
 	if err != nil {
 		return nil, err
 	}

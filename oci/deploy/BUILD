@@ -14,10 +14,12 @@ bifrost_service(
     checked_in = {
         "terraform": "terraform/registry.generated.tf",
     },
-    gcp = {
-        "projectId": "senku-prod",
-        "projectNumber": "874944788122",
-        "region": "europe-west3",
+    environment = {
+        "gcp": {
+            "projectId": "senku-prod",
+            "projectNumber": "874944788122",
+            "region": "europe-west3",
+        },
     },
     image_push = "//oci/cmd/registry:image_push",
     port = 8080,

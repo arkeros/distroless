@@ -10,19 +10,19 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func Render(spec bifrost.Workload) ([]byte, error) {
+func Render(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
 	switch spec.Kind {
 	case bifrost.KindService:
-		return renderService(spec)
+		return renderService(spec, env)
 	case bifrost.KindCronJob:
-		return renderCronJob(spec)
+		return renderCronJob(spec, env)
 	default:
 		return nil, fmt.Errorf("unsupported kind %q", spec.Kind)
 	}
 }
 
-func renderService(spec bifrost.Workload) ([]byte, error) {
-	projectID := spec.Spec.GCP.ProjectID
+func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
+	projectID := env.Spec.GCP.ProjectID
 	accountID, err := accountIDFromEmail(spec.Spec.ServiceAccountName)
 	if err != nil {
 		return nil, err
@@ -38,9 +38,9 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 	serviceAccountBody.SetAttributeValue("account_id", cty.StringVal(accountID))
 	serviceAccountBody.SetAttributeValue("display_name", cty.StringVal("Runtime identity for "+spec.Metadata.Name))
 
-	if spec.Spec.Kubernetes != nil {
+	if env.Spec.Kubernetes != nil {
 		kubernetesServiceAccountName := spec.Metadata.Name
-		namespace := spec.Spec.Kubernetes.Namespace
+		namespace := env.Spec.Kubernetes.Namespace
 		workloadIdentityResourceName := terraformIdentifier(accountID + "_workload_identity")
 		serviceAccountTraversal, err := traversalForExpr("google_service_account." + serviceAccountResourceName + ".name")
 		if err != nil {
@@ -62,8 +62,9 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 	return hclwrite.Format(file.Bytes()), nil
 }
 
-func renderCronJob(spec bifrost.Workload) ([]byte, error) {
-	projectID := spec.Spec.GCP.ProjectID
+func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
+	gcp := env.Spec.GCP
+	projectID := gcp.ProjectID
 	runtimeAccountID, err := accountIDFromEmail(spec.Spec.ServiceAccountName)
 	if err != nil {
 		return nil, err
@@ -88,9 +89,9 @@ func renderCronJob(spec bifrost.Workload) ([]byte, error) {
 	runtimeServiceAccountBody.SetAttributeValue("account_id", cty.StringVal(runtimeAccountID))
 	runtimeServiceAccountBody.SetAttributeValue("display_name", cty.StringVal("Runtime identity for "+spec.Metadata.Name))
 
-	if spec.Spec.Kubernetes != nil {
+	if env.Spec.Kubernetes != nil {
 		kubernetesServiceAccountName := spec.Metadata.Name
-		namespace := spec.Spec.Kubernetes.Namespace
+		namespace := env.Spec.Kubernetes.Namespace
 		workloadIdentityResourceName := terraformIdentifier(runtimeAccountID + "_workload_identity")
 		runtimeServiceAccountTraversal, err := traversalForExpr("google_service_account." + runtimeResourceName + ".name")
 		if err != nil {
@@ -138,22 +139,22 @@ func renderCronJob(spec bifrost.Workload) ([]byte, error) {
 	schedulerBody := schedulerBlock.Body()
 	schedulerBody.SetAttributeValue("project", cty.StringVal(projectID))
 	schedulerBody.SetAttributeValue("name", cty.StringVal(spec.Metadata.Name))
-	schedulerBody.SetAttributeValue("region", cty.StringVal(spec.Spec.GCP.Region))
+	schedulerBody.SetAttributeValue("region", cty.StringVal(gcp.Region))
 	schedulerBody.SetAttributeValue("schedule", cty.StringVal(spec.Spec.Schedule.Cron))
 	if spec.Spec.Schedule.TimeZone != "" {
 		schedulerBody.SetAttributeValue("time_zone", cty.StringVal(spec.Spec.Schedule.TimeZone))
 	}
-	if spec.Spec.GCP.CloudScheduler.AttemptDeadlineSeconds > 0 {
-		schedulerBody.SetAttributeValue("attempt_deadline", cty.StringVal(fmt.Sprintf("%ds", spec.Spec.GCP.CloudScheduler.AttemptDeadlineSeconds)))
+	if spec.Spec.CloudScheduler.AttemptDeadlineSeconds > 0 {
+		schedulerBody.SetAttributeValue("attempt_deadline", cty.StringVal(fmt.Sprintf("%ds", spec.Spec.CloudScheduler.AttemptDeadlineSeconds)))
 	}
-	if spec.Spec.GCP.CloudScheduler.RetryCount > 0 {
+	if spec.Spec.CloudScheduler.RetryCount > 0 {
 		retryConfig := schedulerBody.AppendNewBlock("retry_config", nil)
-		retryConfig.Body().SetAttributeValue("retry_count", cty.NumberIntVal(int64(spec.Spec.GCP.CloudScheduler.RetryCount)))
+		retryConfig.Body().SetAttributeValue("retry_count", cty.NumberIntVal(int64(spec.Spec.CloudScheduler.RetryCount)))
 	}
 	httpTarget := schedulerBody.AppendNewBlock("http_target", nil)
 	httpTargetBody := httpTarget.Body()
 	httpTargetBody.SetAttributeValue("http_method", cty.StringVal("POST"))
-	httpTargetBody.SetAttributeValue("uri", cty.StringVal(fmt.Sprintf("https://run.googleapis.com/v2/projects/%s/locations/%s/jobs/%s:run", projectID, spec.Spec.GCP.Region, spec.Metadata.Name)))
+	httpTargetBody.SetAttributeValue("uri", cty.StringVal(fmt.Sprintf("https://run.googleapis.com/v2/projects/%s/locations/%s/jobs/%s:run", projectID, gcp.Region, spec.Metadata.Name)))
 	httpTargetBody.SetAttributeRaw("body", hclwrite.TokensForFunctionCall("base64encode", hclwrite.TokensForValue(cty.StringVal("{}"))))
 	httpTargetBody.SetAttributeValue("headers", cty.MapVal(map[string]cty.Value{
 		"Content-Type": cty.StringVal("application/json"),

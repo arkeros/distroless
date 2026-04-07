@@ -1,0 +1,11 @@
+apiVersion: bifrost.apotema.cloud/v1alpha1
+kind: Environment
+metadata:
+  name: senku-prod
+spec:
+  gcp:
+    projectId: senku-prod
+    projectNumber: "874944788122"
+    region: europe-west1
+  kubernetes:
+    namespace: jobs

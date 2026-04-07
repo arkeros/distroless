@@ -24,10 +24,3 @@ spec:
   autoscaling:
     min: 0
     max: 3
-  gcp:
-    projectId: senku-prod
-    projectNumber: "874944788122"
-    region: europe-west3
-    cloudRun:
-      ingress: all
-  kubernetes: {}

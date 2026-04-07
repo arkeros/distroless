@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//devtools/bifrost/api",
         "//devtools/bifrost/cloudrun",
+        "//devtools/bifrost/internal",
         "@com_github_spf13_cobra//:cobra",
     ],
 )

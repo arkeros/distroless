@@ -5,8 +5,9 @@
 The tools use the familiar `<context> <noun> <verb>` style of CLI interactions. For example, to render a service from a YAML file, you would run:
 
 ```bash
-bifrost k8s render -f ./service.yaml
-bifrost terraform render -f ./service.yaml
+bifrost cloudrun render -e ./environment.yaml -f ./service.yaml
+bifrost k8s render -e ./environment.yaml -f ./service.yaml
+bifrost terraform render -e ./environment.yaml -f ./service.yaml
 ```
 
 Current outputs:
@@ -30,19 +31,27 @@ After that, `bifrost` is available from the repo root.
 
 ## Quickstart
 
-Render from an existing service spec:
-
-```bash
-bifrost cloudrun render -f ./service.yaml
-bifrost k8s render -f ./service.yaml
-bifrost terraform render -f ./service.json
-```
-
-`bifrost` accepts either YAML or JSON input.
-
-Minimal example:
+Create an environment file with shared infrastructure identity:
 
 ```yaml
+# environment.yaml
+apiVersion: bifrost.apotema.cloud/v1alpha1
+kind: Environment
+metadata:
+  name: senku-prod
+spec:
+  gcp:
+    projectId: senku-prod
+    projectNumber: "874944788122"
+    region: europe-west1
+  kubernetes:
+    namespace: jobs
+```
+
+Define a workload:
+
+```yaml
+# service.yaml
 apiVersion: bifrost.apotema.cloud/v1alpha1
 kind: Service
 metadata:
@@ -54,24 +63,43 @@ spec:
     limits:
       cpu: 1000m
       memory: 256Mi
-  gcp:
-    projectId: senku-prod
-    projectNumber: "874944788122"
-    region: europe-west3
+  cloudRun:
+    ingress: all
 ```
+
+Render:
+
+```bash
+bifrost cloudrun render -e environment.yaml -f service.yaml
+bifrost k8s render -e environment.yaml -f service.yaml
+bifrost terraform render -e environment.yaml -f service.yaml
+```
+
+`bifrost` accepts either YAML or JSON input for both files.
+
+## Environment
+
+An `Environment` holds shared infrastructure identity that is reused across many workloads:
+
+- `gcp.projectId`, `gcp.projectNumber`, `gcp.region` — GCP project coordinates
+- `kubernetes.namespace`, `kubernetes.serviceType` — Kubernetes target config
+
+One environment is shared by all services and cronjobs deployed to the same project and namespace. Per-workload settings like `cloudRun` and `cloudScheduler` stay on the workload.
+
+The `--environment` / `-e` flag is required for all render commands.
 
 ## Bazel Macro
 
-The main in-repo integration is [`bifrost_service`](./bifrost.bzl).
+The main in-repo integration is [`bifrost_service`](./bifrost.bzl) and [`bifrost_cronjob`](./bifrost.bzl).
 
-It lets you define a service in Starlark and generates:
+They let you define a workload in Starlark and generate:
 
-- `<name>.service.json`
+- `<name>.workload.json`
 - `<name>.cloudrun.yaml`
 - `<name>.k8s.yaml`
 - `<name>.terraform.tf`
 
-Example:
+The `environment` parameter accepts a Starlark dict:
 
 ```starlark
 load("//devtools/bifrost:bifrost.bzl", "bifrost_service")
@@ -98,17 +126,27 @@ bifrost_service(
         "min": 0,
         "max": 3,
     },
-    gcp = {
-        "projectId": "senku-prod",
-        "projectNumber": "874944788122",
-        "region": "europe-west3",
-        "cloudRun": {
-            "ingress": "all",
+    environment = {
+        "gcp": {
+            "projectId": "senku-prod",
+            "projectNumber": "874944788122",
+            "region": "europe-west3",
         },
     },
 )
-
 ```
+
+Alternatively, use `environment_file` to point to a YAML or JSON file:
+
+```starlark
+bifrost_service(
+    name = "registry",
+    environment_file = "//env:senku-prod.yaml",
+    # ...
+)
+```
+
+`environment` (dict) and `environment_file` (label) are mutually exclusive — exactly one is required.
 
 The macro emits JSON because Starlark can serialize JSON safely with the built-in `json` module. `bifrost <target> render` consumes that generated JSON the same way it consumes a hand-written YAML or JSON file.
 
@@ -168,6 +206,15 @@ That is closer to a small platform API than to a templating trick.
 
 ## Design Decisions
 
+### Environment vs Workload
+
+Configuration is split into two files:
+
+- **Environment** — shared infrastructure identity: GCP project, region, Kubernetes namespace. One environment is reused across many workloads.
+- **Workload** — application-specific intent: image, resources, scaling, probes, and platform-specific behavior like `cloudRun.ingress` or `cloudScheduler.retryCount`.
+
+The boundary is: if two workloads in the same project could legitimately need different values, the field belongs on the workload. If it's always the same for a given deployment target, it belongs on the environment.
+
 ### Custom Service API
 
 The service API is defined in [`api/`](./api), not embedded in the CLI package.
@@ -190,19 +237,21 @@ Shared fields live once at the top level:
 - `probes`
 - `autoscaling`
 
-Platform-specific fields stay under the platform:
+Platform-specific fields stay under their platform key:
 
-- `gcp.projectId`
-- `gcp.projectNumber`
-- `gcp.region`
-- `gcp.cloudRun.*`
-- `kubernetes.*`
+- `cloudRun.ingress`, `cloudRun.public`
+- `cloudScheduler.retryCount`, `cloudScheduler.attemptDeadlineSeconds`
+
+Environment-level fields:
+
+- `gcp.projectId`, `gcp.projectNumber`, `gcp.region`
+- `kubernetes.namespace`, `kubernetes.serviceType`
 
 That split keeps source intent stable while letting renderers translate to Cloud Run and Kubernetes naming.
 
 ### Explicit Runtime Identity
 
-`serviceAccountName` is optional. If omitted, `bifrost` derives a default Google service account email from `metadata.name` and `gcp.projectId`.
+`serviceAccountName` is optional. If omitted, `bifrost` derives a default Google service account email from `metadata.name` and the environment's `gcp.projectId`.
 
 That gives a good default without silently falling back to broad platform defaults.
 
@@ -281,7 +330,7 @@ It does not set fixed `Deployment.spec.replicas`; horizontal scaling is owned by
 For **Services**:
 
 - `google_service_account` — runtime identity
-- `google_service_account_iam_member` — GKE Workload Identity binding (only when `spec.kubernetes` is set)
+- `google_service_account_iam_member` — GKE Workload Identity binding (only when `kubernetes` is set in the environment)
 
 For **CronJobs**, it additionally emits:
 
@@ -301,10 +350,8 @@ Validation focuses on required and security-relevant inputs:
 - `spec.image` is required
 - `spec.port` must be positive
 - CPU and memory limits are required
-- `gcp.projectId` is required
-- `gcp.projectNumber` is required
-- `gcp.region` is required
-- `serviceAccountName`, if set, must be a GSA email
+- Environment: `gcp.projectId`, `gcp.projectNumber`, `gcp.region` are required
+- `serviceAccountName`, if set, must be a GSA email matching the environment's project
 
 Defaults are used for low-risk operational knobs:
 
@@ -336,5 +383,5 @@ For `CronJob`, the source model is split into:
   Cross-platform trigger intent such as cron and time zone.
 - `job`
   Cross-platform execution settings such as parallelism, completions, retries, and timeout.
-- `gcp.cloudScheduler`
-  Google-specific scheduler configuration (retry count, attempt deadline) used only for the Cloud Run + Cloud Scheduler render path. Region is shared via `gcp.region`.
+- `cloudScheduler`
+  Google-specific scheduler configuration (retry count, attempt deadline) used only for the Cloud Run + Cloud Scheduler render path. Region is shared via the environment's `gcp.region`.

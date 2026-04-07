@@ -4,7 +4,7 @@ metadata:
   annotations:
     run.googleapis.com/ingress: all
   labels:
-    cloud.googleapis.com/location: europe-west3
+    cloud.googleapis.com/location: europe-west1
   name: registry
   namespace: "874944788122"
 spec:

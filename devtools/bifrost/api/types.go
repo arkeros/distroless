@@ -97,21 +97,8 @@ type Spec struct {
 	Autoscaling        AutoscalingSpec             `json:"autoscaling,omitempty"`
 	Schedule           ScheduleSpec                `json:"schedule,omitempty"`
 	Job                JobSpec                     `json:"job,omitempty"`
-	GCP                GCPSpec                     `json:"gcp"`
-	Kubernetes         *KubernetesSpec             `json:"kubernetes,omitempty"`
-}
-
-type GCPSpec struct {
-	ProjectID      string             `json:"projectId"`
-	ProjectNumber  string             `json:"projectNumber"`
-	Region         string             `json:"region"`
-	CloudScheduler CloudSchedulerSpec `json:"cloudScheduler,omitempty"`
-	CloudRun       CloudRunSpec       `json:"cloudRun,omitempty"`
-}
-
-type ProbeSpec struct {
-	StartupPath  string `json:"startupPath,omitempty"`
-	LivenessPath string `json:"livenessPath,omitempty"`
+	CloudRun           CloudRunSpec                `json:"cloudRun,omitempty"`
+	CloudScheduler     CloudSchedulerSpec          `json:"cloudScheduler,omitempty"`
 }
 
 type CloudRunSpec struct {
@@ -119,9 +106,14 @@ type CloudRunSpec struct {
 	Public  bool   `json:"public,omitempty"`
 }
 
-type KubernetesSpec struct {
-	ServiceType string `json:"serviceType,omitempty"`
-	Namespace   string `json:"namespace,omitempty"`
+type CloudSchedulerSpec struct {
+	RetryCount             int32 `json:"retryCount,omitempty"`
+	AttemptDeadlineSeconds int64 `json:"attemptDeadlineSeconds,omitempty"`
+}
+
+type ProbeSpec struct {
+	StartupPath  string `json:"startupPath,omitempty"`
+	LivenessPath string `json:"livenessPath,omitempty"`
 }
 
 type ScheduleSpec struct {
@@ -136,12 +128,6 @@ type JobSpec struct {
 	TimeoutSeconds int64 `json:"timeoutSeconds,omitempty"`
 }
 
-type CloudSchedulerSpec struct {
-	TimeZone               string `json:"timeZone,omitempty"`
-	RetryCount             int32  `json:"retryCount,omitempty"`
-	AttemptDeadlineSeconds int64  `json:"attemptDeadlineSeconds,omitempty"`
-}
-
 type AutoscalingSpec struct {
 	MinReplicas          int32 `json:"min,omitempty"`
 	MaxReplicas          int32 `json:"max,omitempty"`
@@ -149,7 +135,7 @@ type AutoscalingSpec struct {
 	TargetCPUUtilization int32 `json:"targetCPUUtilization,omitempty"`
 }
 
-func Parse(r io.Reader) (Workload, error) {
+func Parse(r io.Reader, env Environment) (Workload, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return Workload{}, err
@@ -158,13 +144,13 @@ func Parse(r io.Reader) (Workload, error) {
 	if err := yaml.UnmarshalStrict(data, &spec); err != nil {
 		return Workload{}, err
 	}
-	if err := spec.Validate(); err != nil {
+	if err := spec.Validate(env); err != nil {
 		return Workload{}, err
 	}
 	return spec, nil
 }
 
-func (s *Workload) Validate() error {
+func (s *Workload) Validate(env Environment) error {
 	if s.APIVersion != APIVersion {
 		return fmt.Errorf("unsupported apiVersion %q", s.APIVersion)
 	}
@@ -177,12 +163,7 @@ func (s *Workload) Validate() error {
 	if s.Spec.Image == "" {
 		return fmt.Errorf("spec.image is required")
 	}
-	if s.Spec.GCP.ProjectID == "" {
-		return fmt.Errorf("spec.gcp.projectId is required")
-	}
-	if s.Spec.GCP.ProjectNumber == "" {
-		return fmt.Errorf("spec.gcp.projectNumber is required")
-	}
+	projectID := env.Spec.GCP.ProjectID
 	if s.Spec.ServiceAccountName == "" {
 		prefix := "svc-"
 		if s.Kind == KindCronJob {
@@ -192,15 +173,15 @@ func (s *Workload) Validate() error {
 		if err != nil {
 			return err
 		}
-		s.Spec.ServiceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", accountID, s.Spec.GCP.ProjectID)
+		s.Spec.ServiceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", accountID, projectID)
 	}
 	if !strings.Contains(s.Spec.ServiceAccountName, "@") {
 		return fmt.Errorf("spec.serviceAccountName must be a Google service account email")
 	}
-	if projectID, err := projectIDFromServiceAccountEmail(s.Spec.ServiceAccountName); err != nil {
+	if saProjectID, err := projectIDFromServiceAccountEmail(s.Spec.ServiceAccountName); err != nil {
 		return err
-	} else if projectID != s.Spec.GCP.ProjectID {
-		return fmt.Errorf("spec.serviceAccountName project %q does not match spec.gcp.projectId %q", projectID, s.Spec.GCP.ProjectID)
+	} else if saProjectID != projectID {
+		return fmt.Errorf("spec.serviceAccountName project %q does not match environment gcp.projectId %q", saProjectID, projectID)
 	}
 	if s.Kind == KindService && (s.Spec.Port < 1 || s.Spec.Port > 65535) {
 		return fmt.Errorf("spec.port must be between 1 and 65535")
@@ -244,24 +225,13 @@ func (s *Workload) Validate() error {
 	if err := validateSecretFiles(s.Spec.SecretFiles); err != nil {
 		return err
 	}
-	if s.Spec.GCP.Region == "" {
-		return fmt.Errorf("spec.gcp.region is required")
+	if s.Spec.CloudRun.Ingress == "" {
+		s.Spec.CloudRun.Ingress = "all"
 	}
-	if s.Spec.GCP.CloudRun.Ingress == "" {
-		s.Spec.GCP.CloudRun.Ingress = "all"
-	}
-	switch s.Spec.GCP.CloudRun.Ingress {
+	switch s.Spec.CloudRun.Ingress {
 	case "all", "internal", "internal-and-cloud-load-balancing":
 	default:
-		return fmt.Errorf("spec.gcp.cloudRun.ingress %q is not valid, must be one of: all, internal, internal-and-cloud-load-balancing", s.Spec.GCP.CloudRun.Ingress)
-	}
-	if s.Spec.Kubernetes != nil {
-		if s.Spec.Kubernetes.ServiceType == "" {
-			s.Spec.Kubernetes.ServiceType = "ClusterIP"
-		}
-		if s.Spec.Kubernetes.Namespace == "" {
-			s.Spec.Kubernetes.Namespace = "default"
-		}
+		return fmt.Errorf("spec.cloudRun.ingress %q is not valid, must be one of: all, internal, internal-and-cloud-load-balancing", s.Spec.CloudRun.Ingress)
 	}
 	if s.Spec.Autoscaling.MinReplicas < 0 {
 		return fmt.Errorf("spec.autoscaling.min must be greater than or equal to zero")

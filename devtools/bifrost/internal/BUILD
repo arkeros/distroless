@@ -2,7 +2,10 @@ load("@rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "internal",
-    srcs = ["render.go"],
+    srcs = [
+        "load.go",
+        "render.go",
+    ],
     importpath = "github.com/arkeros/senku/devtools/bifrost/internal",
     visibility = ["//devtools/bifrost:__subpackages__"],
     deps = [

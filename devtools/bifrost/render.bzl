@@ -4,11 +4,12 @@ load("@rules_img//img/private/providers:deploy_info.bzl", "DeployInfo")
 
 def _bifrost_render_impl(ctx):
     spec_file = ctx.file.spec
+    env_file = ctx.file.environment
     out = ctx.outputs.out
     bifrost = ctx.executable._bifrost
     jq = ctx.toolchains["@jq.bzl//jq/toolchain:type"].jqinfo.bin
 
-    inputs = [spec_file]
+    inputs = [spec_file, env_file]
     render_spec = spec_file
 
     # If image_push is set, patch the service JSON with the resolved image ref
@@ -33,7 +34,7 @@ IMAGE=$({jq} -re '.operations[0] // error("no operations in deploy manifest") | 
             mnemonic = "BifrostResolveImage",
         )
         render_spec = patched_spec
-        inputs = [patched_spec]
+        inputs = [patched_spec, env_file]
 
     # Run bifrost render
     if ctx.attr.header:
@@ -41,9 +42,10 @@ IMAGE=$({jq} -re '.operations[0] // error("no operations in deploy manifest") | 
             tools = [bifrost],
             inputs = inputs,
             outputs = [out],
-            command = "cat <<'BIFROST_HEADER_EOF' > {out}\n{header}\nBIFROST_HEADER_EOF\n{bifrost} {target} render -f {spec} >> {out}".format(
+            command = "cat <<'BIFROST_HEADER_EOF' > {out}\n{header}\nBIFROST_HEADER_EOF\n{bifrost} {target} render -e {env} -f {spec} >> {out}".format(
                 bifrost = bifrost.path,
                 target = ctx.attr.target,
+                env = env_file.path,
                 spec = render_spec.path,
                 out = out.path,
                 header = ctx.attr.header,
@@ -55,9 +57,10 @@ IMAGE=$({jq} -re '.operations[0] // error("no operations in deploy manifest") | 
             tools = [bifrost],
             inputs = inputs,
             outputs = [out],
-            command = "{bifrost} {target} render -f {spec} > {out}".format(
+            command = "{bifrost} {target} render -e {env} -f {spec} > {out}".format(
                 bifrost = bifrost.path,
                 target = ctx.attr.target,
+                env = env_file.path,
                 spec = render_spec.path,
                 out = out.path,
             ),
@@ -72,7 +75,12 @@ bifrost_render = rule(
         "spec": attr.label(
             mandatory = True,
             allow_single_file = [".json"],
-            doc = "Bifrost service spec JSON file.",
+            doc = "Bifrost workload spec JSON file.",
+        ),
+        "environment": attr.label(
+            mandatory = True,
+            allow_single_file = [".json", ".yaml", ".yml"],
+            doc = "Bifrost environment file (YAML or JSON).",
         ),
         "target": attr.string(
             mandatory = True,

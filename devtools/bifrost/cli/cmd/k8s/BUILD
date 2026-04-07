@@ -10,6 +10,7 @@ go_library(
     visibility = ["//devtools/bifrost/cli:__subpackages__"],
     deps = [
         "//devtools/bifrost/api",
+        "//devtools/bifrost/internal",
         "//devtools/bifrost/k8s",
         "@com_github_spf13_cobra//:cobra",
     ],

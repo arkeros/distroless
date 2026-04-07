@@ -6,11 +6,13 @@ import (
 	"github.com/spf13/cobra"
 
 	bifrost "github.com/arkeros/senku/devtools/bifrost/api"
+	"github.com/arkeros/senku/devtools/bifrost/internal"
 	"github.com/arkeros/senku/devtools/bifrost/terraform"
 )
 
 type renderOptions struct {
-	InputPath string
+	InputPath       string
+	EnvironmentPath string
 }
 
 func newCmdRender() *cobra.Command {
@@ -19,8 +21,8 @@ func newCmdRender() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "render",
 		Short: "Render Terraform config from a workload spec",
-		Example: `  bifrost terraform render -f service.yaml
-  bifrost terraform render -f cronjob.yaml`,
+		Example: `  bifrost terraform render -e environment.yaml -f service.yaml
+  bifrost terraform render -e environment.yaml -f cronjob.yaml`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return o.Run()
 		},
@@ -28,23 +30,30 @@ func newCmdRender() *cobra.Command {
 
 	cmd.Flags().StringVarP(&o.InputPath, "file", "f", "", "path to the workload spec YAML or JSON")
 	cmd.MarkFlagRequired("file")
+	cmd.Flags().StringVarP(&o.EnvironmentPath, "environment", "e", "", "path to an Environment YAML or JSON file")
+	cmd.MarkFlagRequired("environment")
 
 	return cmd
 }
 
 func (o *renderOptions) Run() error {
+	env, err := internal.LoadEnvironment(o.EnvironmentPath)
+	if err != nil {
+		return err
+	}
+
 	f, err := os.Open(o.InputPath)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	spec, err := bifrost.Parse(f)
+	spec, err := bifrost.Parse(f, env)
 	if err != nil {
 		return err
 	}
 
-	out, err := terraform.Render(spec)
+	out, err := terraform.Render(spec, env)
 	if err != nil {
 		return err
 	}

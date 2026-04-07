@@ -12,22 +12,23 @@ import (
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-func Render(spec bifrost.Workload) ([]byte, error) {
+func Render(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
 	switch spec.Kind {
 	case bifrost.KindService:
-		return renderService(spec)
+		return renderService(spec, env)
 	case bifrost.KindCronJob:
-		return renderCronJob(spec)
+		return renderCronJob(spec, env)
 	default:
 		return nil, fmt.Errorf("unsupported kind %q", spec.Kind)
 	}
 }
 
-func renderService(spec bifrost.Workload) ([]byte, error) {
+func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
 	trueValue := true
 	trafficPercent := int64(100)
 	concurrency := spec.Spec.Autoscaling.Concurrency
-	resolved := internal.ResolveSecretFiles(spec.Spec.GCP.ProjectID, spec.Spec.SecretFiles)
+	gcp := env.Spec.GCP
+	resolved := internal.ResolveSecretFiles(gcp.ProjectID, spec.Spec.SecretFiles)
 
 	svc := servingv1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -36,19 +37,19 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      spec.Metadata.Name,
-			Namespace: spec.Spec.GCP.ProjectNumber,
+			Namespace: gcp.ProjectNumber,
 			Annotations: map[string]string{
-				"run.googleapis.com/ingress": spec.Spec.GCP.CloudRun.Ingress,
+				"run.googleapis.com/ingress": spec.Spec.CloudRun.Ingress,
 			},
 			Labels: internal.MergeStringMaps(spec.Metadata.Labels, map[string]string{
-				"cloud.googleapis.com/location": spec.Spec.GCP.Region,
+				"cloud.googleapis.com/location": gcp.Region,
 			}),
 		},
 		Spec: servingv1.ServiceSpec{
 			ConfigurationSpec: servingv1.ConfigurationSpec{
 				Template: servingv1.RevisionTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Annotations: internal.MergeStringMaps(templateAnnotations(spec), map[string]string{
+						Annotations: internal.MergeStringMaps(templateAnnotations(gcp, spec), map[string]string{
 							"autoscaling.knative.dev/minScale": strconv.FormatInt(int64(spec.Spec.Autoscaling.MinReplicas), 10),
 							"autoscaling.knative.dev/maxScale": strconv.FormatInt(int64(spec.Spec.Autoscaling.MaxReplicas), 10),
 						}),
@@ -71,22 +72,23 @@ func renderService(spec bifrost.Workload) ([]byte, error) {
 			},
 		},
 	}
-	if spec.Spec.GCP.CloudRun.Public {
+	if spec.Spec.CloudRun.Public {
 		svc.Annotations["run.googleapis.com/invoker-iam-disabled"] = "true"
 	}
 	return internal.MarshalManifest(svc)
 }
 
-func renderCronJob(spec bifrost.Workload) ([]byte, error) {
-	resolved := internal.ResolveSecretFiles(spec.Spec.GCP.ProjectID, spec.Spec.SecretFiles)
+func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
+	gcp := env.Spec.GCP
+	resolved := internal.ResolveSecretFiles(gcp.ProjectID, spec.Spec.SecretFiles)
 	jobSpec := map[string]any{
 		"apiVersion": "run.googleapis.com/v1",
 		"kind":       "Job",
 		"metadata": map[string]any{
 			"name":      spec.Metadata.Name,
-			"namespace": spec.Spec.GCP.ProjectNumber,
+			"namespace": gcp.ProjectNumber,
 			"labels": internal.MergeStringMaps(spec.Metadata.Labels, map[string]string{
-				"cloud.googleapis.com/location": spec.Spec.GCP.Region,
+				"cloud.googleapis.com/location": gcp.Region,
 			}),
 		},
 		"spec": map[string]any{
@@ -106,7 +108,7 @@ func renderCronJob(spec bifrost.Workload) ([]byte, error) {
 			},
 		},
 	}
-	templateMetadataAnnotations := templateAnnotations(spec)
+	templateMetadataAnnotations := templateAnnotations(gcp, spec)
 	if len(templateMetadataAnnotations) > 0 {
 		jobSpec["spec"].(map[string]any)["template"].(map[string]any)["metadata"] = map[string]any{
 			"annotations": templateMetadataAnnotations,
@@ -119,10 +121,10 @@ func renderCronJob(spec bifrost.Workload) ([]byte, error) {
 	return internal.MarshalManifest(jobSpec)
 }
 
-func templateAnnotations(spec bifrost.Workload) map[string]string {
+func templateAnnotations(gcp bifrost.GCPSpec, spec bifrost.Workload) map[string]string {
 	return internal.MergeStringMaps(nil, map[string]string{
 		"run.googleapis.com/execution-environment": "gen2",
-		"run.googleapis.com/secrets":               secretsAnnotation(spec.Spec.GCP.ProjectID, spec.Spec.SecretFiles),
+		"run.googleapis.com/secrets":               secretsAnnotation(gcp.ProjectID, spec.Spec.SecretFiles),
 	})
 }
 

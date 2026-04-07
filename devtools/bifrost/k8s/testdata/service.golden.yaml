@@ -4,7 +4,7 @@ metadata:
   annotations:
     iam.gke.io/gcp-service-account: svc-registry@senku-prod.iam.gserviceaccount.com
   name: registry
-  namespace: default
+  namespace: jobs
 ---
 apiVersion: v1
 data:
@@ -12,13 +12,13 @@ data:
 kind: Secret
 metadata:
   name: registry-env-71bb3ea30f
-  namespace: default
+  namespace: jobs
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry
-  namespace: default
+  namespace: jobs
 spec:
   selector:
     matchLabels:
@@ -81,7 +81,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: registry
-  namespace: default
+  namespace: jobs
 spec:
   maxReplicas: 3
   metrics:
@@ -101,7 +101,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: registry
-  namespace: default
+  namespace: jobs
 spec:
   ports:
   - name: http

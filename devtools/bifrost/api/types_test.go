@@ -8,6 +8,21 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+func validEnvironment() Environment {
+	return Environment{
+		APIVersion: APIVersion,
+		Kind:       KindEnvironment,
+		Metadata:   ObjectMeta{Name: "test-env"},
+		Spec: EnvironmentSpec{
+			GCP: GCPSpec{
+				ProjectID:     "my-project",
+				ProjectNumber: "123456",
+				Region:        "us-central1",
+			},
+		},
+	}
+}
+
 func validWorkload() Workload {
 	return Workload{
 		APIVersion: APIVersion,
@@ -22,11 +37,6 @@ func validWorkload() Workload {
 					corev1.ResourceMemory: resource.MustParse("256Mi"),
 				},
 			},
-			GCP: GCPSpec{
-				ProjectID:     "my-project",
-				ProjectNumber: "123456",
-				Region:        "us-central1",
-			},
 		},
 	}
 }
@@ -34,6 +44,7 @@ func validWorkload() Workload {
 func TestValidate_Port(t *testing.T) {
 	t.Parallel()
 
+	env := validEnvironment()
 	tests := []struct {
 		name    string
 		port    int32
@@ -51,7 +62,7 @@ func TestValidate_Port(t *testing.T) {
 			t.Parallel()
 			w := validWorkload()
 			w.Spec.Port = tt.port
-			err := w.Validate()
+			err := w.Validate(env)
 			if tt.wantErr && err == nil {
 				t.Fatal("expected error, got nil")
 			}
@@ -68,6 +79,7 @@ func TestValidate_Port(t *testing.T) {
 func TestParse_RejectsUnknownFields(t *testing.T) {
 	t.Parallel()
 
+	env := validEnvironment()
 	yaml := `
 apiVersion: bifrost.apotema.cloud/v1alpha1
 kind: Service
@@ -81,12 +93,8 @@ spec:
     limits:
       cpu: "1"
       memory: 256Mi
-  gcp:
-    projectId: my-project
-    projectNumber: "123456"
-    region: us-central1
 `
-	_, err := Parse(strings.NewReader(yaml))
+	_, err := Parse(strings.NewReader(yaml), env)
 	if err == nil {
 		t.Fatal("expected error for unknown field servceAccountName, got nil")
 	}
@@ -95,42 +103,68 @@ spec:
 	}
 }
 
-func TestValidate_CloudRunIngress(t *testing.T) {
+func TestParse_RejectsGCPField(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name    string
-		ingress string
-		wantErr bool
-	}{
-		{"empty defaults to all", "", false},
-		{"all", "all", false},
-		{"internal", "internal", false},
-		{"internal-and-cloud-load-balancing", "internal-and-cloud-load-balancing", false},
-		{"invalid value", "public", true},
+	env := validEnvironment()
+	yaml := `
+apiVersion: bifrost.apotema.cloud/v1alpha1
+kind: Service
+metadata:
+  name: test-svc
+spec:
+  image: test-image
+  port: 8080
+  resources:
+    limits:
+      cpu: "1"
+      memory: 256Mi
+  gcp:
+    projectId: my-project
+    projectNumber: "123456"
+    region: us-central1
+`
+	_, err := Parse(strings.NewReader(yaml), env)
+	if err == nil {
+		t.Fatal("expected error for gcp field in workload, got nil")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			w := validWorkload()
-			w.Spec.GCP.CloudRun.Ingress = tt.ingress
-			err := w.Validate()
-			if tt.wantErr && err == nil {
-				t.Fatal("expected error, got nil")
-			}
-			if !tt.wantErr && err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if tt.wantErr && err != nil && !strings.Contains(err.Error(), "ingress") {
-				t.Fatalf("error should mention ingress, got: %v", err)
-			}
-		})
+	if !strings.Contains(err.Error(), "gcp") {
+		t.Fatalf("error should mention gcp, got: %v", err)
+	}
+}
+
+func TestParse_RejectsKubernetesField(t *testing.T) {
+	t.Parallel()
+
+	env := validEnvironment()
+	yaml := `
+apiVersion: bifrost.apotema.cloud/v1alpha1
+kind: Service
+metadata:
+  name: test-svc
+spec:
+  image: test-image
+  port: 8080
+  resources:
+    limits:
+      cpu: "1"
+      memory: 256Mi
+  kubernetes:
+    namespace: default
+`
+	_, err := Parse(strings.NewReader(yaml), env)
+	if err == nil {
+		t.Fatal("expected error for kubernetes field in workload, got nil")
+	}
+	if !strings.Contains(err.Error(), "kubernetes") {
+		t.Fatalf("error should mention kubernetes, got: %v", err)
 	}
 }
 
 func TestValidate_RequestsExceedLimits(t *testing.T) {
 	t.Parallel()
 
+	env := validEnvironment()
 	tests := []struct {
 		name       string
 		reqCPU     string
@@ -205,7 +239,7 @@ func TestValidate_RequestsExceedLimits(t *testing.T) {
 				corev1.ResourceCPU:    resource.MustParse(tt.limCPU),
 				corev1.ResourceMemory: resource.MustParse(tt.limMem),
 			}
-			err := w.Validate()
+			err := w.Validate(env)
 			if tt.wantErr && err == nil {
 				t.Fatal("expected error, got nil")
 			}
@@ -222,6 +256,7 @@ func TestValidate_RequestsExceedLimits(t *testing.T) {
 func TestParse_SecretFiles(t *testing.T) {
 	t.Parallel()
 
+	env := validEnvironment()
 	yaml := `
 apiVersion: bifrost.apotema.cloud/v1alpha1
 kind: CronJob
@@ -238,12 +273,8 @@ spec:
       path: /run/secrets/env.json
   schedule:
     cron: "0 12 * * *"
-  gcp:
-    projectId: my-project
-    projectNumber: "123456"
-    region: us-central1
 `
-	w, err := Parse(strings.NewReader(yaml))
+	w, err := Parse(strings.NewReader(yaml), env)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -292,9 +323,44 @@ func TestSecretFile_ParseSecret(t *testing.T) {
 	}
 }
 
+func TestValidate_CloudRunIngress(t *testing.T) {
+	t.Parallel()
+
+	env := validEnvironment()
+	tests := []struct {
+		name    string
+		ingress string
+		wantErr bool
+	}{
+		{"empty defaults to all", "", false},
+		{"all", "all", false},
+		{"internal", "internal", false},
+		{"internal-and-cloud-load-balancing", "internal-and-cloud-load-balancing", false},
+		{"invalid value", "public", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			w := validWorkload()
+			w.Spec.CloudRun.Ingress = tt.ingress
+			err := w.Validate(env)
+			if tt.wantErr && err == nil {
+				t.Fatal("expected error, got nil")
+			}
+			if !tt.wantErr && err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.wantErr && err != nil && !strings.Contains(err.Error(), "ingress") {
+				t.Fatalf("error should mention ingress, got: %v", err)
+			}
+		})
+	}
+}
+
 func TestValidate_SecretFiles(t *testing.T) {
 	t.Parallel()
 
+	env := validEnvironment()
 	tests := []struct {
 		name        string
 		secretFiles []SecretFile
@@ -315,7 +381,7 @@ func TestValidate_SecretFiles(t *testing.T) {
 			w.Kind = KindCronJob
 			w.Spec.SecretFiles = tt.secretFiles
 			w.Spec.Schedule.Cron = "0 * * * *"
-			err := w.Validate()
+			err := w.Validate(env)
 			if tt.wantErr && err == nil {
 				t.Fatal("expected error, got nil")
 			}
@@ -328,4 +394,3 @@ func TestValidate_SecretFiles(t *testing.T) {
 		})
 	}
 }
-

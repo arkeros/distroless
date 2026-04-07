@@ -21,11 +21,5 @@ spec:
     completions: 1
     maxRetries: 3
     timeoutSeconds: 600
-  gcp:
-    projectId: senku-prod
-    projectNumber: "874944788122"
-    region: europe-west1
-    cloudScheduler:
-      retryCount: 3
-  kubernetes:
-    namespace: jobs
+  cloudScheduler:
+    retryCount: 3

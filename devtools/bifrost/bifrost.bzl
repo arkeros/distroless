@@ -11,8 +11,9 @@ def _to_camel_case(s):
 def _bifrost_workload(
         name,
         kind,
-        gcp,
         resources,
+        environment = None,
+        environment_file = None,
         image = None,
         image_push = None,
         checked_in = None,
@@ -24,13 +25,37 @@ def _bifrost_workload(
         fail("Cannot specify both 'image' and 'image_push'")
     if not image and not image_push:
         fail("Must specify either 'image' or 'image_push'")
+    if environment and environment_file:
+        fail("Cannot specify both 'environment' (dict) and 'environment_file' (label)")
+    if not environment and not environment_file:
+        fail("Must specify either 'environment' (dict) or 'environment_file' (label)")
 
     if targets == None:
         targets = ["cloudrun", "k8s", "terraform"]
     if checked_in == None:
         checked_in = {}
 
-    spec = {"image": image or name, "resources": resources, "gcp": gcp}
+    # Resolve environment: if dict, write it as a JSON file; if label, use directly.
+    if environment:
+        env_obj = {
+            "apiVersion": "bifrost.apotema.cloud/v1alpha1",
+            "kind": "Environment",
+            "metadata": {"name": name + "-env"},
+            "spec": environment,
+        }
+        env_json = json.encode_indent(env_obj, indent = "  ") + "\n"
+        env_target = name + ".environment.json"
+        write_file(
+            name = name + "_environment_json",
+            out = env_target,
+            content = [env_json],
+            visibility = visibility,
+        )
+        env_label = ":" + name + "_environment_json"
+    else:
+        env_label = environment_file
+
+    spec = {"image": image or name, "resources": resources}
     for key, value in kwargs.items():
         if value != None:
             spec[_to_camel_case(key)] = value
@@ -74,6 +99,7 @@ def _bifrost_workload(
         bifrost_render(
             name = name + "_" + target,
             spec = ":" + name + "_workload_json",
+            environment = env_label,
             target = target,
             image_push = image_push,
             header = header if header else None,
@@ -91,8 +117,9 @@ def _bifrost_workload(
 def bifrost_service(
         name,
         port,
-        gcp,
         resources,
+        environment = None,
+        environment_file = None,
         image = None,
         image_push = None,
         args = None,
@@ -100,7 +127,6 @@ def bifrost_service(
         secret_files = None,
         probes = None,
         autoscaling = None,
-        kubernetes = None,
         checked_in = None,
         targets = None,
         visibility = None):
@@ -112,7 +138,7 @@ def bifrost_service(
             image = "registry",
             port = 8080,
             resources = {"limits": {"cpu": "1000m", "memory": "256Mi"}},
-            gcp = {"projectId": "senku-prod", "projectNumber": "874944788122", "region": "europe-west3"},
+            environment = {"gcp": {"projectId": "senku-prod", "projectNumber": "874944788122", "region": "europe-west3"}},
         )
 
     Args:
@@ -121,14 +147,16 @@ def bifrost_service(
         image_push: Bazel label pointing to an image_push target from @rules_img.
             Mutually exclusive with image.
         port: Container port number.
-        gcp: GCP configuration dict.
+        environment: Environment dict with "gcp" and optional "kubernetes" keys.
+            Mutually exclusive with environment_file.
+        environment_file: Bazel label pointing to an Environment YAML or JSON file.
+            Mutually exclusive with environment.
         resources: Resource requirements dict.
         args: Optional list of container arguments.
         service_account_name: Optional GSA email.
         secret_files: Optional list of secret file dicts.
         probes: Optional probe paths dict.
         autoscaling: Optional autoscaling dict.
-        kubernetes: Optional Kubernetes config dict.
         checked_in: Optional dict mapping render targets to checked-in output paths.
         targets: List of render targets. Defaults to ["cloudrun", "k8s", "terraform"].
         visibility: Bazel visibility.
@@ -136,8 +164,9 @@ def bifrost_service(
     _bifrost_workload(
         name = name,
         kind = "Service",
-        gcp = gcp,
         resources = resources,
+        environment = environment,
+        environment_file = environment_file,
         image = image,
         image_push = image_push,
         checked_in = checked_in,
@@ -149,21 +178,20 @@ def bifrost_service(
         secret_files = secret_files,
         probes = probes,
         autoscaling = autoscaling,
-        kubernetes = kubernetes,
     )
 
 def bifrost_cronjob(
         name,
         schedule,
-        gcp,
         resources,
+        environment = None,
+        environment_file = None,
         image = None,
         image_push = None,
         args = None,
         service_account_name = None,
         secret_files = None,
         job = None,
-        kubernetes = None,
         checked_in = None,
         targets = None,
         visibility = None):
@@ -175,8 +203,7 @@ def bifrost_cronjob(
             image = "data-export",
             schedule = {"cron": "0 12 * * *", "timeZone": "Europe/Madrid"},
             resources = {"limits": {"cpu": "1000m", "memory": "512Mi"}},
-            gcp = {"projectId": "senku-prod", "projectNumber": "874944788122", "region": "europe-west1"},
-            kubernetes = {"namespace": "jobs"},
+            environment = {"gcp": {"projectId": "senku-prod", "projectNumber": "874944788122", "region": "europe-west1"}},
         )
 
     Args:
@@ -185,13 +212,15 @@ def bifrost_cronjob(
         image_push: Bazel label pointing to an image_push target from @rules_img.
             Mutually exclusive with image.
         schedule: Schedule dict with "cron" (required) and optional "timeZone".
-        gcp: GCP configuration dict.
+        environment: Environment dict with "gcp" and optional "kubernetes" keys.
+            Mutually exclusive with environment_file.
+        environment_file: Bazel label pointing to an Environment YAML or JSON file.
+            Mutually exclusive with environment.
         resources: Resource requirements dict.
         args: Optional list of container arguments.
         service_account_name: Optional GSA email.
         secret_files: Optional list of secret file dicts.
         job: Optional job settings dict (parallelism, completions, maxRetries, timeoutSeconds).
-        kubernetes: Optional Kubernetes config dict.
         checked_in: Optional dict mapping render targets to checked-in output paths.
         targets: List of render targets. Defaults to ["cloudrun", "k8s", "terraform"].
         visibility: Bazel visibility.
@@ -199,8 +228,9 @@ def bifrost_cronjob(
     _bifrost_workload(
         name = name,
         kind = "CronJob",
-        gcp = gcp,
         resources = resources,
+        environment = environment,
+        environment_file = environment_file,
         image = image,
         image_push = image_push,
         checked_in = checked_in,
@@ -211,5 +241,4 @@ def bifrost_cronjob(
         service_account_name = service_account_name,
         secret_files = secret_files,
         job = job,
-        kubernetes = kubernetes,
     )

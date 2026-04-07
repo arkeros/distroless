@@ -1,6 +1,14 @@
 load("@kustomize.bzl", "kustomize")
 load("//devtools/bifrost:bifrost.bzl", "bifrost_service")
 
+PROD = {
+    "gcp": {
+        "projectId": "senku-prod",
+        "projectNumber": "874944788122",
+        "region": "europe-west3",
+    },
+}
+
 bifrost_service(
     name = "registry",
     args = [
@@ -14,13 +22,7 @@ bifrost_service(
     checked_in = {
         "terraform": "terraform/registry.generated.tf",
     },
-    environment = {
-        "gcp": {
-            "projectId": "senku-prod",
-            "projectNumber": "874944788122",
-            "region": "europe-west3",
-        },
-    },
+    environment = PROD,
     image_push = "//oci/cmd/registry:image_push",
     probes = {
         "startupPath": "/v2/",

@@ -440,6 +440,30 @@ func TestCatalog(t *testing.T) {
 	}
 }
 
+func TestNonExistentRepoForwardsUpstreamStatus(t *testing.T) {
+	upstream := ocitest.NewServerDenyAuth(t, map[string]ocitest.Response{
+		"/v2/arkeros/senku/nginx/manifests/latest": {
+			Headers: map[string]string{"Content-Type": "application/vnd.oci.image.index.v1+json"},
+			Body:    `{"schemaVersion":2}`,
+		},
+	})
+	defer upstream.Close()
+
+	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/v2/apache/manifests/latest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusForbidden)
+	}
+}
+
 func TestQueryStringForwarded(t *testing.T) {
 	upstream := ocitest.NewServer(t, map[string]ocitest.Response{
 		"/v2/arkeros/senku/redis/tags/list?n=10&last=v1.0.0": {

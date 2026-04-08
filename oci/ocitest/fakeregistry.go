@@ -24,6 +24,9 @@ type Response struct {
 type FakeRegistry struct {
 	t        *testing.T
 	contents map[string]Response // path → response
+	// DenyAuth, when true, makes the token endpoint return 403 for
+	// scopes that don't match any entry in contents.
+	DenyAuth bool
 }
 
 func (f *FakeRegistry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +34,12 @@ func (f *FakeRegistry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// This ensures the proxy follows the OCI auth spec rather than hardcoding a token URL.
 	if r.URL.Path == "/auth/token" {
 		scope := r.URL.Query().Get("scope")
+		if f.DenyAuth && !f.scopeMatchesContent(scope) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(w, `{"errors":[{"code":"DENIED","message":"requested access to the resource is denied"}]}`)
+			return
+		}
 		token := "token-" + scope
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"token": token})
@@ -96,7 +105,31 @@ func (f *FakeRegistry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, `{"errors":[{"code":"NAME_UNKNOWN"}]}`)
 }
 
+// scopeMatchesContent returns true if any content path matches the repo in the scope.
+// Scope format: "repository:<repo>:pull"
+func (f *FakeRegistry) scopeMatchesContent(scope string) bool {
+	// Extract repo from scope like "repository:arkeros/senku/redis:pull"
+	parts := strings.SplitN(scope, ":", 3)
+	if len(parts) < 2 {
+		return false
+	}
+	repo := parts[1]
+	prefix := "/v2/" + repo + "/"
+	for path := range f.contents {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // NewServer creates an httptest.Server running a FakeRegistry with the given canned responses.
 func NewServer(t *testing.T, contents map[string]Response) *httptest.Server {
 	return httptest.NewServer(&FakeRegistry{t: t, contents: contents})
+}
+
+// NewServerDenyAuth creates an httptest.Server that denies auth tokens for
+// repos not represented in contents, mimicking GHCR behavior for non-existent repos.
+func NewServerDenyAuth(t *testing.T, contents map[string]Response) *httptest.Server {
+	return httptest.NewServer(&FakeRegistry{t: t, contents: contents, DenyAuth: true})
 }

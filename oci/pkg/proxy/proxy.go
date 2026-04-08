@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -184,6 +185,12 @@ func (p *Proxy) proxyRequest(w http.ResponseWriter, r *http.Request) {
 	repo := ExtractRepo(r.URL.Path)
 	t, err := p.getTransport(repo)
 	if err != nil {
+		var te *transport.Error
+		if errors.As(err, &te) && te.StatusCode >= 400 && te.StatusCode < 500 {
+			slog.Warn("transport setup rejected", "repo", repo, "status", te.StatusCode)
+			http.Error(w, http.StatusText(te.StatusCode), te.StatusCode)
+			return
+		}
 		slog.Error("transport setup failed", "repo", repo, "error", err)
 		http.Error(w, "transport setup failed", http.StatusBadGateway)
 		return

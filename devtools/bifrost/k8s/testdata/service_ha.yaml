@@ -1,0 +1,15 @@
+apiVersion: bifrost.apotema.cloud/v1alpha1
+kind: Service
+metadata:
+  name: api-gateway
+spec:
+  image: api-gateway
+  resources:
+    limits:
+      cpu: 1000m
+  probes:
+    startupPath: /healthz
+    livenessPath: /healthz
+  autoscaling:
+    min: 2
+    max: 5

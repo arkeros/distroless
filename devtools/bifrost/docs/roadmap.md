@@ -2,8 +2,8 @@
 
 ## Phase 1: Core completeness
 
-- [ ] Environment variables (`env` and `envFrom` fields in spec)
-- [ ] PodDisruptionBudget for K8s services (derived from `minReplicas`)
+- [x] Environment variables (`env` and `envFrom` fields in spec)
+- [x] PodDisruptionBudget for K8s services (derived from `minReplicas`)
 - [ ] One-shot Job workload type (migrations, backfills)
 
 ## Phase 3: Networking and routing

@@ -16,6 +16,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -187,6 +188,31 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 		return nil, err
 	}
 
+	var pdbYAML []byte
+	if spec.Spec.Autoscaling.MinReplicas >= 2 {
+		minAvailable := intstr.FromInt32(spec.Spec.Autoscaling.MinReplicas - 1)
+		pdb := policyv1.PodDisruptionBudget{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "policy/v1",
+				Kind:       "PodDisruptionBudget",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      spec.Metadata.Name,
+				Namespace: namespace,
+			},
+			Spec: policyv1.PodDisruptionBudgetSpec{
+				MinAvailable: &minAvailable,
+				Selector: &metav1.LabelSelector{
+					MatchLabels: labels,
+				},
+			},
+		}
+		pdbYAML, err = internal.MarshalManifest(pdb)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	var out bytes.Buffer
 	out.Write(serviceAccountYAML)
 	out.WriteString("---\n")
@@ -197,6 +223,10 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 	out.WriteString("---\n")
 	out.Write(vpaYAML)
 	out.WriteString("---\n")
+	if len(pdbYAML) > 0 {
+		out.Write(pdbYAML)
+		out.WriteString("---\n")
+	}
 	out.Write(serviceYAML)
 	return out.Bytes(), nil
 }

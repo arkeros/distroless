@@ -209,8 +209,8 @@ jobs:
         if: github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
 
-  deploy:
-    name: Deploy ${{ matrix.service }}
+  cloud_run:
+    name: Deploy ${{ matrix.service }} to Cloud Run
     if: github.event_name == 'push'
     needs: [build, terraform, attest]
     runs-on: ubuntu-latest
@@ -219,10 +219,10 @@ jobs:
       id-token: write
     strategy:
       matrix:
-        service: [registry]
-        include:
-          - service: registry
-            target: //oci/deploy:k8s
+        service: []
+        # include:
+        #   - service: registry
+        #     target: //oci/deploy:k8s
       fail-fast: false
     steps:
       - name: Checkout

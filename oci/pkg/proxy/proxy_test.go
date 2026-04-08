@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/arkeros/senku/oci/pkg/proxy"
+	"github.com/arkeros/senku/oci/ocitest"
 )
 
 func TestV2Base(t *testing.T) {
@@ -130,108 +131,19 @@ func TestNonV2PathReturns404(t *testing.T) {
 	}
 }
 
-// fakeRegistry implements a minimal OCI registry with standard auth challenge flow.
-// On /v2/ it returns a 401 with Www-Authenticate pointing to /auth/token.
-// On /auth/token it issues bearer tokens scoped per repository.
-// On /v2/<repo>/... it validates the bearer token and serves content.
-type fakeRegistry struct {
-	t        *testing.T
-	contents map[string]fakeResponse // path → response
-}
-
-type fakeResponse struct {
-	status  int
-	headers map[string]string
-	body    string
-}
-
-func (f *fakeRegistry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Token endpoint at a non-standard path — only discoverable via Www-Authenticate challenge.
-	// This ensures the proxy follows the OCI auth spec rather than hardcoding a token URL.
-	if r.URL.Path == "/auth/token" {
-		scope := r.URL.Query().Get("scope")
-		token := "token-" + scope
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"token": token})
-		return
-	}
-
-	// /v2/ ping — return 401 with challenge pointing to our token endpoint
-	if r.URL.Path == "/v2/" || r.URL.Path == "/v2" {
-		host := r.Host
-		w.Header().Set("Www-Authenticate", fmt.Sprintf(`Bearer realm="http://%s/auth/token",service="%s"`, host, host))
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	// Registry API — require valid bearer token
-	auth := r.Header.Get("Authorization")
-	if !strings.HasPrefix(auth, "Bearer ") {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	token := strings.TrimPrefix(auth, "Bearer ")
-	if !strings.HasPrefix(token, "token-") {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	scope := strings.TrimPrefix(token, "token-")
-
-	// Enforce that the token scope matches the requested repository.
-	if strings.HasPrefix(r.URL.Path, "/v2/") {
-		rest := strings.TrimPrefix(r.URL.Path, "/v2/")
-		parts := strings.Split(rest, "/")
-		if len(parts) >= 3 {
-			repo := strings.Join(parts[:len(parts)-2], "/")
-			if repo != "" {
-				expectedScope := "repository:" + repo + ":pull"
-				if scope != expectedScope {
-					w.WriteHeader(http.StatusUnauthorized)
-					return
-				}
-			}
-		}
-	}
-
-	key := r.URL.Path
-	if r.URL.RawQuery != "" {
-		key += "?" + r.URL.RawQuery
-	}
-	if resp, ok := f.contents[key]; ok {
-		for k, v := range resp.headers {
-			w.Header().Set(k, v)
-		}
-		status := resp.status
-		if status == 0 {
-			status = http.StatusOK
-		}
-		w.WriteHeader(status)
-		fmt.Fprint(w, resp.body)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprint(w, `{"errors":[{"code":"NAME_UNKNOWN"}]}`)
-}
-
-func newFakeRegistry(t *testing.T, contents map[string]fakeResponse) *httptest.Server {
-	return httptest.NewServer(&fakeRegistry{t: t, contents: contents})
-}
-
 func newTestProxy(upstream *httptest.Server) *httptest.Server {
 	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
 	return httptest.NewServer(p)
 }
 
 func TestProxyManifest(t *testing.T) {
-	upstream := newFakeRegistry(t, map[string]fakeResponse{
+	upstream := ocitest.NewServer(t, map[string]ocitest.Response{
 		"/v2/arkeros/senku/redis/manifests/latest": {
-			headers: map[string]string{
+			Headers: map[string]string{
 				"Content-Type":          "application/vnd.oci.image.index.v1+json",
 				"Docker-Content-Digest": "sha256:deadbeef",
 			},
-			body: `{"schemaVersion":2}`,
+			Body: `{"schemaVersion":2}`,
 		},
 	})
 	defer upstream.Close()
@@ -261,12 +173,12 @@ func TestProxyManifest(t *testing.T) {
 }
 
 func TestProxyBlobDirectResponseReturns502(t *testing.T) {
-	upstream := newFakeRegistry(t, map[string]fakeResponse{
+	upstream := ocitest.NewServer(t, map[string]ocitest.Response{
 		"/v2/arkeros/senku/redis/blobs/sha256:abc123": {
-			headers: map[string]string{
+			Headers: map[string]string{
 				"Content-Type": "application/octet-stream",
 			},
-			body: "blob-content",
+			Body: "blob-content",
 		},
 	})
 	defer upstream.Close()
@@ -286,10 +198,10 @@ func TestProxyBlobDirectResponseReturns502(t *testing.T) {
 }
 
 func TestProxyBlobRedirect(t *testing.T) {
-	upstream := newFakeRegistry(t, map[string]fakeResponse{
+	upstream := ocitest.NewServer(t, map[string]ocitest.Response{
 		"/v2/arkeros/senku/redis/blobs/sha256:abc123": {
-			status: http.StatusTemporaryRedirect,
-			headers: map[string]string{
+			Status: http.StatusTemporaryRedirect,
+			Headers: map[string]string{
 				"Location": "https://storage.example.com/blob/sha256:abc123",
 			},
 		},
@@ -319,7 +231,7 @@ func TestProxyBlobRedirect(t *testing.T) {
 }
 
 func TestUpstream404(t *testing.T) {
-	upstream := newFakeRegistry(t, nil)
+	upstream := ocitest.NewServer(t, nil)
 	defer upstream.Close()
 
 	srv := newTestProxy(upstream)
@@ -337,12 +249,12 @@ func TestUpstream404(t *testing.T) {
 }
 
 func TestTagsList(t *testing.T) {
-	upstream := newFakeRegistry(t, map[string]fakeResponse{
+	upstream := ocitest.NewServer(t, map[string]ocitest.Response{
 		"/v2/arkeros/senku/redis/tags/list": {
-			headers: map[string]string{
+			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},
-			body: `{"name":"arkeros/senku/redis","tags":["latest","v1.0.0"]}`,
+			Body: `{"name":"arkeros/senku/redis","tags":["latest","v1.0.0"]}`,
 		},
 	})
 	defer upstream.Close()
@@ -376,12 +288,12 @@ func TestTagsList(t *testing.T) {
 }
 
 func TestTagsListMultiSegmentRepo(t *testing.T) {
-	upstream := newFakeRegistry(t, map[string]fakeResponse{
+	upstream := ocitest.NewServer(t, map[string]ocitest.Response{
 		"/v2/arkeros/senku/go/debian13/tags/list": {
-			headers: map[string]string{
+			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},
-			body: `{"name":"arkeros/senku/go/debian13","tags":["v1.0.0"]}`,
+			Body: `{"name":"arkeros/senku/go/debian13","tags":["v1.0.0"]}`,
 		},
 	})
 	defer upstream.Close()
@@ -412,14 +324,14 @@ func TestTagsListMultiSegmentRepo(t *testing.T) {
 }
 
 func TestPerRepoTokenScoping(t *testing.T) {
-	upstream := newFakeRegistry(t, map[string]fakeResponse{
+	upstream := ocitest.NewServer(t, map[string]ocitest.Response{
 		"/v2/arkeros/senku/redis/manifests/latest": {
-			headers: map[string]string{"Content-Type": "application/vnd.oci.image.index.v1+json"},
-			body:    `{"schemaVersion":2}`,
+			Headers: map[string]string{"Content-Type": "application/vnd.oci.image.index.v1+json"},
+			Body:   `{"schemaVersion":2}`,
 		},
 		"/v2/arkeros/senku/nginx/manifests/latest": {
-			headers: map[string]string{"Content-Type": "application/vnd.oci.image.index.v1+json"},
-			body:    `{"schemaVersion":2}`,
+			Headers: map[string]string{"Content-Type": "application/vnd.oci.image.index.v1+json"},
+			Body:   `{"schemaVersion":2}`,
 		},
 	})
 	defer upstream.Close()
@@ -450,16 +362,16 @@ func TestPerRepoTokenScoping(t *testing.T) {
 
 func TestTransportCacheIsBounded(t *testing.T) {
 	// Generate content for many unique repos
-	contents := make(map[string]fakeResponse)
+	contents := make(map[string]ocitest.Response)
 	for i := range 200 {
 		path := fmt.Sprintf("/v2/arkeros/senku/repo%d/manifests/latest", i)
-		contents[path] = fakeResponse{
-			headers: map[string]string{"Content-Type": "application/vnd.oci.image.index.v1+json"},
-			body:    `{"schemaVersion":2}`,
+		contents[path] = ocitest.Response{
+			Headers: map[string]string{"Content-Type": "application/vnd.oci.image.index.v1+json"},
+			Body:   `{"schemaVersion":2}`,
 		}
 	}
 
-	upstream := newFakeRegistry(t, contents)
+	upstream := ocitest.NewServer(t, contents)
 	defer upstream.Close()
 
 	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
@@ -529,12 +441,12 @@ func TestCatalog(t *testing.T) {
 }
 
 func TestQueryStringForwarded(t *testing.T) {
-	upstream := newFakeRegistry(t, map[string]fakeResponse{
+	upstream := ocitest.NewServer(t, map[string]ocitest.Response{
 		"/v2/arkeros/senku/redis/tags/list?n=10&last=v1.0.0": {
-			headers: map[string]string{
+			Headers: map[string]string{
 				"Content-Type": "application/json",
 			},
-			body: `{"name":"arkeros/senku/redis","tags":["v1.0.1","v1.0.2"]}`,
+			Body: `{"name":"arkeros/senku/redis","tags":["v1.0.1","v1.0.2"]}`,
 		},
 	})
 	defer upstream.Close()

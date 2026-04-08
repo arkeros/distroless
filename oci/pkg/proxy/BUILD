@@ -16,5 +16,8 @@ go_library(
 go_test(
     name = "proxy_test",
     srcs = ["proxy_test.go"],
-    deps = [":proxy"],
+    deps = [
+        ":proxy",
+        "//oci/ocitest",
+    ],
 )

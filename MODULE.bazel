@@ -3,7 +3,7 @@ bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "bazel_lib", version = "3.2.2")
 
 bazel_dep(name = "bazelrc-preset.bzl", version = "1.9.2", dev_dependency = True)
-bazel_dep(name = "gazelle", version = "0.49.0", dev_dependency = True)
+bazel_dep(name = "gazelle", version = "0.50.0", dev_dependency = True)
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0", dev_dependency = True)
 
 bazel_dep(name = "jq.bzl", version = "0.6.1")

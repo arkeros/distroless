@@ -21,6 +21,7 @@ type Proxy struct {
 	upstream         string
 	repositoryPrefix string
 	scheme           string
+	repos            []string
 
 	transports *lru.Cache[string, http.RoundTripper]
 }
@@ -32,6 +33,13 @@ type Option func(*Proxy)
 func Insecure() Option {
 	return func(p *Proxy) {
 		p.scheme = "http"
+	}
+}
+
+// WithRepos configures the list of repositories returned by _catalog.
+func WithRepos(repos []string) Option {
+	return func(p *Proxy) {
+		p.repos = repos
 	}
 }
 
@@ -61,12 +69,29 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/v2/_catalog" {
+		p.serveCatalog(w)
+		return
+	}
+
 	if !strings.HasPrefix(r.URL.Path, "/v2/") {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	p.proxyRequest(w, r)
+}
+
+func (p *Proxy) serveCatalog(w http.ResponseWriter) {
+	repos := p.repos
+	if repos == nil {
+		repos = []string{}
+	}
+	resp := struct {
+		Repositories []string `json:"repositories"`
+	}{Repositories: repos}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 func RewritePath(path, repositoryPrefix string) string {

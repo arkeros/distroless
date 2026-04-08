@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/arkeros/senku/base/flag/stringslice"
 	"github.com/arkeros/senku/oci/pkg/proxy"
 )
 
@@ -18,12 +19,14 @@ var (
 	port             *string
 	upstream         *string
 	repositoryPrefix *string
+	repos            stringslice.Value
 )
 
 func init() {
 	port = flag.String("port", "8080", "port to listen on")
 	upstream = flag.String("upstream", "ghcr.io", "upstream registry host")
 	repositoryPrefix = flag.String("repository-prefix", "arkeros/senku", "repository prefix to prepend to image names")
+	flag.Var(&repos, "repo", "repository to expose (may be repeated)")
 }
 
 func main() {
@@ -32,7 +35,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	handler := proxy.New(*upstream, *repositoryPrefix)
+	handler := proxy.New(*upstream, *repositoryPrefix, proxy.WithRepos(repos))
 	server := &http.Server{
 		Handler:           handler,
 		ReadTimeout:       10 * time.Second,

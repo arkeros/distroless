@@ -14,7 +14,10 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/arkeros/senku/oci/cmd/registry",
     visibility = ["//visibility:private"],
-    deps = ["//oci/pkg/proxy"],
+    deps = [
+        "//base/flag/stringslice",
+        "//oci/pkg/proxy",
+    ],
 )
 
 go_binary(

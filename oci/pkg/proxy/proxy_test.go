@@ -484,6 +484,50 @@ func TestTransportCacheIsBounded(t *testing.T) {
 	}
 }
 
+func TestCatalogEmpty(t *testing.T) {
+	p := proxy.New("ghcr.io", "arkeros/senku")
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/v2/_catalog")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	want := `{"repositories":[]}`
+	got := strings.TrimSpace(string(body))
+	if got != want {
+		t.Errorf("body = %s, want %s", got, want)
+	}
+}
+
+func TestCatalog(t *testing.T) {
+	p := proxy.New("ghcr.io", "arkeros/senku", proxy.WithRepos([]string{"redis", "nginx"}))
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/v2/_catalog")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var result struct {
+		Repositories []string `json:"repositories"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(result.Repositories) != 2 || result.Repositories[0] != "redis" || result.Repositories[1] != "nginx" {
+		t.Errorf("repositories = %v, want [redis nginx]", result.Repositories)
+	}
+}
+
 func TestQueryStringForwarded(t *testing.T) {
 	upstream := newFakeRegistry(t, map[string]fakeResponse{
 		"/v2/arkeros/senku/redis/tags/list?n=10&last=v1.0.0": {

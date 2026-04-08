@@ -209,54 +209,53 @@ jobs:
         if: github.event_name == 'push'
         run: terraform apply -auto-approve tfplan
 
-  cloud_run:
-    name: Deploy ${{ matrix.service }} to Cloud Run
-    if: github.event_name == 'push'
-    needs: [build, terraform, attest]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    strategy:
-      matrix:
-        service: []
-        # include:
-        #   - service: registry
-        #     target: //oci/deploy:k8s
-      fail-fast: false
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: v1.27.0
-          bazelisk-cache: true
-          repository-cache: true
-          external-cache: true
-          cache-save: false
-          bazelrc: |
-            common --config=ci
-            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
-            build --stamp
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
-          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
-
-      - name: Render manifests
-        id: render
-        run: |
-          set -euxo pipefail
-          bazel build --remote_download_outputs=all ${{ matrix.target }}
-          echo "path=$(realpath $(bazel cquery --output=files ${{ matrix.target }}))" >> "$GITHUB_OUTPUT"
-
-      - name: Deploy to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v3
-        with:
-          metadata: ${{ steps.render.outputs.path }}
+  # cloud_run:
+  #   name: Deploy ${{ matrix.service }} to Cloud Run
+  #   if: github.event_name == 'push'
+  #   needs: [build, terraform, attest]
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     id-token: write
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - service: registry
+  #           target: //oci/deploy:k8s
+  #     fail-fast: false
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v6
+  #       with:
+  #         fetch-depth: 0
+  #
+  #     - name: Set up Bazel
+  #       uses: bazel-contrib/setup-bazel@0.19.0
+  #       with:
+  #         bazelisk-version: v1.27.0
+  #         bazelisk-cache: true
+  #         repository-cache: true
+  #         external-cache: true
+  #         cache-save: false
+  #         bazelrc: |
+  #           common --config=ci
+  #           common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+  #           build --stamp
+  #
+  #     - name: Authenticate to Google Cloud
+  #       uses: google-github-actions/auth@v3
+  #       with:
+  #         workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
+  #         service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+  #
+  #     - name: Render manifests
+  #       id: render
+  #       run: |
+  #         set -euxo pipefail
+  #         bazel build --remote_download_outputs=all ${{ matrix.target }}
+  #         echo "path=$(realpath $(bazel cquery --output=files ${{ matrix.target }}))" >> "$GITHUB_OUTPUT"
+  #
+  #     - name: Deploy to Cloud Run
+  #       uses: google-github-actions/deploy-cloudrun@v3
+  #       with:
+  #         metadata: ${{ steps.render.outputs.path }}

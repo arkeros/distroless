@@ -2,7 +2,7 @@ load("@helm.bzl", "helm_toolchain")
 
 helm_toolchain(
     name = "compiled_helm_toolchain",
-    helm = "@sh_helm_helm_v3//cmd/helm",
+    helm = "@sh_helm_helm_v4//cmd/helm",
     visibility = ["//visibility:public"],
 )
 

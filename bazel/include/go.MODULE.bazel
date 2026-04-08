@@ -49,5 +49,5 @@ use_repo(
     "io_k8s_apimachinery",
     "io_k8s_sigs_kustomize_kustomize_v5",
     "io_k8s_sigs_yaml",
-    "sh_helm_helm_v3",
+    "sh_helm_helm_v4",
 )

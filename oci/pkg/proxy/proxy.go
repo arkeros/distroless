@@ -159,6 +159,7 @@ func (p *Proxy) proxyRequest(w http.ResponseWriter, r *http.Request) {
 	repo := ExtractRepo(r.URL.Path)
 	t, err := p.getTransport(repo)
 	if err != nil {
+		slog.Error("transport setup failed", "repo", repo, "error", err)
 		http.Error(w, "transport setup failed", http.StatusBadGateway)
 		return
 	}

@@ -1,6 +1,6 @@
 bazel_dep(name = "rules_python", version = "1.9.0")
 bazel_dep(name = "rules_uv", version = "0.89.2")
-bazel_dep(name = "aspect_rules_py", version = "1.10.0")
+bazel_dep(name = "aspect_rules_py", version = "1.11.2")
 
 bazel_dep(name = "rules_python_gazelle_plugin", version = "1.9.0", dev_dependency = True)
 

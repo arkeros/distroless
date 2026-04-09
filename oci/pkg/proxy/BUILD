@@ -19,5 +19,6 @@ go_test(
     deps = [
         ":proxy",
         "//oci/ocitest",
+        "@com_github_google_go_containerregistry//pkg/v1:pkg",
     ],
 )

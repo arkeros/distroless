@@ -4,6 +4,7 @@ package ocitest
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -46,9 +47,12 @@ func (f *FakeRegistry) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// /v2/ ping — return 401 with challenge pointing to our token endpoint
+	// /v2/ ping — return 401 with challenge pointing to our token endpoint.
+	// Use "localhost" instead of the raw IP to avoid go-containerregistry's
+	// SSRF protection rejecting loopback IP literals in realm URLs.
 	if r.URL.Path == "/v2/" || r.URL.Path == "/v2" {
-		host := r.Host
+		_, port, _ := net.SplitHostPort(r.Host)
+		host := net.JoinHostPort("localhost", port)
 		w.Header().Set("Www-Authenticate", fmt.Sprintf(`Bearer realm="http://%s/auth/token",service="%s"`, host, host))
 		w.WriteHeader(http.StatusUnauthorized)
 		return

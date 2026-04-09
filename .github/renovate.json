@@ -85,6 +85,11 @@
       }
     },
     {
+      "matchDepNames": ["go"],
+      "matchManagers": ["gomod"],
+      "rangeStrategy": "bump"
+    },
+    {
       "matchManagers": [
         "gomod"
       ],

@@ -121,33 +121,33 @@
     "binaries": [
       {
         "kind": "archive",
-        "url": "https://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_linux_arm64.zip",
+        "url": "https://releases.hashicorp.com/terraform/1.14.8/terraform_1.14.8_linux_arm64.zip",
         "file": "terraform",
-        "sha256": "f8a0347dc5e68e6d60a9fa2db361762e7943ed084a773f28a981d988ceb6fdc9",
+        "sha256": "c953171cde6b25ca0448c3b29a90d2f46c0310121e18742ec8f89631768e770c",
         "os": "linux",
         "cpu": "arm64"
       },
       {
         "kind": "archive",
-        "url": "https://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_linux_amd64.zip",
+        "url": "https://releases.hashicorp.com/terraform/1.14.8/terraform_1.14.8_linux_amd64.zip",
         "file": "terraform",
-        "sha256": "1eaed12ca41fcfe094da3d76a7e9aa0639ad3409c43be0103ee9f5a1ff4b7437",
+        "sha256": "56a5d12f47cbc1c6bedb8f5426ae7d5df984d1929572c24b56f4c82e9f9bf709",
         "os": "linux",
         "cpu": "x86_64"
       },
       {
         "kind": "archive",
-        "url": "https://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_darwin_arm64.zip",
+        "url": "https://releases.hashicorp.com/terraform/1.14.8/terraform_1.14.8_darwin_arm64.zip",
         "file": "terraform",
-        "sha256": "1ca02f336ff4f993d6441806d38a0bcc0bbca0e3c877b84c9c2dc80cfcd0dc8b",
+        "sha256": "5593670a2d42323847bfb216db17c73a44df201a62f7587928bae16adeabba23",
         "os": "macos",
         "cpu": "arm64"
       },
       {
         "kind": "archive",
-        "url": "https://releases.hashicorp.com/terraform/1.12.2/terraform_1.12.2_darwin_amd64.zip",
+        "url": "https://releases.hashicorp.com/terraform/1.14.8/terraform_1.14.8_darwin_amd64.zip",
         "file": "terraform",
-        "sha256": "c65aa74bed1dbb1c48ba4bbab11f08e7f7eeb54a422146561490275340468f19",
+        "sha256": "26dd7593d22e9d99ec09380f0869718f649be7b7f954d888611335e6a84961f8",
         "os": "macos",
         "cpu": "x86_64"
       }

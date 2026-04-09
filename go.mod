@@ -1,6 +1,6 @@
 module github.com/arkeros/senku
 
-go 1.26.1
+go 1.26.2
 
 require (
 	github.com/anchore/grype v0.110.0

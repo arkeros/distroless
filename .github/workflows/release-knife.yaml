@@ -1,0 +1,50 @@
+name: Release knife
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and release knife
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Set up Bazelisk
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-cache: true
+      # NOTE: When x_defs are added to the knife go_binary for --version
+      # stamping, add --stamp here and compare unstamped SHAs instead, or
+      # drop change detection entirely and release on every push.
+      - name: Build
+        run: bazel build //bazel/cmd/knife
+      - name: Check if binary changed
+        id: check
+        run: |
+          NEW_SHA=$(sha256sum bazel-bin/bazel/cmd/knife/knife_/knife | cut -d' ' -f1)
+
+          LATEST_TAG=$(gh release list --repo "${{ github.repository }}" --json tagName --jq '[.[] | select(.tagName | startswith("knife/"))][0].tagName // empty')
+          OLD_SHA=$([ -n "$LATEST_TAG" ] \
+            && gh release download "$LATEST_TAG" --repo "${{ github.repository }}" --pattern knife --dir /tmp/knife-latest \
+            && sha256sum /tmp/knife-latest/knife | cut -d' ' -f1 \
+            || echo "none")
+
+          [ "$NEW_SHA" != "$OLD_SHA" ] && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish release
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          VERSION=$(./bazel/workspace_status.sh | grep STABLE_MONOREPO_SHORT_VERSION | cut -d' ' -f2)
+          TAG="knife/v${VERSION}"
+          cp bazel-bin/bazel/cmd/knife/knife_/knife knife
+          gh release create "$TAG" knife --title "knife ${VERSION}" --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

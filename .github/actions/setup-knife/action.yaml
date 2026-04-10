@@ -1,0 +1,37 @@
+name: Setup knife
+description: Download and install the knife CLI tool
+inputs:
+  version:
+    description: 'knife version to install (e.g. v2026.15.62). Defaults to latest. Ignored if target is set.'
+    required: false
+    default: ''
+  target:
+    description: 'Bazel target to build from source (e.g. //bazel/cmd/knife). Requires bazel in PATH.'
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Install knife
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.target }}" ]; then
+          echo "Building knife from source: ${{ inputs.target }}"
+          bazel build --remote_download_outputs=toplevel ${{ inputs.target }}
+          KNIFE=$(bazel cquery --output=files ${{ inputs.target }})
+          install "$KNIFE" /usr/local/bin/knife
+        else
+          PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(gh release list --repo arkeros/senku --json tagName --jq '[.[] | select(.tagName | startswith("knife/"))][0].tagName // empty')
+            VERSION="${VERSION#knife/}"
+          fi
+          echo "Installing knife ${VERSION} for ${PLATFORM}"
+          gh release download "knife/${VERSION}" --repo arkeros/senku --pattern "knife-${PLATFORM}" --dir /tmp/knife
+          install /tmp/knife/knife-"${PLATFORM}" /usr/local/bin/knife
+          rm -rf /tmp/knife
+        fi
+        echo "knife installed successfully"
+      env:
+        GH_TOKEN: ${{ github.token }}

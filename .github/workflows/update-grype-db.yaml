@@ -2,97 +2,14 @@ name: Update Grype Database
 on:
   workflow_dispatch: # Allow manual trigger
   schedule:
-    - cron: '0 6 * * *' # Run every day at 6AM UTC
+    - cron: "0 6 * * *" # Run every day at 6AM UTC
 jobs:
-  update-grype-db:
-    name: Update Grype vulnerability database
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # to push the updates
-      pull-requests: write # to open Pull requests
-    outputs:
-      pr-number: ${{ steps.create-pr.outputs.pull-request-number }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Set up Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-cache: true
-      - name: Get current database info
-        id: current-db
-        run: |
-          LOCKFILE_PATH='.moduleExtensions["@@grype.bzl+//grype:extensions.bzl%grype_database"].general.generatedRepoSpecs.grype_database.attributes'
-          CURRENT_URL=$(jq -r "${LOCKFILE_PATH}.url" MODULE.bazel.lock)
-          CURRENT_SHA256=$(jq -r "${LOCKFILE_PATH}.sha256" MODULE.bazel.lock)
-
-          echo "current_url=${CURRENT_URL}" >> $GITHUB_OUTPUT
-          echo "current_sha256=${CURRENT_SHA256}" >> $GITHUB_OUTPUT
-      - name: Update Grype database using knife
-        id: update-db
-        run: |
-          bazel run //bazel/cmd/knife -- grype update
-
-          LOCKFILE_PATH='.moduleExtensions["@@grype.bzl+//grype:extensions.bzl%grype_database"].general.generatedRepoSpecs.grype_database.attributes'
-          NEW_URL=$(jq -r "${LOCKFILE_PATH}.url" MODULE.bazel.lock)
-          NEW_SHA256=$(jq -r "${LOCKFILE_PATH}.sha256" MODULE.bazel.lock)
-
-          # Extract build time from URL filename
-          BUILD_TIME=$(echo "$NEW_URL" | grep -oP '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z' || echo "unknown")
-
-          echo "new_url=${NEW_URL}" >> $GITHUB_OUTPUT
-          echo "new_sha256=${NEW_SHA256}" >> $GITHUB_OUTPUT
-          echo "build_time=${BUILD_TIME}" >> $GITHUB_OUTPUT
-
-          # Check if update occurred
-          if [ "${{ steps.current-db.outputs.current_sha256 }}" != "${NEW_SHA256}" ]; then
-            echo "update_needed=true" >> $GITHUB_OUTPUT
-            echo "Database was updated to ${BUILD_TIME}"
-          else
-            echo "update_needed=false" >> $GITHUB_OUTPUT
-            echo "Database is already up to date"
-          fi
-      - name: Create Pull Request
-        if: steps.update-db.outputs.update_needed == 'true'
-        id: create-pr
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.RENOVATE_TOKEN }}
-          commit-message: |
-            chore: update Grype vulnerability database
-
-            Update Grype vulnerability database to version built at ${{ steps.update-db.outputs.build_time }}
-
-            - SHA256: ${{ steps.update-db.outputs.new_sha256 }}
-            - URL: ${{ steps.update-db.outputs.new_url }}
-          branch: update-grype-database
-          delete-branch: true
-          title: 'chore: update Grype vulnerability database'
-          body: |
-            ## Update Grype Vulnerability Database
-
-            This PR updates the Grype vulnerability database to the latest version.
-
-            ### Changes
-            - **Build Time**: ${{ steps.update-db.outputs.build_time }}
-            - **SHA256**: `${{ steps.update-db.outputs.new_sha256 }}`
-            - **URL**: ${{ steps.update-db.outputs.new_url }}
-
-            ### Previous Version
-            - **SHA256**: `${{ steps.current-db.outputs.current_sha256 }}`
-            - **URL**: ${{ steps.current-db.outputs.current_url }}
-
-            ---
-
-            This PR was automatically created by the [Update Grype Database](.github/workflows/update-grype-db.yaml) workflow.
-
-            **Note**: The Grype vulnerability database should be updated regularly (at least every 5 days) to ensure CVE tests pass.
-          labels: |
-            dependencies
-            automated
-          assignees: ${{ github.repository_owner }}
-      - name: Enable auto-merge
-        if: steps.update-db.outputs.update_needed == 'true' && steps.create-pr.outputs.pull-request-number != ''
-        run: gh pr merge --auto --squash "${{ steps.create-pr.outputs.pull-request-number }}"
-        env:
-          GH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+  update:
+    uses: arkeros/senku/.github/workflows/knife-update-grype-db.yaml@main
+    with:
+      knife-target: //bazel/cmd/knife
+      bazelrc: |
+        common --config=ci
+        common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+    secrets:
+      token: ${{ secrets.RENOVATE_TOKEN }}

@@ -1,0 +1,90 @@
+name: Reusable - Update Debian Packages
+on:
+  workflow_call:
+    inputs:
+      knife-version:
+        description: 'knife version to install (e.g. v2026.15.62). Defaults to latest. Ignored if knife-target is set.'
+        required: false
+        default: ''
+        type: string
+      knife-target:
+        description: 'Bazel target to build knife from source (e.g. //bazel/cmd/knife). Requires bazel in PATH.'
+        required: false
+        default: ''
+        type: string
+      bazelrc:
+        description: 'Additional bazelrc content passed to setup-bazel (e.g. remote cache config)'
+        required: false
+        default: ''
+        type: string
+      manifests:
+        description: 'Space-separated list of manifest file paths relative to repo root'
+        required: true
+        type: string
+    secrets:
+      token:
+        description: 'GitHub token for creating PRs and enabling auto-merge'
+        required: true
+
+jobs:
+  update-debian-packages:
+    name: Update Debian packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      pr-number: ${{ steps.create-pr.outputs.pull-request-number }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set up Bazelisk
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-cache: true
+          bazelrc: ${{ inputs.bazelrc }}
+      - name: Install knife
+        uses: arkeros/senku/.github/actions/setup-knife@main
+        with:
+          version: ${{ inputs.knife-version }}
+          target: ${{ inputs.knife-target }}
+      - name: Update and lock all manifests
+        id: update-packages
+        run: |
+          for manifest in ${{ inputs.manifests }}; do
+            knife apt update "$PWD/$manifest"
+            repo=$(basename "$manifest" .yaml | tr '-' '_')
+            bazel run "@${repo}//:lock"
+          done
+
+          # Check if update occurred
+          if [ -n "$(git diff --name-only)" ]; then
+            echo "update_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "update_needed=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Create Pull Request
+        if: steps.update-packages.outputs.update_needed == 'true'
+        id: create-pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.token }}
+          commit-message: 'chore: update debian packages'
+          branch: update-debian-packages
+          delete-branch: true
+          title: 'chore: update debian packages'
+          body: |
+            This PR updates apt packages and lockfiles for all distroless manifests.
+
+            ---
+
+            This PR was automatically created by the Update Debian Packages workflow.
+          labels: |
+            dependencies
+            automated
+          assignees: ${{ github.repository_owner }}
+      - name: Enable auto-merge
+        if: steps.update-packages.outputs.update_needed == 'true' && steps.create-pr.outputs.pull-request-number != ''
+        run: gh pr merge --auto --squash "${{ steps.create-pr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ secrets.token }}

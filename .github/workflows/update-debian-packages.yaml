@@ -2,67 +2,19 @@ name: Update Debian Packages
 on:
   workflow_dispatch: # Allow manual trigger
   schedule:
-    - cron: '0 16 * * *' # Run every day at 4PM UTC (after daily snapshots ~14:30 UTC)
-
-env:
-  MANIFESTS: >-
-    oci/distroless/debian13.yaml
-    oci/distroless/nginx/nginx-stable.yaml
-    oci/distroless/nginx/nginx-mainline.yaml
+    - cron: "0 16 * * *" # Run every day at 4PM UTC (after daily snapshots ~14:30 UTC)
 
 jobs:
-  update-debian-packages:
-    name: Update Debian packages
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # to push the updates
-      pull-requests: write # to open Pull requests
-    outputs:
-      pr-number: ${{ steps.create-pr.outputs.pull-request-number }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Set up Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-cache: true
-      - name: Update and lock all manifests
-        id: update-packages
-        run: |
-          for manifest in $MANIFESTS; do
-            bazel run //bazel/cmd/knife -- apt update "$PWD/$manifest"
-            repo=$(basename "$manifest" .yaml | tr '-' '_')
-            bazel run "@${repo}//:lock"
-          done
-
-          # Check if update occurred
-          if [ -n "$(git diff --name-only)" ]; then
-            echo "update_needed=true" >> $GITHUB_OUTPUT
-          else
-            echo "update_needed=false" >> $GITHUB_OUTPUT
-          fi
-      - name: Create Pull Request
-        if: steps.update-packages.outputs.update_needed == 'true'
-        id: create-pr
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.RENOVATE_TOKEN }}
-          commit-message: 'chore: update debian packages'
-          branch: update-debian-packages
-          delete-branch: true
-          title: 'chore: update debian packages'
-          body: |
-            This PR updates apt packages and lockfiles for all distroless manifests.
-
-            ---
-
-            This PR was automatically created by the [Update Debian Packages](.github/workflows/update-debian-packages.yaml) workflow.
-          labels: |
-            dependencies
-            automated
-          assignees: ${{ github.repository_owner }}
-      - name: Enable auto-merge
-        if: steps.update-packages.outputs.update_needed == 'true' && steps.create-pr.outputs.pull-request-number != ''
-        run: gh pr merge --auto --squash "${{ steps.create-pr.outputs.pull-request-number }}"
-        env:
-          GH_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+  update:
+    uses: arkeros/senku/.github/workflows/knife-update-debian-packages.yaml@main
+    with:
+      knife-target: //bazel/cmd/knife
+      bazelrc: |
+        common --config=ci
+        common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+      manifests: >-
+        oci/distroless/debian13.yaml
+        oci/distroless/nginx/nginx-stable.yaml
+        oci/distroless/nginx/nginx-mainline.yaml
+    secrets:
+      token: ${{ secrets.RENOVATE_TOKEN }}

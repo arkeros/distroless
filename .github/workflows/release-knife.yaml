@@ -20,10 +20,13 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
+          bazelrc: |
+            common --config=ci
+            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
       # NOTE: When x_defs are added to the knife go_binary for --version
       # stamping, add --stamp here and compare unstamped SHAs instead, or
       # drop change detection entirely and release on every push.
-      - name: Build
+      - name: Build (native, for change detection)
         run: bazel build //bazel/cmd/knife
       - name: Check if binary changed
         id: check
@@ -32,19 +35,31 @@ jobs:
 
           LATEST_TAG=$(gh release list --repo "${{ github.repository }}" --json tagName --jq '[.[] | select(.tagName | startswith("knife/"))][0].tagName // empty')
           OLD_SHA=$([ -n "$LATEST_TAG" ] \
-            && gh release download "$LATEST_TAG" --repo "${{ github.repository }}" --pattern knife --dir /tmp/knife-latest \
-            && sha256sum /tmp/knife-latest/knife | cut -d' ' -f1 \
+            && gh release download "$LATEST_TAG" --repo "${{ github.repository }}" --pattern knife-linux-amd64 --dir /tmp/knife-latest \
+            && sha256sum /tmp/knife-latest/knife-linux-amd64 | cut -d' ' -f1 \
             || echo "none")
 
           [ "$NEW_SHA" != "$OLD_SHA" ] && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cross-compile
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          PLATFORMS=(
+            linux_amd64
+            linux_arm64
+            darwin_amd64
+            darwin_arm64
+          )
+          for platform in "${PLATFORMS[@]}"; do
+            bazel build --platforms="@rules_go//go/toolchain:${platform}" //bazel/cmd/knife
+            cp bazel-bin/bazel/cmd/knife/knife_/knife "knife-${platform//_/-}"
+          done
       - name: Publish release
         if: steps.check.outputs.changed == 'true'
         run: |
           VERSION=$(./bazel/workspace_status.sh | grep STABLE_MONOREPO_SHORT_VERSION | cut -d' ' -f2)
           TAG="knife/v${VERSION}"
-          cp bazel-bin/bazel/cmd/knife/knife_/knife knife
-          gh release create "$TAG" knife --title "knife ${VERSION}" --generate-notes
+          gh release create "$TAG" knife-* --title "knife ${VERSION}" --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

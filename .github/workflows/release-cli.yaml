@@ -37,7 +37,7 @@ jobs:
       # drop change detection entirely and release on every push.
       - name: Build all platforms
         run: |
-          bazel build ${{ matrix.package }}/...
+          bazel build --remote_download_outputs=toplevel ${{ matrix.package }}/...
           for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
             cp "$(bazel cquery --output=files "${{ matrix.package }}:${{ matrix.tool }}-${platform}")" "${{ matrix.tool }}-${platform}"
           done
@@ -77,6 +77,7 @@ jobs:
             echo "All binaries unchanged, skipping release"
           fi
           echo "changed=${CHANGED}" >> $GITHUB_OUTPUT
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Attest provenance
@@ -89,6 +90,10 @@ jobs:
         run: |
           VERSION=$(./bazel/workspace_status.sh | grep STABLE_MONOREPO_SHORT_VERSION | cut -d' ' -f2)
           TAG="${{ matrix.tool }}/v${VERSION}"
-          gh release create "$TAG" ${{ matrix.tool }}-* --title "${{ matrix.tool }} ${VERSION}" --generate-notes
+          if [ -n "${{ steps.check.outputs.latest_tag }}" ]; then
+            gh release create "$TAG" ${{ matrix.tool }}-* --title "${{ matrix.tool }} ${VERSION}" --generate-notes --notes-start-tag "${{ steps.check.outputs.latest_tag }}"
+          else
+            gh release create "$TAG" ${{ matrix.tool }}-* --title "${{ matrix.tool }} ${VERSION}" --notes "Initial release"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

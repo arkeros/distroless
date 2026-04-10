@@ -1,4 +1,4 @@
-name: Release knife
+name: Release CLI tools
 on:
   push:
     branches: [main]
@@ -11,8 +11,15 @@ permissions:
 
 jobs:
   release:
-    name: Build and release knife
+    name: Release ${{ matrix.tool }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - tool: knife
+            package: //bazel/cmd/knife
+          - tool: bifrost
+            package: //devtools/bifrost/cli
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -25,19 +32,20 @@ jobs:
           bazelrc: |
             common --config=ci
             common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
-      # NOTE: When x_defs are added to the knife go_binary for --version
+      # NOTE: When x_defs are added to go_binary targets for --version
       # stamping, add --stamp here and compare unstamped SHAs instead, or
       # drop change detection entirely and release on every push.
       - name: Build all platforms
         run: |
-          bazel build //bazel/cmd/knife/...
+          bazel build ${{ matrix.package }}/...
           for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
-            cp "$(bazel cquery --output=files "//bazel/cmd/knife:knife-${platform}")" "knife-${platform}"
+            cp "$(bazel cquery --output=files "${{ matrix.package }}:${{ matrix.tool }}-${platform}")" "${{ matrix.tool }}-${platform}"
           done
       - name: Check if binaries changed
         id: check
         run: |
-          LATEST_TAG=$(gh release list --repo "${{ github.repository }}" --json tagName --jq '[.[] | select(.tagName | startswith("knife/"))][0].tagName // empty')
+          TOOL="${{ matrix.tool }}"
+          LATEST_TAG=$(gh release list --repo "${{ github.repository }}" --json tagName --jq "[.[] | select(.tagName | startswith(\"${TOOL}/\"))][0].tagName // empty")
 
           if [ -z "$LATEST_TAG" ]; then
             echo "No previous release found, releasing"
@@ -46,13 +54,13 @@ jobs:
           fi
 
           echo "Comparing against ${LATEST_TAG}"
-          gh release download "$LATEST_TAG" --repo "${{ github.repository }}" --pattern 'knife-*' --dir /tmp/knife-latest
+          gh release download "$LATEST_TAG" --repo "${{ github.repository }}" --pattern "${TOOL}-*" --dir "/tmp/${TOOL}-latest"
 
           CHANGED=false
           for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
-            NEW_SHA=$(sha256sum "knife-${platform}" | cut -d' ' -f1)
-            if [ -f "/tmp/knife-latest/knife-${platform}" ]; then
-              OLD_SHA=$(sha256sum "/tmp/knife-latest/knife-${platform}" | cut -d' ' -f1)
+            NEW_SHA=$(sha256sum "${TOOL}-${platform}" | cut -d' ' -f1)
+            if [ -f "/tmp/${TOOL}-latest/${TOOL}-${platform}" ]; then
+              OLD_SHA=$(sha256sum "/tmp/${TOOL}-latest/${TOOL}-${platform}" | cut -d' ' -f1)
             else
               OLD_SHA="none"
             fi
@@ -75,12 +83,12 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         uses: actions/attest@v4
         with:
-          subject-path: knife-*
+          subject-path: ${{ matrix.tool }}-*
       - name: Publish release
         if: steps.check.outputs.changed == 'true'
         run: |
           VERSION=$(./bazel/workspace_status.sh | grep STABLE_MONOREPO_SHORT_VERSION | cut -d' ' -f2)
-          TAG="knife/v${VERSION}"
-          gh release create "$TAG" knife-* --title "knife ${VERSION}" --generate-notes
+          TAG="${{ matrix.tool }}/v${VERSION}"
+          gh release create "$TAG" ${{ matrix.tool }}-* --title "${{ matrix.tool }} ${VERSION}" --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

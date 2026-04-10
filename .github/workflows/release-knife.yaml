@@ -6,6 +6,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -26,35 +28,54 @@ jobs:
       # NOTE: When x_defs are added to the knife go_binary for --version
       # stamping, add --stamp here and compare unstamped SHAs instead, or
       # drop change detection entirely and release on every push.
-      - name: Build (native, for change detection)
-        run: bazel build //bazel/cmd/knife
-      - name: Check if binary changed
+      - name: Build all platforms
+        run: |
+          bazel build //bazel/cmd/knife/...
+          for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
+            cp "$(bazel cquery --output=files "//bazel/cmd/knife:knife-${platform}")" "knife-${platform}"
+          done
+      - name: Check if binaries changed
         id: check
         run: |
-          NEW_SHA=$(sha256sum bazel-bin/bazel/cmd/knife/knife_/knife | cut -d' ' -f1)
-
           LATEST_TAG=$(gh release list --repo "${{ github.repository }}" --json tagName --jq '[.[] | select(.tagName | startswith("knife/"))][0].tagName // empty')
-          OLD_SHA=$([ -n "$LATEST_TAG" ] \
-            && gh release download "$LATEST_TAG" --repo "${{ github.repository }}" --pattern knife-linux-amd64 --dir /tmp/knife-latest \
-            && sha256sum /tmp/knife-latest/knife-linux-amd64 | cut -d' ' -f1 \
-            || echo "none")
 
-          [ "$NEW_SHA" != "$OLD_SHA" ] && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No previous release found, releasing"
+            echo "changed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Comparing against ${LATEST_TAG}"
+          gh release download "$LATEST_TAG" --repo "${{ github.repository }}" --pattern 'knife-*' --dir /tmp/knife-latest
+
+          CHANGED=false
+          for platform in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
+            NEW_SHA=$(sha256sum "knife-${platform}" | cut -d' ' -f1)
+            if [ -f "/tmp/knife-latest/knife-${platform}" ]; then
+              OLD_SHA=$(sha256sum "/tmp/knife-latest/knife-${platform}" | cut -d' ' -f1)
+            else
+              OLD_SHA="none"
+            fi
+            if [ "$NEW_SHA" != "$OLD_SHA" ]; then
+              echo "${platform}: changed (${OLD_SHA} -> ${NEW_SHA})"
+              CHANGED=true
+              break
+            else
+              echo "${platform}: unchanged (${NEW_SHA})"
+            fi
+          done
+
+          if [ "$CHANGED" = "false" ]; then
+            echo "All binaries unchanged, skipping release"
+          fi
+          echo "changed=${CHANGED}" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cross-compile
+      - name: Attest provenance
         if: steps.check.outputs.changed == 'true'
-        run: |
-          PLATFORMS=(
-            linux_amd64
-            linux_arm64
-            darwin_amd64
-            darwin_arm64
-          )
-          for platform in "${PLATFORMS[@]}"; do
-            bazel build --platforms="@rules_go//go/toolchain:${platform}" //bazel/cmd/knife
-            cp bazel-bin/bazel/cmd/knife/knife_/knife "knife-${platform//_/-}"
-          done
+        uses: actions/attest@v4
+        with:
+          subject-path: knife-*
       - name: Publish release
         if: steps.check.outputs.changed == 'true'
         run: |

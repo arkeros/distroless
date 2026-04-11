@@ -10,7 +10,7 @@ import (
 // Tidy runs `bazel mod tidy` in the workspace directory.
 // It uses BUILD_WORKSPACE_DIRECTORY when available (i.e., running via `bazel run`).
 func Tidy(ctx context.Context) error {
-	cmd := exec.CommandContext(ctx, "bazel", "mod", "tidy")
+	cmd := exec.CommandContext(ctx, "bazel", "mod", "tidy", "--lockfile_mode=update")
 	if wsDir := os.Getenv("BUILD_WORKSPACE_DIRECTORY"); wsDir != "" {
 		cmd.Dir = wsDir
 	}

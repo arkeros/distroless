@@ -1,0 +1,60 @@
+name: Update Debian Packages
+description: Update Debian packages and lockfiles and create a PR if changed
+inputs:
+  manifests:
+    description: 'Space-separated list of manifest file paths relative to repo root'
+    required: true
+  token:
+    description: 'GitHub token for creating PRs and enabling auto-merge'
+    required: true
+outputs:
+  update-needed:
+    description: 'Whether packages were updated'
+    value: ${{ steps.update-packages.outputs.update_needed }}
+  pr-number:
+    description: 'Pull request number if created'
+    value: ${{ steps.create-pr.outputs.pull-request-number }}
+runs:
+  using: composite
+  steps:
+    - name: Update and lock all manifests
+      id: update-packages
+      shell: bash
+      run: |
+        for manifest in ${{ inputs.manifests }}; do
+          knife apt update "$PWD/$manifest"
+          repo=$(basename "$manifest" .yaml | tr '-' '_')
+          bazel run "@${repo}//:lock"
+        done
+
+        if [ -n "$(git diff --name-only)" ]; then
+          echo "update_needed=true" >> $GITHUB_OUTPUT
+        else
+          echo "update_needed=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Create Pull Request
+      if: steps.update-packages.outputs.update_needed == 'true'
+      id: create-pr
+      uses: peter-evans/create-pull-request@v8
+      with:
+        token: ${{ inputs.token }}
+        commit-message: 'chore: update debian packages'
+        branch: update-debian-packages
+        delete-branch: true
+        title: 'chore: update debian packages'
+        body: |
+          This PR updates apt packages and lockfiles for all distroless manifests.
+
+          ---
+
+          This PR was automatically created by the Update Debian Packages workflow.
+        labels: |
+          dependencies
+          automated
+        assignees: ${{ github.repository_owner }}
+    - name: Enable auto-merge
+      if: steps.update-packages.outputs.update_needed == 'true' && steps.create-pr.outputs.pull-request-number != ''
+      shell: bash
+      run: gh pr merge --auto --squash "${{ steps.create-pr.outputs.pull-request-number }}"
+      env:
+        GH_TOKEN: ${{ inputs.token }}

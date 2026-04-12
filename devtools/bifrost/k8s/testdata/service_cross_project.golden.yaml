@@ -7,20 +7,20 @@ metadata:
   namespace: jobs
 ---
 apiVersion: v1
-data:
-  config.json: Z2NwOi8vL3Byb2plY3RzL3Nlbmt1LXByb2Qvc2VjcmV0cy9zaGFyZWQtY29uZmlnL3ZlcnNpb25zLzE=
 kind: Secret
 metadata:
-  name: shared-config-fa6a56038d
+  name: shared-config-3067aed0d3
   namespace: jobs
+stringData:
+  config.json: gcp:///projects/senku-prod/secrets/shared-config/versions/1
 ---
 apiVersion: v1
-data:
-  other-config.json: Z2NwOi8vL3Byb2plY3RzL290aGVyLXByb2plY3Qvc2VjcmV0cy9zaGFyZWQtY29uZmlnL3ZlcnNpb25zLzI=
 kind: Secret
 metadata:
-  name: other-project--shared-config-5d09c562d9
+  name: other-project--shared-config-46e255ba77
   namespace: jobs
+stringData:
+  other-config.json: gcp:///projects/other-project/secrets/shared-config/versions/2
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -69,21 +69,21 @@ spec:
             port: 8080
         volumeMounts:
         - mountPath: /run/secrets
-          name: shared-config-fa6a56038d
+          name: shared-config-3067aed0d3
         - mountPath: /run/secrets
-          name: other-project--shared-config-5d09c562d9
+          name: other-project--shared-config-46e255ba77
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: multi-secret-svc
       volumes:
-      - name: shared-config-fa6a56038d
+      - name: shared-config-3067aed0d3
         secret:
-          secretName: shared-config-fa6a56038d
-      - name: other-project--shared-config-5d09c562d9
+          secretName: shared-config-3067aed0d3
+      - name: other-project--shared-config-46e255ba77
         secret:
-          secretName: other-project--shared-config-5d09c562d9
+          secretName: other-project--shared-config-46e255ba77
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

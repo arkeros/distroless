@@ -3,7 +3,6 @@ package k8s
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"path"
@@ -351,7 +350,7 @@ func resolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) reso
 			secrets[ukey] = sd
 			secretOrder = append(secretOrder, ukey)
 		}
-		sd.data[basename] = base64.StdEncoding.EncodeToString([]byte(gcp.URI(proj, sf.Secret, version)))
+		sd.data[basename] = gcp.URI(proj, sf.Secret, version)
 
 		dir := path.Dir(sf.Path)
 		gkey := ukey + ":" + dir
@@ -407,7 +406,7 @@ func secretManifests(projectID, namespace string, secretFiles []bifrost.SecretFi
 			seen[ukey] = e
 			order = append(order, ukey)
 		}
-		e.data[basename] = base64.StdEncoding.EncodeToString([]byte(gcp.URI(proj, sf.Secret, version)))
+		e.data[basename] = gcp.URI(proj, sf.Secret, version)
 	}
 	var out bytes.Buffer
 	for _, ukey := range order {
@@ -420,7 +419,7 @@ func secretManifests(projectID, namespace string, secretFiles []bifrost.SecretFi
 				"name":      suffixed,
 				"namespace": namespace,
 			},
-			"data": e.data,
+			"stringData": e.data,
 		}
 		b, err := internal.MarshalManifest(secret)
 		if err != nil {

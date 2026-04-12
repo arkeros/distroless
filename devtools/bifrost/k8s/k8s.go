@@ -12,6 +12,7 @@ import (
 
 	bifrost "github.com/arkeros/senku/devtools/bifrost/api"
 	"github.com/arkeros/senku/devtools/bifrost/internal"
+	"github.com/arkeros/senku/platform/kubernetes/secrets/providers/gcp"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
@@ -341,15 +342,15 @@ func resolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) reso
 	var groupOrder []string
 	for _, sf := range secretFiles {
 		ukey := sf.UniqueKey(projectID)
-		proj, name, version := sf.ParseSecret(projectID)
+		proj := sf.ProjectOrDefault(projectID)
+		version := sf.VersionString()
 		sd, ok := secrets[ukey]
 		if !ok {
-			sd = &secretData{name: name, data: map[string]string{}}
+			sd = &secretData{name: sf.Secret, data: map[string]string{}}
 			secrets[ukey] = sd
 			secretOrder = append(secretOrder, ukey)
 		}
-		sd.data[version] = base64.StdEncoding.EncodeToString([]byte(
-			fmt.Sprintf("${gcpsm:///projects/%s/secrets/%s/versions/%s}", proj, name, version)))
+		sd.data[version] = base64.StdEncoding.EncodeToString([]byte(gcp.URI(proj, sf.Secret, version)))
 
 		dir := path.Dir(sf.Path)
 		gkey := ukey + ":" + dir
@@ -402,15 +403,15 @@ func secretManifests(projectID, namespace string, secretFiles []bifrost.SecretFi
 	var order []string
 	for _, sf := range secretFiles {
 		ukey := sf.UniqueKey(projectID)
-		proj, name, version := sf.ParseSecret(projectID)
+		proj := sf.ProjectOrDefault(projectID)
+		version := sf.VersionString()
 		e, ok := seen[ukey]
 		if !ok {
-			e = &secretEntry{name: name, data: map[string]string{}}
+			e = &secretEntry{name: sf.Secret, data: map[string]string{}}
 			seen[ukey] = e
 			order = append(order, ukey)
 		}
-		e.data[version] = base64.StdEncoding.EncodeToString([]byte(
-			fmt.Sprintf("${gcpsm:///projects/%s/secrets/%s/versions/%s}", proj, name, version)))
+		e.data[version] = base64.StdEncoding.EncodeToString([]byte(gcp.URI(proj, sf.Secret, version)))
 	}
 	var out bytes.Buffer
 	for _, ukey := range order {

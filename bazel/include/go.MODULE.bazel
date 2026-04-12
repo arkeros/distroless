@@ -36,6 +36,7 @@ use_repo(
     "com_github_anchore_syft",
     "com_github_bazelbuild_bazel_watcher",
     "com_github_bazelbuild_buildtools",
+    "com_google_cloud_go_secretmanager",
     "com_github_google_go_containerregistry",
     "com_github_google_go_containerregistry_cmd_krane",
     "com_github_hashicorp_hcl_v2",

@@ -17,6 +17,7 @@ spec:
       memory: 256Mi
   secretFiles:
     - secret: registry-env
+      version: 1
       path: /run/secrets/env.json
   probes:
     startupPath: /v2/

@@ -27,13 +27,13 @@ func ResolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) Reso
 	groups := map[string]*mountGroup{}
 	var order []string
 	for _, sf := range secretFiles {
-		_, name, version := sf.ParseSecret(projectID)
+		version := sf.VersionString()
 		dir := path.Dir(sf.Path)
 		ukey := sf.UniqueKey(projectID)
 		gkey := ukey + ":" + dir
 		g, ok := groups[gkey]
 		if !ok {
-			g = &mountGroup{name: name, mountPath: dir}
+			g = &mountGroup{name: sf.Secret, mountPath: dir}
 			groups[gkey] = g
 			order = append(order, gkey)
 		}

@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//devtools/bifrost/api",
         "//devtools/bifrost/internal",
+        "//platform/kubernetes/secrets/providers/gcp",
         "@io_k8s_api//apps/v1:apps",
         "@io_k8s_api//autoscaling/v2:autoscaling",
         "@io_k8s_api//batch/v1:batch",

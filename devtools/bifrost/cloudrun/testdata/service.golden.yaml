@@ -50,7 +50,7 @@ spec:
       - name: registry-env
         secret:
           items:
-          - key: latest
+          - key: "1"
             path: env.json
           secretName: registry-env
   traffic:

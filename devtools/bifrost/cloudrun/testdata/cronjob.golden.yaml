@@ -40,6 +40,6 @@ spec:
           - name: data-export-env
             secret:
               items:
-              - key: latest
+              - key: "1"
                 path: env.json
               secretName: data-export-env

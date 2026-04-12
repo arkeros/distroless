@@ -243,34 +243,50 @@ func TestValidate_TimeZoneRequired(t *testing.T) {
 	}
 }
 
-func TestSecretFile_ParseSecret(t *testing.T) {
+func TestSecretFile_ProjectOrDefault(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name           string
-		secret         string
-		defaultProject string
-		wantProject    string
-		wantName       string
-		wantVersion    string
+		name    string
+		project string
+		def     string
+		want    string
 	}{
-		{"bare name", "data-export-env", "my-project", "my-project", "data-export-env", "latest"},
-		{"full path no version", "projects/other/secrets/foo", "my-project", "other", "foo", "latest"},
-		{"full path with version", "projects/other/secrets/foo/versions/4", "my-project", "other", "foo", "4"},
+		{"uses default", "", "my-project", "my-project"},
+		{"explicit project", "other", "my-project", "other"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			sf := SecretFile{Secret: tt.secret}
-			proj, name, ver := sf.ParseSecret(tt.defaultProject)
-			if proj != tt.wantProject {
-				t.Errorf("project = %q, want %q", proj, tt.wantProject)
+			sf := SecretFile{Secret: "db-pass", Project: tt.project, Version: 1}
+			got := sf.ProjectOrDefault(tt.def)
+			if got != tt.want {
+				t.Errorf("ProjectOrDefault() = %q, want %q", got, tt.want)
 			}
-			if name != tt.wantName {
-				t.Errorf("name = %q, want %q", name, tt.wantName)
-			}
-			if ver != tt.wantVersion {
-				t.Errorf("version = %q, want %q", ver, tt.wantVersion)
+		})
+	}
+}
+
+func TestSecretFile_UniqueKey(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		secret  string
+		project string
+		def     string
+		want    string
+	}{
+		{"default project", "db-pass", "", "my-project", "my-project/db-pass"},
+		{"explicit project", "db-pass", "other", "my-project", "other/db-pass"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			sf := SecretFile{Secret: tt.secret, Project: tt.project, Version: 1}
+			got := sf.UniqueKey(tt.def)
+			if got != tt.want {
+				t.Errorf("UniqueKey() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -350,12 +366,13 @@ func TestValidate_SecretFiles(t *testing.T) {
 		wantErr     bool
 		errContain  string
 	}{
-		{"valid", []SecretFile{{Secret: "foo", Path: "/run/secrets/a.json"}}, false, ""},
-		{"empty secret", []SecretFile{{Secret: "", Path: "/run/secrets/a.json"}}, true, "secret is required"},
-		{"empty path", []SecretFile{{Secret: "foo", Path: ""}}, true, "path is required"},
-		{"relative path", []SecretFile{{Secret: "foo", Path: "relative/path"}}, true, "must be absolute"},
-		{"malformed projects path", []SecretFile{{Secret: "projects//secrets/", Path: "/a"}}, true, "not a valid"},
-		{"malformed projects no secrets", []SecretFile{{Secret: "projects/p", Path: "/a"}}, true, "not a valid"},
+		{"valid", []SecretFile{{Secret: "foo", Path: "/run/secrets/a.json", Version: 1}}, false, ""},
+		{"empty secret", []SecretFile{{Secret: "", Path: "/run/secrets/a.json", Version: 1}}, true, "secret is required"},
+		{"empty path", []SecretFile{{Secret: "foo", Path: "", Version: 1}}, true, "path is required"},
+		{"relative path", []SecretFile{{Secret: "foo", Path: "relative/path", Version: 1}}, true, "must be absolute"},
+		{"missing version", []SecretFile{{Secret: "foo", Path: "/a"}}, true, "version is required"},
+		{"zero version", []SecretFile{{Secret: "foo", Path: "/a", Version: 0}}, true, "version is required"},
+		{"negative version", []SecretFile{{Secret: "foo", Path: "/a", Version: -1}}, true, "version is required"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

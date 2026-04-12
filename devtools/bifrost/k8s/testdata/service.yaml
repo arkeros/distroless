@@ -16,6 +16,7 @@ spec:
       cpu: 1000m
   secretFiles:
     - secret: registry-env
+      version: 1
       path: /run/secrets/env.json
   probes:
     startupPath: /v2/

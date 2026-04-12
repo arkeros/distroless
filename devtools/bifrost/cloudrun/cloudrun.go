@@ -133,12 +133,12 @@ func secretsAnnotation(defaultProject string, secretFiles []bifrost.SecretFile) 
 	var parts []string
 	for _, sf := range secretFiles {
 		ukey := sf.UniqueKey(defaultProject)
-		proj, name, _ := sf.ParseSecret(defaultProject)
+		proj := sf.ProjectOrDefault(defaultProject)
 		if proj == defaultProject || seen[ukey] {
 			continue
 		}
 		seen[ukey] = true
-		parts = append(parts, fmt.Sprintf("%s:projects/%s/secrets/%s", name, proj, name))
+		parts = append(parts, fmt.Sprintf("%s:projects/%s/secrets/%s", sf.Secret, proj, sf.Secret))
 	}
 	if len(parts) == 0 {
 		return ""

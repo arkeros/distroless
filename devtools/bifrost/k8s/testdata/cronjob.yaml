@@ -14,6 +14,7 @@ spec:
       memory: 512Mi
   secretFiles:
     - secret: data-export-env
+      version: 1
       path: /run/secrets/env.json
   schedule:
     cron: "0 12 * * *"

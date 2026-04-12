@@ -3,6 +3,7 @@ package bifrost
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -32,36 +33,28 @@ type ObjectMeta struct {
 }
 
 type SecretFile struct {
-	Secret string `json:"secret"`
-	Path   string `json:"path"`
+	Secret  string `json:"secret"`
+	Project string `json:"project,omitempty"`
+	Version int    `json:"version"`
+	Path    string `json:"path"`
 }
 
-// ParseSecret parses the Secret field into project, name, and version components.
-// Accepted formats:
-//   - "name"                              → (defaultProject, "name", "latest")
-//   - "projects/P/secrets/name"           → ("P", "name", "latest")
-//   - "projects/P/secrets/name/versions/V" → ("P", "name", "V")
-func (sf SecretFile) ParseSecret(defaultProject string) (project, name, version string) {
-	s := sf.Secret
-	if !strings.HasPrefix(s, "projects/") {
-		return defaultProject, s, "latest"
+// VersionString returns the version as a string.
+func (sf SecretFile) VersionString() string {
+	return strconv.Itoa(sf.Version)
+}
+
+// ProjectOrDefault returns the secret's project, falling back to defaultProject.
+func (sf SecretFile) ProjectOrDefault(defaultProject string) string {
+	if sf.Project != "" {
+		return sf.Project
 	}
-	s = strings.TrimPrefix(s, "projects/")
-	project, s, ok := strings.Cut(s, "/secrets/")
-	if !ok || project == "" || s == "" {
-		return defaultProject, sf.Secret, "latest"
-	}
-	name, version, ok = strings.Cut(s, "/versions/")
-	if !ok || version == "" {
-		version = "latest"
-	}
-	return project, name, version
+	return defaultProject
 }
 
 // UniqueKey returns a key that uniquely identifies this secret across projects.
 func (sf SecretFile) UniqueKey(defaultProject string) string {
-	project, name, _ := sf.ParseSecret(defaultProject)
-	return project + "/" + name
+	return sf.ProjectOrDefault(defaultProject) + "/" + sf.Secret
 }
 
 func validateSecretFiles(secretFiles []SecretFile) error {
@@ -75,12 +68,8 @@ func validateSecretFiles(secretFiles []SecretFile) error {
 		if !strings.HasPrefix(sf.Path, "/") {
 			return fmt.Errorf("spec.secretFiles[%d].path must be absolute", i)
 		}
-		if strings.HasPrefix(sf.Secret, "projects/") {
-			s := strings.TrimPrefix(sf.Secret, "projects/")
-			project, rest, ok := strings.Cut(s, "/secrets/")
-			if !ok || project == "" || rest == "" {
-				return fmt.Errorf("spec.secretFiles[%d].secret %q is not a valid GCP Secret Manager resource path", i, sf.Secret)
-			}
+		if sf.Version <= 0 {
+			return fmt.Errorf("spec.secretFiles[%d].version is required and must be a positive integer", i)
 		}
 	}
 	return nil

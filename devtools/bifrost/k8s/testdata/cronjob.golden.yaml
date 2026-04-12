@@ -8,10 +8,10 @@ metadata:
 ---
 apiVersion: v1
 data:
-  latest: JHtnY3BzbTovLy9wcm9qZWN0cy9zZW5rdS1wcm9kL3NlY3JldHMvZGF0YS1leHBvcnQtZW52L3ZlcnNpb25zL2xhdGVzdH0=
+  "1": Z2NwOi8vL3Byb2plY3RzL3Nlbmt1LXByb2Qvc2VjcmV0cy9kYXRhLWV4cG9ydC1lbnYvdmVyc2lvbnMvMQ==
 kind: Secret
 metadata:
-  name: data-export-env-4badae36a3
+  name: data-export-env-995958e00c
   namespace: jobs
 ---
 apiVersion: batch/v1
@@ -58,7 +58,7 @@ spec:
                 type: RuntimeDefault
             volumeMounts:
             - mountPath: /run/secrets
-              name: data-export-env-4badae36a3
+              name: data-export-env-995958e00c
           restartPolicy: Never
           securityContext:
             runAsNonRoot: true
@@ -66,11 +66,11 @@ spec:
               type: RuntimeDefault
           serviceAccountName: analytics-data-export
           volumes:
-          - name: data-export-env-4badae36a3
+          - name: data-export-env-995958e00c
             secret:
               items:
-              - key: latest
+              - key: "1"
                 path: env.json
-              secretName: data-export-env-4badae36a3
+              secretName: data-export-env-995958e00c
   schedule: 0 12 * * *
   timeZone: Europe/Madrid

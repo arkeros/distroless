@@ -52,6 +52,16 @@ func (sf SecretFile) ProjectOrDefault(defaultProject string) string {
 	return defaultProject
 }
 
+// VolumeName returns a name suitable for Kubernetes volumes and Cloud Run aliases.
+// For secrets in the default project, this is the bare secret name.
+// For cross-project secrets, the project is prepended to avoid collisions.
+func (sf SecretFile) VolumeName(defaultProject string) string {
+	if sf.Project == "" || sf.Project == defaultProject {
+		return sf.Secret
+	}
+	return sf.Project + "--" + sf.Secret
+}
+
 // UniqueKey returns a key that uniquely identifies this secret across projects.
 func (sf SecretFile) UniqueKey(defaultProject string) string {
 	return sf.ProjectOrDefault(defaultProject) + "/" + sf.Secret

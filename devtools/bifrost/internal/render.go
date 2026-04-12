@@ -33,7 +33,7 @@ func ResolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) Reso
 		gkey := ukey + ":" + dir
 		g, ok := groups[gkey]
 		if !ok {
-			g = &mountGroup{name: sf.Secret, mountPath: dir}
+			g = &mountGroup{name: sf.VolumeName(projectID), mountPath: dir}
 			groups[gkey] = g
 			order = append(order, gkey)
 		}

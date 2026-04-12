@@ -344,9 +344,10 @@ func resolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) reso
 		ukey := sf.UniqueKey(projectID)
 		proj := sf.ProjectOrDefault(projectID)
 		version := sf.VersionString()
+		vname := sf.VolumeName(projectID)
 		sd, ok := secrets[ukey]
 		if !ok {
-			sd = &secretData{name: sf.Secret, data: map[string]string{}}
+			sd = &secretData{name: vname, data: map[string]string{}}
 			secrets[ukey] = sd
 			secretOrder = append(secretOrder, ukey)
 		}
@@ -405,9 +406,10 @@ func secretManifests(projectID, namespace string, secretFiles []bifrost.SecretFi
 		ukey := sf.UniqueKey(projectID)
 		proj := sf.ProjectOrDefault(projectID)
 		version := sf.VersionString()
+		vname := sf.VolumeName(projectID)
 		e, ok := seen[ukey]
 		if !ok {
-			e = &secretEntry{name: sf.Secret, data: map[string]string{}}
+			e = &secretEntry{name: vname, data: map[string]string{}}
 			seen[ukey] = e
 			order = append(order, ukey)
 		}

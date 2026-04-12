@@ -138,7 +138,8 @@ func secretsAnnotation(defaultProject string, secretFiles []bifrost.SecretFile) 
 			continue
 		}
 		seen[ukey] = true
-		parts = append(parts, fmt.Sprintf("%s:projects/%s/secrets/%s", sf.Secret, proj, sf.Secret))
+		alias := sf.VolumeName(defaultProject)
+		parts = append(parts, fmt.Sprintf("%s:projects/%s/secrets/%s", alias, proj, sf.Secret))
 	}
 	if len(parts) == 0 {
 		return ""

@@ -27,11 +27,22 @@ runs:
           bazel run "@${repo}//:lock"
         done
 
-        if [ -n "$(git diff --name-only)" ]; then
-          echo "update_needed=true" >> $GITHUB_OUTPUT
-        else
+        if [ -z "$(git diff --name-only)" ]; then
+          echo "No changes detected."
           echo "update_needed=false" >> $GITHUB_OUTPUT
+          exit 0
         fi
+
+        # If no sha256 values changed in lock files, only snapshot URLs were
+        # updated — the actual binaries are identical. Discard and skip.
+        if ! git diff -- '**/*.lock.json' | grep -qE '^[+-].*"sha256"'; then
+          echo "Only snapshot URLs changed, no binary package changes. Skipping."
+          git checkout -- .
+          echo "update_needed=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        echo "update_needed=true" >> $GITHUB_OUTPUT
     - name: Create Pull Request
       if: steps.update-packages.outputs.update_needed == 'true'
       id: create-pr

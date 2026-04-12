@@ -34,3 +34,29 @@ func TestResolveSecretFiles_CrossProjectSameName(t *testing.T) {
 		t.Errorf("mount[1].Name = %q, want %q", res.Mounts[1].Name, res.Volumes[1].Name)
 	}
 }
+
+func TestResolveSecretFiles_VersionAsKey(t *testing.T) {
+	t.Parallel()
+
+	// For Cloud Run, the volume item key is the Secret Manager version
+	// and the path is the filename. This is correct for the Cloud Run API.
+	secrets := []bifrost.SecretFile{
+		{Secret: "registry-env", Version: 1, Path: "/run/secrets/env.json"},
+	}
+	res := ResolveSecretFiles("my-project", secrets)
+
+	if len(res.Volumes) != 1 {
+		t.Fatalf("expected 1 volume, got %d", len(res.Volumes))
+	}
+
+	items := res.Volumes[0].VolumeSource.Secret.Items
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+	if items[0].Key != "1" {
+		t.Errorf("item key = %q, want %q", items[0].Key, "1")
+	}
+	if items[0].Path != "env.json" {
+		t.Errorf("item path = %q, want %q", items[0].Path, "env.json")
+	}
+}

@@ -334,7 +334,6 @@ func resolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) reso
 	type mountGroup struct {
 		ukey      string
 		mountPath string
-		items     []corev1.KeyToPath
 	}
 	secrets := map[string]*secretData{}
 	var secretOrder []string
@@ -344,6 +343,7 @@ func resolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) reso
 		ukey := sf.UniqueKey(projectID)
 		proj := sf.ProjectOrDefault(projectID)
 		version := sf.VersionString()
+		basename := path.Base(sf.Path)
 		vname := sf.VolumeName(projectID)
 		sd, ok := secrets[ukey]
 		if !ok {
@@ -351,20 +351,14 @@ func resolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) reso
 			secrets[ukey] = sd
 			secretOrder = append(secretOrder, ukey)
 		}
-		sd.data[version] = base64.StdEncoding.EncodeToString([]byte(gcp.URI(proj, sf.Secret, version)))
+		sd.data[basename] = base64.StdEncoding.EncodeToString([]byte(gcp.URI(proj, sf.Secret, version)))
 
 		dir := path.Dir(sf.Path)
 		gkey := ukey + ":" + dir
-		g, ok := groups[gkey]
-		if !ok {
-			g = &mountGroup{ukey: ukey, mountPath: dir}
-			groups[gkey] = g
+		if _, ok := groups[gkey]; !ok {
+			groups[gkey] = &mountGroup{ukey: ukey, mountPath: dir}
 			groupOrder = append(groupOrder, gkey)
 		}
-		g.items = append(g.items, corev1.KeyToPath{
-			Key:  version,
-			Path: path.Base(sf.Path),
-		})
 	}
 	suffixedNames := map[string]string{}
 	for _, ukey := range secretOrder {
@@ -380,7 +374,6 @@ func resolveSecretFiles(projectID string, secretFiles []bifrost.SecretFile) reso
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: sname,
-					Items:      g.items,
 				},
 			},
 		})
@@ -406,6 +399,7 @@ func secretManifests(projectID, namespace string, secretFiles []bifrost.SecretFi
 		ukey := sf.UniqueKey(projectID)
 		proj := sf.ProjectOrDefault(projectID)
 		version := sf.VersionString()
+		basename := path.Base(sf.Path)
 		vname := sf.VolumeName(projectID)
 		e, ok := seen[ukey]
 		if !ok {
@@ -413,7 +407,7 @@ func secretManifests(projectID, namespace string, secretFiles []bifrost.SecretFi
 			seen[ukey] = e
 			order = append(order, ukey)
 		}
-		e.data[version] = base64.StdEncoding.EncodeToString([]byte(gcp.URI(proj, sf.Secret, version)))
+		e.data[basename] = base64.StdEncoding.EncodeToString([]byte(gcp.URI(proj, sf.Secret, version)))
 	}
 	var out bytes.Buffer
 	for _, ukey := range order {

@@ -8,10 +8,10 @@ metadata:
 ---
 apiVersion: v1
 data:
-  "1": Z2NwOi8vL3Byb2plY3RzL3Nlbmt1LXByb2Qvc2VjcmV0cy9yZWdpc3RyeS1lbnYvdmVyc2lvbnMvMQ==
+  env.json: Z2NwOi8vL3Byb2plY3RzL3Nlbmt1LXByb2Qvc2VjcmV0cy9yZWdpc3RyeS1lbnYvdmVyc2lvbnMvMQ==
 kind: Secret
 metadata:
-  name: registry-env-346292ecae
+  name: registry-env-870f0c6392
   namespace: jobs
 ---
 apiVersion: apps/v1
@@ -66,19 +66,16 @@ spec:
             port: 8080
         volumeMounts:
         - mountPath: /run/secrets
-          name: registry-env-346292ecae
+          name: registry-env-870f0c6392
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: registry
       volumes:
-      - name: registry-env-346292ecae
+      - name: registry-env-870f0c6392
         secret:
-          items:
-          - key: "1"
-            path: env.json
-          secretName: registry-env-346292ecae
+          secretName: registry-env-870f0c6392
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

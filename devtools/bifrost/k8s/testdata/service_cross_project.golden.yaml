@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: svc-multi-secret-svc@senku-prod.iam.gserviceaccount.com
+  name: multi-secret-svc
+  namespace: jobs
+---
+apiVersion: v1
+data:
+  config.json: Z2NwOi8vL3Byb2plY3RzL3Nlbmt1LXByb2Qvc2VjcmV0cy9zaGFyZWQtY29uZmlnL3ZlcnNpb25zLzE=
+kind: Secret
+metadata:
+  name: shared-config-fa6a56038d
+  namespace: jobs
+---
+apiVersion: v1
+data:
+  other-config.json: Z2NwOi8vL3Byb2plY3RzL290aGVyLXByb2plY3Qvc2VjcmV0cy9zaGFyZWQtY29uZmlnL3ZlcnNpb25zLzI=
+kind: Secret
+metadata:
+  name: other-project--shared-config-5d09c562d9
+  namespace: jobs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-secret-svc
+  namespace: jobs
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: multi-secret-svc
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: multi-secret-svc
+    spec:
+      containers:
+      - env:
+        - name: PORT
+          value: "8080"
+        image: app
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        name: app
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+          requests:
+            cpu: "1"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+        volumeMounts:
+        - mountPath: /run/secrets
+          name: shared-config-fa6a56038d
+        - mountPath: /run/secrets
+          name: other-project--shared-config-5d09c562d9
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: multi-secret-svc
+      volumes:
+      - name: shared-config-fa6a56038d
+        secret:
+          secretName: shared-config-fa6a56038d
+      - name: other-project--shared-config-5d09c562d9
+        secret:
+          secretName: other-project--shared-config-5d09c562d9
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: multi-secret-svc
+  namespace: jobs
+spec:
+  maxReplicas: 2
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 80
+        type: Utilization
+    type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: multi-secret-svc
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: multi-secret-svc
+  namespace: jobs
+spec:
+  resourcePolicy:
+    containerPolicies:
+    - containerName: app
+      controlledResources:
+      - memory
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: multi-secret-svc
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: multi-secret-svc
+  namespace: jobs
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: multi-secret-svc
+  type: ClusterIP

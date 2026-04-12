@@ -43,6 +43,17 @@ func TestRenderServiceHA(t *testing.T) {
 	golden.Compare(t, got, "testdata/service_ha.golden.yaml")
 }
 
+func TestRenderServiceCrossProject(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/service_cross_project.yaml", "testdata/environment.yaml")
+	got, err := Render(spec, env)
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	golden.Compare(t, got, "testdata/service_cross_project.golden.yaml")
+}
+
 func TestRenderCronJob(t *testing.T) {
 	t.Parallel()
 

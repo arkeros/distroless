@@ -1,0 +1,23 @@
+apiVersion: bifrost.apotema.cloud/v1alpha1
+kind: Service
+metadata:
+  name: multi-secret-svc
+spec:
+  image: app
+  resources:
+    limits:
+      cpu: 1000m
+  secretFiles:
+    - secret: shared-config
+      version: 1
+      path: /run/secrets/config.json
+    - secret: shared-config
+      project: other-project
+      version: 2
+      path: /run/secrets/other-config.json
+  probes:
+    startupPath: /healthz
+    livenessPath: /healthz
+  autoscaling:
+    min: 1
+    max: 2

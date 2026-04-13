@@ -36,17 +36,17 @@ git_override(
 apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
 apt.install(
     name = "debian13",
-    lock = "@@//oci/distroless:debian13.lock.json",
+    lock = "//oci/distroless:debian13.lock.json",
     manifest = "//oci/distroless:debian13.yaml",
 )
 apt.install(
     name = "nginx_stable",
-    lock = "@@//oci/distroless/nginx:nginx-stable.lock.json",
+    lock = "//oci/distroless/nginx:nginx-stable.lock.json",
     manifest = "//oci/distroless/nginx:nginx-stable.yaml",
 )
 apt.install(
     name = "nginx_mainline",
-    lock = "@@//oci/distroless/nginx:nginx-mainline.lock.json",
+    lock = "//oci/distroless/nginx:nginx-mainline.lock.json",
     manifest = "//oci/distroless/nginx:nginx-mainline.yaml",
 )
 use_repo(apt, "debian13", "nginx_mainline", "nginx_stable")

@@ -1,5 +1,4 @@
 load("@aspect_rules_py//py:defs.bzl", "py_image_layer")
-load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_img//img:image.bzl", "image_index")
 load("//oci/distroless:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//oci/distroless/common:variables.bzl", "COMPRESSION", "DEBUG_MODE", "USERS", "USER_IDS")

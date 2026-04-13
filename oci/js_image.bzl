@@ -1,5 +1,4 @@
-load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_image_layer")
-load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@aspect_rules_js//js:defs.bzl", "js_image_layer")
 load("@rules_img//img:image.bzl", "image_index")
 load("//oci/distroless:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//oci/distroless/common:variables.bzl", "COMPRESSION", "DEBUG_MODE", "USERS", "USER_IDS")

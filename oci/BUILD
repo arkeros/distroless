@@ -29,7 +29,6 @@ bzl_library(
         "//oci/distroless:platforms",
         "//oci/distroless/common:variables",
         "@aspect_rules_js//js:defs",
-        "@container_structure_test//:defs",
         "@rules_img//img:image",
     ],
 )
@@ -44,7 +43,6 @@ bzl_library(
         "//oci/distroless:platforms",
         "//oci/distroless/common:variables",
         "@aspect_rules_py//py:defs",
-        "@container_structure_test//:defs",
         "@rules_img//img:image",
     ],
 )

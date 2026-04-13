@@ -51,7 +51,7 @@ apt.install(
 )
 use_repo(apt, "debian13", "nginx_mainline", "nginx_stable")
 
-grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database")
+grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(
     name = "grype_database",
     sha256 = "297abe97b85b36dea4571faf9e54d81145630bb21b078e7f5b97376c9076485b",

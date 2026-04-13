@@ -743,7 +743,7 @@
     "@@grype.bzl+//grype:extensions.bzl%grype_database": {
       "general": {
         "bzlTransitiveDigest": "wxwS3i2YCjHA0Xa4qWCYJJzDiiMwagPfhZttafK57o0=",
-        "usagesDigest": "B0DCHKS/BldGiRjiMDI4DsKWQ8zykW12nDMkEY5bt8Y=",
+        "usagesDigest": "WVi0Y1VSb0rtML6xvMlc57uqS83XYE01xkc/B1vtvFs=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "grype_database": {

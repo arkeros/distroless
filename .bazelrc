@@ -59,6 +59,7 @@ test:ci --test_env=TESTCONTAINERS_HOST_OVERRIDE=172.17.0.1
 
 # CI includes BuildBuddy RBE
 common:ci --config=buildbuddy
+common:ci --build_metadata=ROLE=CI
 common:ci --build_metadata=VISIBILITY=PUBLIC
 
 # Don't build protoc from the cc_binary, it's slow and spammy when cache miss

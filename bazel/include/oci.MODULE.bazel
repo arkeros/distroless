@@ -5,7 +5,7 @@ bazel_dep(name = "tar.bzl", version = "0.10.1")
 bazel_dep(name = "syft.bzl", version = "0.1.0")
 bazel_dep(name = "grype.bzl", version = "0.1.0")
 
-bazel_dep(name = "container_structure_test", version = "1.22.1", dev_dependency = True)
+bazel_dep(name = "container_structure_test", version = "1.22.1")
 
 single_version_override(
     module_name = "rules_distroless",

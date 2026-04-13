@@ -9,6 +9,7 @@ pip_compile(
     python_platform = "x86_64-unknown-linux-gnu",
     requirements_in = ":requirements.in",
     requirements_txt = "requirements_linux.txt",
+    tags = ["no-remote"],
 )
 
 pip_compile(
@@ -16,6 +17,7 @@ pip_compile(
     python_platform = "aarch64-apple-darwin",
     requirements_in = ":requirements.in",
     requirements_txt = "requirements_macos.txt",
+    tags = ["no-remote"],
 )
 
 create_venv(

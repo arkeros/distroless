@@ -2,7 +2,7 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3")
 bazel_dep(name = "aspect_rules_js", version = "3.0.3")
 bazel_dep(name = "aspect_rules_ts", version = "3.8.8")
 
-node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
 node.toolchain(
     node_version = "24.13.0",
 )
@@ -46,7 +46,7 @@ npm.npm_translate_lock(
 )
 use_repo(npm, "npm")
 
-pnpm = use_extension("@aspect_rules_js//npm:extensions.bzl", "pnpm")
+pnpm = use_extension("@aspect_rules_js//npm:extensions.bzl", "pnpm", dev_dependency = True)
 pnpm.pnpm(
     name = "pnpm",
     pnpm_version = "10.33.0",

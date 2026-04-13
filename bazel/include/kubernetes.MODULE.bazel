@@ -26,6 +26,6 @@ register_toolchains("//bazel/toolchains/kubeconform")
 
 register_toolchains("//bazel/toolchains/helm")
 
-kubeconform = use_extension("@kubeconform.bzl//kubeconform:extensions.bzl", "kubeconform")
+kubeconform = use_extension("@kubeconform.bzl//kubeconform:extensions.bzl", "kubeconform", dev_dependency = True)
 kubeconform.kubernetes_schemas(kubernetes_version = "1.34.3")
 use_repo(kubeconform, "kubernetes_schemas")

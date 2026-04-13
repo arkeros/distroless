@@ -1,0 +1,19 @@
+x-bazel-init: &bazel-init 'echo -e "common --config=ci\ncommon --config=rbe" >> .bazelrc.user'
+actions:
+  - name: "Test all targets"
+    container_image: "ubuntu-22.04"
+    user: buildbuddy
+    resource_requests:
+      cpu: 3
+      memory: 16GB
+      disk: 50GB
+    triggers:
+      pull_request:
+        branches:
+          - "*"
+      push:
+        branches:
+          - "main"
+    steps:
+      - run: *bazel-init
+      - run: "bazel test //..."

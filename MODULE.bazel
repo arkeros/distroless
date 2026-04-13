@@ -1,15 +1,14 @@
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "bazel_lib", version = "3.2.2")
+bazel_dep(name = "jq.bzl", version = "0.6.1")
 
 bazel_dep(name = "bazelrc-preset.bzl", version = "1.9.2", dev_dependency = True)
 bazel_dep(name = "gazelle", version = "0.50.0", dev_dependency = True)
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0", dev_dependency = True)
-
-bazel_dep(name = "jq.bzl", version = "0.6.1")
-
 bazel_dep(name = "lazy_bazel_env.bzl", version = "0.0.0", dev_dependency = True)
 bazel_dep(name = "yq.bzl", version = "0.3.5", dev_dependency = True)
+bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4", dev_dependency = True)
 
 include("//bazel/include:proto.MODULE.bazel")
 include("//bazel/include:oci.MODULE.bazel")
@@ -32,3 +31,11 @@ single_version_override(
 
 jq_toolchains = use_extension("@jq.bzl//jq:extensions.bzl", "toolchains")
 use_repo(jq_toolchains, "jq_toolchains")
+
+buildbuddy = use_extension("@toolchains_buildbuddy//:extensions.bzl", "buildbuddy")
+buildbuddy.platform(buildbuddy_container_image = "UBUNTU22_04_IMAGE")
+use_repo(buildbuddy, "buildbuddy_toolchain")
+
+register_toolchains(
+    "@toolchains_buildbuddy//toolchains/cc:ubuntu_gcc_x86_64",
+)

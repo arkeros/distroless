@@ -13,6 +13,9 @@ build --@grype.bzl//grype:database=@grype_database
 build --@grype.bzl//grype:fail_on_severity=high
 build --sandbox_add_mount_pair=/tmp
 
+# Grype CVE scans: database transfer to RBE workers is too slow (~80s vs ~2s local),
+# but results should still be cached remotely
+common --modify_execution_info=GrypeScan=+no-remote-exec
 
 build --workspace_status_command=bazel/workspace_status.sh
 
@@ -37,7 +40,24 @@ common:buildbuddy --nolegacy_important_outputs
 common:buildbuddy --noslim_profile
 common:buildbuddy --experimental_profile_include_target_label
 common:buildbuddy --experimental_profile_include_primary_output
-# CI includes BuildBuddy remote cache
+# Remote Build Execution (BuildBuddy)
+common:rbe --config=buildbuddy
+common:rbe --remote_executor=grpcs://remote.buildbuddy.io
+common:rbe --jobs=50
+build:rbe --crosstool_top=@buildbuddy_toolchain//:toolchain
+build:rbe --extra_toolchains=@buildbuddy_toolchain//:cc_toolchain
+build:rbe --host_platform=@buildbuddy_toolchain//:platform
+build:rbe --platforms=@buildbuddy_toolchain//:platform
+build:rbe --extra_execution_platforms=@buildbuddy_toolchain//:platform
+build:rbe --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+# With RBE, tar outputs should be cached so remote workers can stage them
+build:rbe --modify_execution_info=Tar=-no-remote-cache
+# Disable Ryuk sidecar for testcontainers in Firecracker microVMs
+build:rbe --test_env=TESTCONTAINERS_RYUK_DISABLED=true
+# Use Docker bridge gateway for container connectivity in DinD environments
+test:ci --test_env=TESTCONTAINERS_HOST_OVERRIDE=172.17.0.1
+
+# CI includes BuildBuddy RBE
 common:ci --config=buildbuddy
 
 # Don't build protoc from the cc_binary, it's slow and spammy when cache miss

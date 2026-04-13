@@ -37,6 +37,10 @@ container_structure_test(
     size = "small",
     configs = ["test.yaml"],
     driver = "docker",
+    exec_properties = {
+        "test.workload-isolation-type": "firecracker",
+        "test.init-dockerd": "true",
+    },
     image = ":cc_nonroot_amd64_debian13.oci_layout",
     tags = ["requires-docker"],
 )

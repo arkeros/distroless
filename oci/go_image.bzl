@@ -81,7 +81,7 @@ def go_image(
     [
         oci_image(
             name = name + mode + "_" + user + "_" + arch,
-            base = base_prefix + mode + "_" + user + "_" + arch + "_" + distro,
+            base = Label(base_prefix + mode + "_" + user + "_" + arch + "_" + distro),
             entrypoint = entrypoint if entrypoint != None else ["/{}/{}_/{}".format(binary_path, binary_name, binary_name)],
             layers = extra_layers + [
                 name + "_" + arch + "_layer",

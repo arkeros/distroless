@@ -743,7 +743,7 @@
     "@@grype.bzl+//grype:extensions.bzl%grype_database": {
       "general": {
         "bzlTransitiveDigest": "wxwS3i2YCjHA0Xa4qWCYJJzDiiMwagPfhZttafK57o0=",
-        "usagesDigest": "IVKU7gKQcOX9UxZrNsIf0ADnd2BL11rNhL/g+5YKk2U=",
+        "usagesDigest": "B0DCHKS/BldGiRjiMDI4DsKWQ8zykW12nDMkEY5bt8Y=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "grype_database": {
@@ -861,7 +861,7 @@
     "@@rules_nodejs+//nodejs:extensions.bzl%node": {
       "general": {
         "bzlTransitiveDigest": "Wk34E3p3A3kbwcuJQ9G/Q0rF/kuE/Dk2i/kPk1AA3oI=",
-        "usagesDigest": "M/0RAYMTvkstlzfXXlN22ojoSbt+Qrn+Fu5zNhWBfJw=",
+        "usagesDigest": "BtFWy9X/JSeuWhJVNTb/7YiThzwyUg2YLnWvsPAgqmE=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "nodejs_linux_amd64": {
@@ -1022,7 +1022,7 @@
     "@@toolchains_buildbuddy+//:extensions.bzl%buildbuddy": {
       "general": {
         "bzlTransitiveDigest": "lWa6Z0bfkK+GLxGpbRuJ/rFqT50PcvllkL8aIGUpSc4=",
-        "usagesDigest": "sbk9wWYOxF7iQnXpkYGaaznXZFays6Yrc/zP3S/Hd1o=",
+        "usagesDigest": "qSaWyUNSb3PiJplSdQ/E7aONOggjF8Ev+6e5SiCNAqo=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "buildbuddy_toolchain": {

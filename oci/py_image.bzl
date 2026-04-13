@@ -49,12 +49,12 @@ def py_image(
     [
         oci_image(
             name = name + mode + "_" + user + "_" + arch,
-            base = "//oci/distroless/bash:bash" + mode + "_" + user + "_" + arch + "_" + distro,
+            base = Label("//oci/distroless/bash:bash" + mode + "_" + user + "_" + arch + "_" + distro),
             entrypoint = ["/{}/{}".format(binary_path, binary_name)],
             # Use UTF-8 encoding for file system: match modern Linux
             env = {"LANG": "C.UTF-8"},
             layers = [
-                "//distroless/python:" + arch + "_" + distro + "_layer",
+                Label("//oci/distroless/python:" + arch + "_" + distro + "_layer"),
                 name + "_" + user + "_" + arch + "_layer",
             ],
             platform = ARCHITECTURE_PLATFORMS[arch],

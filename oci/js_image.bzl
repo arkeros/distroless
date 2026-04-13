@@ -48,7 +48,7 @@ def js_image(
     [
         oci_image(
             name = name + mode + "_" + user + "_" + arch,
-            base = "//oci/distroless/bash:bash" + mode + "_" + user + "_" + arch + "_" + distro,
+            base = Label("//oci/distroless/bash:bash" + mode + "_" + user + "_" + arch + "_" + distro),
             entrypoint = entrypoint,
             working_dir = "/",
             env = {

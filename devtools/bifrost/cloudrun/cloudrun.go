@@ -9,7 +9,7 @@ import (
 
 	bifrost "github.com/arkeros/senku/devtools/bifrost/api"
 	"github.com/arkeros/senku/devtools/bifrost/internal"
-	"github.com/arkeros/senku/platform/kubernetes/secrets/providers/gcp"
+	"github.com/arkeros/senku/platform/secrets/gcp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"

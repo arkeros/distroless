@@ -108,6 +108,11 @@
       ]
     },
     {
+      "matchDepNames": ["rules_img", "rules_img_tool"],
+      "groupName": "rules_img",
+      "groupSlug": "rules_img"
+    },
+    {
       "matchManagers": [
         "npm"
       ],

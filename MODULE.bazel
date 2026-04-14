@@ -7,13 +7,13 @@ bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "bazel_lib", version = "3.2.2")
 bazel_dep(name = "jq.bzl", version = "0.6.1")
-
 bazel_dep(name = "gazelle", version = "0.50.0")
 
 bazel_dep(name = "bazelrc-preset.bzl", version = "1.9.2", dev_dependency = True)
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0", dev_dependency = True)
 bazel_dep(name = "lazy_bazel_env.bzl", version = "0.0.0", dev_dependency = True)
 bazel_dep(name = "yq.bzl", version = "0.3.5", dev_dependency = True)
+
 bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
 
 include("//bazel/include:proto.MODULE.bazel")

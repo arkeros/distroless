@@ -3,7 +3,7 @@ module github.com/arkeros/senku
 go 1.26.2
 
 require (
-	cloud.google.com/go/secretmanager v1.18.0
+	cloud.google.com/go/secretmanager v1.19.0
 	github.com/anchore/grype v0.111.0
 	github.com/bazelbuild/buildtools v0.0.0-20260319080235-05d2ebe49b0f
 	github.com/google/go-containerregistry v0.21.5

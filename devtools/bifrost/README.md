@@ -236,6 +236,7 @@ Shared fields live once at the top level:
 - `resources`
 - `probes`
 - `autoscaling`
+- `secretEnv`
 
 Platform-specific fields stay under their platform key:
 
@@ -248,6 +249,47 @@ Environment-level fields:
 - `kubernetes.namespace`, `kubernetes.serviceType`
 
 That split keeps source intent stable while letting renderers translate to Cloud Run and Kubernetes naming.
+
+### Secret Environment Variables
+
+`secretEnv` injects secrets from providers (GCP Secret Manager, env vars, files) as container environment variables:
+
+```yaml
+spec:
+  env:
+    APP_ENV: production
+  secretEnv:
+    API_KEY: gcp:///projects/P/secrets/catalog-api-key/versions/3
+    DB_HOST: gcp:///projects/P/secrets/aiven-pg-secret/versions/1#/host
+    ...catalog: gcp:///projects/P/secrets/catalog-env/versions/1
+```
+
+Values are secret provider URIs from [`platform/kubernetes/secrets`](../../platform/kubernetes/secrets/README.md). URI features work:
+
+- **JSON Pointer** (`#/host`) — extract a field from a JSON secret
+- **Spread** (`...` prefix) — expand all top-level keys from a JSON secret into separate env vars
+- **Base64 decode** (`?decode=base64`, `?payload=base64`) — ingress/egress decoding
+
+For Kubernetes, `secretEnv` generates a K8s Secret with the URIs as `stringData`, and adds `envFrom.secretRef` to the container. [`resolve-secrets`](../resolve-secrets/README.md) resolves the URIs before the Secret reaches the cluster.
+
+Plain `env` values take precedence over `secretEnv` (K8s `env` overrides `envFrom`).
+
+In Starlark:
+
+```starlark
+bifrost_service(
+    name = "myapp",
+    secret_env = {
+        "API_KEY": "gcp:///projects/P/secrets/catalog-api-key/versions/3",
+    },
+    # ...
+)
+```
+
+**Platform behavior:**
+
+- **Kubernetes** — generates a K8s Secret with URIs as `stringData` + `envFrom.secretRef`. Supports JSON Pointer, spread, and all transforms (resolved by `resolve-secrets`).
+- **Cloud Run** — generates native `valueFrom.secretKeyRef` entries. Only plain `gcp://` URIs are supported (no fragments, spreads, or transforms).
 
 ### Explicit Runtime Identity
 

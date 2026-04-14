@@ -31,6 +31,70 @@ func TestRenderCronJob(t *testing.T) {
 	golden.Compare(t, got, "testdata/cronjob.golden.yaml")
 }
 
+func TestRenderServiceSecretEnv(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/service-secret-env.yaml", "testdata/environment.yaml")
+	got, err := Render(spec, env)
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	golden.Compare(t, got, "testdata/service-secret-env.golden.yaml")
+}
+
+func TestRenderCronJobSecretEnv(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/cronjob-secret-env.yaml", "testdata/environment.yaml")
+	got, err := Render(spec, env)
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	golden.Compare(t, got, "testdata/cronjob-secret-env.golden.yaml")
+}
+
+func TestRenderService_RejectsDuplicateEnvKeys(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/service-secret-env.yaml", "testdata/environment.yaml")
+	spec.Spec.Env["API_KEY"] = "override"
+	_, err := Render(spec, env)
+	if err == nil {
+		t.Fatal("expected error for duplicate key across env and secretEnv")
+	}
+	if !strings.Contains(err.Error(), "API_KEY") {
+		t.Errorf("error should mention the key, got: %v", err)
+	}
+}
+
+func TestResolveSecretEnv_RejectsSpread(t *testing.T) {
+	t.Parallel()
+
+	_, _, err := resolveSecretEnv("proj", map[string]string{
+		"...db": "gcp:///projects/proj/secrets/s/versions/1",
+	})
+	if err == nil {
+		t.Fatal("expected error for spread on Cloud Run")
+	}
+	if !strings.Contains(err.Error(), "spread") {
+		t.Errorf("error should mention spread, got: %v", err)
+	}
+}
+
+func TestResolveSecretEnv_RejectsFragment(t *testing.T) {
+	t.Parallel()
+
+	_, _, err := resolveSecretEnv("proj", map[string]string{
+		"DB_HOST": "gcp:///projects/proj/secrets/s/versions/1#/host",
+	})
+	if err == nil {
+		t.Fatal("expected error for fragment on Cloud Run")
+	}
+	if !strings.Contains(err.Error(), "fragment") {
+		t.Errorf("error should mention fragment, got: %v", err)
+	}
+}
+
 func TestSecretsAnnotation_CrossProjectSameName(t *testing.T) {
 	t.Parallel()
 

@@ -127,6 +127,7 @@ def bifrost_service(
         args = None,
         service_account_name = None,
         secret_files = None,
+        secret_env = None,
         probes = None,
         autoscaling = None,
         checked_in = None,
@@ -157,6 +158,7 @@ def bifrost_service(
         args: Optional list of container arguments.
         service_account_name: Optional GSA email.
         secret_files: Optional list of secret file dicts.
+        secret_env: Optional dict mapping env var names to secret provider URIs.
         probes: Optional probe paths dict.
         autoscaling: Optional autoscaling dict.
         checked_in: Optional dict mapping render targets to checked-in output paths.
@@ -178,6 +180,7 @@ def bifrost_service(
         args = args,
         service_account_name = service_account_name,
         secret_files = secret_files,
+        secret_env = secret_env,
         probes = probes,
         autoscaling = autoscaling,
     )
@@ -193,6 +196,7 @@ def bifrost_cronjob(
         args = None,
         service_account_name = None,
         secret_files = None,
+        secret_env = None,
         job = None,
         checked_in = None,
         targets = None,
@@ -222,6 +226,7 @@ def bifrost_cronjob(
         args: Optional list of container arguments.
         service_account_name: Optional GSA email.
         secret_files: Optional list of secret file dicts.
+        secret_env: Optional dict mapping env var names to secret provider URIs.
         job: Optional job settings dict (parallelism, completions, maxRetries, timeoutSeconds).
         checked_in: Optional dict mapping render targets to checked-in output paths.
         targets: List of render targets. Defaults to ["cloudrun", "k8s", "terraform"].
@@ -242,5 +247,6 @@ def bifrost_cronjob(
         args = args,
         service_account_name = service_account_name,
         secret_files = secret_files,
+        secret_env = secret_env,
         job = job,
     )

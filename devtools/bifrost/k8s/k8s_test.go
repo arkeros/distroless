@@ -54,6 +54,28 @@ func TestRenderServiceCrossProject(t *testing.T) {
 	golden.Compare(t, got, "testdata/service_cross_project.golden.yaml")
 }
 
+func TestRenderServiceSecretEnv(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/service-secret-env.yaml", "testdata/environment.yaml")
+	got, err := Render(spec, env)
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	golden.Compare(t, got, "testdata/service-secret-env.golden.yaml")
+}
+
+func TestRenderCronJobSecretEnv(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/cronjob-secret-env.yaml", "testdata/environment.yaml")
+	got, err := Render(spec, env)
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	golden.Compare(t, got, "testdata/cronjob-secret-env.golden.yaml")
+}
+
 func TestRenderCronJob(t *testing.T) {
 	t.Parallel()
 

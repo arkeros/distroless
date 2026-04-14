@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//devtools/bifrost/api",
         "//devtools/bifrost/internal",
+        "//platform/kubernetes/secrets/providers/gcp",
         "@dev_knative_serving//pkg/apis/serving/v1:serving",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",

@@ -2,11 +2,14 @@ package cloudrun
 
 import (
 	"fmt"
+	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 
 	bifrost "github.com/arkeros/senku/devtools/bifrost/api"
 	"github.com/arkeros/senku/devtools/bifrost/internal"
+	"github.com/arkeros/senku/platform/kubernetes/secrets/providers/gcp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
@@ -30,6 +33,19 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 	gcp := env.Spec.GCP
 	resolved := internal.ResolveSecretFiles(gcp.ProjectID, spec.Spec.SecretFiles)
 
+	for key := range spec.Spec.SecretEnv {
+		if _, ok := spec.Spec.Env[key]; ok {
+			return nil, fmt.Errorf("key %q appears in both spec.env and spec.secretEnv (Cloud Run does not support env overriding secretEnv)", key)
+		}
+	}
+
+	container := internal.ContainerForSpec(spec.Spec, resolved.Mounts, true, true)
+	secretEnvVars, secretAliases, err := resolveSecretEnv(gcp.ProjectID, spec.Spec.SecretEnv)
+	if err != nil {
+		return nil, err
+	}
+	container.Env = append(container.Env, secretEnvVars...)
+
 	svc := servingv1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "serving.knative.dev/v1",
@@ -49,7 +65,7 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 			ConfigurationSpec: servingv1.ConfigurationSpec{
 				Template: servingv1.RevisionTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
-						Annotations: internal.MergeStringMaps(templateAnnotations(gcp, spec), map[string]string{
+						Annotations: internal.MergeStringMaps(templateAnnotations(gcp, spec, secretAliases), map[string]string{
 							"autoscaling.knative.dev/minScale": strconv.FormatInt(int64(spec.Spec.Autoscaling.MinReplicas), 10),
 							"autoscaling.knative.dev/maxScale": strconv.FormatInt(int64(spec.Spec.Autoscaling.MaxReplicas), 10),
 						}),
@@ -57,7 +73,7 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 					Spec: servingv1.RevisionSpec{
 						PodSpec: corev1.PodSpec{
 							ServiceAccountName: spec.Spec.ServiceAccountName,
-							Containers:         []corev1.Container{internal.ContainerForSpec(spec.Spec, resolved.Mounts, true, true)},
+							Containers:         []corev1.Container{container},
 							Volumes:            resolved.Volumes,
 						},
 						ContainerConcurrency: &concurrency,
@@ -81,6 +97,20 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, error) {
 	gcp := env.Spec.GCP
 	resolved := internal.ResolveSecretFiles(gcp.ProjectID, spec.Spec.SecretFiles)
+
+	for key := range spec.Spec.SecretEnv {
+		if _, ok := spec.Spec.Env[key]; ok {
+			return nil, fmt.Errorf("key %q appears in both spec.env and spec.secretEnv (Cloud Run does not support env overriding secretEnv)", key)
+		}
+	}
+
+	cronContainer := internal.ContainerForSpec(spec.Spec, resolved.Mounts, false, false)
+	secretEnvVars, secretAliases, err := resolveSecretEnv(gcp.ProjectID, spec.Spec.SecretEnv)
+	if err != nil {
+		return nil, err
+	}
+	cronContainer.Env = append(cronContainer.Env, secretEnvVars...)
+
 	jobSpec := map[string]any{
 		"apiVersion": "run.googleapis.com/v1",
 		"kind":       "Job",
@@ -98,7 +128,7 @@ func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 					"taskCount":   spec.Spec.Job.Completions,
 					"template": map[string]any{
 						"spec": map[string]any{
-							"containers":         []corev1.Container{internal.ContainerForSpec(spec.Spec, resolved.Mounts, false, false)},
+							"containers":         []corev1.Container{cronContainer},
 							"maxRetries":         spec.Spec.Job.MaxRetries,
 							"timeoutSeconds":     strconv.FormatInt(spec.Spec.Job.TimeoutSeconds, 10),
 							"serviceAccountName": spec.Spec.ServiceAccountName,
@@ -108,7 +138,7 @@ func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 			},
 		},
 	}
-	templateMetadataAnnotations := templateAnnotations(gcp, spec)
+	templateMetadataAnnotations := templateAnnotations(gcp, spec, secretAliases)
 	if len(templateMetadataAnnotations) > 0 {
 		jobSpec["spec"].(map[string]any)["template"].(map[string]any)["metadata"] = map[string]any{
 			"annotations": templateMetadataAnnotations,
@@ -121,10 +151,25 @@ func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 	return internal.MarshalManifest(jobSpec)
 }
 
-func templateAnnotations(gcp bifrost.GCPSpec, spec bifrost.Workload) map[string]string {
+func templateAnnotations(gcpSpec bifrost.GCPSpec, spec bifrost.Workload, extraAliases []string) map[string]string {
+	// Merge and deduplicate aliases from secretFiles and secretEnv.
+	seen := map[string]bool{}
+	var parts []string
+	for _, entry := range append(strings.Split(secretsAnnotation(gcpSpec.ProjectID, spec.Spec.SecretFiles), ","), extraAliases...) {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		alias, _, _ := strings.Cut(entry, ":")
+		if seen[alias] {
+			continue
+		}
+		seen[alias] = true
+		parts = append(parts, entry)
+	}
 	return internal.MergeStringMaps(nil, map[string]string{
 		"run.googleapis.com/execution-environment": "gen2",
-		"run.googleapis.com/secrets":               secretsAnnotation(gcp.ProjectID, spec.Spec.SecretFiles),
+		"run.googleapis.com/secrets":               strings.Join(parts, ","),
 	})
 }
 
@@ -145,4 +190,72 @@ func secretsAnnotation(defaultProject string, secretFiles []bifrost.SecretFile) 
 		return ""
 	}
 	return strings.Join(parts, ",")
+}
+
+// resolveSecretEnv converts secretEnv URIs to Cloud Run native env vars.
+// Returns env vars with valueFrom.secretKeyRef and any cross-project alias strings.
+// Only plain GCP Secret Manager URIs are supported (no fragments, spreads, or transforms).
+func resolveSecretEnv(defaultProject string, secretEnv map[string]string) ([]corev1.EnvVar, []string, error) {
+	if len(secretEnv) == 0 {
+		return nil, nil, nil
+	}
+
+	keys := make([]string, 0, len(secretEnv))
+	for k := range secretEnv {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var envVars []corev1.EnvVar
+	var aliases []string
+	seenAliases := map[string]bool{}
+
+	for _, key := range keys {
+		uri := secretEnv[key]
+
+		// Reject spread keys.
+		if strings.HasPrefix(key, "...") {
+			return nil, nil, fmt.Errorf("secretEnv[%q]: spread is not supported on Cloud Run (use Kubernetes)", key)
+		}
+
+		// Reject transforms.
+		u, err := url.Parse(uri)
+		if err != nil {
+			return nil, nil, fmt.Errorf("secretEnv[%q]: invalid URI: %v", key, err)
+		}
+		if u.Fragment != "" {
+			return nil, nil, fmt.Errorf("secretEnv[%q]: JSON Pointer fragments are not supported on Cloud Run (use Kubernetes)", key)
+		}
+		if u.RawQuery != "" {
+			return nil, nil, fmt.Errorf("secretEnv[%q]: query transforms are not supported on Cloud Run (use Kubernetes)", key)
+		}
+
+		ref, err := gcp.NewSecretRef(uri)
+		if err != nil {
+			return nil, nil, fmt.Errorf("secretEnv[%q]: %v (Cloud Run only supports gcp:// URIs)", key, err)
+		}
+
+		// For cross-project secrets, add alias annotation.
+		secretName := ref.Name
+		if ref.Project != defaultProject {
+			alias := ref.Project + "--" + ref.Name
+			secretName = alias
+			if !seenAliases[alias] {
+				seenAliases[alias] = true
+				aliases = append(aliases, fmt.Sprintf("%s:projects/%s/secrets/%s", alias, ref.Project, ref.Name))
+			}
+		}
+
+		envVars = append(envVars, corev1.EnvVar{
+			Name: key,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
+					Key:                  ref.Version,
+				},
+			},
+		})
+	}
+
+	return envVars, aliases, nil
 }

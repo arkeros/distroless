@@ -58,6 +58,16 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 		},
 	}
 
+	container := containerWithSecurityContext(withPortEnv(internal.ContainerForSpec(spec.Spec, resolved.mounts, true, true), spec.Spec.Port))
+	if len(spec.Spec.SecretEnv) > 0 {
+		envSecretName := spec.Metadata.Name + "-env-" + hashSecretData(spec.Spec.SecretEnv)
+		container.EnvFrom = append(container.EnvFrom, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: envSecretName},
+			},
+		})
+	}
+
 	deploy := appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -77,7 +87,7 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 				},
 				Spec: podSpecWithSecurityContext(corev1.PodSpec{
 					ServiceAccountName: kubernetesServiceAccountName,
-					Containers:         []corev1.Container{containerWithSecurityContext(withPortEnv(internal.ContainerForSpec(spec.Spec, resolved.mounts, true, true), spec.Spec.Port))},
+					Containers:         []corev1.Container{container},
 					Volumes:            resolved.volumes,
 				}),
 			},
@@ -143,6 +153,10 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 		return nil, err
 	}
 	secretsYAML, err := secretManifests(gcp.ProjectID, namespace, spec.Spec.SecretFiles)
+	if err != nil {
+		return nil, err
+	}
+	envSecretYAML, err := envSecretManifest(spec.Metadata.Name, namespace, spec.Spec.SecretEnv)
 	if err != nil {
 		return nil, err
 	}
@@ -217,6 +231,7 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 	out.Write(serviceAccountYAML)
 	out.WriteString("---\n")
 	out.Write(secretsYAML)
+	out.Write(envSecretYAML)
 	out.Write(deployYAML)
 	out.WriteString("---\n")
 	out.Write(hpaYAML)
@@ -239,6 +254,17 @@ func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 	namespace := env.Spec.Kubernetes.Namespace
 	kubernetesServiceAccountName := spec.Metadata.Name
 	resolved := resolveSecretFiles(gcp.ProjectID, spec.Spec.SecretFiles)
+
+	cronContainer := containerWithSecurityContext(internal.ContainerForSpec(spec.Spec, resolved.mounts, false, false))
+	if len(spec.Spec.SecretEnv) > 0 {
+		envSecretName := spec.Metadata.Name + "-env-" + hashSecretData(spec.Spec.SecretEnv)
+		cronContainer.EnvFrom = append(cronContainer.EnvFrom, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{Name: envSecretName},
+			},
+		})
+	}
+
 	parallelism := spec.Spec.Job.Parallelism
 	completions := spec.Spec.Job.Completions
 	maxRetries := spec.Spec.Job.MaxRetries
@@ -282,7 +308,7 @@ func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 						Spec: podSpecWithSecurityContext(corev1.PodSpec{
 							RestartPolicy:      corev1.RestartPolicyNever,
 							ServiceAccountName: kubernetesServiceAccountName,
-							Containers:         []corev1.Container{containerWithSecurityContext(internal.ContainerForSpec(spec.Spec, resolved.mounts, false, false))},
+							Containers:         []corev1.Container{cronContainer},
 							Volumes:            resolved.volumes,
 						}),
 					},
@@ -302,6 +328,10 @@ func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 	if err != nil {
 		return nil, err
 	}
+	envSecretYAML, err := envSecretManifest(spec.Metadata.Name, namespace, spec.Spec.SecretEnv)
+	if err != nil {
+		return nil, err
+	}
 	cronJobYAML, err := internal.MarshalManifest(cronJob)
 	if err != nil {
 		return nil, err
@@ -311,6 +341,7 @@ func renderCronJob(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 	out.Write(serviceAccountYAML)
 	out.WriteString("---\n")
 	out.Write(secretsYAML)
+	out.Write(envSecretYAML)
 	out.Write(cronJobYAML)
 	return out.Bytes(), nil
 }
@@ -428,6 +459,30 @@ func secretManifests(projectID, namespace string, secretFiles []bifrost.SecretFi
 		out.Write(b)
 		out.WriteString("---\n")
 	}
+	return out.Bytes(), nil
+}
+
+func envSecretManifest(workloadName, namespace string, secretEnv map[string]string) ([]byte, error) {
+	if len(secretEnv) == 0 {
+		return nil, nil
+	}
+	suffixed := workloadName + "-env-" + hashSecretData(secretEnv)
+	secret := map[string]any{
+		"apiVersion": "v1",
+		"kind":       "Secret",
+		"metadata": map[string]any{
+			"name":      suffixed,
+			"namespace": namespace,
+		},
+		"stringData": secretEnv,
+	}
+	b, err := internal.MarshalManifest(secret)
+	if err != nil {
+		return nil, err
+	}
+	var out bytes.Buffer
+	out.Write(b)
+	out.WriteString("---\n")
 	return out.Bytes(), nil
 }
 

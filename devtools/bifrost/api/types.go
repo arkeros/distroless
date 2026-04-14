@@ -3,6 +3,7 @@ package bifrost
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"strconv"
 	"strings"
 	"unicode"
@@ -91,6 +92,7 @@ type Spec struct {
 	Args               []string                    `json:"args,omitempty"`
 	Port               int32                       `json:"port,omitempty"`
 	Env                map[string]string            `json:"env,omitempty"`
+	SecretEnv          map[string]string            `json:"secretEnv,omitempty"`
 	Resources          corev1.ResourceRequirements `json:"resources"`
 	SecretFiles        []SecretFile                `json:"secretFiles,omitempty"`
 	Probes             ProbeSpec                   `json:"probes,omitempty"`
@@ -227,6 +229,9 @@ func (s *Workload) Validate(env Environment) error {
 	if err := validateSecretFiles(s.Spec.SecretFiles); err != nil {
 		return err
 	}
+	if err := validateSecretEnv(s.Spec.SecretEnv); err != nil {
+		return err
+	}
 	if s.Spec.CloudRun.Ingress == "" {
 		s.Spec.CloudRun.Ingress = "all"
 	}
@@ -271,6 +276,22 @@ func (s *Workload) Validate(env Environment) error {
 		}
 		if s.Spec.Job.TimeoutSeconds <= 0 {
 			s.Spec.Job.TimeoutSeconds = 600
+		}
+	}
+	return nil
+}
+
+func validateSecretEnv(secretEnv map[string]string) error {
+	for key, uri := range secretEnv {
+		if uri == "" {
+			return fmt.Errorf("spec.secretEnv[%q] must not be empty", key)
+		}
+		u, err := url.Parse(uri)
+		if err != nil {
+			return fmt.Errorf("spec.secretEnv[%q]: invalid URI %q: %v", key, uri, err)
+		}
+		if u.Scheme == "" {
+			return fmt.Errorf("spec.secretEnv[%q]: URI %q missing scheme (expected scheme://ref)", key, uri)
 		}
 	}
 	return nil

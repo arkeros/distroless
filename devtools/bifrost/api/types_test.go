@@ -356,6 +356,44 @@ func TestValidate_Env(t *testing.T) {
 	}
 }
 
+func TestValidate_SecretEnv(t *testing.T) {
+	t.Parallel()
+
+	env := validEnvironment()
+	tests := []struct {
+		name       string
+		secretEnv  map[string]string
+		wantErr    bool
+		errContain string
+	}{
+		{"valid gcp", map[string]string{"API_KEY": "gcp:///projects/p/secrets/s/versions/1"}, false, ""},
+		{"valid env", map[string]string{"FOO": "env://BAR"}, false, ""},
+		{"valid with fragment", map[string]string{"DB_HOST": "gcp:///projects/p/secrets/s/versions/1#/host"}, false, ""},
+		{"valid spread", map[string]string{"...db": "gcp:///projects/p/secrets/s/versions/1"}, false, ""},
+		{"empty value", map[string]string{"API_KEY": ""}, true, "must not be empty"},
+		{"no scheme", map[string]string{"API_KEY": "just-a-string"}, true, "missing scheme"},
+		{"overlap with env ok", map[string]string{"LOG_LEVEL": "gcp:///projects/p/secrets/s/versions/1"}, false, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			w := validWorkload()
+			w.Spec.Env = map[string]string{"LOG_LEVEL": "info"}
+			w.Spec.SecretEnv = tt.secretEnv
+			err := w.Validate(env)
+			if tt.wantErr && err == nil {
+				t.Fatal("expected error, got nil")
+			}
+			if !tt.wantErr && err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.wantErr && err != nil && !strings.Contains(err.Error(), tt.errContain) {
+				t.Fatalf("error should contain %q, got: %v", tt.errContain, err)
+			}
+		})
+	}
+}
+
 func TestValidate_SecretFiles(t *testing.T) {
 	t.Parallel()
 

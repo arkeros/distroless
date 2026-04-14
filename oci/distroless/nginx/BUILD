@@ -29,9 +29,9 @@ tar(
         "nginx.conf",
     ],
     mtree = [
-        "./etc/nginx/nginx.conf uid=0 gid=0 mode=0644 type=file content=oci/distroless/nginx/nginx.conf",
+        "./etc/nginx/nginx.conf uid=0 gid=0 mode=0644 type=file content=$(execpath nginx.conf)",
         "./etc/nginx/conf.d type=dir uid=0 gid=0 mode=0755",
-        "./etc/nginx/conf.d/default.conf uid=0 gid=0 mode=0644 type=file content=oci/distroless/nginx/default.conf",
+        "./etc/nginx/conf.d/default.conf uid=0 gid=0 mode=0644 type=file content=$(execpath default.conf)",
         "./var/www/html type=dir uid=0 gid=0 mode=0755",
     ],
 )

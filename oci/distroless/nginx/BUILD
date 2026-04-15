@@ -1,12 +1,14 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@jq.bzl//jq:jq.bzl", "jq_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@rules_img//img:push.bzl", "image_push")
 load("@tar.bzl", "tar")
 load("//oci:config.bzl", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless/common:variables.bzl", "COMPRESSION", "DEBUG_MODE")
-load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_DISTROS", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
+load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
 # CVE-2022-4899: libzstd, disputed - fixed in 2022 (https://github.com/facebook/zstd/issues/3200)
 NGINX_IGNORE_CVES = {
@@ -114,11 +116,44 @@ tar(
             short_version + ("-debug" if mode else ""),
         ] + ([
             "debug" if mode else "latest",
-        ] if version_label == "mainline" else []),
+        ] if version_label == NGINX_LATEST_CHANNEL else []),
         tags = ["manual"],
     )
     for version_label, short_version in NGINX_TAGS.items()
     for mode in DEBUG_MODE
+]
+
+[
+    write_file(
+        name = "nginx_" + version_label + "_expected_version",
+        out = "nginx_" + version_label + "_expected_version.json",
+        content = ['{"versions":["%s"]}' % short_version],
+    )
+    for version_label, short_version in NGINX_TAGS.items()
+]
+
+[
+    jq_test(
+        name = "nginx_" + version_label + "_lock_version_test",
+        file1 = ":" + "nginx_" + version_label + "_expected_version",
+        file2 = lockfile,
+        filter2 = """{
+  versions: (
+    [
+      .packages[]
+      | select(.name == "nginx")
+      | .version
+      | split(".")[0:2]
+      | join(".")
+    ]
+    | unique
+  ),
+}""",
+    )
+    for version_label, lockfile in {
+        "stable": "nginx-stable.lock.json",
+        "mainline": "nginx-mainline.lock.json",
+    }.items()
 ]
 
 container_structure_test(

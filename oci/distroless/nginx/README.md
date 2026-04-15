@@ -12,8 +12,8 @@ docker pull ghcr.io/arkeros/senku/nginx:latest
 
 | Channel  | Version | Tags                         |
 |----------|---------|------------------------------|
-| Mainline | 1.29.x  | `latest`, `mainline`, `1.29` |
-| Stable   | 1.28.x  | `stable`, `1.28`             |
+| Stable   | 1.30.x  | `latest`, `stable`, `1.30`   |
+| Mainline | 1.29.x  | `mainline`, `1.29`           |
 
 ## Usage
 
@@ -46,7 +46,7 @@ docker run --rm -p 8080:8080 \
 ## Frontend Images
 
 Use the macros in `frontend.bzl` to build images for static frontends (SPAs, static sites).
-Static files are placed in `/var/www/html` on top of the nginx mainline nonroot base.
+Static files are placed in `/var/www/html` on top of the nginx stable nonroot base.
 
 ### Multi-arch (recommended)
 
@@ -81,7 +81,7 @@ Creates `my_app_amd64`.
 |-----------------|-------------------|------------------------------------------|
 | `srcs`          | —                 | Static files to serve                    |
 | `statics_layer` | —                 | Pre-built tar layer (alternative to srcs)|
-| `base`          | mainline nonroot  | Custom base image (dict for all_arch)    |
+| `base`          | stable nonroot    | Custom base image (dict for all_arch) |
 | `owner`         | `"65532"`         | UID for static files                     |
 | `ownername`     | `"nonroot"`       | Username for static files                |
 | `strip_prefix`  | package name      | Prefix to strip from file paths          |

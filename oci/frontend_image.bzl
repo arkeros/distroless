@@ -5,6 +5,8 @@ load("//oci/distroless/common:variables.bzl", "NONROOT")
 load(":oci_image.bzl", "oci_image")
 load("//oci/distroless/nginx:config.bzl", "NGINX_ARCHITECTURES")
 
+NGINX_FRONTEND_DEFAULT_CHANNEL = "stable"
+
 def frontend_image_index(name, architectures):
     """frontend image index
 
@@ -54,7 +56,7 @@ def frontend_image(
         distro: distribution to use (default: debian13)
         srcs: static files to serve
         statics_layer: pre-built tar layer (mutually exclusive with srcs)
-        base: base image. Defaults to nginx mainline nonroot.
+        base: base image. Defaults to the nginx stable nonroot image.
         owner: uid for static files (default: 65532/nonroot), only used with srcs
         ownername: uname for static files (default: nonroot), only used with srcs
         strip_prefix: prefix to strip from file paths, only used with srcs
@@ -72,7 +74,7 @@ def frontend_image(
 
     oci_image(
         name = name + "_" + arch,
-        base = base or "//oci/distroless/nginx:nginx_mainline_nonroot_" + arch + "_" + distro,
+        base = base or "//oci/distroless/nginx:nginx_%s_nonroot_%s_%s" % (NGINX_FRONTEND_DEFAULT_CHANNEL, arch, distro),
         layers = [statics_layer],
         platform = ARCHITECTURE_PLATFORMS[arch],
         **kwargs
@@ -87,7 +89,7 @@ def frontend_images_all_arch(name, srcs, base = None, distro = "debian13", **kwa
         name: target name
         srcs: static files to serve (e.g., a filegroup of built frontend assets)
         base: base image per arch, as a dict {"amd64": "//my:image_amd64", ...}.
-            Defaults to nginx mainline nonroot.
+            Defaults to the nginx stable nonroot image.
         distro: distribution to use (default: debian13)
         **kwargs: passed to frontend_image (owner, ownername, strip_prefix, ignore_cves)
     """

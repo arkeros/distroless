@@ -270,7 +270,7 @@ Values are secret provider URIs from [`platform/kubernetes/secrets`](../../platf
 - **Spread** (`...` prefix) — expand all top-level keys from a JSON secret into separate env vars
 - **Base64 decode** (`?decode=base64`, `?payload=base64`) — ingress/egress decoding
 
-For Kubernetes, `secretEnv` generates a K8s Secret with the URIs as `stringData`, and adds `envFrom.secretRef` to the container. [`resolve-secrets`](../resolve-secrets/README.md) resolves the URIs before the Secret reaches the cluster.
+For Kubernetes, `secretEnv` generates a K8s Secret with the URIs as `stringData`, and adds `envFrom.secretRef` to the container. [`resolve-secrets`](../../platform/k8s/resolve-secrets/README.md) resolves the URIs before the Secret reaches the cluster.
 
 Plain `env` values take precedence over `secretEnv` (K8s `env` overrides `envFrom`).
 

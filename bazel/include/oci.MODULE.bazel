@@ -28,7 +28,7 @@ git_override(
 
 git_override(
     module_name = "grype.bzl",
-    commit = "dc02c84",
+    commit = "19aaa83",
     remote = "https://github.com/arkeros/grype.bzl.git",
 )
 

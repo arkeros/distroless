@@ -11,8 +11,8 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/zclconf/go-cty v1.18.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
-	k8s.io/api v0.35.3
-	k8s.io/apimachinery v0.35.3
+	k8s.io/api v0.35.4
+	k8s.io/apimachinery v0.35.4
 	knative.dev/serving v0.48.2
 	sigs.k8s.io/yaml v1.6.0
 )

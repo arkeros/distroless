@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     name: Build and test
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -134,7 +135,6 @@ jobs:
 
   terraform:
     name: ${{ github.event_name == 'push' && 'Apply' || 'Plan' }} (${{ matrix.dir }})
-    needs: [build]
     runs-on: ubuntu-latest
     permissions:
       contents: read

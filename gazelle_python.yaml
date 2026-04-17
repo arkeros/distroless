@@ -6,17 +6,23 @@
 ---
 manifest:
   modules_mapping:
+    81d243bd2c585b0f4821__mypyc: charset_normalizer
     absl: absl_py
     adbc_driver_duckdb: duckdb
     blake3: blake3
+    certifi: certifi
+    charset_normalizer: charset_normalizer
     duckdb: duckdb
+    idna: idna
     iniconfig: iniconfig
     packaging: packaging
     pluggy: pluggy
     py: pytest
     pygments: pygments
     pytest: pytest
+    requests: requests
     ruamel.yaml: ruamel_yaml
+    urllib3: urllib3
   pip_repository:
     name: pip
-integrity: 34e48bff6cc0ceb6445adc06e581824e0679250b5743dc5e5a0d1761ce0a2292
+integrity: 9a2caeb9ee5572e2622c32d2bfbf076dd238455f8d86b90c4711223627371966

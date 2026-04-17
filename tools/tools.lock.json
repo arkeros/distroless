@@ -57,33 +57,33 @@
     "binaries": [
       {
         "kind": "archive",
-        "url": "https://github.com/j178/prek/releases/download/v0.3.8/prek-aarch64-unknown-linux-gnu.tar.gz",
+        "url": "https://github.com/j178/prek/releases/download/v0.3.9/prek-aarch64-unknown-linux-gnu.tar.gz",
         "file": "prek-aarch64-unknown-linux-gnu/prek",
-        "sha256": "e2119993923e9bdc28aca11f89361197f8c70648cb016bb6103379445e21758a",
+        "sha256": "fda97d7e802ed84ee3c9e80b9aadb38abe04cfc6bce88da1aeb31300413891f5",
         "os": "linux",
         "cpu": "arm64"
       },
       {
         "kind": "archive",
-        "url": "https://github.com/j178/prek/releases/download/v0.3.8/prek-x86_64-unknown-linux-gnu.tar.gz",
+        "url": "https://github.com/j178/prek/releases/download/v0.3.9/prek-x86_64-unknown-linux-gnu.tar.gz",
         "file": "prek-x86_64-unknown-linux-gnu/prek",
-        "sha256": "80ec6adb9f1883344de52cb943d371ecfd25340c4a6b5b81e2600d27e246cfa1",
+        "sha256": "0ff74ba7658e81a2d78ab3b9f3ede45af04bab7040d5710b2ee5985cdfc76359",
         "os": "linux",
         "cpu": "x86_64"
       },
       {
         "kind": "archive",
-        "url": "https://github.com/j178/prek/releases/download/v0.3.8/prek-aarch64-apple-darwin.tar.gz",
+        "url": "https://github.com/j178/prek/releases/download/v0.3.9/prek-aarch64-apple-darwin.tar.gz",
         "file": "prek-aarch64-apple-darwin/prek",
-        "sha256": "702fde4399fafb054ce85d0a64367689e3668b6475d732c4a46aae50cec0a4be",
+        "sha256": "0e52d21951d488a9db211c9ea35775614b3cbadc778247486c1e0e9fd0e106cc",
         "os": "macos",
         "cpu": "arm64"
       },
       {
         "kind": "archive",
-        "url": "https://github.com/j178/prek/releases/download/v0.3.8/prek-x86_64-apple-darwin.tar.gz",
+        "url": "https://github.com/j178/prek/releases/download/v0.3.9/prek-x86_64-apple-darwin.tar.gz",
         "file": "prek-x86_64-apple-darwin/prek",
-        "sha256": "010198daf4e99a76d03a911973320542ffd7a04091cf7e86c60ac861187577f6",
+        "sha256": "62b863b3cfcd56dec6a924acad0362594607c86cb773265e148acce252a5c4ac",
         "os": "macos",
         "cpu": "x86_64"
       }

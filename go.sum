@@ -670,6 +670,7 @@ github.com/google/go-containerregistry v0.21.5 h1:KTJG9Pn/jC0VdZR6ctV3/jcN+q6/Iq
 github.com/google/go-containerregistry v0.21.5/go.mod h1:ySvMuiWg+dOsRW0Hw8GYwfMwBlNRTmpYBFJPlkco5zU=
 github.com/google/go-containerregistry/cmd/krane v0.0.0-20260406183343-e8813dd0a00e h1:Hu/uEe6AWBcPlfReLinRUiSogfzh7UgcRCxwzBj3Avs=
 github.com/google/go-containerregistry/cmd/krane v0.0.0-20260406183343-e8813dd0a00e/go.mod h1:sDKFYYoOP3cKhd+LUqWQDO6ZOMM6lv8ufH0PWdTT0KI=
+github.com/google/go-containerregistry/cmd/krane v0.0.0-20260416183851-f80cb9a75083/go.mod h1:X1gbnR9r6ZS7C7UaeG9/eabYwMNiQgKVSkvGEp4Lbnk=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/licensecheck v0.3.1 h1:QoxgoDkaeC4nFrtGN1jV7IPmDCHFNIVh54e5hSt6sPs=
 github.com/google/licensecheck v0.3.1/go.mod h1:ORkR35t/JjW+emNKtfJDII0zlciG9JgbT7SmsohlHmY=

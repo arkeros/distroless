@@ -1,5 +1,15 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary", "gazelle_test")
+load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_python_gazelle_plugin//:def.bzl", "GAZELLE_PYTHON_RUNTIME_DEPS")
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//visibility:public"],
+)
 
 exports_files(["gazelle_python.yaml"])
 

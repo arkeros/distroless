@@ -1,6 +1,7 @@
 bazel_dep(name = "rules_nodejs", version = "6.7.4")
 bazel_dep(name = "aspect_rules_js", version = "3.0.3")
 bazel_dep(name = "aspect_rules_ts", version = "3.8.8")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.25.1")
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
 node.toolchain(
@@ -12,6 +13,10 @@ npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependenc
 npm.npm_translate_lock(
     name = "npm",
     bins = {
+        # Babel CLI for custom ts_project transpilers
+        "@babel/cli": [
+            "babel=./bin/babel.js",
+        ],
         # derived from "bin" attribute in node_modules/typescript/package.json
         "typescript": [
             "tsc=./bin/tsc",
@@ -23,6 +28,9 @@ npm.npm_translate_lock(
         ],
     },
     generate_bzl_library_targets = True,
+    lifecycle_hooks_execution_requirements = {
+        "esbuild": ["no-sandbox"],
+    },
     lifecycle_hooks_envs = {
         "*": [
             "aspect_test_id=testc",

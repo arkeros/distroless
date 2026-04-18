@@ -87,6 +87,9 @@ importers:
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
+      mime:
+        specifier: ^4.1.0
+        version: 4.1.0
       relay-compiler:
         specifier: ^20.1.1
         version: 20.1.1
@@ -699,6 +702,11 @@ packages:
   make-dir@2.1.0:
     resolution: {integrity: sha512-LS9X+dc8KLxXCb8dni79fLIIUA5VyZoyjSMCwTluaXA0o27cCK0bhXkpgw+sTXVpPy/lSO57ilRixqk0vDmtRA==}
     engines: {node: '>=6'}
+
+  mime@4.1.0:
+    resolution: {integrity: sha512-X5ju04+cAzsojXKes0B/S4tcYtFAJ6tTMuSPBEn9CPGlrWr8Fiw7qYeLT0XyH80HSoAoqWCaz+MWKh22P7G1cw==}
+    engines: {node: '>=16'}
+    hasBin: true
 
   minimatch@3.1.5:
     resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
@@ -1513,6 +1521,8 @@ snapshots:
     dependencies:
       pify: 4.0.1
       semver: 5.7.2
+
+  mime@4.1.0: {}
 
   minimatch@3.1.5:
     dependencies:

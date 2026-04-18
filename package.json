@@ -39,6 +39,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "esbuild": "^0.28.0",
+    "mime": "^4.1.0",
     "relay-compiler": "^20.1.1",
     "typescript": "6.0.2"
   }

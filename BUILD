@@ -3,23 +3,23 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary", "gazelle_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_python_gazelle_plugin//:def.bzl", "GAZELLE_PYTHON_RUNTIME_DEPS")
-load("//devtools/build/panallet:install.bzl", "panallet_browser_modules")
+load("//devtools/build/panellet:install.bzl", "panellet_browser_modules")
 
 npm_link_all_packages(name = "node_modules")
 
-# First-party panallet packages — link them into //:node_modules/ alongside
+# First-party panellet packages — link them into //:node_modules/ alongside
 # the npm packages so user code can import them via standard module
 # resolution. Senku's own examples consume this link, and downstream bzlmod
 # consumers add the same line in their own root BUILD.
 npm_link_package(
-    name = "node_modules/@panallet/i18n-runtime",
+    name = "node_modules/@panellet/i18n-runtime",
     src = "//devtools/build/react_component/i18n_runtime:pkg",
     visibility = ["//visibility:public"],
 )
 
-# Materialize the canonical browser_modules for panallet apps as
+# Materialize the canonical browser_modules for panellet apps as
 # //:browser_modules/<npm-specifier> targets — esm.sh-style local serving.
-panallet_browser_modules(i18n = True)
+panellet_browser_modules(i18n = True)
 
 ts_config(
     name = "tsconfig",

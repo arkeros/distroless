@@ -7,6 +7,16 @@ load("//oci/distroless/nginx:config.bzl", "NGINX_ARCHITECTURES")
 
 NGINX_FRONTEND_DEFAULT_CHANNEL = "stable"
 
+# Canonical on-image location and owner for the statics nginx serves. The
+# web root matches the nginx base's `root` directive
+# (see //oci/distroless/nginx:default.conf); the username matches the UID
+# in //oci/distroless/common:variables.bzl#USER_IDS. Exposed so callers
+# producing their own statics_layer (e.g. react_static_layer) can line up
+# on the exact same paths/owner without hardcoding them independently.
+NGINX_WEB_ROOT = "/var/www/html"
+NGINX_USERNAME = "nonroot"
+NGINX_UID = NONROOT
+
 def frontend_image_index(name, architectures):
     """frontend image index
 
@@ -29,7 +39,7 @@ def _statics_layer(name, srcs, owner, ownername, strip_prefix):
         mutate = mutate(
             owner = owner,
             ownername = ownername,
-            package_dir = "/var/www/html",
+            package_dir = NGINX_WEB_ROOT,
             strip_prefix = strip_prefix or native.package_name(),
         ),
     )
@@ -74,34 +84,52 @@ def frontend_image(
 
     oci_image(
         name = name + "_" + arch,
-        base = base or "//oci/distroless/nginx:nginx_%s_nonroot_%s_%s" % (NGINX_FRONTEND_DEFAULT_CHANNEL, arch, distro),
+        # Wrap in Label() so the default resolves to @senku regardless of the
+        # caller's repo — same cross-repo pattern as go_image.bzl's base.
+        base = base or Label("//oci/distroless/nginx:nginx_%s_nonroot_%s_%s" % (NGINX_FRONTEND_DEFAULT_CHANNEL, arch, distro)),
         layers = [statics_layer],
         platform = ARCHITECTURE_PLATFORMS[arch],
         **kwargs
     )
 
-def frontend_images_all_arch(name, srcs, base = None, distro = "debian13", **kwargs):
+def frontend_images_all_arch(name, srcs = None, statics_layer = None, base = None, distro = "debian13", **kwargs):
     """Build frontend images for all architectures serving static files with nginx.
 
     Static files are placed in /var/www/html on top of the nginx base image.
+    Provide either srcs (static files; a layer is built for you) or
+    statics_layer (a pre-built tar layer with final on-disk paths).
 
     Args:
         name: target name
-        srcs: static files to serve (e.g., a filegroup of built frontend assets)
+        srcs: static files to serve (e.g., a filegroup of built frontend assets).
+            Mutually exclusive with statics_layer.
+        statics_layer: pre-built tar layer label whose entries already sit at
+            /var/www/html/. Use this when the layer cannot be produced from a
+            flat srcs + strip_prefix — e.g. react_static_layer, whose
+            TreeArtifact-based pipeline emits entries at exactly the right
+            absolute paths already. Mutually exclusive with srcs.
         base: base image per arch, as a dict {"amd64": "//my:image_amd64", ...}.
             Defaults to the nginx stable nonroot image.
         distro: distribution to use (default: debian13)
         **kwargs: passed to frontend_image (owner, ownername, strip_prefix, ignore_cves)
     """
+    if srcs and statics_layer:
+        fail("srcs and statics_layer are mutually exclusive")
+    if not srcs and not statics_layer:
+        fail("one of srcs or statics_layer is required")
+
     architectures = NGINX_ARCHITECTURES[distro]
 
-    layer = _statics_layer(
-        name,
-        srcs,
-        kwargs.pop("owner", str(NONROOT)),
-        kwargs.pop("ownername", "nonroot"),
-        kwargs.pop("strip_prefix", None),
-    )
+    if srcs:
+        layer = _statics_layer(
+            name,
+            srcs,
+            kwargs.pop("owner", str(NONROOT)),
+            kwargs.pop("ownername", "nonroot"),
+            kwargs.pop("strip_prefix", None),
+        )
+    else:
+        layer = statics_layer
 
     [
         frontend_image(

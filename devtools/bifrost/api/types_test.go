@@ -89,7 +89,36 @@ func TestValidate_PortDefaultsTo8080(t *testing.T) {
 	}
 }
 
-func TestValidate_MemoryOptional(t *testing.T) {
+// Omitting resources.limits fills in the Cloud Run minimum (1 CPU / 512Mi)
+// as defaults rather than failing validation, so callers deploying to Cloud
+// Run only can skip the boilerplate.
+func TestValidate_ResourceLimitsDefaultToCloudRunMinimum(t *testing.T) {
+	t.Parallel()
+	env := validEnvironment()
+	w := Workload{
+		APIVersion: APIVersion,
+		Kind:       KindService,
+		Metadata:   ObjectMeta{Name: "test-svc"},
+		Spec: Spec{
+			Image: "test-image",
+		},
+	}
+	if err := w.Validate(env); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	cpu := w.Spec.Resources.Limits[corev1.ResourceCPU]
+	if cpu.MilliValue() != 1000 {
+		t.Errorf("expected default cpu limit 1000m, got %s", cpu.String())
+	}
+	mem := w.Spec.Resources.Limits[corev1.ResourceMemory]
+	if mem.Value() != 512*1024*1024 {
+		t.Errorf("expected default memory limit 512Mi, got %s", mem.String())
+	}
+}
+
+// Explicit limits still win over defaults — the defaults only fill what's
+// missing.
+func TestValidate_ResourceLimitsRespectCallerValues(t *testing.T) {
 	t.Parallel()
 	env := validEnvironment()
 	w := Workload{
@@ -100,7 +129,8 @@ func TestValidate_MemoryOptional(t *testing.T) {
 			Image: "test-image",
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
-					corev1.ResourceCPU: resource.MustParse("1"),
+					corev1.ResourceCPU:    resource.MustParse("2"),
+					corev1.ResourceMemory: resource.MustParse("1Gi"),
 				},
 			},
 		},
@@ -108,30 +138,13 @@ func TestValidate_MemoryOptional(t *testing.T) {
 	if err := w.Validate(env); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if _, ok := w.Spec.Resources.Limits[corev1.ResourceMemory]; ok {
-		t.Fatal("expected memory limit to be absent when not specified")
+	cpu := w.Spec.Resources.Limits[corev1.ResourceCPU]
+	if cpu.MilliValue() != 2000 {
+		t.Errorf("caller cpu=2 should be preserved, got %s", cpu.String())
 	}
-}
-
-func TestValidate_CpuStillRequired(t *testing.T) {
-	t.Parallel()
-	env := validEnvironment()
-	w := Workload{
-		APIVersion: APIVersion,
-		Kind:       KindService,
-		Metadata:   ObjectMeta{Name: "test-svc"},
-		Spec: Spec{
-			Image: "test-image",
-			Resources: corev1.ResourceRequirements{
-				Limits: corev1.ResourceList{
-					corev1.ResourceMemory: resource.MustParse("256Mi"),
-				},
-			},
-		},
-	}
-	err := w.Validate(env)
-	if err == nil {
-		t.Fatal("expected error for missing cpu, got nil")
+	mem := w.Spec.Resources.Limits[corev1.ResourceMemory]
+	if mem.Value() != 1024*1024*1024 {
+		t.Errorf("caller memory=1Gi should be preserved, got %s", mem.String())
 	}
 }
 

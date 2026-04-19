@@ -24,5 +24,7 @@ go_test(
         "//devtools/bifrost/api",
         "//devtools/bifrost/testing",
         "//testing/golden",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
     ],
 )

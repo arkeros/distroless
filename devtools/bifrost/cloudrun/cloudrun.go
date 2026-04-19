@@ -39,6 +39,23 @@ func renderService(spec bifrost.Workload, env bifrost.Environment) ([]byte, erro
 		}
 	}
 
+	// Cloud Run rejects fractional CPU limits when containerConcurrency > 1.
+	// Fail here rather than surfacing the error at `gcloud run services replace`.
+	if concurrency > 1 {
+		cpuLimit := spec.Spec.Resources.Limits[corev1.ResourceCPU]
+		if cpuLimit.MilliValue() < 1000 {
+			return nil, fmt.Errorf("spec.resources.limits.cpu must be >= 1 when spec.autoscaling.concurrency > 1 (got cpu=%s, concurrency=%d); Cloud Run rejects fractional CPU with concurrency > 1 — raise the limit or set autoscaling.concurrency=1", cpuLimit.String(), concurrency)
+		}
+	}
+
+	// Cloud Run's gen2 execution environment (which bifrost always emits)
+	// requires memory >= 512Mi.
+	if memLimit, ok := spec.Spec.Resources.Limits[corev1.ResourceMemory]; ok {
+		if memLimit.Value() < 512*1024*1024 {
+			return nil, fmt.Errorf("spec.resources.limits.memory must be >= 512Mi for Cloud Run gen2 execution environment (got memory=%s)", memLimit.String())
+		}
+	}
+
 	container := internal.ContainerForSpec(spec.Spec, resolved.Mounts, true, true)
 	secretEnvVars, secretAliases, err := resolveSecretEnv(gcp.ProjectID, spec.Spec.SecretEnv)
 	if err != nil {

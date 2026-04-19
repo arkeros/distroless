@@ -7,6 +7,8 @@ import (
 	bifrost "github.com/arkeros/senku/devtools/bifrost/api"
 	btesting "github.com/arkeros/senku/devtools/bifrost/testing"
 	"github.com/arkeros/senku/testing/golden"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestRenderService(t *testing.T) {
@@ -51,6 +53,50 @@ func TestRenderCronJobSecretEnv(t *testing.T) {
 		t.Fatalf("Render() error = %v", err)
 	}
 	golden.Compare(t, got, "testdata/cronjob-secret-env.golden.yaml")
+}
+
+// Cloud Run rejects fractional CPU limits when containerConcurrency > 1; the
+// render should fail at build time rather than at `gcloud run services replace`.
+func TestRenderService_RejectsFractionalCPUWithDefaultConcurrency(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/service.yaml", "testdata/environment.yaml")
+	spec.Spec.Resources.Limits[corev1.ResourceCPU] = resource.MustParse("500m")
+	_, err := Render(spec, env)
+	if err == nil {
+		t.Fatal("expected error for fractional cpu with concurrency > 1")
+	}
+	if !strings.Contains(err.Error(), "concurrency") {
+		t.Errorf("error should mention concurrency, got: %v", err)
+	}
+}
+
+// Fractional CPU is fine when concurrency is 1 — only the > 1 case trips.
+func TestRenderService_AllowsFractionalCPUWhenConcurrencyIsOne(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/service.yaml", "testdata/environment.yaml")
+	spec.Spec.Resources.Limits[corev1.ResourceCPU] = resource.MustParse("500m")
+	spec.Spec.Autoscaling.Concurrency = 1
+	if _, err := Render(spec, env); err != nil {
+		t.Fatalf("Render() error = %v (fractional cpu should be allowed with concurrency=1)", err)
+	}
+}
+
+// Cloud Run's gen2 execution environment requires memory >= 512Mi; bifrost
+// always emits gen2, so sub-512Mi limits should fail at build time.
+func TestRenderService_RejectsSubGen2MemoryFloor(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/service.yaml", "testdata/environment.yaml")
+	spec.Spec.Resources.Limits[corev1.ResourceMemory] = resource.MustParse("128Mi")
+	_, err := Render(spec, env)
+	if err == nil {
+		t.Fatal("expected error for memory < 512Mi with gen2 execution environment")
+	}
+	if !strings.Contains(err.Error(), "memory") || !strings.Contains(err.Error(), "gen2") {
+		t.Errorf("error should mention memory and gen2, got: %v", err)
+	}
 }
 
 func TestRenderService_RejectsDuplicateEnvKeys(t *testing.T) {

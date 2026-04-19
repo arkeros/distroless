@@ -28,9 +28,6 @@ npm.npm_translate_lock(
         ],
     },
     generate_bzl_library_targets = True,
-    lifecycle_hooks_execution_requirements = {
-        "esbuild": ["no-sandbox"],
-    },
     lifecycle_hooks_envs = {
         "*": [
             "aspect_test_id=testc",
@@ -44,6 +41,9 @@ npm.npm_translate_lock(
             "npm_config_arch=arm64",
             "SHARP_INSTALL_FORCE=1",
         ],
+    },
+    lifecycle_hooks_execution_requirements = {
+        "esbuild": ["no-sandbox"],
     },
     npmrc = "//:.npmrc",
     patch_args = {

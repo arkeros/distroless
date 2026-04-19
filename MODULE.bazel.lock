@@ -969,7 +969,7 @@
     "@@rules_nodejs+//nodejs:extensions.bzl%node": {
       "general": {
         "bzlTransitiveDigest": "6YPtCNjJA6Z9Gx0rUblcrrRiR7ag60iRLmALQo7b76U=",
-        "usagesDigest": "XhNIr9WVCr28rMmOMQcyBmLjvid9h/E1bHeJ9MlSINI=",
+        "usagesDigest": "iBBpiyixWsvsbwUS80CuFpFpR6AtoK63Hu7j4LgbMAY=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "nodejs_linux_amd64": {

@@ -3,6 +3,7 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary", "gazelle_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@rules_python_gazelle_plugin//:def.bzl", "GAZELLE_PYTHON_RUNTIME_DEPS")
+load("//devtools/build/panallet:install.bzl", "panallet_browser_modules")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -15,6 +16,10 @@ npm_link_package(
     src = "//devtools/build/react_component/i18n_runtime:pkg",
     visibility = ["//visibility:public"],
 )
+
+# Materialize the canonical browser_modules for panallet apps as
+# //:browser_modules/<npm-specifier> targets — esm.sh-style local serving.
+panallet_browser_modules(i18n = True)
 
 ts_config(
     name = "tsconfig",

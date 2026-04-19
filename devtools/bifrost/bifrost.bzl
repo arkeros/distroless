@@ -130,6 +130,7 @@ def bifrost_service(
         secret_env = None,
         probes = None,
         autoscaling = None,
+        cloud_run = None,
         checked_in = None,
         targets = None,
         visibility = None):
@@ -161,6 +162,8 @@ def bifrost_service(
         secret_env: Optional dict mapping env var names to secret provider URIs.
         probes: Optional probe paths dict.
         autoscaling: Optional autoscaling dict.
+        cloud_run: Optional Cloud Run-specific dict. Supported keys:
+            "ingress" (str), "public" (bool — sets invoker-iam-disabled).
         checked_in: Optional dict mapping render targets to checked-in output paths.
         targets: List of render targets. Defaults to ["cloudrun", "k8s", "terraform"].
         visibility: Bazel visibility.
@@ -183,6 +186,7 @@ def bifrost_service(
         secret_env = secret_env,
         probes = probes,
         autoscaling = autoscaling,
+        cloud_run = cloud_run,
     )
 
 def bifrost_cronjob(

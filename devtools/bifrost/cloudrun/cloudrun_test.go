@@ -83,6 +83,23 @@ func TestRenderService_AllowsFractionalCPUWhenConcurrencyIsOne(t *testing.T) {
 	}
 }
 
+// cloudRun.public sets the invoker-iam-disabled annotation, which Cloud Run
+// reads to skip the per-request IAM invoker check. Lets orgs with
+// iam.allowedPolicyMemberDomains expose services without an allUsers binding.
+func TestRenderService_PublicSetsInvokerIAMDisabled(t *testing.T) {
+	t.Parallel()
+
+	spec, env := btesting.LoadFixtures(t, "testdata/service.yaml", "testdata/environment.yaml")
+	spec.Spec.CloudRun.Public = true
+	got, err := Render(spec, env)
+	if err != nil {
+		t.Fatalf("Render() error = %v", err)
+	}
+	if !strings.Contains(string(got), "run.googleapis.com/invoker-iam-disabled: \"true\"") {
+		t.Errorf("expected invoker-iam-disabled annotation when cloudRun.public=true; got:\n%s", got)
+	}
+}
+
 // Cloud Run's gen2 execution environment requires memory >= 512Mi; bifrost
 // always emits gen2, so sub-512Mi limits should fail at build time.
 func TestRenderService_RejectsSubGen2MemoryFloor(t *testing.T) {

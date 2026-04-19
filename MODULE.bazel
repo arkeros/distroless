@@ -11,7 +11,9 @@ bazel_dep(name = "gazelle", version = "0.50.0")
 bazel_dep(name = "rules_shell", version = "0.8.0")
 
 bazel_dep(name = "bazelrc-preset.bzl", version = "1.9.2", dev_dependency = True)
-bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0", dev_dependency = True)
+# Not dev_dependency: //:BUILD loads from this plugin to wire up gazelle, and
+# that load needs to succeed when @senku is consumed as a non-root bzlmod dep.
+bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0")
 bazel_dep(name = "lazy_bazel_env.bzl", version = "0.0.0", dev_dependency = True)
 bazel_dep(name = "yq.bzl", version = "0.3.6", dev_dependency = True)
 

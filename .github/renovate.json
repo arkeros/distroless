@@ -110,6 +110,11 @@
       "groupSlug": "rules_img"
     },
     {
+      "matchPackageNames": ["@stylexjs/**"],
+      "groupName": "stylexjs",
+      "groupSlug": "stylexjs"
+    },
+    {
       "matchManagers": [
         "npm"
       ],

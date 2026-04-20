@@ -9,6 +9,10 @@ permissions:
   id-token: write
   attestations: write
 
+concurrency:
+  group: release-cli-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Release ${{ matrix.tool }}
@@ -99,3 +103,63 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-versions-bzl:
+    name: Refresh versions.bzl
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          # Push back to main needs a working tree tracking the branch.
+          ref: main
+          fetch-depth: 0
+      - name: Set up Bazelisk
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-cache: true
+          bazelrc: |
+            common --config=ci
+            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+      - name: Regenerate and commit per tool
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          bazel build //bazel/cmd/knife
+          KNIFE=$(bazel cquery --output=files //bazel/cmd/knife)
+
+          # Refreshing unconditionally is cheap: Write is idempotent, so
+          # tools whose versions.bzl already reflects the latest release
+          # produce no diff and we skip the commit.
+          "$KNIFE" prebuilts list | while read -r tool; do
+            echo "::group::$tool"
+            "$KNIFE" prebuilts update --tool "$tool"
+
+            if git diff --quiet; then
+              echo "no changes"
+            else
+              git add -A
+              git commit -m "chore(${tool}): refresh versions.bzl"
+            fi
+            echo "::endgroup::"
+          done
+
+          if git log origin/main..HEAD --oneline | grep -q .; then
+            # Race-safe push: if main advanced while we ran, rebase and retry.
+            for attempt in 1 2 3 4 5; do
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+              git fetch origin main
+              git rebase origin/main
+              sleep $((RANDOM % 5 + 1))
+            done
+            echo "Failed to push after 5 attempts" >&2
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

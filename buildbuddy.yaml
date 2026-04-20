@@ -1,4 +1,3 @@
-x-bazel-init: &bazel-init 'echo -e "common --config=ci\ncommon --config=rbe" >> .bazelrc.user'
 actions:
   - name: "Test all targets"
     container_image: "ubuntu-22.04"
@@ -15,5 +14,5 @@ actions:
         branches:
           - "main"
     steps:
-      - run: *bazel-init
+      - run: 'echo -e "common --config=ci\ncommon --config=rbe" >> .bazelrc.user'
       - run: "bazel test //..."

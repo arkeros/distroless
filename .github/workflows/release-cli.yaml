@@ -134,6 +134,9 @@ jobs:
           fi
       - name: Commit and push versions.bzl
         if: steps.diff.outputs.has_changes == 'true'
+        # Pushes authenticated with GITHUB_TOKEN don't re-trigger workflows,
+        # which is what avoids this step causing an infinite release loop.
+        # If you ever swap GITHUB_TOKEN for a PAT here, re-evaluate.
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

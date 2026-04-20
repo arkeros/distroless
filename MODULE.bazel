@@ -58,8 +58,10 @@ register_toolchains(
 
 # resolve-secrets has no Starlark-rule consumer inside senku; the extension
 # exists to let external modules (e.g. astrograde) depend on the prebuilt
-# binary as a sh_binary without rebuilding the Go source. We declare it here
-# with dev_dependency so it's a no-op for senku's own builds.
+# binary as a sh_binary without rebuilding the Go source. The dev_dependency
+# flag keeps it off downstream modules' resolution graph — they opt in by
+# declaring their own use_extension. Senku, as the root module, still sees
+# it activated via the use_repo below.
 resolve_secrets = use_extension(
     "//platform/k8s/resolve-secrets/prebuilt:extensions.bzl",
     "resolve_secrets",

@@ -31,6 +31,7 @@
       ],
       "postUpgradeTasks": {
         "commands": [
+          "bazel mod deps --lockfile_mode=update",
           "bazel mod tidy"
         ],
         "fileFilters": [
@@ -60,6 +61,7 @@
       ],
       "postUpgradeTasks": {
         "commands": [
+          "bazel mod deps --lockfile_mode=update",
           "bazel mod tidy"
         ],
         "fileFilters": [
@@ -76,6 +78,7 @@
       "postUpgradeTasks": {
         "commands": [
           "./tools/repin",
+          "bazel mod deps --lockfile_mode=update",
           "bazel mod tidy"
         ],
         "fileFilters": [
@@ -98,6 +101,7 @@
       ],
       "postUpgradeTasks": {
         "commands": [
+          "bazel mod deps --lockfile_mode=update",
           "bazel mod tidy"
         ],
         "fileFilters": [
@@ -132,6 +136,7 @@
       "postUpgradeTasks": {
         "commands": [
           "pnpm install --lockfile-only",
+          "bazel mod deps --lockfile_mode=update",
           "bazel mod tidy"
         ],
         "fileFilters": [

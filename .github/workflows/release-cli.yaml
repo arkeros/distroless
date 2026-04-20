@@ -9,10 +9,6 @@ permissions:
   id-token: write
   attestations: write
 
-concurrency:
-  group: release-cli-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   release:
     name: Release ${{ matrix.tool }}

@@ -99,78 +99,55 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  update-versions-bzl:
-    name: Refresh versions.bzl
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          # Push back to main needs a working tree tracking the branch.
-          ref: main
-          fetch-depth: 0
-      - name: Set up Bazelisk
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-cache: true
-          bazelrc: |
-            common --config=ci
-            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
-      - name: Configure git identity
+      - name: Check prebuilts pipeline
+        id: prebuilts
+        if: steps.check.outputs.changed == 'true'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Regenerate versions.bzl per tool
+          set -euo pipefail
+          KNIFE=$(bazel cquery --output=files //bazel/cmd/knife)
+          if "$KNIFE" prebuilts list | grep -qx "${{ matrix.tool }}"; then
+            echo "has_pipeline=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "${{ matrix.tool }} is not configured for versions.bzl refresh; skipping"
+            echo "has_pipeline=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Regenerate versions.bzl
+        if: steps.prebuilts.outputs.has_pipeline == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          bazel build //bazel/cmd/knife
           KNIFE=$(bazel cquery --output=files //bazel/cmd/knife)
-
-          # Refreshing unconditionally is cheap: Write is idempotent, so
-          # tools whose versions.bzl already reflects the latest release
-          # produce no diff and the subsequent commit step skips them.
-          "$KNIFE" prebuilts list | while read -r tool; do
-            echo "::group::$tool"
-            "$KNIFE" prebuilts update --tool "$tool"
-            if git diff --quiet; then
-              echo "no changes"
-            else
-              git add -A
-              git commit -m "chore(${tool}): refresh versions.bzl"
-            fi
-            echo "::endgroup::"
-          done
+          "$KNIFE" prebuilts update --tool "${{ matrix.tool }}"
       - name: Show pending diff
         id: diff
+        if: steps.prebuilts.outputs.has_pipeline == 'true'
         run: |
           set -euo pipefail
-          if git log origin/main..HEAD --oneline | grep -q .; then
-            echo "Commits to push:"
-            git log --oneline origin/main..HEAD
-            echo
-            echo "Aggregated diff:"
-            git diff origin/main..HEAD
-            echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No changes to push"
+          if git diff --quiet; then
+            echo "versions.bzl already up-to-date"
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            git diff
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Push to main
+      - name: Commit and push versions.bzl
         if: steps.diff.outputs.has_changes == 'true'
         run: |
           set -euo pipefail
-          # Race-safe push: if main advanced while we ran, rebase and retry.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(${{ matrix.tool }}): refresh versions.bzl"
+          # Race-safe push: if main advanced while we ran (another matrix
+          # job committing, or an unrelated push), rebase and retry.
           for attempt in 1 2 3 4 5; do
             if git push origin HEAD:main; then
               exit 0
             fi
             git fetch origin main
             git rebase origin/main
-            sleep $((RANDOM % 5 + 1))
+            sleep $((attempt * attempt))
           done
           echo "Failed to push after 5 attempts" >&2
           exit 1

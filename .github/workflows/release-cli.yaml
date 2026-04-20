@@ -118,23 +118,24 @@ jobs:
           bazelrc: |
             common --config=ci
             common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
-      - name: Regenerate and commit per tool
+      - name: Configure git identity
         run: |
-          set -euo pipefail
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
+      - name: Regenerate versions.bzl per tool
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
           bazel build //bazel/cmd/knife
           KNIFE=$(bazel cquery --output=files //bazel/cmd/knife)
 
           # Refreshing unconditionally is cheap: Write is idempotent, so
           # tools whose versions.bzl already reflects the latest release
-          # produce no diff and we skip the commit.
+          # produce no diff and the subsequent commit step skips them.
           "$KNIFE" prebuilts list | while read -r tool; do
             echo "::group::$tool"
             "$KNIFE" prebuilts update --tool "$tool"
-
             if git diff --quiet; then
               echo "no changes"
             else
@@ -143,19 +144,33 @@ jobs:
             fi
             echo "::endgroup::"
           done
-
+      - name: Show pending diff
+        id: diff
+        run: |
+          set -euo pipefail
           if git log origin/main..HEAD --oneline | grep -q .; then
-            # Race-safe push: if main advanced while we ran, rebase and retry.
-            for attempt in 1 2 3 4 5; do
-              if git push origin HEAD:main; then
-                exit 0
-              fi
-              git fetch origin main
-              git rebase origin/main
-              sleep $((RANDOM % 5 + 1))
-            done
-            echo "Failed to push after 5 attempts" >&2
-            exit 1
+            echo "Commits to push:"
+            git log --oneline origin/main..HEAD
+            echo
+            echo "Aggregated diff:"
+            git diff origin/main..HEAD
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes to push"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push to main
+        if: steps.diff.outputs.has_changes == 'true'
+        run: |
+          set -euo pipefail
+          # Race-safe push: if main advanced while we ran, rebase and retry.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            sleep $((RANDOM % 5 + 1))
+          done
+          echo "Failed to push after 5 attempts" >&2
+          exit 1

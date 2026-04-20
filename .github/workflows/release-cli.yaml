@@ -104,8 +104,10 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         run: |
           set -euo pipefail
-          KNIFE=$(bazel cquery --output=files //bazel/cmd/knife)
-          if "$KNIFE" prebuilts list | grep -qx "${{ matrix.tool }}"; then
+          # `bazel run` downloads the binary even with
+          # --remote_download_outputs=minimal; `bazel cquery --output=files`
+          # would only return a path that may not be materialised.
+          if bazel run --ui_event_filters=-info,-stdout,-stderr //bazel/cmd/knife -- prebuilts list | grep -qx "${{ matrix.tool }}"; then
             echo "has_pipeline=true" >> "$GITHUB_OUTPUT"
           else
             echo "${{ matrix.tool }} is not configured for versions.bzl refresh; skipping"
@@ -117,8 +119,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          KNIFE=$(bazel cquery --output=files //bazel/cmd/knife)
-          "$KNIFE" prebuilts update --tool "${{ matrix.tool }}"
+          bazel run //bazel/cmd/knife -- prebuilts update --tool "${{ matrix.tool }}"
       - name: Show pending diff
         id: diff
         if: steps.prebuilts.outputs.has_pipeline == 'true'

@@ -10,7 +10,7 @@ Platforms: darwin_amd64, darwin_arm64, linux_amd64, linux_arm64
 Regenerate with: bazel run //bazel/cmd/knife -- prebuilts update --tool bifrost
 """
 
-DEFAULT_VERSION = "2026.16.43"
+DEFAULT_VERSION = "2026.17.75"
 
 BIFROST_VERSIONS = {
     "2026.15.64-darwin_amd64": (
@@ -156,6 +156,22 @@ BIFROST_VERSIONS = {
     "2026.16.43-linux_arm64": (
         "bifrost-linux-arm64",
         "28d9aebc3c197d64825690d98b3203ada290ca71fecce09ce296faee42855b5c",
+    ),
+    "2026.17.75-darwin_amd64": (
+        "bifrost-darwin-amd64",
+        "949bcb31b75a7502f94e1c8f557e167d9b88b4f2981097813d28e3d1e37a28dc",
+    ),
+    "2026.17.75-darwin_arm64": (
+        "bifrost-darwin-arm64",
+        "69fc0604389444ee99ee4511cbff8d65dc9ad17f3f76ff330f88973ffe2bc9a6",
+    ),
+    "2026.17.75-linux_amd64": (
+        "bifrost-linux-amd64",
+        "9f4e7901365d8aae301394683dd20b60bcbf2a4be627821c0becab7470e54022",
+    ),
+    "2026.17.75-linux_arm64": (
+        "bifrost-linux-arm64",
+        "00943bec2a97db86f7ac84b02bd12c2eb6ec3fb1908bfdeb7afe6c7345b0dc60",
     ),
 }
 

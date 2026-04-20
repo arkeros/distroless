@@ -28,16 +28,6 @@ bifrost_service(
         "startupPath": "/v2/",
         "livenessPath": "/v2/",
     },
-    resources = {
-        "requests": {
-            "cpu": "250m",
-            "memory": "256Mi",
-        },
-        "limits": {
-            "cpu": "1000m",
-            "memory": "256Mi",
-        },
-    },
     targets = [
         "cloudrun",
         "terraform",

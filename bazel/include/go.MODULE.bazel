@@ -35,6 +35,7 @@ go_deps_dev.module_override(
     ],
     path = "github.com/anchore/syft",
 )
+
 use_repo(
     go_deps,
     "com_github_anchore_grype",
@@ -43,6 +44,7 @@ use_repo(
     "com_github_bazelbuild_buildtools",
     "com_github_google_go_containerregistry",
     "com_github_google_go_containerregistry_cmd_krane",
+    "com_github_google_go_github_v85",
     "com_github_hashicorp_hcl_v2",
     "com_github_mikefarah_yq_v4",
     "com_github_spf13_cobra",
@@ -55,5 +57,6 @@ use_repo(
     "io_k8s_apimachinery",
     "io_k8s_sigs_kustomize_kustomize_v5",
     "io_k8s_sigs_yaml",
+    "org_golang_x_text",
     "sh_helm_helm_v4",
 )

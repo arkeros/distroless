@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//bazel/cmd/knife/cmd/apt",
         "//bazel/cmd/knife/cmd/grype",
+        "//bazel/cmd/knife/cmd/prebuilts",
         "@com_github_spf13_cobra//:cobra",
     ],
 )

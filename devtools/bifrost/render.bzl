@@ -6,7 +6,7 @@ def _bifrost_render_impl(ctx):
     spec_file = ctx.file.spec
     env_file = ctx.file.environment
     out = ctx.outputs.out
-    bifrost = ctx.executable._bifrost
+    bifrost = ctx.toolchains["//devtools/bifrost/toolchain:toolchain_type"].bifrost_info.bifrost_binary
     jq = ctx.toolchains["@jq.bzl//jq/toolchain:type"].jqinfo.bin
 
     inputs = [spec_file, env_file]
@@ -97,11 +97,9 @@ bifrost_render = rule(
             mandatory = True,
             doc = "Output file name.",
         ),
-        "_bifrost": attr.label(
-            default = "//devtools/bifrost/cli",
-            executable = True,
-            cfg = "exec",
-        ),
     },
-    toolchains = ["@jq.bzl//jq/toolchain:type"],
+    toolchains = [
+        "//devtools/bifrost/toolchain:toolchain_type",
+        "@jq.bzl//jq/toolchain:type",
+    ],
 )

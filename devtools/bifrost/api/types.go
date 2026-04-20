@@ -218,19 +218,18 @@ func (s *Workload) Validate(env Environment) error {
 	if reqCPU := s.Spec.Resources.Requests[corev1.ResourceCPU]; reqCPU.Cmp(s.Spec.Resources.Limits[corev1.ResourceCPU]) > 0 {
 		return fmt.Errorf("spec.resources.requests.cpu must be <= spec.resources.limits.cpu")
 	}
-	if memLimit, ok := s.Spec.Resources.Limits[corev1.ResourceMemory]; ok {
-		if err := validateResourceQuantity("spec.resources.limits.memory", memLimit); err != nil {
-			return err
-		}
-		if _, ok := s.Spec.Resources.Requests[corev1.ResourceMemory]; !ok {
-			s.Spec.Resources.Requests[corev1.ResourceMemory] = memLimit
-		}
-		if err := validateResourceQuantity("spec.resources.requests.memory", s.Spec.Resources.Requests[corev1.ResourceMemory]); err != nil {
-			return err
-		}
-		if reqMem := s.Spec.Resources.Requests[corev1.ResourceMemory]; reqMem.Cmp(memLimit) > 0 {
-			return fmt.Errorf("spec.resources.requests.memory must be <= spec.resources.limits.memory")
-		}
+	memLimit := s.Spec.Resources.Limits[corev1.ResourceMemory]
+	if err := validateResourceQuantity("spec.resources.limits.memory", memLimit); err != nil {
+		return err
+	}
+	if _, ok := s.Spec.Resources.Requests[corev1.ResourceMemory]; !ok {
+		s.Spec.Resources.Requests[corev1.ResourceMemory] = memLimit
+	}
+	if err := validateResourceQuantity("spec.resources.requests.memory", s.Spec.Resources.Requests[corev1.ResourceMemory]); err != nil {
+		return err
+	}
+	if reqMem := s.Spec.Resources.Requests[corev1.ResourceMemory]; reqMem.Cmp(memLimit) > 0 {
+		return fmt.Errorf("spec.resources.requests.memory must be <= spec.resources.limits.memory")
 	}
 	if err := validateSecretFiles(s.Spec.SecretFiles); err != nil {
 		return err

@@ -30,4 +30,4 @@ jobs:
           LOG_LEVEL: debug
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REPOSITORIES: ${{ github.repository }}
-          RENOVATE_ALLOWED_COMMANDS: '["^\\./tools/repin$", "^bazel mod tidy$", "^pnpm install --lockfile-only$"]'
+          RENOVATE_ALLOWED_COMMANDS: '["^\\./tools/repin$", "^bazel mod tidy$", "^bazel mod deps --lockfile_mode=update$", "^pnpm install --lockfile-only$"]'

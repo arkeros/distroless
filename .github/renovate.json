@@ -40,6 +40,7 @@
       ],
       "postUpgradeTasks": {
         "commands": [
+          "bazel mod deps --lockfile_mode=update",
           "bazel mod tidy"
         ],
         "fileFilters": [

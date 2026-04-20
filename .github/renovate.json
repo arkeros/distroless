@@ -115,6 +115,11 @@
       "groupSlug": "stylexjs"
     },
     {
+      "matchPackageNames": ["@base-ui/**"],
+      "groupName": "base-ui",
+      "groupSlug": "base-ui"
+    },
+    {
       "matchManagers": [
         "npm"
       ],

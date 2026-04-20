@@ -50,6 +50,13 @@ var tools = map[string]toolConfig{
 		OutPath:   "devtools/bifrost/toolchain/versions.bzl",
 		Platforms: defaultPlatforms,
 	},
+	"resolve-secrets": {
+		Name:      "resolve-secrets",
+		Owner:     "arkeros",
+		Repo:      "senku",
+		OutPath:   "platform/k8s/resolve-secrets/prebuilt/versions.bzl",
+		Platforms: defaultPlatforms,
+	},
 }
 
 type updateOptions struct {

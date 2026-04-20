@@ -362,6 +362,21 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//platform/k8s/resolve-secrets/prebuilt:extensions.bzl%resolve_secrets": {
+      "general": {
+        "bzlTransitiveDigest": "SDsUauwq4jt+iW/3NbRrLD73xG25pP5On74fR2hNs7s=",
+        "usagesDigest": "6SAGMX4/xYdv5G1GPF3cF5/R815r+Ug82iPrXv31h40=",
+        "recordedInputs": [],
+        "generatedRepoSpecs": {
+          "resolve_secrets": {
+            "repoRuleId": "@@//platform/k8s/resolve-secrets/prebuilt:extensions.bzl%_resolve_secrets_repo",
+            "attributes": {
+              "version": "2026.16.32"
+            }
+          }
+        }
+      }
+    },
     "@@aspect_rules_esbuild+//esbuild:extensions.bzl%esbuild": {
       "general": {
         "bzlTransitiveDigest": "foF4efsgdDkkq+V2uKFsr/ntW9jTUxM6sBcDKBluOI8=",

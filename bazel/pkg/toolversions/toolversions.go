@@ -113,7 +113,14 @@ func Write(path string, cfg Config, releases []Release, defaultVersion string) e
 }
 
 func versionsVar(tool string) string {
-	return strings.ToUpper(tool) + "_VERSIONS"
+	return strings.ToUpper(identifierName(tool)) + "_VERSIONS"
+}
+
+// identifierName converts a tool name (which may contain hyphens, e.g.
+// "resolve-secrets") into a valid Starlark/Go identifier by swapping hyphens
+// for underscores.
+func identifierName(tool string) string {
+	return strings.ReplaceAll(tool, "-", "_")
 }
 
 // CompareVersions orders version strings by numeric component, not lexically.
@@ -159,7 +166,7 @@ DEFAULT_VERSION = ""
 
 %[4]s = {}
 
-def get_%[3]s_url(version, filename):
+def get_%[5]s_url(version, filename):
     """Returns the download URL for a %[3]s release."""
     return "%[2]s".format(version, filename)
 `,
@@ -167,6 +174,7 @@ def get_%[3]s_url(version, filename):
 		urlTemplateForStarlark(cfg.URLTemplate),
 		cfg.Tool,
 		versionsVar(cfg.Tool),
+		identifierName(cfg.Tool),
 	)
 }
 

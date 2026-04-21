@@ -15,7 +15,7 @@ monorepo_version=$(
 # Short version without build metadata. For example, 2025.34.0.
 monorepo_short_version="${monorepo_version%%+*}"
 
-# Image repository compatible monrepo version. For example, 2025.34.0-201b9a8.
+# Image repository compatible monorepo version. For example, 2025.34.0-201b9a8.
 # OCI registries do not allow `+` characters in tags so we swap with `-`.
 monorepo_image_tag_version="${monorepo_version//+/-}"
 

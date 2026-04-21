@@ -65,7 +65,10 @@ def frontend_image(
         arch: target architecture (e.g., "amd64")
         distro: distribution to use (default: debian13)
         srcs: static files to serve
-        statics_layer: pre-built tar layer (mutually exclusive with srcs)
+        statics_layer: pre-built tar layer label, or list of labels composed
+            as multiple OCI layers (py_image_layer style). List form is
+            useful when logical groups (webroot, nginx conf) want
+            independent layer-cache boundaries. Mutually exclusive with srcs.
         base: base image. Defaults to the nginx stable nonroot image.
         owner: uid for static files (default: 65532/nonroot), only used with srcs
         ownername: uname for static files (default: nonroot), only used with srcs
@@ -82,12 +85,18 @@ def frontend_image(
     if srcs:
         statics_layer = _statics_layer(name, srcs, owner, ownername, strip_prefix)
 
+    # Accept either a single label (historical shape) or a list of labels
+    # (py_image_layer pattern). Callers like react_static_layer emit
+    # multiple logically-separated tars (webroot, nginx conf) and pass
+    # them together so each keeps its own layer-cache boundary.
+    layers = statics_layer if type(statics_layer) == "list" else [statics_layer]
+
     oci_image(
         name = name + "_" + arch,
         # Wrap in Label() so the default resolves to @senku regardless of the
         # caller's repo — same cross-repo pattern as go_image.bzl's base.
         base = base or Label("//oci/distroless/nginx:nginx_%s_nonroot_%s_%s" % (NGINX_FRONTEND_DEFAULT_CHANNEL, arch, distro)),
-        layers = [statics_layer],
+        layers = layers,
         platform = ARCHITECTURE_PLATFORMS[arch],
         **kwargs
     )
@@ -103,11 +112,12 @@ def frontend_images_all_arch(name, srcs = None, statics_layer = None, base = Non
         name: target name
         srcs: static files to serve (e.g., a filegroup of built frontend assets).
             Mutually exclusive with statics_layer.
-        statics_layer: pre-built tar layer label whose entries already sit at
-            /var/www/html/. Use this when the layer cannot be produced from a
-            flat srcs + strip_prefix — e.g. react_static_layer, whose
-            TreeArtifact-based pipeline emits entries at exactly the right
-            absolute paths already. Mutually exclusive with srcs.
+        statics_layer: pre-built tar layer label, or list of labels composed
+            as multiple OCI layers. Use this when the layer cannot be
+            produced from a flat srcs + strip_prefix — e.g.
+            react_static_layer, which emits one tar per logical group
+            (webroot, nginx conf) for independent cache boundaries.
+            Mutually exclusive with srcs.
         base: base image per arch, as a dict {"amd64": "//my:image_amd64", ...}.
             Defaults to the nginx stable nonroot image.
         distro: distribution to use (default: debian13)

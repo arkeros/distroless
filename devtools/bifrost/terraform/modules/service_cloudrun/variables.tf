@@ -141,3 +141,9 @@ variable "labels" {
   default     = {}
   description = "Labels applied to the Cloud Run service."
 }
+
+variable "custom_domains" {
+  type        = list(string)
+  default     = []
+  description = "Fully-qualified domains to attach via Cloud Run domain mappings. Only available in a subset of regions (see Google Cloud docs). Each mapping exposes DNS records via the `custom_domain_dns_records` output; the domain must be verified in the project's Search Console before apply succeeds."
+}

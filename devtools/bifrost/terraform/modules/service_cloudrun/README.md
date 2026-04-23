@@ -61,10 +61,23 @@ See [`variables.tf`](./variables.tf). Notable ones:
 - `startup_cpu_boost` — free cold-start speedup, default on.
 - `execution_environment` — `EXECUTION_ENVIRONMENT_GEN2` default (Linux cgroups); `GEN1` for legacy gVisor.
 
+## Custom domains
+
+`custom_domains = ["api.example.com", ...]` creates a `google_cloud_run_domain_mapping` per entry. Cloud Run provisions a managed TLS cert once DNS resolves to the returned records.
+
+Caveats inherited from the feature (pick a load balancer instead if any of these hurt):
+
+- Not available in every region. `europe-west1`, `us-central1`, `asia-northeast1`, and a few others are supported; `europe-west4`, `us-east4`, and others are not. See Google's docs for the current list.
+- The domain must be verified in the project's Search Console before `terraform apply` succeeds.
+- No CDN, no Cloud Armor, no multi-region fan-out, no sharing TLS across services.
+
+Output `custom_domain_dns_records` exposes the `{ type, name, rrdata }` tuples to create in your DNS provider.
+
 ## Outputs
 
 - `service_account_email` — runtime GSA; grant IAM on other resources.
 - `service_name`, `service_uri`, `service_id` — for DNS wiring, Cloud Scheduler targets, load balancer backends.
+- `custom_domain_dns_records` — DNS records to create per domain mapping.
 
 ## Verification
 

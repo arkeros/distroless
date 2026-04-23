@@ -129,3 +129,22 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
+
+# Cloud Run domain mappings. The v1 API resource is what the google provider
+# exposes; it interoperates with v2 services by referencing the service name.
+# The parent project must have the domain verified in Search Console.
+resource "google_cloud_run_domain_mapping" "custom" {
+  for_each = toset(var.custom_domains)
+
+  name     = each.value
+  location = var.region
+
+  metadata {
+    namespace = var.project_id
+    labels    = local.labels
+  }
+
+  spec {
+    route_name = google_cloud_run_v2_service.this.name
+  }
+}

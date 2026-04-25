@@ -1,0 +1,11 @@
+{
+  "terraform": {
+    "backend": {
+      "gcs": {
+        "bucket": "senku-prod-terraform-state",
+        "prefix": "devtools/build/tools/tf/examples/empty"
+      }
+    },
+    "required_version": ">= 1.14.0"
+  }
+}

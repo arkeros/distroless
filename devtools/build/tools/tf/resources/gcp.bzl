@@ -46,6 +46,54 @@ def project_service(name, project, service, disable_on_destroy = True):
         attrs = ["id"],
     )
 
+def project_iam_audit_config(name, project, service, log_types):
+    """`google_project_iam_audit_config` — Cloud Audit Logs Data Access config.
+
+    Admin Activity logs are on by default and free; this resource is for
+    enabling the streams that aren't (DATA_READ, DATA_WRITE, ADMIN_READ).
+    `service = "allServices"` applies to every service, but is a footgun
+    for cost — prefer naming services explicitly.
+
+    `log_types` is a list of {"DATA_READ", "DATA_WRITE", "ADMIN_READ"}.
+    """
+    return resource(
+        rtype = "google_project_iam_audit_config",
+        name = name,
+        body = {
+            "project": project,
+            "service": service,
+            "audit_log_config": [
+                {"log_type": lt}
+                for lt in log_types
+            ],
+        },
+        attrs = ["etag"],
+    )
+
+def logging_project_exclusion(name, project, exclusion_name, filter, description = None, disabled = False):
+    """`google_logging_project_exclusion` — drop matching entries before
+    they hit the `_Default` log bucket.
+
+    Use to suppress high-volume / low-signal entries that would otherwise
+    overwhelm Data Access logs (e.g. reads on a public 404 bucket).
+    Excluded entries are *not* counted toward the project's log
+    ingestion bill.
+    """
+    body = {
+        "project": project,
+        "name": exclusion_name,
+        "filter": filter,
+        "disabled": disabled,
+    }
+    if description != None:
+        body["description"] = description
+    return resource(
+        rtype = "google_logging_project_exclusion",
+        name = name,
+        body = body,
+        attrs = ["id"],
+    )
+
 # ---------- artifact registry -----------------------------------------------
 
 def service_account(name, project, account_id, display_name = None):
@@ -371,4 +419,69 @@ def iam_workload_identity_pool_provider(
         name = name,
         body = body,
         attrs = ["id", "name", "state"],
+    )
+
+# ---------- monitoring -----------------------------------------------------
+
+def monitoring_notification_channel(name, project, display_name, type, labels):
+    """`google_monitoring_notification_channel`.
+
+    `type` is one of "email", "slack", "pagerduty", "webhook_tokenauth", etc.
+    `labels` is the type-specific config dict (e.g. {"email_address": "..."}).
+    """
+    return resource(
+        rtype = "google_monitoring_notification_channel",
+        name = name,
+        body = {
+            "project": project,
+            "display_name": display_name,
+            "type": type,
+            "labels": labels,
+        },
+        attrs = ["id", "name"],
+    )
+
+def monitoring_alert_policy_log_match(
+        name,
+        project,
+        display_name,
+        filter,
+        notification_channels,
+        documentation = None,
+        rate_limit_period = "300s"):
+    """`google_monitoring_alert_policy` for a log-match condition.
+
+    `condition_matched_log` fires once per log entry matching `filter`,
+    with a per-channel rate-limit window (`rate_limit_period`) so a
+    bursty pattern doesn't page on every entry.
+
+    `documentation` is the runbook text the notification carries — make
+    it useful at 3am, not a description of the filter.
+    """
+    body = {
+        "project": project,
+        "display_name": display_name,
+        "combiner": "OR",
+        "conditions": [{
+            "display_name": display_name,
+            "condition_matched_log": [{"filter": filter}],
+        }],
+        "alert_strategy": [{
+            "notification_rate_limit": [{"period": rate_limit_period}],
+            # Auto-close the incident after 30 min of no matches —
+            # log-match incidents don't auto-close otherwise.
+            "auto_close": "1800s",
+        }],
+        "notification_channels": notification_channels,
+    }
+    if documentation != None:
+        body["documentation"] = [{
+            "content": documentation,
+            "mime_type": "text/markdown",
+        }]
+    return resource(
+        rtype = "google_monitoring_alert_policy",
+        name = name,
+        body = body,
+        attrs = ["id", "name"],
     )

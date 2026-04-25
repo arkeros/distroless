@@ -158,6 +158,12 @@ jobs:
     name: Plan
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # `pr-plan` is unprotected (any branch, no reviewers) — its job is
+    # to make every plan-path token environment-tagged so the WIF
+    # principalSet for the plan SA has a specific claim to bind to.
+    # The plan SA itself only carries read-only roles, so an unprotected
+    # environment is the right trade-off: PR plans must run on any branch.
+    environment: pr-plan
     permissions:
       contents: read
       id-token: write
@@ -198,7 +204,7 @@ jobs:
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
-          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+          service_account: github-actions-senku-plan@senku-prod.iam.gserviceaccount.com
 
       - name: Plan
         env:
@@ -213,6 +219,13 @@ jobs:
     name: Apply
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # `prod` is configured in repo settings with `main`-only deployment
+    # branches and required reviewers. GitHub validates both *before*
+    # minting the OIDC token, so the branch/reviewer gate lives in the
+    # identity layer — not in this YAML, which any committer can edit.
+    # The apply SA's WIF binding is keyed on `attribute.environment/prod`,
+    # so a token from any other environment cannot impersonate it.
+    environment: prod
     permissions:
       contents: read
       id-token: write
@@ -254,7 +267,7 @@ jobs:
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
-          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+          service_account: github-actions-senku-apply@senku-prod.iam.gserviceaccount.com
           token_format: access_token
 
       - name: Login to Artifact Registry

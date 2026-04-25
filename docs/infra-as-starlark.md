@@ -39,19 +39,24 @@ command for everything).
 
 ## Approach
 
-Three composable primitives, each ~150 lines or less:
+Two composable primitives, each ~150 lines or less:
 
 1. **Resource constructors** — Starlark functions returning a struct with `.tf`
    (the JSON for the resource) and one attribute per cross-resource reference.
 2. **`tf_root`** — macro that takes a list of resources, merges them, writes
    `.tf.json` files, and emits `:plan` / `:apply` / `:destroy` runnable targets.
-3. **`tf_dag`** — macro that takes a topologically ordered list of `tf_root`s
-   and emits one runner that walks them.
 
 Terraform's interpolation language stays — `${...}` strings flow through the
 JSON unchanged. Starlark only handles things resolvable at generation time
 (loops, defaults, shared constants); cross-resource refs and provider state
 remain Terraform's job.
+
+Cross-root sequencing (apply gar, then registry, then lb) is *not* Bazel's
+job. Per Aspect's [outside-of-Bazel pattern](https://blog.aspect.build/outside-of-bazel-pattern),
+multi-process orchestration belongs in the task layer. Concretely: CI's
+`needs:` graph is the source of truth for deploy ordering, and a small
+task-runner config (`mise.toml` / `Justfile`) gives local devs a one-command
+shortcut. Bazel owns the build graph; the runner orchestrates the runs.
 
 ## Architecture
 
@@ -67,10 +72,6 @@ BUILD files (Starlark)
             │
             ├── write_file ──► main.tf.json + backend.tf.json
             └── sh_binary  ──► :<name>.plan / .apply / .destroy
-
-tf_dag(name, roots = [...])
-            │
-            └── sh_binary  ──► walks the chain, fail-fast
 ```
 
 ## Resource constructors
@@ -158,41 +159,20 @@ def tf_root(name, docs, backend_prefix, pre_apply = [], visibility = None):
 materialization), then `terraform init` + the requested verb. State stays in
 GCS — Bazel never tries to own it.
 
-## tf_dag
+## Cross-root orchestration (CI + task runner, not Bazel)
 
-```python
-def tf_dag(name, roots, verb = "apply"):
-    targets = ["%s.%s" % (r, verb) for r in roots]
-    native.sh_binary(
-        name = name,
-        srcs = ["//devtools/build/tools/tf:dag.sh"],
-        args = ["$(rootpath %s)" % t for t in targets],
-        data = targets,
-        tags = ["manual"],
-    )
-```
+We considered a `tf_dag` macro that walked N roots in order via `bazel run`.
+Aspect Build's [outside-of-Bazel pattern](https://blog.aspect.build/outside-of-bazel-pattern)
+named exactly the smell: *multi-process orchestration belongs in the task
+layer, not the build core*. We agreed and dropped it.
 
-```python
-# infra/BUILD
-tf_dag(
-    name = "apply_all",
-    roots = [
-        "//infra/cloud/gcp/gar:terraform",
-        "//oci/cmd/registry:terraform",
-        "//infra/cloud/gcp/lb:terraform",
-    ],
-)
+So sequencing lives in two places:
 
-tf_dag(
-    name = "plan_all",
-    verb = "plan",
-    roots = [...],  # same list
-)
-```
-
-One ordered list, one place to maintain it. Auto-detection from a `requires`
-field on each `tf_root` is a future cleanup, not worth the complexity at three
-roots.
+- **CI:** GHA `needs:` graph. PR plans run in parallel (independent), push
+  applies chain (gar → registry → lb at the GCP level). Per-job retries,
+  per-job permissions, per-job plan-as-PR-comment — all native.
+- **Local:** A small `mise.toml` / `Justfile` recipe wraps the same
+  `bazel run` invocations. Three lines, no Bazel runtime quirks.
 
 ## Worked example: registry
 
@@ -258,13 +238,13 @@ step and still have a working repo.
 
 ### Step 1 — Land the primitives, no callers
 
-- Add `devtools/build/tools/tf/defs.bzl` with `_resource`, `tf_root`, `tf_dag`,
-  `var`, `remote_state`.
-- Add `devtools/build/tools/tf/run.sh` and `dag.sh`.
+- Add `devtools/build/tools/tf/defs.bzl` with `resource`, `tf_root`, `var`,
+  `remote_state`.
+- Add `devtools/build/tools/tf/run.sh`.
+- Add `devtools/build/tools/tf/render.bzl` for build-time digest substitution.
 - Pin a `@terraform//` toolchain via `bzlmod` (replaces
   `hashicorp/setup-terraform@v4` in CI).
-- Unit test by generating a no-op `tf_root` with a single null resource and
-  confirming `bazel run :foo.plan` exits 0 against a temp backend.
+- Snapshot-test by generating a no-op `tf_root` and `diff_test`-ing the JSON.
 
 No production roots touched. Reviewable in isolation.
 
@@ -290,30 +270,23 @@ proven to do the same thing.
 
 ### Step 4 — Migrate `infra/cloud/gcp/lb`
 
-This is the hairiest because the LB stack reads other roots' outputs via
-`terraform_remote_state`. Convert each remote-state block to `remote_state(...)`
-in Starlark; the references resolve to the same `${data.terraform_remote_state...}`
-strings.
+This is the hairiest because the LB aggregates outputs from every backend
+service. Rather than reading those via `terraform_remote_state` at plan time,
+have each service expose an `LB_BACKEND` constant from its own `defs.bzl` —
+the LB root imports them directly via Starlark `load()`. Same content, no
+runtime indirection, fail-fast at Bazel build time.
 
-### Step 5 — Add `tf_dag`, collapse CI
+### Step 5 — Wire CI
 
-```yaml
-# .github/workflows/ci.yaml
-infra:
-  runs-on: ubuntu-latest
-  permissions: { contents: read, id-token: write, packages: write, pull-requests: write }
-  steps:
-    - checkout (fetch-depth: 0)
-    - setup bazel
-    - auth to GCP (WIF)
-    - login to GAR (docker)
-    - if PR:    bazel run //infra:plan_all
-    - if push:  bazel run //infra:apply_all
-```
+Three new GHA jobs (`gar`, `registry`, `lb`), each invoking
+`bazel run //path:terraform.{plan,apply}`. Plans run in parallel on PR,
+applies chain via `needs:` on push (gar → registry → lb at the GCP level).
+Per-job plan-as-PR-comment, per-job retries.
 
-The three jobs (`gar`, `registry`, `lb`) collapse to one. The plan-comment
-logic moves out of the workflow into a Bazel-side reporter that walks the
-roots and posts one comment per root with the plan diff.
+Don't try to express the deploy DAG inside Bazel — that's outside-of-Bazel
+work per [Aspect's pattern](https://blog.aspect.build/outside-of-bazel-pattern).
+For local convenience, a tiny `mise.toml` / `Justfile` recipe wraps the same
+three `bazel run` calls; ship it when someone actually wants it.
 
 ### Step 6 — Optional: add `infra/cloud/gcp/lb/examples/hello`
 
@@ -354,24 +327,23 @@ it under `tf_root` too. Otherwise skip.
    GHA (simplest), move into `tf_root` as a `plan_json` target (more
    consistent), build a dedicated reporter rule (highest investment).
 
-2. **Auto-DAG vs explicit list.** `tf_dag` currently takes a hand-ordered list.
-   At what root count is it worth a Bazel aspect that walks `requires` fields
-   and topo-sorts? Best guess: ~7+ roots.
-
-3. **Multi-environment.** Today there's one `senku-prod`. If we add `staging`,
+2. **Multi-environment.** Today there's one `senku-prod`. If we add `staging`,
    does each root take an `env` parameter and emit one tf_root per env, or do
    we keep one root per env on disk? Affects how `var()` and backend prefixes
    are scoped.
 
-4. **Drift detection.** Once `bazel run //infra:apply_all` is the deploy path,
-   running `bazel run //infra:plan_all` on a cron and alerting on non-empty
-   diffs gives free drift detection. Worth wiring up; not urgent.
+3. **Drift detection.** Run all `:terraform.plan` targets on a cron and alert
+   on non-empty diffs. Free drift detection. Worth wiring up; not urgent.
 
-5. **rules_terraform vs homegrown.** Public `rules_terraform` implementations
+4. **rules_terraform vs homegrown.** Public `rules_terraform` implementations
    are mostly abandoned. The 150-line homegrown approach above costs less than
    evaluating a third-party rule set. Reconsider if our needs grow past what
-   `tf_root` + `tf_dag` covers (e.g., per-resource targeted apply, plan
-   caching keyed on TF state).
+   `tf_root` covers (e.g., per-resource targeted apply, plan caching keyed on
+   TF state).
+
+5. **Local convenience tool.** When a `mise.toml` / `Justfile` becomes
+   worthwhile, it's three recipes: `apply-all` (chain), `plan-all` (parallel),
+   `destroy-all` (reverse). Three lines each.
 
 ## Why not Terragrunt
 
@@ -401,22 +373,24 @@ one language.
 
 ```
 devtools/build/tools/tf/
-├── defs.bzl              — tf_root, tf_dag, _resource, var, remote_state
+├── defs.bzl              — tf_root, resource, var, remote_state
+├── render.bzl            — IMAGE_URI sentinel + render_main_with_image
 ├── resources/
-│   ├── gcp.bzl           — service_account, cloud_run_service, ...
-│   └── google_compute.bzl — backend_service, url_map, ...
+│   └── gcp.bzl           — service_account, project_service, ...
 ├── run.sh                — per-root plan/apply runner
-├── dag.sh                — DAG walker
-└── BUILD                 — exposes the toolchain + scripts
+└── BUILD                 — exposes the toolchain + script
 
-infra/
-├── BUILD                 — tf_dag(plan_all, apply_all)
-└── cloud/gcp/
-    ├── gar/BUILD         — tf_root(...)
-    └── lb/BUILD          — tf_root(...)
+devtools/bifrost/terraform/modules/
+└── service_cloudrun/
+    ├── main.tf           — HCL form (terraform-only consumers)
+    └── defs.bzl          — Starlark form (cloud_run_service macro)
+
+infra/cloud/gcp/
+├── gar/{BUILD,defs.bzl}  — tf_root + GAR identity constants
+└── lb/{BUILD,defs.bzl}   — tf_root + LB resources
 
 oci/cmd/registry/
-└── BUILD                 — tf_root(...) with pre_apply = [image_push_gar, image_tfvars]
+└── {BUILD,defs.bzl}      — tf_root with image_push, registry identity + LB_BACKEND
 ```
 
 The `resources/` split keeps GCP-specific constructors out of the core rules

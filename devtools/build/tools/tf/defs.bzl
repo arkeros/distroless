@@ -11,8 +11,10 @@ Three primitives:
   `backend.tf.json` for one Terraform root, plus `:<name>.{plan,apply,destroy}`
   runnable targets that exec terraform against the generated dir.
 
-- `tf_dag(name, roots, verb)`: aggregate runner that walks N roots in the
-  given order, fail-fast.
+Cross-root sequencing (`apply gar, then registry, then lb`) is *not* this
+file's job — that's CI's job graph (or a task runner like `mise`/`just`
+locally). Bazel owns the build/test DAG; deploy ordering belongs to the
+runner that's already orchestrating the rest of the pipeline.
 
 Terraform's interpolation language stays — `${...}` strings flow through the
 generated JSON unchanged. Starlark only handles things resolvable at
@@ -36,7 +38,6 @@ IMAGE_URI = _IMAGE_URI
 
 _TERRAFORM_BIN = "@multitool//tools/terraform"
 _RUN_SH = "//devtools/build/tools/tf:run.sh"
-_DAG_SH = "//devtools/build/tools/tf:dag.sh"
 _DEFAULT_BUCKET = "senku-prod-terraform-state"
 
 # ---------- references ------------------------------------------------------
@@ -279,24 +280,3 @@ def tf_root(
             visibility = visibility,
         )
 
-# ---------- tf_dag ----------------------------------------------------------
-
-def tf_dag(name, roots, verb = "apply", visibility = None):
-    """Run `:<root>.<verb>` for each root in `roots`, in order, fail-fast.
-
-    Args:
-        name: Target name.
-        roots: Topologically ordered list of `tf_root` labels (e.g.
-            `//infra/cloud/gcp/gar:terraform`). The verb is appended to each.
-        verb: One of `plan`/`apply`/`destroy`. Defaults to `apply`.
-        visibility: Standard.
-    """
-    targets = ["{}.{}".format(r, verb) for r in roots]
-    sh_binary(
-        name = name,
-        srcs = [_DAG_SH],
-        args = ["$(rootpath {})".format(t) for t in targets],
-        data = targets,
-        tags = ["manual"],
-        visibility = visibility,
-    )

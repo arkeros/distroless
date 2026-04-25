@@ -15,9 +15,6 @@ bzl_library(
 )
 
 exports_files(
-    [
-        "run.sh",
-        "dag.sh",
-    ],
+    ["run.sh"],
     visibility = ["//visibility:public"],
 )

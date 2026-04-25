@@ -1,89 +1,95 @@
-# `service_cloudrun` Terraform module (PoC)
+# `service_cloudrun` — Starlark macro
 
-A module for a Cloud Run web service. Parallel to [`service_kubernetes`](../service_kubernetes/README.md), but targeting the managed serverless control plane instead of GKE.
+A Cloud Run web service, declared in Starlark and emitted into a `tf_root`'s
+generated `.tf.json`. The macro composes `google_cloud_run_v2_service` and
+(when `public = True`) `google_cloud_run_v2_service_iam_member` from the
+[1:1 wrappers](../../../../../devtools/build/tools/tf/resources/gcp.bzl) into
+one logical unit, with bifrost's opinionated defaults baked in.
 
-> **Status:** proof of concept.
+## Usage
+
+```python
+load(
+    "//devtools/bifrost/terraform/modules/service_cloudrun:defs.bzl",
+    "cloud_run_service",
+)
+
+services = [
+    cloud_run_service(
+        name = "registry_" + region.replace("-", "_"),
+        service_name = "registry",
+        project = "senku-prod",
+        region = region,
+        image = IMAGE_URI,                  # sentinel; tf_root splices the digest at build time
+        service_account_email = sa.email,
+        scaling = {"min": 0, "max": 3},
+        resources = {"cpu": 1, "memory": 512},
+        probes = {"startup_path": "/v2/", "liveness_path": "/v2/"},
+        ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER",
+        public = True,
+    )
+    for region in REGIONS
+]
+```
+
+See [`oci/cmd/registry/BUILD`](../../../../../oci/cmd/registry/BUILD) for the
+canonical end-to-end usage.
 
 ## Architecture — different from Kubernetes on purpose
 
 Cloud Run is not Kubernetes, and a lot of the K8s module's shape doesn't apply:
 
-| Concern | Kubernetes module | Cloud Run module |
+| Concern | Kubernetes module | Cloud Run macro |
 |---|---|---|
 | Rollout controller | Flagger / Argo Rollouts (external) | Cloud Run native (revisions + traffic allocation) |
-| Server-Side Apply | Yes (`kubernetes_manifest`) | N/A — this is the google provider calling GCP APIs |
 | HPA / VPA / PDB | Yes | No — Cloud Run's native scaling subsumes them |
 | Secret materialisation | `ephemeral + data_wo` + typed Secret carve-out | Native `secret_key_ref` — Cloud Run reads SM at container startup |
 | Pod security context | Hardened at the container level | N/A — every Cloud Run instance runs sandboxed (gVisor or Linux cgroups) |
 | Namespaces | Required | None — project + region scopes the service |
 
-Terraform owns everything for Cloud Run — there's no Flagger, no HPA, no `computed_fields` coordination. `terraform apply` with a new `var.image` creates a new revision; the default traffic policy (`TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST`, 100%) sends traffic immediately.
+Terraform owns everything for Cloud Run — there's no Flagger, no HPA, no
+`computed_fields` coordination. `terraform apply` with a new `image` creates a
+new revision; the default traffic policy (`TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST`,
+100%) sends traffic immediately.
 
-## Resource contract
+## Notable inputs
 
-`resources = { cpu, memory }` maps directly to Cloud Run's `limits`:
+- `name` — **Terraform block key**, must be a valid identifier (`a-z`, `0-9`, `_`).
+- `service_name` — Cloud Run service `name` field. Defaults to `name`. Cloud Run names are scoped by `(project, location)`, so multi-region fan-out can share `service_name = "foo"` while each region has its own unique block key.
+- `image` — digest-pinned URI. Use the `IMAGE_URI` sentinel from `tf_root`'s render layer to splice the build's just-built digest at build time.
+- `resources = { cpu, memory }` — CPU in cores (float, e.g. `0.5`), memory in MiB (int). No request/limit split.
+- `scaling = { min, max }` — `min = 0` is allowed (scale-to-zero). `concurrency` is a separate kwarg, default 80.
+- `probes = { startup_path, liveness_path }` — HTTP GET paths.
+- `ingress` — `INGRESS_TRAFFIC_ALL` | `INTERNAL_ONLY` | `INTERNAL_LOAD_BALANCER`.
+- `public = True` adds `roles/run.invoker` for `allUsers`. Default `False`.
+- `cpu_idle` (default `True`), `startup_cpu_boost` (default `True`),
+  `execution_environment` (default `EXECUTION_ENVIRONMENT_GEN2`).
+- `env`, `secret_env` — plain and Secret Manager-backed env vars. `secret_env`
+  versions must be explicit integers; `"latest"` is rejected.
 
-- `cpu` in cores (float, e.g. `0.5`) → `"0.5"`
-- `memory` in MiB (int, e.g. `512`) → `"512Mi"`
-
-Cloud Run has no request/limit split. The "no CPU limit for web services" rule doesn't apply because each Cloud Run instance is isolated — there's no co-tenant on the same node to throttle.
-
-## Secrets
-
-`secret_env = map({ project, secret, version })` — same shape as the K8s module. Resolution differs: Cloud Run calls Secret Manager at container start and injects the value into the process environment. Nothing is materialised as a K8s Secret; nothing enters Terraform state.
-
-Version must be an explicit integer. `"latest"` is rejected — deploys are immutable, rotation is an explicit version bump that produces a new Cloud Run revision.
-
-## Image pinning
-
-`image` must be digest-pinned (`…@sha256:…`), validated.
-
-## Scaling
-
-`scaling = { min, max }` — Cloud Run allows `min = 0` (scale-to-zero), unlike HPA. The module's validation accepts that.
-
-`concurrency` sets max concurrent requests per instance. This is the native Cloud Run primitive and has no K8s equivalent.
-
-## Traffic / rollouts
-
-The module sets a single traffic block: `TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST` at 100%. That means every apply of a new image takes full traffic immediately. Canary traffic splits (e.g. 10% to new revision, 90% to prior) require revision names that only exist post-apply, so they're not exposed as a module input. Callers who want canaries either:
-
-1. Use Cloud Deploy / Cloud Deploy for Cloud Run (separate control plane, like Flagger for Cloud Run).
-2. Override the `google_cloud_run_v2_service.traffic` resource directly outside the module, pinning to named revisions.
-
-## Inputs
-
-See [`variables.tf`](./variables.tf). Notable ones:
-
-- `public` — when `true`, grants `roles/run.invoker` to `allUsers`. Default `false` (private by construction).
-- `ingress` — `INGRESS_TRAFFIC_ALL`, `INGRESS_TRAFFIC_INTERNAL_ONLY`, or `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER`.
-- `cpu_idle` — whether CPU is throttled outside requests. `true` (default) is cheaper; `false` keeps CPU allocated always.
-- `startup_cpu_boost` — free cold-start speedup, default on.
-- `execution_environment` — `EXECUTION_ENVIRONMENT_GEN2` default (Linux cgroups); `GEN1` for legacy gVisor.
-
-## Custom domains
-
-`custom_domains = ["api.example.com", ...]` creates a `google_cloud_run_domain_mapping` per entry. Cloud Run provisions a managed TLS cert once DNS resolves to the returned records.
-
-Caveats inherited from the feature (pick a load balancer instead if any of these hurt):
-
-- Not available in every region. `europe-west1`, `us-central1`, `asia-northeast1`, and a few others are supported; `europe-west4`, `us-east4`, and others are not. See Google's docs for the current list.
-- The domain must be verified in the project's Search Console before `terraform apply` succeeds.
-- No CDN, no Cloud Armor, no multi-region fan-out, no sharing TLS across services.
-
-Output `custom_domain_dns_records` exposes the `{ type, name, rrdata }` tuples to create in your DNS provider.
+See `defs.bzl` for the full list and defaults.
 
 ## Outputs
 
-- `service_account_email` — runtime GSA; grant IAM on other resources.
-- `service_name`, `service_uri`, `service_id` — for DNS wiring, Cloud Scheduler targets, load balancer backends.
-- `custom_domain_dns_records` — DNS records to create per domain mapping.
+The returned struct exposes attribute interpolation strings for downstream
+references (e.g. an LB NEG pointing at the service):
 
-## Verification
+- `.uri` — `${google_cloud_run_v2_service.<name>.uri}`
+- `.id`, `.name`, `.location` — same shape
 
-```bash
-bazel test //devtools/bifrost/terraform/modules/service_cloudrun:lint
-bazel run  //devtools/bifrost/terraform/modules/service_cloudrun:validate
-```
+Plus `.tf` (the JSON body) and `.addr` (bare address for `depends_on`).
 
-Lint is `terraform fmt -check -recursive`; semantic validation needs provider downloads and runs locally only.
+## Why Starlark, not HCL
+
+The HCL form of this module was deleted when the registry root migrated to
+`tf_root`. Reasons:
+
+- The HCL module was duplicating what the Starlark macro now expresses, with
+  inevitable drift between the two.
+- The only in-repo consumer (`oci/cmd/registry`) used the Starlark form.
+- The standalone Terraform sample (`infra/cloud/gcp/lb/examples/hello`) was a
+  documentation artifact for the HCL flow; with no HCL flow to document, it's
+  redundant.
+
+External terraform-only consumers should pin a tag of this repo from before
+the deletion, or copy the resource graph into their own root.

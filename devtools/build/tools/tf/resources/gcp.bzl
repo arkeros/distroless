@@ -67,7 +67,7 @@ def service_account(name, project, account_id, display_name = None):
 # Cloud Run v2: 1:1 resource wrappers.
 #
 # The convenience composer that builds a full Cloud Run service from
-# bifrost-style flat inputs lives next to its HCL twin at
+# bifrost-style flat inputs lives at
 # `//devtools/bifrost/terraform/modules/service_cloudrun:defs.bzl`.
 # ---------------------------------------------------------------------------
 

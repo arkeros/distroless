@@ -8,9 +8,10 @@ build artifact, not a CI YAML quirk. Local and CI run the same commands.
 > together — both as a record of the decisions made (Terragrunt rejection,
 > CDKTF rejection, `tf_dag` rejection in favour of Aspect CLI, etc.) and as
 > the reference for adding the next root. The three production roots
-> (`infra/cloud/gcp/gar`, `oci/cmd/registry`, `infra/cloud/gcp/lb`) have all
-> been migrated; the `infra/cloud/gcp/lb/examples/hello` standalone sample
-> remains in HCL by design (it's a documentation artifact, not a deploy).
+> (`infra/cloud/gcp/gar`, `oci/cmd/registry`, `infra/cloud/gcp/lb`) are all
+> on the new path; the HCL form of bifrost's `service_cloudrun` module
+> (and its standalone `examples/hello` consumer) was deleted as part of
+> the migration — Starlark is the single source of truth.
 
 ## Motivation
 
@@ -311,10 +312,21 @@ Three new GHA jobs (`gar`, `registry`, `lb`), each invoking
 aspect-cli is set up in CI). Plans run in parallel on PR, applies chain
 via `needs:` on push.
 
-### Step 6 — Optional: add `infra/cloud/gcp/lb/examples/hello`
+### Step 6 — Delete the HCL twin of `service_cloudrun` and its example
 
-If we already have it (the existing `lb/main.tf` references `examples`), bring
-it under `tf_root` too. Otherwise skip.
+Once the registry root is fully on the Starlark `cloud_run_service` macro,
+the parallel HCL implementation becomes drift-prone. Delete it:
+
+- `devtools/bifrost/terraform/modules/service_cloudrun/{main,outputs,variables,versions}.tf`
+- `devtools/bifrost/terraform/modules/service_cloudrun/examples/`
+- `infra/cloud/gcp/lb/examples/hello/` (the only HCL consumer)
+
+Bifrost's `service_cloudrun` then exists only in `defs.bzl` — Starlark is the
+single source of truth.
+
+### Step 7 — Multi-environment
+
+(Design — see "Multi-environment" section below; not implemented in this PR.)
 
 ## Trade-offs
 
@@ -406,8 +418,7 @@ devtools/build/tools/tf/
 
 devtools/bifrost/terraform/modules/
 └── service_cloudrun/
-    ├── main.tf           — HCL form (terraform-only consumers)
-    └── defs.bzl          — Starlark form (cloud_run_service macro)
+    └── defs.bzl          — cloud_run_service Starlark macro
 
 infra/cloud/gcp/
 ├── gar/{BUILD,defs.bzl}  — tf_root + GAR identity constants

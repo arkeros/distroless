@@ -76,11 +76,11 @@ Push is not supported; images are pushed directly to GHCR via CI.
 
 ## Deployment
 
-Deployed to Cloud Run in five regions — `us-central1`, `europe-west3`, `asia-northeast1`, `southamerica-east1`, `australia-southeast1` — by the co-located Terraform root in [`terraform/`](./terraform). Each region is a separate service (`registry-usc1`, `registry-euw3`, `registry-ane1`, `registry-sae1`, `registry-ase1`) with its own runtime GSA, all instantiated via the `//devtools/bifrost/terraform/modules/service_cloudrun` module with `for_each`.
+Deployed to Cloud Run in three regions — `us-central1`, `europe-west3`, `asia-northeast1` — by the co-located `tf_root` in [`BUILD`](./BUILD). Each region is a separate service (`registry_us_central1`, `registry_europe_west3`, `registry_asia_northeast1`) sharing one runtime GSA, all emitted by a Starlark loop over the `cloud_run_service` macro at [`//devtools/bifrost/terraform/modules/service_cloudrun:defs.bzl`](../../../devtools/bifrost/terraform/modules/service_cloudrun/defs.bzl).
 
-Image pull path is the shared multi-region `europe` GAR provisioned by [`//infra/cloud/gcp/gar`](../../../infra/cloud/gcp/gar). All five Cloud Run regions pull from the same `europe-docker.pkg.dev/senku-prod/containers/registry@<digest>` URL.
+Image pull path is the shared multi-region `europe` GAR provisioned by [`//infra/cloud/gcp/gar`](../../../infra/cloud/gcp/gar). All three Cloud Run regions pull from the same `europe-docker.pkg.dev/senku-prod/containers/registry@<digest>` URL.
 
-The image is pushed to **two** destinations: **GHCR** for the public `distroless.io` mirror, and **GAR** for Cloud Run's deploy-time pull (Cloud Run can't pull from GHCR directly). Separate Bazel targets for each. The digest of the just-built image is materialized into a Bazel-generated `terraform/image.auto.tfvars.json` by `:image_tfvars` — no manual tfvars edit.
+The image is pushed to **two** destinations: **GHCR** for the public `distroless.io` mirror, and **GAR** for Cloud Run's deploy-time pull (Cloud Run can't pull from GHCR directly). Separate Bazel targets for each. `tf_root.image_push` splices the digest URI into the generated `main.tf.json` at Bazel build time, and the same `image_push` target is auto-injected as a `pre_apply` hook so `bazel run :terraform.apply` pushes-then-applies in one command. No tfvars edits, no `var.image` round-trip.
 
 The deploy flow is wrapped by [`deploy.sh`](./deploy.sh):
 

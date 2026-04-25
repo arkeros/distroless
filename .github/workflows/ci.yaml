@@ -148,9 +148,10 @@ jobs:
   #
   # `aspect plan` / `aspect apply` walk the ordered list of roots from
   # `.aspect/stdlib.axl` (`TF_ROOTS`). Same commands work locally and in CI.
-  # `aspect plan` itself posts per-root PR comments via `gh api` when run
-  # under `$CI` — see `.aspect/plan.axl`. CI's job is just to provide the
-  # auth + token; no fan-out, no matrix, no follow-up github-script step.
+  # `aspect plan` itself upserts per-root PR comments via the
+  # //devtools/build/tools/tf_pr_comment Go binary when run under `$CI` —
+  # see `.aspect/plan.axl`. CI's job is just to provide the auth + token;
+  # no fan-out, no matrix, no follow-up github-script step.
   # ---------------------------------------------------------------------------
 
   plan:
@@ -201,10 +202,11 @@ jobs:
 
       - name: Plan
         env:
-          # `gh` CLI uses these to authenticate the comment-posting calls
-          # `aspect plan` makes via `gh api`. The action's default token
-          # has `pull-requests: write` (set above), which is what we need.
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The tf_pr_comment Go binary that `aspect plan` invokes uses
+          # the same env vars as `gh` for auth. The action's default
+          # token has `pull-requests: write` (set above), which is what
+          # we need to upsert per-root plan comments.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: aspect plan
 
   apply:

@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Bump together. The sha256 must match `aspect-cli-x86_64-unknown-linux-musl`
+  # for the pinned tag — re-compute via:
+  #   curl -fsSL https://github.com/aspect-build/aspect-cli/releases/download/${ASPECT_CLI_VERSION}/aspect-cli-x86_64-unknown-linux-musl | sha256sum
+  ASPECT_CLI_VERSION: v2026.17.17
+  ASPECT_CLI_SHA256: db45968e114c22af0e0d3dddadfb7091c81983f66499eed9d01d782bb09483d0
+
 jobs:
   build:
     name: Build and test
@@ -173,13 +180,13 @@ jobs:
       - name: Install Aspect CLI
         run: |
           set -euo pipefail
-          # Resolve latest release tag from GitHub, then download that asset.
-          # No setup-aspect-cli action exists yet; this is the documented
-          # Linux CI install pattern.
-          TAG=$(curl -fsSL https://api.github.com/repos/aspect-build/aspect-cli/releases/latest | jq -r .tag_name)
+          # Pinned via top-of-file env vars. No official setup-aspect-cli
+          # action exists yet; this is the documented Linux CI install
+          # pattern. Hermetic: sha256 verified against the pinned digest.
           curl -fsSL \
-            "https://github.com/aspect-build/aspect-cli/releases/download/${TAG}/aspect-cli-x86_64-unknown-linux-musl" \
+            "https://github.com/aspect-build/aspect-cli/releases/download/${ASPECT_CLI_VERSION}/aspect-cli-x86_64-unknown-linux-musl" \
             -o /tmp/aspect
+          echo "${ASPECT_CLI_SHA256}  /tmp/aspect" | sha256sum -c -
           chmod +x /tmp/aspect
           sudo mv /tmp/aspect /usr/local/bin/aspect
           aspect --version
@@ -267,13 +274,13 @@ jobs:
       - name: Install Aspect CLI
         run: |
           set -euo pipefail
-          # Resolve latest release tag from GitHub, then download that asset.
-          # No setup-aspect-cli action exists yet; this is the documented
-          # Linux CI install pattern.
-          TAG=$(curl -fsSL https://api.github.com/repos/aspect-build/aspect-cli/releases/latest | jq -r .tag_name)
+          # Pinned via top-of-file env vars. No official setup-aspect-cli
+          # action exists yet; this is the documented Linux CI install
+          # pattern. Hermetic: sha256 verified against the pinned digest.
           curl -fsSL \
-            "https://github.com/aspect-build/aspect-cli/releases/download/${TAG}/aspect-cli-x86_64-unknown-linux-musl" \
+            "https://github.com/aspect-build/aspect-cli/releases/download/${ASPECT_CLI_VERSION}/aspect-cli-x86_64-unknown-linux-musl" \
             -o /tmp/aspect
+          echo "${ASPECT_CLI_SHA256}  /tmp/aspect" | sha256sum -c -
           chmod +x /tmp/aspect
           sudo mv /tmp/aspect /usr/local/bin/aspect
           aspect --version

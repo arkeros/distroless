@@ -1,13 +1,16 @@
-# Infra as Starlark — Plan
+# Infra as Starlark
 
-A plan to move Terraform from hand-written HCL + GitHub Actions choreography to
-Starlark-generated `.tf.json` driven by Bazel. The DAG between roots becomes a
-build artifact, not a CI YAML quirk. Local `bazel run` and CI run the same
-command.
+The migration from hand-written HCL + GitHub Actions choreography to
+Starlark-generated `.tf.json` driven by Bazel. The DAG between roots is a
+build artifact, not a CI YAML quirk. Local and CI run the same commands.
 
-> Status: proposal. Nothing in this doc is built yet. The current state is
-> hand-written HCL in `infra/cloud/gcp/{gar,lb}` and `oci/cmd/registry/terraform`,
-> with `oci/cmd/registry/deploy.sh` orchestrating the registry root.
+> Status: implemented. This doc captures the design and the migration trail
+> together — both as a record of the decisions made (Terragrunt rejection,
+> CDKTF rejection, `tf_dag` rejection in favour of Aspect CLI, etc.) and as
+> the reference for adding the next root. The three production roots
+> (`infra/cloud/gcp/gar`, `oci/cmd/registry`, `infra/cloud/gcp/lb`) have all
+> been migrated; the `infra/cloud/gcp/lb/examples/hello` standalone sample
+> remains in HCL by design (it's a documentation artifact, not a deploy).
 
 ## Motivation
 

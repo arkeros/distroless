@@ -4,7 +4,10 @@ bzl_library(
     name = "defs",
     srcs = ["defs.bzl"],
     visibility = ["//visibility:public"],
-    deps = [":render"],
+    deps = [
+        ":render",
+        ":rule",
+    ],
 )
 
 bzl_library(
@@ -14,7 +17,24 @@ bzl_library(
     deps = [],
 )
 
+bzl_library(
+    name = "rule",
+    srcs = ["rule.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//devtools/build/tools/tf/toolchain"],
+)
+
 exports_files(
-    ["run.sh"],
+    [
+        "lint_wrapper.sh.tpl",
+        "run.sh",
+        "runner.sh.tpl",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "lint",
+    srcs = ["lint.bzl"],
     visibility = ["//visibility:public"],
 )

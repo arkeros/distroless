@@ -2,15 +2,13 @@
 # Hermetic HCL format check. Runs `terraform fmt -check -recursive` against
 # every .tf file packaged as test data.
 #
-# Args: $1 = rootpath to the terraform binary (from @multitool//tools/terraform).
+# Env: $TERRAFORM_BIN — absolute path to the terraform binary, set by the
+#                       generating rule (see //devtools/build/tools/tf:lint.bzl).
 #
 # Why only fmt: `terraform init` needs network to download providers and the
 # Bazel sandbox has none. `terraform validate` requires init. fmt is offline
 # and still catches HCL syntax errors.
 set -euo pipefail
-
-TERRAFORM="$PWD/$1"
-shift
 
 # Discover the module root — the directory containing this test's data tree.
 MODULE_ROOT=""
@@ -28,4 +26,4 @@ if [[ -z "$MODULE_ROOT" ]]; then
 fi
 
 echo "terraform fmt -check -recursive $MODULE_ROOT"
-"$TERRAFORM" fmt -check -recursive "$MODULE_ROOT"
+"$TERRAFORM_BIN" fmt -check -recursive "$MODULE_ROOT"

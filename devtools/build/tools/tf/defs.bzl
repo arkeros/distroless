@@ -23,12 +23,12 @@ emitted as strings and resolved by Terraform at plan time.
 """
 
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load(
     ":render.bzl",
     _IMAGE_URI = "IMAGE_URI",
     _render_main_with_image = "render_main_with_image",
 )
+load(":rule.bzl", "tf_runner")
 
 # Re-export `IMAGE_URI` so callers loading `tf_root` from this file can also
 # pull the sentinel without a second load line. Starlark's `load` makes the
@@ -36,8 +36,6 @@ load(
 # name does.
 IMAGE_URI = _IMAGE_URI
 
-_TERRAFORM_BIN = "@multitool//tools/terraform"
-_RUN_SH = "//devtools/build/tools/tf:run.sh"
 _DEFAULT_BUCKET = "senku-prod-terraform-state"
 
 # ---------- references ------------------------------------------------------
@@ -241,41 +239,20 @@ def tf_root(
         name,
     )
 
-    # Args shape, in order:
-    #   <terraform-bin> <one-generated-file> <verb> <root-name>
-    #   --             [tfvars rootpaths...]
-    #   --             ["<subdir>|<package_path>" pairs...]
-    #   --             [pre_apply rootpaths...]
-    # Empty sections still need their `--` separator.
-    module_args = [
-        "{}|{}".format(subdir, Label(label).package)
-        for subdir, label in modules.items()
-    ]
+    # Per-verb runners. The `tf_runner` rule resolves the terraform
+    # toolchain at analysis time and bakes the resulting paths into a
+    # generated wrapper script — no `bazel run`-only `args = [...]`
+    # injection — so direct-spawn callers (e.g. `aspect plan` via
+    # `runnable`) work without bouncing through `bazel run`.
     for verb in ("plan", "apply", "destroy"):
-        sh_binary(
+        tf_runner(
             name = "{}.{}".format(name, verb),
-            srcs = [_RUN_SH],
-            args = (
-                [
-                    "$(rootpath {})".format(_TERRAFORM_BIN),
-                    "$(rootpath :{})".format(main_target),
-                    verb,
-                    root_name,
-                    "--",
-                ] +
-                ["$(rootpath {})".format(t) for t in tfvars] +
-                ["--"] +
-                module_args +
-                ["--"] +
-                ["$(rootpath {})".format(t) for t in pre_apply]
-            ),
-            data = (
-                generated +
-                [_TERRAFORM_BIN] +
-                tfvars +
-                modules.values() +
-                pre_apply
-            ),
+            verb = verb,
+            root_name = root_name,
+            generated = generated,
+            tfvars = tfvars,
+            modules = {label: subdir for subdir, label in modules.items()},
+            pre_apply = pre_apply,
             tags = ["manual"],
             visibility = visibility,
         )

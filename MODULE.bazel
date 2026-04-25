@@ -28,6 +28,7 @@ include("//bazel/include:javascript.MODULE.bazel")
 include("//bazel/include:python.MODULE.bazel")
 include("//bazel/include:kubernetes.MODULE.bazel")
 include("//bazel/include:multitool.MODULE.bazel")
+include("//bazel/include:terraform.MODULE.bazel")
 
 git_override(
     module_name = "lazy_bazel_env.bzl",

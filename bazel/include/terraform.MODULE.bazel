@@ -1,0 +1,12 @@
+"Terraform toolchain configuration"
+
+# Pinned version + platform sha256s live in
+# `//devtools/build/tools/tf/toolchain:versions.bzl`. Bumping happens
+# there; this file just wires the extension up.
+terraform = use_extension(
+    "//devtools/build/tools/tf/toolchain:extensions.bzl",
+    "terraform",
+)
+use_repo(terraform, "terraform_toolchains")
+
+register_toolchains("@terraform_toolchains//:terraform_toolchain")

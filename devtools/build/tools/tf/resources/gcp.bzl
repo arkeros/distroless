@@ -473,6 +473,7 @@ def monitoring_alert_policy_metric_absent(
         display_name,
         metric_filter,
         notification_channels,
+        severity,
         documentation = None,
         duration = "3600s"):
     """`google_monitoring_alert_policy` for a metric-absence condition.
@@ -484,11 +485,16 @@ def monitoring_alert_policy_metric_absent(
 
     `metric_filter` is a Cloud Monitoring filter (not a logging filter),
     typically `metric.type="logging.googleapis.com/user/<metric_name>"`.
+
+    `severity` is one of "CRITICAL", "ERROR", "WARNING". Required:
+    GCP renders an empty severity in notifications, which makes triage
+    by inbox harder than it needs to be.
     """
     body = {
         "project": project,
         "display_name": display_name,
         "combiner": "OR",
+        "severity": severity,
         "conditions": [{
             "display_name": display_name,
             "condition_absent": [{
@@ -521,6 +527,7 @@ def monitoring_alert_policy_log_match(
         display_name,
         filter,
         notification_channels,
+        severity,
         documentation = None,
         rate_limit_period = "300s"):
     """`google_monitoring_alert_policy` for a log-match condition.
@@ -531,11 +538,16 @@ def monitoring_alert_policy_log_match(
 
     `documentation` is the runbook text the notification carries — make
     it useful at 3am, not a description of the filter.
+
+    `severity` is one of "CRITICAL", "ERROR", "WARNING". Required:
+    GCP renders an empty severity in notifications, which makes triage
+    by inbox harder than it needs to be.
     """
     body = {
         "project": project,
         "display_name": display_name,
         "combiner": "OR",
+        "severity": severity,
         "conditions": [{
             "display_name": display_name,
             "condition_matched_log": [{"filter": filter}],

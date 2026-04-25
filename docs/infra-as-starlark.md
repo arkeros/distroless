@@ -53,10 +53,12 @@ remain Terraform's job.
 
 Cross-root sequencing (apply gar, then registry, then lb) is *not* Bazel's
 job. Per Aspect's [outside-of-Bazel pattern](https://blog.aspect.build/outside-of-bazel-pattern),
-multi-process orchestration belongs in the task layer. Concretely: CI's
-`needs:` graph is the source of truth for deploy ordering, and a small
-task-runner config (`mise.toml` / `Justfile`) gives local devs a one-command
-shortcut. Bazel owns the build graph; the runner orchestrates the runs.
+multi-process orchestration belongs in the task layer. We adopt the
+[Aspect CLI](https://docs.aspect.build/cli/) for that: `.aspect/plan.axl`
+and `.aspect/apply.axl` define `aspect plan` / `aspect apply` tasks that
+walk the root list in dependency order. Same command runs locally and (with
+aspect-cli installed) in CI. Bazel owns the build graph; aspect-cli
+orchestrates the runs.
 
 ## Architecture
 
@@ -159,20 +161,35 @@ def tf_root(name, docs, backend_prefix, pre_apply = [], visibility = None):
 materialization), then `terraform init` + the requested verb. State stays in
 GCS — Bazel never tries to own it.
 
-## Cross-root orchestration (CI + task runner, not Bazel)
+## Cross-root orchestration (Aspect CLI, not Bazel)
 
 We considered a `tf_dag` macro that walked N roots in order via `bazel run`.
 Aspect Build's [outside-of-Bazel pattern](https://blog.aspect.build/outside-of-bazel-pattern)
 named exactly the smell: *multi-process orchestration belongs in the task
 layer, not the build core*. We agreed and dropped it.
 
-So sequencing lives in two places:
+Sequencing now lives in `.aspect/{plan,apply}.axl`. `stdlib.axl` defines
+`TF_ROOTS` (the ordered list). The tasks are thin Starlark wrappers around
+`bazel run <root>.{plan,apply}`:
 
-- **CI:** GHA `needs:` graph. PR plans run in parallel (independent), push
-  applies chain (gar → registry → lb at the GCP level). Per-job retries,
-  per-job permissions, per-job plan-as-PR-comment — all native.
-- **Local:** A small `mise.toml` / `Justfile` recipe wraps the same
-  `bazel run` invocations. Three lines, no Bazel runtime quirks.
+```python
+# .aspect/stdlib.axl
+TF_ROOTS = [
+    "//infra/cloud/gcp/gar:terraform",
+    "//oci/cmd/registry:terraform",
+    "//infra/cloud/gcp/lb:terraform",
+]
+```
+
+```bash
+aspect apply                                  # all roots, gar → registry → lb
+aspect apply //oci/cmd/registry:terraform     # one root
+aspect plan                                   # all roots
+aspect plan //infra/cloud/gcp/lb:terraform    # one root
+```
+
+CI's `needs:` graph mirrors `TF_ROOTS` for per-step UI (per-root PR plan
+comments, per-root retries). Same source of truth, two surfaces.
 
 ## Worked example: registry
 
@@ -276,17 +293,20 @@ have each service expose an `LB_BACKEND` constant from its own `defs.bzl` —
 the LB root imports them directly via Starlark `load()`. Same content, no
 runtime indirection, fail-fast at Bazel build time.
 
-### Step 5 — Wire CI
+### Step 5 — Adopt Aspect CLI for orchestration + wire CI
+
+Add `.aspect/{stdlib,plan,apply}.axl`:
+
+- `stdlib.axl` exports `TF_ROOTS` (ordered list) and a small `bazel_run`
+  helper that auto-sets `TF_AUTO_APPROVE` when `$CI` is set.
+- `plan.axl` defines `aspect plan [<target>]` — runs all roots or one.
+- `apply.axl` defines `aspect apply [<target>]` — runs all in order, with
+  `--stamp` (registry's image tags need it).
 
 Three new GHA jobs (`gar`, `registry`, `lb`), each invoking
-`bazel run //path:terraform.{plan,apply}`. Plans run in parallel on PR,
-applies chain via `needs:` on push (gar → registry → lb at the GCP level).
-Per-job plan-as-PR-comment, per-job retries.
-
-Don't try to express the deploy DAG inside Bazel — that's outside-of-Bazel
-work per [Aspect's pattern](https://blog.aspect.build/outside-of-bazel-pattern).
-For local convenience, a tiny `mise.toml` / `Justfile` recipe wraps the same
-three `bazel run` calls; ship it when someone actually wants it.
+`bazel run //path:terraform.{plan,apply}` (or `aspect <command>` if
+aspect-cli is set up in CI). Plans run in parallel on PR, applies chain
+via `needs:` on push.
 
 ### Step 6 — Optional: add `infra/cloud/gcp/lb/examples/hello`
 
@@ -341,9 +361,10 @@ it under `tf_root` too. Otherwise skip.
    `tf_root` covers (e.g., per-resource targeted apply, plan caching keyed on
    TF state).
 
-5. **Local convenience tool.** When a `mise.toml` / `Justfile` becomes
-   worthwhile, it's three recipes: `apply-all` (chain), `plan-all` (parallel),
-   `destroy-all` (reverse). Three lines each.
+5. **Aspect CLI in CI.** Currently CI invokes `bazel run` directly per job
+   so it doesn't depend on aspect-cli being installed. If senku adopts
+   aspect-cli more broadly, CI can switch to `aspect plan` / `aspect apply`
+   for true single-source-of-truth.
 
 ## Why not Terragrunt
 

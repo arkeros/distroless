@@ -8,8 +8,5 @@ project_id = "senku-prod"
 regions = [
   "us-central1",
   "europe-west3",
-  "europe-southwest1",
   "asia-northeast1",
-  "southamerica-east1",
-  "australia-southeast1",
 ]

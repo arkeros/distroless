@@ -76,11 +76,27 @@ Push is not supported; images are pushed directly to GHCR via CI.
 
 ## Deployment
 
-Deployed to Cloud Run (europe-west3) via kustomize manifests in `oci/deploy/`.
+Deployed to Cloud Run in five regions — `us-central1`, `europe-west3`, `asia-northeast1`, `southamerica-east1`, `australia-southeast1` — by the co-located Terraform root in [`terraform/`](./terraform). Each region is a separate service (`registry-usc1`, `registry-euw3`, `registry-ane1`, `registry-sae1`, `registry-ase1`) with its own runtime GSA, all instantiated via the `//devtools/bifrost/terraform/modules/service_cloudrun` module with `for_each`.
+
+Image pull path is the shared multi-region `europe` GAR provisioned by [`//infra/cloud/gcp/gar`](../../../infra/cloud/gcp/gar). All five Cloud Run regions pull from the same `europe-docker.pkg.dev/senku-prod/containers/registry@<digest>` URL.
+
+The image is pushed to **two** destinations: **GHCR** for the public `distroless.io` mirror, and **GAR** for Cloud Run's deploy-time pull (Cloud Run can't pull from GHCR directly). Separate Bazel targets for each. The digest of the just-built image is materialized into a Bazel-generated `terraform/image.auto.tfvars.json` by `:image_tfvars` — no manual tfvars edit.
+
+The deploy flow is wrapped by [`deploy.sh`](./deploy.sh):
 
 ```sh
-bazel build //oci/deploy:k8s
+./oci/cmd/registry/deploy.sh
 ```
+
+Which runs:
+
+```sh
+bazel run //oci/cmd/registry:image_push_gar    # push to deploy-side GAR
+bazel run //oci/cmd/registry:image_tfvars      # digest → image.auto.tfvars.json
+(cd oci/cmd/registry/terraform && terraform init && terraform apply)
+```
+
+`image.auto.tfvars.json` is gitignored — it rotates on every image build. The GHCR public-mirror push (`:image_push_ghcr`) is separate so a release can gate the public distribution independently. Debug variants: `image_debug_push_ghcr` / `image_debug_push_gar`.
 
 ## Testing
 

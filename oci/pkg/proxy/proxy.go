@@ -98,19 +98,33 @@ func (p *Proxy) serveCatalog(w http.ResponseWriter) {
 }
 
 // cacheControl returns the Cache-Control policy for a registry path. Returns
-// "" when the path is unrecognized or should not be cached. Digest-keyed
-// paths are content-addressed (immutable); tag-keyed paths can move when the
-// tag is republished. Blob requests come back as 307s to signed URLs that
-// ghcr issues with ~10-min validity, so blob TTL must stay below that.
+// "" when the path is unrecognized or should not be cached.
+//
+// The policy separates "how long fresh" (max-age) from "how long stale-OK"
+// (stale-while-revalidate, stale-if-error). Mutable paths get a short
+// max-age plus a longer SWR window so the CDN serves the cached response
+// immediately and async-revalidates with origin via `If-None-Match` — the
+// proxy already returns `ETag: "sha256:..."`, so revalidations are 304 round
+// trips, not full re-fetches.
+//
+// Blob TTL stays well under the ~10-min validity of ghcr's signed URLs, so
+// the cache never serves an expired signature even at the SWR boundary.
 func cacheControl(path string) string {
+	// Mutable list-shaped responses (catalog, tag list, tag→digest mapping):
+	// republished any time, but staleness is cheap and revalidation is a
+	// 304 against ETag.
+	const mutableShort = "public, max-age=30, stale-while-revalidate=600, stale-if-error=86400"
+
 	if path == "/v2/" || path == "/v2" {
-		return "public, max-age=86400"
+		// Constant `{}`. Long max-age, plus `stale-if-error` so a
+		// dead origin doesn't break v2 discovery for clients.
+		return "public, max-age=86400, stale-if-error=86400"
 	}
 	if path == "/v2/_catalog" {
-		return "public, max-age=30"
+		return mutableShort
 	}
 	if strings.HasSuffix(path, "/tags/list") {
-		return "public, max-age=30"
+		return mutableShort
 	}
 	rest := strings.TrimPrefix(path, "/v2/")
 	segments := strings.Split(rest, "/")
@@ -121,11 +135,15 @@ func cacheControl(path string) string {
 	switch segments[i] {
 	case "manifests":
 		if strings.HasPrefix(segments[i+1], "sha256:") {
+			// Content-addressed; never changes.
 			return "public, max-age=31536000, immutable"
 		}
-		return "public, max-age=30"
+		return mutableShort
 	case "blobs":
-		return "public, max-age=120"
+		// 307 to a signed URL with ~10-min validity. Total cache life
+		// (max-age + SWR) stays at 4 min — well under the signed URL
+		// expiry, so SWR can never serve an expired signature.
+		return "public, max-age=120, stale-while-revalidate=120, stale-if-error=86400"
 	}
 	return ""
 }

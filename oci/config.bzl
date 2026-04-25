@@ -2,10 +2,8 @@
 OCI_REGISTRY = "ghcr.io"
 OCI_REPOSITORY_PREFIX = "arkeros/senku"
 
-# GAR destination, provisioned by //infra/cloud/gcp/gar. Cloud Run pulls from
-# here; GHCR stays as the public-facing mirror for `distroless.io`.
-GAR_REGISTRY = "europe-docker.pkg.dev"
-GAR_REPOSITORY_PREFIX = "senku-prod/containers"
+# GAR destination is owned by `//infra/cloud/gcp/gar:defs.bzl` (the root that
+# provisions it). Load `GAR_REGISTRY` / `GAR_REPOSITORY_PREFIX` from there.
 
 GO_DISTROS = ["debian13"]
 GO_ARCHITECTURES = {

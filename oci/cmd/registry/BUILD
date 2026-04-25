@@ -1,7 +1,25 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_img//img:push.bzl", "image_push")
-load("//devtools/build/tools/image_tfvars:image_tfvars.bzl", "image_tfvars")
-load("//oci:config.bzl", "GAR_REGISTRY", "GAR_REPOSITORY_PREFIX", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
+load(
+    "//devtools/bifrost/terraform/modules/service_cloudrun:defs.bzl",
+    "cloud_run_service",
+)
+load("//devtools/build/tools/tf:defs.bzl", "IMAGE_URI", "tf_root")
+load(
+    "//devtools/build/tools/tf/resources:gcp.bzl",
+    "google_provider",
+    "service_account",
+)
+load(
+    "//infra/cloud/gcp/gar:defs.bzl",
+    "GAR_REGISTRY",
+    "GAR_REPOSITORY_PREFIX",
+)
+load(
+    "//oci:config.bzl",
+    "OCI_REGISTRY",
+    "OCI_REPOSITORY_PREFIX",
+)
 load("//oci:go_image.bzl", "go_images_all_arch")
 load("//oci/distroless/common:variables.bzl", "COMPRESSION", "DEBUG_MODE")
 
@@ -57,12 +75,126 @@ go_images_all_arch(
     ]
 ]
 
-# The digest of the just-built image, pinned into the Terraform root as a
-# gitignored `image.auto.tfvars.json`. Running `:image_tfvars` materializes
-# the file; `terraform apply` auto-loads it and deploys the exact digest
-# Bazel just built.
-image_tfvars(
-    name = "image_tfvars",
+# ---------------------------------------------------------------------------
+# Terraform root for the registry deploy.
+#
+# One Cloud Run service per region, all sharing the same logical name
+# (`registry`) and the same runtime GSA. Region fan-out is for latency, not
+# identity — the services are replicas of the same workload, so they share
+# one SA (one row in audit logs / IAM bindings, not three). Cloud Run service
+# names are region-scoped, so `registry` in every region does not collide.
+# Fronting them behind a single anycast IP is the job of `infra/cloud/gcp/lb`.
+# ---------------------------------------------------------------------------
+
+PROJECT = "senku-prod"
+
+REGIONS = [
+    "us-central1",
+    "europe-west3",
+    "asia-northeast1",
+]
+
+UPSTREAM = "ghcr.io"
+
+REPOSITORY_PREFIX = "arkeros/senku"
+
+sa = service_account(
+    name = "registry",
+    account_id = "svc-registry",
+    display_name = "Runtime identity for registry (shared across all regions)",
+    project = PROJECT,
+)
+
+# Cloud Run service per region. Resources are inlined directly via the
+# `cloud_run_service` Starlark macro — no Terraform `module` block, no
+# bifrost HCL files copied into the workdir. Each call produces both the
+# `google_cloud_run_v2_service.registry_<region>` and (because public=True)
+# its `google_cloud_run_v2_service_iam_member.registry_<region>_public`.
+#
+# Ingress locked to LB-only. Org policy on senku-prod forbids
+# `INGRESS_TRAFFIC_ALL`, and architecturally the registry sits behind the
+# shared external HTTPS LB anyway. `public = True` stays because the LB's
+# Serverless NEG calls without injecting an OIDC identity, so the services
+# must accept anonymous invokes — the ingress filter is what keeps the
+# service off the open internet.
+services = [
+    cloud_run_service(
+        name = "registry_" + region.replace("-", "_"),
+        args = [
+            "--upstream=" + UPSTREAM,
+            "--repository-prefix=" + REPOSITORY_PREFIX,
+        ],
+        # Sentinel substituted with the digest URI at Bazel build time
+        # (see `tf_root.image_push` below). No `var.image` round-trip.
+        image = IMAGE_URI,
+        ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER",
+        probes = {
+            "startup_path": "/v2/",
+            "liveness_path": "/v2/",
+        },
+        project = PROJECT,
+        public = True,
+        region = region,
+        resources = {
+            "cpu": 1,
+            "memory": 512,
+        },
+        scaling = {
+            "min": 0,
+            "max": 3,
+        },
+        # Share one identity across regions: one principal in audit logs /
+        # IAM bindings, not three.
+        service_account_email = sa.email,
+        service_name = "registry",
+    )
+    for region in REGIONS
+]
+
+# Output value: an HCL object literal mapping region → service uri,
+# expanded at Starlark evaluation. Each entry references the inlined
+# `google_cloud_run_v2_service.registry_<region>` resource directly.
+SERVICE_URIS = "${ {" + ", ".join([
+    '"%s" = google_cloud_run_v2_service.registry_%s.uri' % (
+        region,
+        region.replace("-", "_"),
+    )
+    for region in REGIONS
+]) + "} }"
+
+tf_root(
+    name = "terraform",
+    docs = [
+        google_provider(project = PROJECT),
+        sa,
+    ] + services + [
+        {"output": {"lb_backends": {
+            # `sorted(REGIONS)` mimics the previous `set(string)` semantics:
+            # the old `var.regions` was a set, which Terraform serializes in
+            # alphabetical order; preserve that so the LB root's plan shows
+            # no diff after this migration.
+            "value": {"registry": {
+                "service_name": "registry",
+                "regions": sorted(REGIONS),
+                "paths": ["/v2/*"],
+            }},
+            "description": "LB backends exposed for `infra/cloud/gcp/lb` to read via `terraform_remote_state`. The single `registry` backend fans out across every deploy region — one NEG per region, all attached to one backend service, so the LB picks the closest healthy region per request.",
+        }}},
+        {"output": {"service_account_email": {
+            "value": sa.email,
+            "description": "Runtime GSA shared across every regional Cloud Run service. Grant downstream IAM (e.g. pull credentials, Secret Manager) here once — every region picks it up.",
+        }}},
+        {"output": {"service_uris": {
+            "value": SERVICE_URIS,
+            "description": "Cloud Run `*.run.app` URL per region. Not reachable directly because of `ingress = INTERNAL_LOAD_BALANCER`; exposed for `gcloud` smoke tests and debugging.",
+        }}},
+    ],
     image_push = ":image_push_gar",
-    out_file = "terraform/image.auto.tfvars.json",
+    required_providers = {
+        "google": {
+            "source": "hashicorp/google",
+            "version": "~> 7.0",
+        },
+    },
+    visibility = ["//visibility:public"],
 )

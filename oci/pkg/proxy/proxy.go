@@ -141,10 +141,14 @@ func cacheControl(path string) string {
 		}
 		return mutableShort
 	case "blobs":
-		// 307 to a signed URL with ~10-min validity. Total cache life
-		// (max-age + SWR) stays at 4 min — well under the signed URL
-		// expiry, so SWR can never serve an expired signature.
-		return "public, max-age=120, stale-while-revalidate=120, stale-if-error=86400"
+		// 307 to a presigned ghcr URL. The `se=` expiry is rounded
+		// down to the next 5-min wall-clock boundary on a 10-min
+		// target, so signed-URL validity ranges from 5–10 min
+		// depending on phase. Cache life is bounded by
+		// `max-age + max(SWR, SIE)` because the URL must still be
+		// valid when *any* stale response is served — keep that under
+		// the 5-min worst case, with buffer.
+		return "public, max-age=120, stale-while-revalidate=120, stale-if-error=120"
 	}
 	return ""
 }

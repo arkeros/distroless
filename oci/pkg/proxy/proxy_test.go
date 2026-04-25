@@ -516,7 +516,7 @@ func TestCacheControlBlobRedirect(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=120, stale-while-revalidate=120, stale-if-error=86400"; got != want {
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=120, stale-while-revalidate=120, stale-if-error=120"; got != want {
 		t.Errorf("Cache-Control = %q, want %q", got, want)
 	}
 }

@@ -199,3 +199,176 @@ def artifact_registry_repository(
         body = body,
         attrs = ["id", "name", "location", "repository_id", "format"],
     )
+
+# ---------- storage --------------------------------------------------------
+
+def storage_bucket(
+        name,
+        project,
+        bucket_name,
+        location,
+        uniform_bucket_level_access = None,
+        force_destroy = None,
+        lifecycle_rule = None,
+        labels = None,
+        public_access_prevention = None,
+        versioning = None):
+    """`google_storage_bucket`.
+
+    `bucket_name` is the GCS bucket name (the TF schema's `name` field).
+    `name` is the Terraform resource block key.
+    """
+    body = {
+        "project": project,
+        "name": bucket_name,
+        "location": location,
+    }
+    if uniform_bucket_level_access != None:
+        body["uniform_bucket_level_access"] = uniform_bucket_level_access
+    if force_destroy != None:
+        body["force_destroy"] = force_destroy
+    if lifecycle_rule != None:
+        body["lifecycle_rule"] = lifecycle_rule
+    if labels != None:
+        body["labels"] = labels
+    if public_access_prevention != None:
+        body["public_access_prevention"] = public_access_prevention
+    if versioning != None:
+        body["versioning"] = versioning if type(versioning) == type([]) else [versioning]
+    return resource(
+        rtype = "google_storage_bucket",
+        name = name,
+        body = body,
+        attrs = ["id", "name", "url", "self_link"],
+    )
+
+# ---------- IAM ------------------------------------------------------------
+
+def project_iam_member(name, project, role, member, condition = None):
+    """`google_project_iam_member` — non-authoritative single-member binding.
+
+    Use this (not `_binding` or `_policy`) so adding a role here doesn't
+    evict members granted out-of-band.
+    """
+    body = {
+        "project": project,
+        "role": role,
+        "member": member,
+    }
+    if condition != None:
+        body["condition"] = condition if type(condition) == type([]) else [condition]
+    return resource(
+        rtype = "google_project_iam_member",
+        name = name,
+        body = body,
+        attrs = ["id", "etag"],
+    )
+
+def service_account_iam_member(name, service_account_id, role, member, condition = None):
+    """`google_service_account_iam_member` — non-authoritative."""
+    body = {
+        "service_account_id": service_account_id,
+        "role": role,
+        "member": member,
+    }
+    if condition != None:
+        body["condition"] = condition if type(condition) == type([]) else [condition]
+    return resource(
+        rtype = "google_service_account_iam_member",
+        name = name,
+        body = body,
+        attrs = ["id", "etag"],
+    )
+
+def storage_bucket_iam_member(name, bucket, role, member, condition = None):
+    """`google_storage_bucket_iam_member` — non-authoritative."""
+    body = {
+        "bucket": bucket,
+        "role": role,
+        "member": member,
+    }
+    if condition != None:
+        body["condition"] = condition if type(condition) == type([]) else [condition]
+    return resource(
+        rtype = "google_storage_bucket_iam_member",
+        name = name,
+        body = body,
+        attrs = ["id", "etag"],
+    )
+
+# ---------- workload identity federation -----------------------------------
+
+def iam_workload_identity_pool(
+        name,
+        project,
+        workload_identity_pool_id,
+        display_name = None,
+        description = None,
+        disabled = None):
+    """`google_iam_workload_identity_pool`."""
+    body = {
+        "project": project,
+        "workload_identity_pool_id": workload_identity_pool_id,
+    }
+    if display_name != None:
+        body["display_name"] = display_name
+    if description != None:
+        body["description"] = description
+    if disabled != None:
+        body["disabled"] = disabled
+    return resource(
+        rtype = "google_iam_workload_identity_pool",
+        name = name,
+        body = body,
+        attrs = ["id", "name", "state", "workload_identity_pool_id"],
+    )
+
+def iam_workload_identity_pool_provider(
+        name,
+        project,
+        workload_identity_pool_id,
+        workload_identity_pool_provider_id,
+        display_name = None,
+        description = None,
+        disabled = None,
+        attribute_mapping = None,
+        attribute_condition = None,
+        oidc = None,
+        aws = None,
+        saml = None,
+        x509 = None):
+    """`google_iam_workload_identity_pool_provider`.
+
+    Exactly one of `oidc` / `aws` / `saml` / `x509` must be set, per the
+    Google provider's schema. Each accepts either a dict (single block,
+    we wrap) or a list of one (already the JSON block-as-array shape).
+    """
+    body = {
+        "project": project,
+        "workload_identity_pool_id": workload_identity_pool_id,
+        "workload_identity_pool_provider_id": workload_identity_pool_provider_id,
+    }
+    if display_name != None:
+        body["display_name"] = display_name
+    if description != None:
+        body["description"] = description
+    if disabled != None:
+        body["disabled"] = disabled
+    if attribute_mapping != None:
+        body["attribute_mapping"] = attribute_mapping
+    if attribute_condition != None:
+        body["attribute_condition"] = attribute_condition
+    if oidc != None:
+        body["oidc"] = oidc if type(oidc) == type([]) else [oidc]
+    if aws != None:
+        body["aws"] = aws if type(aws) == type([]) else [aws]
+    if saml != None:
+        body["saml"] = saml if type(saml) == type([]) else [saml]
+    if x509 != None:
+        body["x509"] = x509 if type(x509) == type([]) else [x509]
+    return resource(
+        rtype = "google_iam_workload_identity_pool_provider",
+        name = name,
+        body = body,
+        attrs = ["id", "name", "state"],
+    )

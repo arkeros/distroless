@@ -192,8 +192,18 @@ jobs:
 
       - name: Plan
         id: plan
-        run: aspect plan
         continue-on-error: true
+        # `tee`-and-capture: aspect plan's combined output goes to the runner
+        # log AND a step output. github-script (next step) needs an explicit
+        # `outputs.stdout` — `run:` doesn't auto-populate it.
+        run: |
+          set -o pipefail
+          aspect plan 2>&1 | tee /tmp/plan.txt
+          {
+            echo 'stdout<<EOF_PLAN'
+            cat /tmp/plan.txt
+            echo EOF_PLAN
+          } >> "$GITHUB_OUTPUT"
 
       - name: Comment on PR
         uses: actions/github-script@v9

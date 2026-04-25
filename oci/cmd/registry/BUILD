@@ -193,4 +193,6 @@ tf_root(
 bzl_library(
     name = "defs",
     srcs = ["defs.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [],  # keep (consumed via load() in //infra/cloud/gcp/lb:defs.bzl — gazelle's bzl_library reverse-dep detection only reads BUILD files, not other .bzl, so without this the rule gets regenerated and visibility stripped)
 )

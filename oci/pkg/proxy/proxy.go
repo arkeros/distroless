@@ -265,6 +265,16 @@ func (p *Proxy) proxyRequest(w http.ResponseWriter, r *http.Request) {
 		req.Header.Add("Accept", v)
 	}
 
+	// Forward conditional headers so Cloud CDN's stale-while-revalidate
+	// fetches collapse to 304 round trips when the upstream content hasn't
+	// changed — saves the cost of a full manifest re-fetch on every async
+	// revalidation.
+	for _, h := range []string{"If-None-Match", "If-Modified-Since"} {
+		if v := r.Header.Get(h); v != "" {
+			req.Header.Set(h, v)
+		}
+	}
+
 	resp, err := t.RoundTrip(req)
 	if err != nil {
 		http.Error(w, "upstream request failed", http.StatusBadGateway)

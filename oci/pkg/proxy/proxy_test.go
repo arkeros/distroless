@@ -426,6 +426,118 @@ func TestNonExistentRepoForwardsUpstreamStatus(t *testing.T) {
 	}
 }
 
+func TestCacheControlV2Base(t *testing.T) {
+	p := proxy.New("ghcr.io", "arkeros/senku")
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=86400"; got != want {
+		t.Errorf("Cache-Control = %q, want %q", got, want)
+	}
+}
+
+func TestCacheControlCatalog(t *testing.T) {
+	p := proxy.New("ghcr.io", "arkeros/senku")
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/v2/_catalog")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=30"; got != want {
+		t.Errorf("Cache-Control = %q, want %q", got, want)
+	}
+}
+
+func TestCacheControlManifestByTag(t *testing.T) {
+	upstream := ocitest.NewServer(t)
+	upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
+
+	srv := newTestProxy(t, upstream)
+
+	resp, err := http.Get(srv.URL + "/v2/redis/manifests/latest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=30"; got != want {
+		t.Errorf("Cache-Control = %q, want %q", got, want)
+	}
+}
+
+func TestCacheControlManifestByDigest(t *testing.T) {
+	upstream := ocitest.NewServer(t)
+	img := upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
+	digest, err := img.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv := newTestProxy(t, upstream)
+
+	resp, err := http.Get(fmt.Sprintf("%s/v2/redis/manifests/%s", srv.URL, digest))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=31536000, immutable"; got != want {
+		t.Errorf("Cache-Control = %q, want %q", got, want)
+	}
+}
+
+func TestCacheControlBlobRedirect(t *testing.T) {
+	const redirectURL = "https://storage.example.com/blob/sha256:abc123"
+
+	upstream := ocitest.NewServer(t)
+	redirector := upstream.WithBlobRedirect(t, redirectURL)
+
+	p := proxy.New(redirector.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
+	srv := httptest.NewServer(p)
+	t.Cleanup(srv.Close)
+
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}}
+
+	resp, err := client.Get(srv.URL + "/v2/redis/blobs/sha256:abc123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=120"; got != want {
+		t.Errorf("Cache-Control = %q, want %q", got, want)
+	}
+}
+
+func TestCacheControlTagsList(t *testing.T) {
+	upstream := ocitest.NewServer(t)
+	upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
+
+	srv := newTestProxy(t, upstream)
+
+	resp, err := http.Get(srv.URL + "/v2/redis/tags/list")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=30"; got != want {
+		t.Errorf("Cache-Control = %q, want %q", got, want)
+	}
+}
+
 func TestQueryStringForwarded(t *testing.T) {
 	upstream := ocitest.NewServer(t)
 	upstream.MustPushImage(t, "arkeros/senku/redis", "v1.0.0")

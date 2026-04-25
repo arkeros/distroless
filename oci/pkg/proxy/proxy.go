@@ -66,11 +66,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/v2/" || r.URL.Path == "/v2" {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Docker-Distribution-Api-Version", "registry/2.0")
+		w.Header().Set("Cache-Control", cacheControl(r.URL.Path))
 		fmt.Fprint(w, "{}")
 		return
 	}
 
 	if r.URL.Path == "/v2/_catalog" {
+		w.Header().Set("Cache-Control", cacheControl(r.URL.Path))
 		p.serveCatalog(w)
 		return
 	}
@@ -93,6 +95,39 @@ func (p *Proxy) serveCatalog(w http.ResponseWriter) {
 	}{Repositories: repos}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+// cacheControl returns the Cache-Control policy for a registry path. Returns
+// "" when the path is unrecognized or should not be cached. Digest-keyed
+// paths are content-addressed (immutable); tag-keyed paths can move when the
+// tag is republished. Blob requests come back as 307s to signed URLs that
+// ghcr issues with ~10-min validity, so blob TTL must stay below that.
+func cacheControl(path string) string {
+	if path == "/v2/" || path == "/v2" {
+		return "public, max-age=86400"
+	}
+	if path == "/v2/_catalog" {
+		return "public, max-age=30"
+	}
+	if strings.HasSuffix(path, "/tags/list") {
+		return "public, max-age=30"
+	}
+	rest := strings.TrimPrefix(path, "/v2/")
+	segments := strings.Split(rest, "/")
+	i := findOp(segments)
+	if i < 0 || i == len(segments)-1 {
+		return ""
+	}
+	switch segments[i] {
+	case "manifests":
+		if strings.HasPrefix(segments[i+1], "sha256:") {
+			return "public, max-age=31536000, immutable"
+		}
+		return "public, max-age=30"
+	case "blobs":
+		return "public, max-age=120"
+	}
+	return ""
 }
 
 func RewritePath(path, repositoryPrefix string) string {
@@ -228,6 +263,12 @@ func (p *Proxy) proxyRequest(w http.ResponseWriter, r *http.Request) {
 	for _, h := range proxyHeaders {
 		if v := resp.Header.Get(h); v != "" {
 			w.Header().Set(h, v)
+		}
+	}
+
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusTemporaryRedirect {
+		if cc := cacheControl(r.URL.Path); cc != "" {
+			w.Header().Set("Cache-Control", cc)
 		}
 	}
 

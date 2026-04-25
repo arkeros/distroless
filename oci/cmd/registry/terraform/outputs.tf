@@ -2,7 +2,7 @@ output "lb_backends" {
   value = {
     registry = {
       service_name = "registry"
-      regions      = values(var.regions)
+      regions      = var.regions
       paths        = ["/v2/*"]
     }
   }
@@ -15,6 +15,6 @@ output "service_account_email" {
 }
 
 output "service_uris" {
-  value       = { for code, m in module.registry : code => m.service_uri }
+  value       = { for region, m in module.registry : region => m.service_uri }
   description = "Cloud Run `*.run.app` URL per region. Not reachable directly because of `ingress = INTERNAL_LOAD_BALANCER`; exposed for `gcloud` smoke tests and debugging."
 }

@@ -13,12 +13,8 @@ variable "image" {
 }
 
 variable "regions" {
-  type        = map(string)
-  description = "Map of short region code (used as the Cloud Run service name suffix and the runtime GSA account_id suffix) → GCP region. The short code is what keeps `svc-registry-<code>` under GCP's 30-char account-id cap for long region names like `southamerica-east1`."
-  validation {
-    condition     = alltrue([for code in keys(var.regions) : can(regex("^[a-z][a-z0-9]{0,6}$", code))])
-    error_message = "region keys must be lowercase alphanumeric, start with a letter, and be at most 7 chars — so `svc-registry-<code>` stays ≤ 20 chars."
-  }
+  type        = set(string)
+  description = "GCP regions to deploy the registry to. One Cloud Run service per region — all share the same name (`registry`) and runtime SA, fronted by the LB stack in `infra/cloud/gcp/lb`."
 }
 
 variable "upstream" {

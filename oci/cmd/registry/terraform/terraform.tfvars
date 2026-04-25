@@ -5,10 +5,10 @@ project_id = "senku-prod"
 # Running `terraform apply` without that step first errors "variable image
 # has no value" — intentional, forces the deploy flow.
 
-regions = {
-  usc1 = "us-central1"
-  euw3 = "europe-west3"
-  ane1 = "asia-northeast1"
-  sae1 = "southamerica-east1"
-  ase1 = "australia-southeast1"
-}
+regions = [
+  "us-central1",
+  "europe-west3",
+  "asia-northeast1",
+  "southamerica-east1",
+  "australia-southeast1",
+]

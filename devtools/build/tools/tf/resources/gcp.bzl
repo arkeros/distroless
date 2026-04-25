@@ -441,6 +441,80 @@ def monitoring_notification_channel(name, project, display_name, type, labels):
         attrs = ["id", "name"],
     )
 
+def logging_metric(name, project, metric_name, filter, description = None):
+    """`google_logging_metric` — counter metric over matching log entries.
+
+    Defaults to `DELTA` / `INT64` (count of entries per minute). Suitable
+    for rate-based or absence-based alerts. Bucket / labels / value
+    extractor are not exposed yet — add when needed.
+    """
+    body = {
+        "project": project,
+        "name": metric_name,
+        "filter": filter,
+        "metric_descriptor": {
+            "metric_kind": "DELTA",
+            "value_type": "INT64",
+            "unit": "1",
+        },
+    }
+    if description != None:
+        body["description"] = description
+    return resource(
+        rtype = "google_logging_metric",
+        name = name,
+        body = body,
+        attrs = ["id", "name"],
+    )
+
+def monitoring_alert_policy_metric_absent(
+        name,
+        project,
+        display_name,
+        metric_filter,
+        notification_channels,
+        documentation = None,
+        duration = "3600s"):
+    """`google_monitoring_alert_policy` for a metric-absence condition.
+
+    Fires when `metric_filter` reports no data points for `duration`.
+    Use to alert on log streams that should always have *some* volume —
+    if they go silent, either the source stopped or the audit config
+    was disabled.
+
+    `metric_filter` is a Cloud Monitoring filter (not a logging filter),
+    typically `metric.type="logging.googleapis.com/user/<metric_name>"`.
+    """
+    body = {
+        "project": project,
+        "display_name": display_name,
+        "combiner": "OR",
+        "conditions": [{
+            "display_name": display_name,
+            "condition_absent": [{
+                "filter": metric_filter,
+                "duration": duration,
+                "aggregations": [{
+                    "alignment_period": "300s",
+                    "per_series_aligner": "ALIGN_RATE",
+                }],
+                "trigger": [{"count": 1}],
+            }],
+        }],
+        "notification_channels": notification_channels,
+    }
+    if documentation != None:
+        body["documentation"] = [{
+            "content": documentation,
+            "mime_type": "text/markdown",
+        }]
+    return resource(
+        rtype = "google_monitoring_alert_policy",
+        name = name,
+        body = body,
+        attrs = ["id", "name"],
+    )
+
 def monitoring_alert_policy_log_match(
         name,
         project,

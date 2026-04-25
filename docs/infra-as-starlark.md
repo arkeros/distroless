@@ -326,7 +326,8 @@ single source of truth.
 
 ### Step 7 — Multi-environment
 
-(Design — see "Multi-environment" section below; not implemented in this PR.)
+Design captured in the "Multi-environment" section below. Not implemented
+in this PR — defer until the first non-prod env is actually needed.
 
 ## Trade-offs
 
@@ -355,31 +356,166 @@ single source of truth.
   once before downstream plans work. First-time bootstrapping needs ordered
   applies.
 
+## Multi-environment
+
+Today there's one env: `senku-prod`. To add `senku-staging` (or any other),
+the shape is **macro factory per root** + **env-keyed dict in `defs.bzl`** +
+**env-aware `aspect` task**.
+
+### Shape
+
+Each root's `defs.bzl` declares the per-env knobs as a dict, and exports a
+macro that emits one `tf_root` per env. The BUILD just iterates:
+
+```python
+# infra/cloud/gcp/gar/defs.bzl
+
+load(...)
+
+ENVS = {
+    "prod":    struct(project = "senku-prod",    location = "europe", repository_id = "containers"),
+    "staging": struct(project = "senku-staging", location = "europe", repository_id = "containers"),
+}
+
+# Derived strings, keyed by env. Image-push rules consume these.
+GAR_REGISTRY          = {e: cfg.location + "-docker.pkg.dev"        for e, cfg in ENVS.items()}
+GAR_REPOSITORY_PREFIX = {e: cfg.project  + "/" + cfg.repository_id  for e, cfg in ENVS.items()}
+
+def gar_root(env):
+    cfg = ENVS[env]
+    api = project_service(
+        name = "artifactregistry_" + env,
+        project = cfg.project,
+        service = "artifactregistry.googleapis.com",
+        disable_on_destroy = False,
+    )
+    repo = artifact_registry_repository(
+        name = "containers_" + env,
+        project = cfg.project,
+        location = cfg.location,
+        repository_id = cfg.repository_id,
+        ...
+        depends_on = [api.addr],
+    )
+    tf_root(
+        name = env + "_terraform",
+        backend_prefix = "infra/cloud/gcp/gar/" + env,    # one prefix per env
+        docs = [google_provider(project = cfg.project), api, repo, ...],
+        required_providers = {...},
+        visibility = ["//visibility:public"],
+    )
+```
+
+```python
+# infra/cloud/gcp/gar/BUILD
+load(":defs.bzl", "ENVS", "gar_root")
+
+[gar_root(env) for env in ENVS]
+```
+
+Result: targets `//infra/cloud/gcp/gar:prod_terraform.{plan,apply}` and
+`//infra/cloud/gcp/gar:staging_terraform.{plan,apply}`. Each has its own
+state under its own backend prefix; same code path otherwise.
+
+### Aspect CLI
+
+`TF_ROOTS` becomes a dict keyed by env; `aspect apply` / `aspect plan` accept
+an `--env` flag (defaulting to `prod`):
+
+```python
+# .aspect/stdlib.axl
+TF_ROOTS = {
+    "prod": [
+        "//infra/cloud/gcp/gar:prod_terraform",
+        "//oci/cmd/registry:prod_terraform",
+        "//infra/cloud/gcp/lb:prod_terraform",
+    ],
+    "staging": [
+        "//infra/cloud/gcp/gar:staging_terraform",
+        "//oci/cmd/registry:staging_terraform",
+        "//infra/cloud/gcp/lb:staging_terraform",
+    ],
+}
+```
+
+```bash
+aspect apply              # default: prod
+aspect apply --env=staging
+aspect plan  --env=staging //oci/cmd/registry:staging_terraform
+```
+
+### Image push: shared vs per-env GAR
+
+Two valid options:
+
+1. **Shared GAR (one source of truth).** Push images once to `senku-prod`'s
+   GAR; staging Cloud Run pulls from the same registry. Simpler, cheaper,
+   but blurs the env boundary (a botched prod push could affect staging).
+2. **Per-env GAR.** Each env has its own `gar` root + its own image_push
+   target. `cloud_run_service` references the env's GAR. Strict isolation
+   but doubles the push cost and makes the build's image-push step env-aware.
+
+Recommend **shared GAR until staging's isolation requirements force it
+otherwise** — for most multi-env setups, the registry isn't the
+trust-boundary anyway (the Cloud Run service identity and IAM bindings
+are).
+
+### Cross-root constants per env
+
+`LB_BACKEND` (currently a single dict in `oci/cmd/registry/defs.bzl`) becomes
+keyed by env, like `GAR_REGISTRY`:
+
+```python
+# oci/cmd/registry/defs.bzl
+LB_BACKEND = {
+    env: {
+        "service_name": "registry",
+        "regions": sorted(REGIONS[env]),
+        "paths":   ["/v2/*"],
+    }
+    for env in ENVS
+}
+```
+
+Then lb's `BACKENDS` is also env-keyed, and lb's macro emits per-env LB stacks
+that consume the right slice.
+
+### What this *doesn't* solve
+
+- **Org-policy or quota differences between envs** — projects might have
+  different ingress policies, region availability, etc. Those leak into the
+  per-env `cfg` struct; no uniform answer.
+- **Promotion flow.** "Apply to staging, soak, then apply to prod" is a CI
+  question, not an infra-as-Starlark question. Aspect tasks would call out to
+  whatever promotion machinery lives elsewhere.
+
+### When to do it
+
+Don't pre-emptively. Land it the first PR that actually adds a non-prod env;
+trying to retro-fit later is cheap because the call sites are concentrated in
+each root's `defs.bzl`.
+
 ## Open questions
 
-1. **Plan output for PRs.** The current CI posts each root's plan as a PR
-   comment. Where does this live in the new world? Options: keep posting from
-   GHA (simplest), move into `tf_root` as a `plan_json` target (more
-   consistent), build a dedicated reporter rule (highest investment).
+1. **Plan output for PRs.** The current CI posts a single combined plan as a
+   PR comment. At ~3 roots that's fine; at 6+ reviewers will want per-root
+   threading. Either (a) move per-root output capture into `aspect plan` and
+   have CI fan out into per-root comments, or (b) keep a matrix of CI jobs
+   each calling `aspect plan <one-root>` and posting separately.
 
-2. **Multi-environment.** Today there's one `senku-prod`. If we add `staging`,
-   does each root take an `env` parameter and emit one tf_root per env, or do
-   we keep one root per env on disk? Affects how `var()` and backend prefixes
-   are scoped.
-
-3. **Drift detection.** Run all `:terraform.plan` targets on a cron and alert
+2. **Drift detection.** Run all `:terraform.plan` targets on a cron and alert
    on non-empty diffs. Free drift detection. Worth wiring up; not urgent.
 
-4. **rules_terraform vs homegrown.** Public `rules_terraform` implementations
+3. **rules_terraform vs homegrown.** Public `rules_terraform` implementations
    are mostly abandoned. The 150-line homegrown approach above costs less than
    evaluating a third-party rule set. Reconsider if our needs grow past what
    `tf_root` covers (e.g., per-resource targeted apply, plan caching keyed on
    TF state).
 
-5. **Aspect CLI in CI.** Currently CI invokes `bazel run` directly per job
-   so it doesn't depend on aspect-cli being installed. If senku adopts
-   aspect-cli more broadly, CI can switch to `aspect plan` / `aspect apply`
-   for true single-source-of-truth.
+4. **State migrations as code.** Today, `terraform state mv` invocations are
+   ad-hoc (replay-script in PR bodies). A `migrations/<date>-<purpose>.sh`
+   convention with `tags = ["manual"]` Bazel runners would make them
+   reviewable and replayable.
 
 ## Why not Terragrunt
 

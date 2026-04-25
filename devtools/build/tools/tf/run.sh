@@ -5,16 +5,16 @@
 # two roots don't fight over the same directory.
 #
 # Args:
-#   $1  — runfiles path to the terraform binary (from @multitool//tools/terraform)
-#   $2  — runfiles path to ANY of the generated files (its dirname holds them all)
-#   $3  — verb: plan | apply | destroy
-#   $4  — root name (used as the workdir key)
-#   $5+ — extra flags forwarded to the terraform invocation
+#   $1  — terraform binary (already resolved to an absolute path by the wrapper)
+#   $2  — verb: plan | apply | destroy
+#   $3  — root name (used as the workdir key)
+#   $4+ — extra flags forwarded to the terraform invocation
 #
-# Env (newline-separated lists; unset/empty means "none"):
-#   TFRUNNER_TFVARS    — rootpaths to *.auto.tfvars.json files
-#   TFRUNNER_MODULES   — `subdir|package_path` pairs for modules
-#   TFRUNNER_PRE_APPLY — rootpaths to pre-apply executables (only run on `apply`)
+# Env (newline-separated rlocation paths; unset/empty means "none"):
+#   TFRUNNER_GEN_FILES — generated `*.tf.json` files
+#   TFRUNNER_TFVARS    — `*.auto.tfvars.json` files
+#   TFRUNNER_MODULES   — `<subdir>|<relpath>|<rloc>` triples (one per file)
+#   TFRUNNER_PRE_APPLY — pre-apply executables (only run on `apply`)
 #
 # Env (control):
 #   TF_WORKDIR       — base directory for per-root workspaces (default ~/.cache/senku-tf)
@@ -22,15 +22,29 @@
 #   TF_INIT_UPGRADE  — if non-empty, pass `-upgrade` to init (refresh lockfile)
 set -euo pipefail
 
-TERRAFORM_BIN="$PWD/$1"
-GEN_FILE="$2"
-VERB="$3"
-ROOT_NAME="$4"
-shift 4
+# --- begin runfiles.bash initialization v3 ---
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f 2- -d ' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f 2- -d ' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f 2- -d ' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
+
+TERRAFORM_BIN="$1"
+VERB="$2"
+ROOT_NAME="$3"
+shift 3
 
 # Bazel labels can't contain newlines or whitespace, so newline-separated
 # lists are unambiguous. The `-n` guard avoids a stray empty element when
 # the var is unset or empty.
+GEN_FILES=()
+if [[ -n "${TFRUNNER_GEN_FILES:-}" ]]; then
+  while IFS= read -r line; do GEN_FILES+=("$line"); done <<< "$TFRUNNER_GEN_FILES"
+fi
+
 TFVARS=()
 if [[ -n "${TFRUNNER_TFVARS:-}" ]]; then
   while IFS= read -r line; do TFVARS+=("$line"); done <<< "$TFRUNNER_TFVARS"
@@ -46,47 +60,48 @@ if [[ -n "${TFRUNNER_PRE_APPLY:-}" ]]; then
   while IFS= read -r line; do PRE_APPLY+=("$line"); done <<< "$TFRUNNER_PRE_APPLY"
 fi
 
-GEN_DIR="$PWD/$(dirname "$GEN_FILE")"
 WORK="${TF_WORKDIR:-$HOME/.cache/senku-tf}/$ROOT_NAME"
-
 mkdir -p "$WORK"
 
 # Wipe Bazel-owned files (everything we generate) before re-syncing. State,
 # lockfiles, and `.terraform/` survive.
 find "$WORK" -maxdepth 1 -name "*.tf.json" -delete
 find "$WORK" -maxdepth 1 -name "*.auto.tfvars.json" -delete
-# Module subdirs are also Bazel-owned; nuke whatever was there last run.
+# Module subdirs are also Bazel-owned; nuke each one once before re-staging.
+declare -A SEEN_SUBDIRS=()
 for entry in "${MODULES[@]}"; do
   subdir="${entry%%|*}"
-  rm -rf "${WORK:?}/$subdir"
+  if [[ -z "${SEEN_SUBDIRS[$subdir]:-}" ]]; then
+    rm -rf "${WORK:?}/$subdir"
+    SEEN_SUBDIRS["$subdir"]=1
+  fi
 done
 
-cp "$GEN_DIR"/*.tf.json "$WORK/"
+for f in "${GEN_FILES[@]}"; do
+  cp "$(rlocation "$f")" "$WORK/"
+done
 
 for tf in "${TFVARS[@]}"; do
-  cp "$PWD/$tf" "$WORK/"
+  cp "$(rlocation "$tf")" "$WORK/"
 done
 
 for entry in "${MODULES[@]}"; do
-  subdir="${entry%%|*}"
-  pkg="${entry#*|}"
-  mkdir -p "$WORK/$subdir"
-  # `data = filegroup` ensures only the module's declared files are in
-  # runfiles at this package path, so cp -r picks up exactly the right set.
-  cp -R "$PWD/$pkg/." "$WORK/$subdir/"
+  IFS='|' read -r subdir relpath rloc <<< "$entry"
+  src="$(rlocation "$rloc")"
+  dest="$WORK/$subdir/$relpath"
+  mkdir -p "$(dirname "$dest")"
+  cp "$src" "$dest"
 done
 
 if [[ "$VERB" == "apply" ]]; then
-  # `pre_apply` children are part of THIS binary's runfiles tree (they're
-  # declared as `data`). Their own runfiles libraries look for
-  # `RUNFILES_DIR` / `RUNFILES_MANIFEST_FILE` env vars; without them they
-  # fall back to `<argv[0]>.runfiles`, which doesn't exist because the
-  # child is INSIDE our runfiles tree, not next to its own. Point them at
-  # our tree (the parent dir of `_main`).
-  export RUNFILES_DIR="${RUNFILES_DIR:-$(cd .. && pwd)}"
+  # Pre-apply hooks have their own runfiles trees as part of THIS binary's
+  # runfiles. Export RUNFILES_DIR / _MANIFEST_FILE so each hook's own
+  # runfiles library finds them via env instead of an absent `<argv[0]>.runfiles`.
+  runfiles_export_envvars
   for hook in "${PRE_APPLY[@]}"; do
-    echo "==> pre-apply: $hook"
-    "$PWD/$hook"
+    hook_path="$(rlocation "$hook")"
+    echo "==> pre-apply: $hook_path"
+    "$hook_path"
   done
 fi
 

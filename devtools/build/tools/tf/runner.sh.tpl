@@ -3,35 +3,38 @@
 # in at analysis time by `_tf_runner` (see ./rule.bzl); after expansion
 # the script is fully self-contained — no `bazel run`-only args injection,
 # so `aspect plan` can spawn the wrapper directly via `runnable`.
+#
+# Path resolution goes through Bazel's bash runfiles library, so this
+# script works whether the runfiles symlink tree was materialized
+# (`--build_runfile_links`) or only the manifest is on disk
+# (`--nobuild_runfile_links`, the workspace default).
 set -euo pipefail
 
-# Locate the runfiles dir. Both `bazel run` (sets RUNFILES_DIR) and
-# `runnable.spawn` (also sets RUNFILES_DIR) cover the standard cases;
-# the fallbacks handle a bare `./<script>` invocation too.
-if [[ -z "${RUNFILES_DIR:-}" ]]; then
-  for cand in "${BASH_SOURCE[0]}.runfiles" "$0.runfiles"; do
-    if [[ -d "$cand" ]]; then
-      RUNFILES_DIR="$cand"
-      break
-    fi
-  done
-fi
-[[ -d "${RUNFILES_DIR:-}" ]] || { echo "tf-runner: cannot locate runfiles" >&2; exit 2; }
-export RUNFILES_DIR
+# --- begin runfiles.bash initialization v3 ---
+# Copy-pasted from the Bazel Bash runfiles library v3.
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f 2- -d ' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f 2- -d ' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f 2- -d ' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
 
-# The underlying run.sh expects paths relative to $PWD. Setting cwd to
-# the workspace's runfiles subtree (`_main`) lets it resolve in-repo
-# rootpaths (`infra/cloud/gcp/foo/...`) and external rootpaths
-# (`../<repo>/...`) the same way `bazel run` would.
-cd "$RUNFILES_DIR/_main"
-
+# Newline-separated rlocation paths consumed by run.sh. Forwarded through
+# the env so run.sh's positional argv stays compact and stable.
+export TFRUNNER_GEN_FILES='{GEN_FILES_NL}'
 export TFRUNNER_TFVARS='{TFVARS_NL}'
 export TFRUNNER_MODULES='{MODULES_NL}'
 export TFRUNNER_PRE_APPLY='{PRE_APPLY_NL}'
 
-exec ./devtools/build/tools/tf/run.sh \
-  '{TERRAFORM_PATH}' \
-  '{GEN_FILE}' \
+# Export RUNFILES_DIR / RUNFILES_MANIFEST_FILE so run.sh's own runfiles
+# init (and any pre-apply hook's) finds the same source of truth instead
+# of re-discovering it via $0.runfiles fallbacks.
+runfiles_export_envvars
+
+exec "$(rlocation '{RUN_SH_PATH}')" \
+  "$(rlocation '{TERRAFORM_PATH}')" \
   '{VERB}' \
   '{ROOT_NAME}' \
   "$@"

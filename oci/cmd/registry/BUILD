@@ -1,3 +1,4 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_img//img:push.bzl", "image_push")
 load(
@@ -22,6 +23,12 @@ load(
 )
 load("//oci:go_image.bzl", "go_images_all_arch")
 load("//oci/distroless/common:variables.bzl", "COMPRESSION", "DEBUG_MODE")
+load(
+    ":defs.bzl",
+    "LB_BACKEND",
+    "PROJECT",
+    "REGIONS",
+)
 
 package(default_visibility = [
     "//oci/cmd/registry:__subpackages__",
@@ -85,14 +92,6 @@ go_images_all_arch(
 # names are region-scoped, so `registry` in every region does not collide.
 # Fronting them behind a single anycast IP is the job of `infra/cloud/gcp/lb`.
 # ---------------------------------------------------------------------------
-
-PROJECT = "senku-prod"
-
-REGIONS = [
-    "us-central1",
-    "europe-west3",
-    "asia-northeast1",
-]
 
 UPSTREAM = "ghcr.io"
 
@@ -169,16 +168,8 @@ tf_root(
         sa,
     ] + services + [
         {"output": {"lb_backends": {
-            # `sorted(REGIONS)` mimics the previous `set(string)` semantics:
-            # the old `var.regions` was a set, which Terraform serializes in
-            # alphabetical order; preserve that so the LB root's plan shows
-            # no diff after this migration.
-            "value": {"registry": {
-                "service_name": "registry",
-                "regions": sorted(REGIONS),
-                "paths": ["/v2/*"],
-            }},
-            "description": "LB backends exposed for `infra/cloud/gcp/lb` to read via `terraform_remote_state`. The single `registry` backend fans out across every deploy region — one NEG per region, all attached to one backend service, so the LB picks the closest healthy region per request.",
+            "value": {"registry": LB_BACKEND},
+            "description": "LB backends exposed for external (terraform-only) consumers. In-repo callers (//infra/cloud/gcp/lb) load `LB_BACKEND` from `:defs.bzl` directly — same content, no `terraform_remote_state` round-trip.",
         }}},
         {"output": {"service_account_email": {
             "value": sa.email,
@@ -197,4 +188,9 @@ tf_root(
         },
     },
     visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "defs",
+    srcs = ["defs.bzl"],
 )

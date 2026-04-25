@@ -9,6 +9,7 @@
 #   $2  — runfiles path to ANY of the generated files (its dirname holds them all)
 #   $3  — verb: plan | apply | destroy
 #   $4  — root name (used as the workdir key)
+#   $5+ — extra flags forwarded to the terraform invocation
 #
 # Env (newline-separated lists; unset/empty means "none"):
 #   TFRUNNER_TFVARS    — rootpaths to *.auto.tfvars.json files

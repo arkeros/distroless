@@ -33,4 +33,5 @@ exec ./devtools/build/tools/tf/run.sh \
   '{TERRAFORM_PATH}' \
   '{GEN_FILE}' \
   '{VERB}' \
-  '{ROOT_NAME}'
+  '{ROOT_NAME}' \
+  "$@"

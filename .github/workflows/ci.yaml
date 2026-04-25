@@ -144,7 +144,6 @@ jobs:
       matrix:
         dir:
           - bazel/terraform
-          - oci/deploy/terraform
     defaults:
       run:
         working-directory: ${{ matrix.dir }}

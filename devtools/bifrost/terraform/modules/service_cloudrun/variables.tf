@@ -133,7 +133,13 @@ variable "execution_environment" {
 variable "service_account_id" {
   type        = string
   default     = null
-  description = "GSA account_id for the runtime identity. Defaults to \"svc-<name>\"."
+  description = "GSA account_id for a module-created runtime identity. Defaults to \"svc-<name>\". Ignored when `service_account_email` is set (external SA takes over)."
+}
+
+variable "service_account_email" {
+  type        = string
+  default     = null
+  description = "Email of a pre-existing GSA to use as the runtime identity. When set, the module does not create a new SA; it just wires this email into the Cloud Run service template. Use this to share one identity across multi-region instantiations of the same logical workload (one SA = one principal in audit logs / IAM bindings, rather than N)."
 }
 
 variable "labels" {

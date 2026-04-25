@@ -1,8 +1,10 @@
 locals {
-  service_account_id = coalesce(var.service_account_id, "svc-${var.name}")
-  labels             = merge({ "app.kubernetes.io/name" = var.name }, var.labels)
-  cpu_quantity       = tostring(var.resources.cpu)
-  memory_quantity    = "${var.resources.memory}Mi"
+  create_service_account = var.service_account_email == null
+  service_account_id     = coalesce(var.service_account_id, "svc-${var.name}")
+  service_account_email  = local.create_service_account ? google_service_account.runtime[0].email : var.service_account_email
+  labels                 = merge({ app = var.name }, var.labels)
+  cpu_quantity           = tostring(var.resources.cpu)
+  memory_quantity        = "${var.resources.memory}Mi"
 
   plain_env = [
     for k, v in var.env : {
@@ -25,6 +27,8 @@ locals {
 }
 
 resource "google_service_account" "runtime" {
+  count = local.create_service_account ? 1 : 0
+
   project      = var.project_id
   account_id   = local.service_account_id
   display_name = "Runtime identity for ${var.name}"
@@ -37,8 +41,13 @@ resource "google_cloud_run_v2_service" "this" {
   ingress  = var.ingress
   labels   = local.labels
 
+  # Services in this repo are fully reproducible from code; the Google
+  # default (`true`) blocks destroy-and-recreate when a service's `name`
+  # changes or the workload moves regions. Opt out.
+  deletion_protection = false
+
   template {
-    service_account                  = google_service_account.runtime.email
+    service_account                  = local.service_account_email
     execution_environment            = var.execution_environment
     max_instance_request_concurrency = var.concurrency
     timeout                          = "${var.timeout_seconds}s"

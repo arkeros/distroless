@@ -1,6 +1,6 @@
 output "service_account_email" {
-  value       = google_service_account.runtime.email
-  description = "Runtime GSA email. Grant IAM on other resources (DBs, Redis, Secret Manager secrets) to this."
+  value       = local.service_account_email
+  description = "Runtime GSA email — either the module-created SA (default) or the external `var.service_account_email` if one was provided. Grant IAM on other resources (DBs, Redis, Secret Manager secrets) to this."
 }
 
 output "service_name" {

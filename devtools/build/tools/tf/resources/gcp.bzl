@@ -123,7 +123,7 @@ def google_cloud_run_v2_service(
     if launch_stage != None:
         body["launch_stage"] = launch_stage
     if template != None:
-        body["template"] = template if type(template) == "list" else [template]
+        body["template"] = template if type(template) == type([]) else [template]
     if traffic != None:
         body["traffic"] = traffic
     if scaling != None:

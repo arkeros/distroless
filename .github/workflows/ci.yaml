@@ -57,7 +57,10 @@ jobs:
         id: meta
         run: |
           set -euxo pipefail
-          TARGETS=$(bazel query 'kind("image_push rule", //...)' --output=label)
+          # Skip `_gar` push targets — `aspect apply` re-pushes those via
+          # the registry root's `pre_apply` hook, against the same digest.
+          # build only mirrors images to GHCR (the public-facing copy).
+          TARGETS=$(bazel query 'kind("image_push rule", //...)' --output=label | grep -v '_gar$')
           MATRIX="[]"
           for TARGET in $TARGETS; do
             bazel run "$TARGET"
@@ -132,6 +135,148 @@ jobs:
           subject-digest: ${{ matrix.digest }}
           sbom-path: sbom.spdx.json
           push-to-registry: true
+
+  # ---------------------------------------------------------------------------
+  # Terraform deploys, orchestrated via Aspect CLI.
+  #
+  # `aspect plan` / `aspect apply` walk the ordered list of roots from
+  # `.aspect/stdlib.axl` (`TF_ROOTS`). Same commands work locally; CI's job
+  # is just to provide the auth and post the plan to PR.
+  # ---------------------------------------------------------------------------
+
+  plan:
+    name: Plan
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          bazelisk-cache: true
+          repository-cache: true
+          external-cache: true
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+
+      - name: Install Aspect CLI
+        run: |
+          set -euo pipefail
+          VERSION=2025.46.20
+          curl -fsSL \
+            "https://github.com/aspect-build/aspect-cli/releases/download/v${VERSION}/aspect-cli-x86_64-unknown-linux-musl" \
+            -o /tmp/aspect
+          chmod +x /tmp/aspect
+          sudo mv /tmp/aspect /usr/local/bin/aspect
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+
+      - name: Plan
+        id: plan
+        run: aspect plan
+        continue-on-error: true
+
+      - name: Comment on PR
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const marker = `<!-- tf-plan -->`;
+            const output = ${{ toJSON(steps.plan.outputs.stdout) }};
+            const body = `${marker}\n### Terraform Plan\n\`\`\`\n${output.substring(0, 60000)}\n\`\`\``;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const existing = comments.find(c => c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body,
+              });
+            }
+
+      - name: Plan status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+  apply:
+    name: Apply
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          bazelisk-cache: true
+          repository-cache: true
+          external-cache: true
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+
+      - name: Install Aspect CLI
+        run: |
+          set -euo pipefail
+          VERSION=2025.46.20
+          curl -fsSL \
+            "https://github.com/aspect-build/aspect-cli/releases/download/v${VERSION}/aspect-cli-x86_64-unknown-linux-musl" \
+            -o /tmp/aspect
+          chmod +x /tmp/aspect
+          sudo mv /tmp/aspect /usr/local/bin/aspect
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: github-actions-senku@senku-prod.iam.gserviceaccount.com
+          token_format: access_token
+
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v4
+        with:
+          registry: europe-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+
+      - name: Apply
+        run: aspect apply
 
   terraform:
     name: ${{ github.event_name == 'push' && 'Apply' || 'Plan' }} (${{ matrix.dir }})

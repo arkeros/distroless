@@ -17,15 +17,6 @@ load("//devtools/build/tools/tf/toolchain:toolchain.bzl", "TerraformInfo")
 
 _TOOLCHAIN_TYPE = "//devtools/build/tools/tf/toolchain:toolchain_type"
 
-def _shell_quote_each(paths):
-    """Single-quote each path and join with spaces, suitable for `exec`'s
-    argv list. Bazel labels never contain whitespace or single quotes so
-    this is safe by construction.
-    """
-    if not paths:
-        return ""
-    return " ".join(["'" + p + "'" for p in paths])
-
 def _tf_runner_impl(ctx):
     tf_info = ctx.toolchains[_TOOLCHAIN_TYPE].tf_info
     terraform = tf_info.terraform_binary
@@ -64,9 +55,9 @@ def _tf_runner_impl(ctx):
             "{GEN_FILE}": gen_file.short_path,
             "{VERB}": ctx.attr.verb,
             "{ROOT_NAME}": ctx.attr.root_name,
-            "{TFVARS_ARGS}": _shell_quote_each([f.short_path for f in ctx.files.tfvars]),
-            "{MODULES_ARGS}": _shell_quote_each(module_entries),
-            "{PRE_APPLY_ARGS}": _shell_quote_each(pre_apply_paths),
+            "{TFVARS_NL}": "\n".join([f.short_path for f in ctx.files.tfvars]),
+            "{MODULES_NL}": "\n".join(module_entries),
+            "{PRE_APPLY_NL}": "\n".join(pre_apply_paths),
         },
         is_executable = True,
     )

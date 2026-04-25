@@ -25,14 +25,12 @@ export RUNFILES_DIR
 # (`../<repo>/...`) the same way `bazel run` would.
 cd "$RUNFILES_DIR/_main"
 
+export TFRUNNER_TFVARS='{TFVARS_NL}'
+export TFRUNNER_MODULES='{MODULES_NL}'
+export TFRUNNER_PRE_APPLY='{PRE_APPLY_NL}'
+
 exec ./devtools/build/tools/tf/run.sh \
   '{TERRAFORM_PATH}' \
   '{GEN_FILE}' \
   '{VERB}' \
-  '{ROOT_NAME}' \
-  -- \
-  {TFVARS_ARGS} \
-  -- \
-  {MODULES_ARGS} \
-  -- \
-  {PRE_APPLY_ARGS}
+  '{ROOT_NAME}'

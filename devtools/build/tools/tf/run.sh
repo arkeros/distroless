@@ -4,19 +4,18 @@
 # terraform's mutable state (.terraform/, lockfiles) survives between runs and
 # two roots don't fight over the same directory.
 #
-# Args (`--` separates sections; sections may be empty):
-#   $1 — runfiles path to the terraform binary (from @multitool//tools/terraform)
-#   $2 — runfiles path to ANY of the generated files (its dirname holds them all)
-#   $3 — verb: plan | apply | destroy
-#   $4 — root name (used as the workdir key)
-#   $5 — literal `--`
-#   ... — rootpaths to *.auto.tfvars.json files (zero or more)
-#   --
-#   ... — `subdir|package_path` pairs for modules (zero or more)
-#   --
-#   ... — rootpaths to pre-apply executables (zero or more; only run on `apply`)
+# Args:
+#   $1  — runfiles path to the terraform binary (from @multitool//tools/terraform)
+#   $2  — runfiles path to ANY of the generated files (its dirname holds them all)
+#   $3  — verb: plan | apply | destroy
+#   $4  — root name (used as the workdir key)
 #
-# Env:
+# Env (newline-separated lists; unset/empty means "none"):
+#   TFRUNNER_TFVARS    — rootpaths to *.auto.tfvars.json files
+#   TFRUNNER_MODULES   — `subdir|package_path` pairs for modules
+#   TFRUNNER_PRE_APPLY — rootpaths to pre-apply executables (only run on `apply`)
+#
+# Env (control):
 #   TF_WORKDIR       — base directory for per-root workspaces (default ~/.cache/senku-tf)
 #   TF_AUTO_APPROVE  — if non-empty, pass `-auto-approve` to apply/destroy
 #   TF_INIT_UPGRADE  — if non-empty, pass `-upgrade` to init (refresh lockfile)
@@ -28,28 +27,23 @@ VERB="$3"
 ROOT_NAME="$4"
 shift 4
 
-# Consume the leading `--`.
-[[ "${1:-}" == "--" ]] || { echo "tf/run.sh: expected '--' before tfvars"; exit 2; }
-shift
-
+# Bazel labels can't contain newlines or whitespace, so newline-separated
+# lists are unambiguous. The `-n` guard avoids a stray empty element when
+# the var is unset or empty.
 TFVARS=()
-while [[ "${1:-}" != "--" ]]; do
-  TFVARS+=("$1")
-  shift || break
-done
-shift  # consume the `--`
+if [[ -n "${TFRUNNER_TFVARS:-}" ]]; then
+  while IFS= read -r line; do TFVARS+=("$line"); done <<< "$TFRUNNER_TFVARS"
+fi
 
 MODULES=()
-while [[ "${1:-}" != "--" ]]; do
-  MODULES+=("$1")
-  shift || break
-done
-shift
+if [[ -n "${TFRUNNER_MODULES:-}" ]]; then
+  while IFS= read -r line; do MODULES+=("$line"); done <<< "$TFRUNNER_MODULES"
+fi
 
-PRE_APPLY=("$@")
-# Clear positional args so the trailing pre-apply rootpaths don't leak into
-# the terraform invocation below (which forwards `"$@"` for future user args).
-set --
+PRE_APPLY=()
+if [[ -n "${TFRUNNER_PRE_APPLY:-}" ]]; then
+  while IFS= read -r line; do PRE_APPLY+=("$line"); done <<< "$TFRUNNER_PRE_APPLY"
+fi
 
 GEN_DIR="$PWD/$(dirname "$GEN_FILE")"
 WORK="${TF_WORKDIR:-$HOME/.cache/senku-tf}/$ROOT_NAME"

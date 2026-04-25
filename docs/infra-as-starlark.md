@@ -15,13 +15,16 @@ build artifact, not a CI YAML quirk. Local and CI run the same commands.
 
 ## Motivation
 
-We now have three Terraform roots with a real dependency graph:
+We now have four Terraform roots with a real dependency graph:
 
 ```
+infra/cloud/gcp/ci            # CI bootstrap: WIF + GHA SA + project IAM (apply locally first)
+        │
+        ▼
 infra/cloud/gcp/gar           # Artifact Registry repo
         │
         ▼
-oci/cmd/registry/terraform    # Cloud Run services per region (image lives in GAR)
+oci/cmd/registry              # Cloud Run services per region (image lives in GAR)
         │
         ▼
 infra/cloud/gcp/lb            # Global LB fronting the Cloud Run services

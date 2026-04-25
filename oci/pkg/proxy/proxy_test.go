@@ -453,7 +453,7 @@ func TestCacheControlCatalog(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=30, stale-while-revalidate=600, stale-if-error=86400"; got != want {
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=900, stale-while-revalidate=3600, stale-if-error=86400"; got != want {
 		t.Errorf("Cache-Control = %q, want %q", got, want)
 	}
 }
@@ -470,7 +470,7 @@ func TestCacheControlManifestByTag(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=30, stale-while-revalidate=600, stale-if-error=86400"; got != want {
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=900, stale-while-revalidate=3600, stale-if-error=86400"; got != want {
 		t.Errorf("Cache-Control = %q, want %q", got, want)
 	}
 }
@@ -533,7 +533,7 @@ func TestCacheControlTagsList(t *testing.T) {
 	}
 	defer resp.Body.Close()
 
-	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=30, stale-while-revalidate=600, stale-if-error=86400"; got != want {
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=900, stale-while-revalidate=3600, stale-if-error=86400"; got != want {
 		t.Errorf("Cache-Control = %q, want %q", got, want)
 	}
 }

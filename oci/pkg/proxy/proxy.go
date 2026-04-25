@@ -111,9 +111,10 @@ func (p *Proxy) serveCatalog(w http.ResponseWriter) {
 // the cache never serves an expired signature even at the SWR boundary.
 func cacheControl(path string) string {
 	// Mutable list-shaped responses (catalog, tag list, tag→digest mapping):
-	// republished any time, but staleness is cheap and revalidation is a
-	// 304 against ETag.
-	const mutableShort = "public, max-age=30, stale-while-revalidate=600, stale-if-error=86400"
+	// republished any time. 15-minute fresh window + 1-hour SWR — async
+	// revalidations are conditional GETs (the proxy forwards
+	// If-None-Match), so most refreshes are 304s and origin load stays low.
+	const mutableShort = "public, max-age=900, stale-while-revalidate=3600, stale-if-error=86400"
 
 	if path == "/v2/" || path == "/v2" {
 		// Constant `{}`. Long max-age, plus `stale-if-error` so a

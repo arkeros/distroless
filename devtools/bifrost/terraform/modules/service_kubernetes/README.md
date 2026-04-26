@@ -1,6 +1,8 @@
-# `service_kubernetes` Terraform module (PoC)
+# `service_kubernetes` Starlark module (PoC)
 
 A module for a Kubernetes web service, shaped for a **TF-as-provisioner + Flagger-as-pusher** architecture.
+
+The implementation is the [`service_kubernetes`](./defs.bzl) Starlark macro; callers `load(...)` it from a `tf_root`-using BUILD file and pass flat kwargs.
 
 > **Status:** proof of concept. No caller yet. The Go-generated `*.generated.tf` path remains the source of truth for production workloads.
 
@@ -30,7 +32,7 @@ Every Kubernetes object is created via `kubernetes_manifest` with `field_manager
 
 - `image` must be digest-pinned (`…@sha256:…`); validated.
 - `secret_env[*].version` must be an explicit integer; `"latest"` is rejected.
-- The K8s Secret name is content-hashed: `${name}-env-${sha256(secret_env)[:8]}`. Any change to `secret_env` produces a new Secret object and a new ReplicaSet. Rollback = revert the inputs; the hash names back to its prior value.
+- The K8s Secret name is content-hashed: `<name>-env-<hash>`, where the hash is a stable Starlark `hash()` over a deterministic JSON serialization of `secret_env`. Any change to `secret_env` produces a new Secret object and a new ReplicaSet. Rollback = revert the inputs; the hash names back to its prior value.
 
 ## Secrets: ephemeral + write-only
 
@@ -49,15 +51,11 @@ CronJobs use the batch variant (both CPU and memory request==limit); see `cronjo
 
 ## Composition
 
-See [`examples/with_db/main.tf`](./examples/with_db/main.tf):
-
-- `env = { DB_HOST = google_sql_database_instance.api.private_ip_address }` — DB hostname wired through plain HCL.
-- `depends_on = [kubernetes_job_v1.migrate]` — migration Job runs before the Deployment is created. Name the Job with the image digest if you want per-version migrations.
-- `google_secret_manager_secret_iam_member` granting the module's GSA access to each secret.
+The macro returns a struct that drops directly into `tf_root(docs=...)`. Compose by passing `env` values that interpolate other resources (e.g. `env = {"DB_HOST": db.private_ip_address}` where `db` is the struct from `google_sql_database_instance(...)`), and emit any sibling resources (migration Jobs, IAM members for the runtime GSA) as separate entries in the same `docs` list.
 
 ## Inputs
 
-See [`variables.tf`](./variables.tf). Key ones:
+See the macro signature in [`defs.bzl`](./defs.bzl). Key ones:
 
 - `image` — digest-pinned; validated.
 - `resources = { cpu = float, memory = int }` — cores and MiB.
@@ -75,14 +73,6 @@ A `PodDisruptionBudget` is emitted automatically when `autoscaling.min >= 2` (`m
 
 ## Verification
 
-```bash
-bazel test //devtools/bifrost/terraform/modules/service_kubernetes:lint
-```
-
-`:lint` runs `terraform fmt -check -recursive` in the Bazel sandbox (offline). It's a linter, not a semantic test. Full validation needs provider downloads (network):
-
-```bash
-bazel run //devtools/bifrost/terraform/modules/service_kubernetes:validate
-```
+The smoke target at [`examples/basic_starlark`](./examples/basic_starlark) builds the macro into JSON at Bazel analysis time, so a typo or missing kwarg fails `bazel build` before it can slip into a real root.
 
 True semantic correctness — does SSA ownership split work as designed, does `data_wo` behave as expected under drift — is only verifiable by applying against a real cluster.

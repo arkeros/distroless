@@ -7,13 +7,24 @@ load(
     "secret_manager_secret_iam_member",
     "sql_database_instance",
 )
-load("//devtools/build/tools/tf/resources:k8s.bzl", "kubernetes_job_v1")
+load(
+    "//devtools/build/tools/tf/resources:k8s.bzl",
+    "kubernetes_job_v1",
+    "kubernetes_provider",
+)
 
 # Composition smoke target — never planned, never applied, just analyzed.
 # Demonstrates the three integration idioms that don't fit in a basic
 # example: cross-resource env wiring (DB hostname → service env), a
 # sibling depends_on (migration Job → Deployment), and an IAM grant on
 # the runtime GSA (DB password access).
+#
+# The `kubernetes_provider` block below carries placeholder strings only
+# so the smoke target is self-contained. Real roots wire it from data
+# sources — typically `google_container_cluster` for host +
+# cluster_ca_certificate and `google_client_config` for a short-lived
+# access token — never literal strings (a baked-in token would land in
+# terraform state).
 PROJECT = "senku-prod"
 
 REGION = "europe-west1"
@@ -119,6 +130,11 @@ tf_root(
             project = PROJECT,
             region = REGION,
         ),
+        kubernetes_provider(
+            cluster_ca_certificate = "REPLACE_FROM_CLUSTER_HARNESS",
+            host = "https://kubernetes.example.invalid",
+            token = "REPLACE_FROM_CLUSTER_HARNESS",
+        ),
         db,
         db_password,
         migrate,
@@ -130,15 +146,9 @@ tf_root(
             secret_id = db_password.id,
         ),
     ],
-    required_providers = {
-        "google": {
-            "source": "hashicorp/google",
-            "version": "~> 7.0",
-        },
-        "kubernetes": {
-            "source": "hashicorp/kubernetes",
-            "version": "~> 2.38",
-        },
-    },
+    providers = [
+        "@terraform_providers//:google",
+        "@terraform_providers//:kubernetes",
+    ],
     visibility = ["//visibility:private"],
 )

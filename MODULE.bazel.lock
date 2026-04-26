@@ -365,8 +365,8 @@
   "moduleExtensions": {
     "//devtools/build/tools/tf/toolchain:extensions.bzl%terraform": {
       "general": {
-        "bzlTransitiveDigest": "a2xI8WZp0PfD17phgsUgubAUk3VjdsIKq1Kbc7TC6Nk=",
-        "usagesDigest": "UuFtCjmDwbC8Ez2pQIyqwM3oPncQojYbe3nR7qRcqdc=",
+        "bzlTransitiveDigest": "IHbEqpMrBNrlmnrZHMOLIQf1D4+UtidwVeaVp1Dvh+U=",
+        "usagesDigest": "D166HddsybqjW8zNIO847XvTMeEXbo7ACSENjErQOqw=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "terraform_toolchains": {
@@ -411,11 +411,48 @@
               "sha256": "207a6de17871088d907bf11854419fbc9793fa832f4bbdcc1aa0d63d18f87dcf"
             }
           },
+          "terraform_provider_hashicorp_kubernetes_2_38_0_darwin_amd64": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_provider_archive_repo",
+            "attributes": {
+              "source": "hashicorp/kubernetes",
+              "version": "2.38.0",
+              "platform": "darwin_amd64",
+              "sha256": "5136e51765d6a0b9e4dbcc3b38821e9736bd2136cf15e9aac11668f22db117d2"
+            }
+          },
+          "terraform_provider_hashicorp_kubernetes_2_38_0_darwin_arm64": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_provider_archive_repo",
+            "attributes": {
+              "source": "hashicorp/kubernetes",
+              "version": "2.38.0",
+              "platform": "darwin_arm64",
+              "sha256": "1be998e67206f7cfc4ffe77c01a09ac91ce725de0abaec9030b22c0a832af44f"
+            }
+          },
+          "terraform_provider_hashicorp_kubernetes_2_38_0_linux_amd64": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_provider_archive_repo",
+            "attributes": {
+              "source": "hashicorp/kubernetes",
+              "version": "2.38.0",
+              "platform": "linux_amd64",
+              "sha256": "d39861aa21077f1bc899bc53e7233262e530ba8a3a2d737449b100daeb303e4d"
+            }
+          },
+          "terraform_provider_hashicorp_kubernetes_2_38_0_linux_arm64": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_provider_archive_repo",
+            "attributes": {
+              "source": "hashicorp/kubernetes",
+              "version": "2.38.0",
+              "platform": "linux_arm64",
+              "sha256": "63fab47349852d7802fb032e4f2b6a101ee1ce34b62557a9ad0f0f0f5b6ecfdc"
+            }
+          },
           "terraform_providers": {
             "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_providers_hub_repo",
             "attributes": {
               "specs": [
-                "{\"archives\":{\"darwin_amd64\":\"@terraform_provider_hashicorp_google_7_29_0_darwin_amd64//:files\",\"darwin_arm64\":\"@terraform_provider_hashicorp_google_7_29_0_darwin_arm64//:files\",\"linux_amd64\":\"@terraform_provider_hashicorp_google_7_29_0_linux_amd64//:files\",\"linux_arm64\":\"@terraform_provider_hashicorp_google_7_29_0_linux_arm64//:files\"},\"hashes\":{\"darwin_amd64\":\"h1:aKrtVbk3naU8dxw5phrOK2PtN02dPkBV/3+3eAl36TU=\",\"darwin_arm64\":\"h1:SQaFVC55GTev4MsXkmyFWTtH0OhyJXGV7Txi6ZguLsc=\",\"linux_amd64\":\"h1:o0puBmN8n9phQ3SK5z5dcjRCn7fL48rqSKduDv5QbiE=\",\"linux_arm64\":\"h1:gEx4zyCsc4WwhuSViF3H90jXdp/qePjClyEoW7vjFVI=\"},\"name\":\"google\",\"source\":\"hashicorp/google\",\"version\":\"7.29.0\"}"
+                "{\"archives\":{\"darwin_amd64\":\"@terraform_provider_hashicorp_google_7_29_0_darwin_amd64//:files\",\"darwin_arm64\":\"@terraform_provider_hashicorp_google_7_29_0_darwin_arm64//:files\",\"linux_amd64\":\"@terraform_provider_hashicorp_google_7_29_0_linux_amd64//:files\",\"linux_arm64\":\"@terraform_provider_hashicorp_google_7_29_0_linux_arm64//:files\"},\"hashes\":{\"darwin_amd64\":\"h1:aKrtVbk3naU8dxw5phrOK2PtN02dPkBV/3+3eAl36TU=\",\"darwin_arm64\":\"h1:SQaFVC55GTev4MsXkmyFWTtH0OhyJXGV7Txi6ZguLsc=\",\"linux_amd64\":\"h1:o0puBmN8n9phQ3SK5z5dcjRCn7fL48rqSKduDv5QbiE=\",\"linux_arm64\":\"h1:gEx4zyCsc4WwhuSViF3H90jXdp/qePjClyEoW7vjFVI=\"},\"name\":\"google\",\"source\":\"hashicorp/google\",\"version\":\"7.29.0\"}",
+                "{\"archives\":{\"darwin_amd64\":\"@terraform_provider_hashicorp_kubernetes_2_38_0_darwin_amd64//:files\",\"darwin_arm64\":\"@terraform_provider_hashicorp_kubernetes_2_38_0_darwin_arm64//:files\",\"linux_amd64\":\"@terraform_provider_hashicorp_kubernetes_2_38_0_linux_amd64//:files\",\"linux_arm64\":\"@terraform_provider_hashicorp_kubernetes_2_38_0_linux_arm64//:files\"},\"hashes\":{\"darwin_amd64\":\"h1:7nJdsd1RMPBtOjDXidB37+KSDN5VcOWkbkow69qJVGc=\",\"darwin_arm64\":\"h1:soK8Lt0SZ6dB+HsypFRDzuX/npqlMU6M0fvyaR1yW0k=\",\"linux_amd64\":\"h1:5CkveFo5ynsLdzKk+Kv+r7+U9rMrNjfZPT3a0N/fhgE=\",\"linux_arm64\":\"h1:XCkL/mxjWTawg6gg+jlpCQhF/+SNRoCEZxbbkDTj42s=\"},\"name\":\"kubernetes\",\"source\":\"hashicorp/kubernetes\",\"version\":\"2.38.0\"}"
               ]
             }
           }

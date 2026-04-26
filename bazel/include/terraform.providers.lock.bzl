@@ -32,4 +32,22 @@ PROVIDER_HASHES = {
             "h1": "h1:gEx4zyCsc4WwhuSViF3H90jXdp/qePjClyEoW7vjFVI=",
         },
     },
+    "hashicorp/kubernetes@2.38.0": {
+        "darwin_amd64": {
+            "sha256": "5136e51765d6a0b9e4dbcc3b38821e9736bd2136cf15e9aac11668f22db117d2",
+            "h1": "h1:7nJdsd1RMPBtOjDXidB37+KSDN5VcOWkbkow69qJVGc=",
+        },
+        "darwin_arm64": {
+            "sha256": "1be998e67206f7cfc4ffe77c01a09ac91ce725de0abaec9030b22c0a832af44f",
+            "h1": "h1:soK8Lt0SZ6dB+HsypFRDzuX/npqlMU6M0fvyaR1yW0k=",
+        },
+        "linux_amd64": {
+            "sha256": "d39861aa21077f1bc899bc53e7233262e530ba8a3a2d737449b100daeb303e4d",
+            "h1": "h1:5CkveFo5ynsLdzKk+Kv+r7+U9rMrNjfZPT3a0N/fhgE=",
+        },
+        "linux_arm64": {
+            "sha256": "63fab47349852d7802fb032e4f2b6a101ee1ce34b62557a9ad0f0f0f5b6ecfdc",
+            "h1": "h1:XCkL/mxjWTawg6gg+jlpCQhF/+SNRoCEZxbbkDTj42s=",
+        },
+    },
 }

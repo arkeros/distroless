@@ -15,6 +15,24 @@ Terraform address. Add new constructors as bifrost modules need them.
 
 load("//devtools/build/tools/tf:defs.bzl", "resource")
 
+# ---------- providers -------------------------------------------------------
+
+def kubernetes_provider(host = None, **kwargs):
+    """The `kubernetes` provider block. Bare `provider "kubernetes" { ... }`.
+
+    Auth has many shapes (token, client cert, exec plugin, kubeconfig path).
+    Pass whichever set the cluster harness provides via kwargs —
+    `cluster_ca_certificate`, `token`, `exec`, `config_path`, etc.
+
+    Aliased instances (multiple clusters in one root) are not supported yet —
+    add an `alias` parameter when needed.
+    """
+    body = {}
+    if host != None:
+        body["host"] = host
+    body.update(kwargs)
+    return struct(tf = {"provider": {"kubernetes": body}})
+
 def kubernetes_manifest(
         name,
         manifest,

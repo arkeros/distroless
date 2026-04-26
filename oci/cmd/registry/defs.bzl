@@ -14,11 +14,8 @@ REGIONS = [
     "asia-northeast1",
 ]
 
-# `sorted` mirrors the previous `set(string)` semantics: Terraform serialised
-# `var.regions` (a set) in alphabetical order, and the LB still depends on
-# that ordering for its plan to be a no-op after this migration.
 LB_BACKEND = {
     "service_name": "registry",
-    "regions": sorted(REGIONS),
+    "regions": REGIONS,
     "paths": ["/v2/*"],
 }

@@ -60,6 +60,13 @@ if [[ -n "${TFRUNNER_PRE_APPLY:-}" ]]; then
   while IFS= read -r line; do PRE_APPLY+=("$line"); done <<< "$TFRUNNER_PRE_APPLY"
 fi
 
+# Strip ANSI colors when stdout isn't a terminal — i.e. CI capture to a file
+# for the PR-comment upload. Terraform doesn't auto-detect this reliably.
+NO_COLOR=()
+if ! [ -t 1 ]; then
+  NO_COLOR=(-no-color)
+fi
+
 WORK="${TF_WORKDIR:-$HOME/.cache/senku-tf}/$ROOT_NAME"
 mkdir -p "$WORK"
 
@@ -109,18 +116,18 @@ cd "$WORK"
 # `init` (no `-upgrade`) uses the existing lockfile if present, picks the
 # latest matching provider on first run. Set `TF_INIT_UPGRADE=1` to force
 # `-upgrade` (refresh the lockfile to the latest matching versions).
-"$TERRAFORM_BIN" init -input=false ${TF_INIT_UPGRADE:+-upgrade}
+"$TERRAFORM_BIN" init -input=false "${NO_COLOR[@]}" ${TF_INIT_UPGRADE:+-upgrade}
 
 case "$VERB" in
   plan)
     # `-input=false` keeps plan non-blocking: a missing variable fails fast
     # instead of stalling on a terminal prompt.
-    exec "$TERRAFORM_BIN" plan -input=false "$@"
+    exec "$TERRAFORM_BIN" plan -input=false "${NO_COLOR[@]}" "$@"
     ;;
   apply|destroy)
     # No `-input=false` here: the y/n confirmation prompt is the default
     # human path. Set `TF_AUTO_APPROVE=1` to skip it (CI, scripted use).
-    exec "$TERRAFORM_BIN" "$VERB" ${TF_AUTO_APPROVE:+-auto-approve} "$@"
+    exec "$TERRAFORM_BIN" "$VERB" "${NO_COLOR[@]}" ${TF_AUTO_APPROVE:+-auto-approve} "$@"
     ;;
   *)
     echo "tf/run.sh: unknown verb '$VERB' (expected plan|apply|destroy)" >&2

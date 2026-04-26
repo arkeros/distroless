@@ -34,7 +34,20 @@ exports_files(
 )
 
 bzl_library(
+    name = "lockfile",
+    srcs = ["lockfile.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [":provider"],
+)
+
+bzl_library(
     name = "lint",
     srcs = ["lint.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "provider",
+    srcs = ["provider.bzl"],
     visibility = ["//visibility:public"],
 )

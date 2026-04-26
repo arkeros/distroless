@@ -365,14 +365,58 @@
   "moduleExtensions": {
     "//devtools/build/tools/tf/toolchain:extensions.bzl%terraform": {
       "general": {
-        "bzlTransitiveDigest": "6AXQt88YGcHrT51aocSQJFkc4qnSWjBlV7wXZbDmD58=",
-        "usagesDigest": "W1nNh54sOmjYl6uwEiEFuRkYniTSeoyaqS9m9tPcBSY=",
+        "bzlTransitiveDigest": "IBvRAREf9d/7wfOXPdpInae7phcqRpQAUYt0dku5bfY=",
+        "usagesDigest": "UuFtCjmDwbC8Ez2pQIyqwM3oPncQojYbe3nR7qRcqdc=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "terraform_toolchains": {
             "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_terraform_repo",
             "attributes": {
               "version": "1.14.8"
+            }
+          },
+          "terraform_provider_hashicorp_google_7_29_0_darwin_amd64": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_provider_archive_repo",
+            "attributes": {
+              "source": "hashicorp/google",
+              "version": "7.29.0",
+              "platform": "darwin_amd64",
+              "sha256": "2afdb8530b53edb1ea39aa3736e0a28eb8413d042296e01026c027e3b5abf12f"
+            }
+          },
+          "terraform_provider_hashicorp_google_7_29_0_darwin_arm64": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_provider_archive_repo",
+            "attributes": {
+              "source": "hashicorp/google",
+              "version": "7.29.0",
+              "platform": "darwin_arm64",
+              "sha256": "2b920672181a115a72c901a0f121b4a5425d9977b05c0231e84a669f3c8ac731"
+            }
+          },
+          "terraform_provider_hashicorp_google_7_29_0_linux_amd64": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_provider_archive_repo",
+            "attributes": {
+              "source": "hashicorp/google",
+              "version": "7.29.0",
+              "platform": "linux_amd64",
+              "sha256": "3996360bf8f3a17819183df69fc6dad750e8661cbf8f24b1ef96f2db5632f92d"
+            }
+          },
+          "terraform_provider_hashicorp_google_7_29_0_linux_arm64": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_provider_archive_repo",
+            "attributes": {
+              "source": "hashicorp/google",
+              "version": "7.29.0",
+              "platform": "linux_arm64",
+              "sha256": "207a6de17871088d907bf11854419fbc9793fa832f4bbdcc1aa0d63d18f87dcf"
+            }
+          },
+          "terraform_providers": {
+            "repoRuleId": "@@//devtools/build/tools/tf/toolchain:extensions.bzl%_providers_hub_repo",
+            "attributes": {
+              "specs": [
+                "{\"archives\":{\"darwin_amd64\":\"@terraform_provider_hashicorp_google_7_29_0_darwin_amd64//:files\",\"darwin_arm64\":\"@terraform_provider_hashicorp_google_7_29_0_darwin_arm64//:files\",\"linux_amd64\":\"@terraform_provider_hashicorp_google_7_29_0_linux_amd64//:files\",\"linux_arm64\":\"@terraform_provider_hashicorp_google_7_29_0_linux_arm64//:files\"},\"hashes\":{\"darwin_amd64\":\"h1:aKrtVbk3naU8dxw5phrOK2PtN02dPkBV/3+3eAl36TU=\",\"darwin_arm64\":\"h1:SQaFVC55GTev4MsXkmyFWTtH0OhyJXGV7Txi6ZguLsc=\",\"linux_amd64\":\"h1:o0puBmN8n9phQ3SK5z5dcjRCn7fL48rqSKduDv5QbiE=\",\"linux_arm64\":\"h1:gEx4zyCsc4WwhuSViF3H90jXdp/qePjClyEoW7vjFVI=\"},\"name\":\"google\",\"source\":\"hashicorp/google\",\"version\":\"7.29.0\"}"
+              ]
             }
           }
         }

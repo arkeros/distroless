@@ -9,7 +9,10 @@ bzl_library(
     name = "extensions",
     srcs = ["extensions.bzl"],
     visibility = ["//visibility:public"],
-    deps = [":versions"],
+    deps = [
+        ":versions",
+        "//bazel/include:terraform.providers.lock",
+    ],
 )
 
 bzl_library(

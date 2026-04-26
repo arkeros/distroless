@@ -28,6 +28,11 @@ export TFRUNNER_TFVARS='{TFVARS_NL}'
 export TFRUNNER_MODULES='{MODULES_NL}'
 export TFRUNNER_PRE_APPLY='{PRE_APPLY_NL}'
 
+# Workspace-relative path of the tf_root output directory. The wrapper
+# resolves the absolute workdir as `$BUILD_WORKSPACE_DIRECTORY/bazel-bin/`
+# joined with this — see run.sh.
+export TFRUNNER_WORKDIR_REL='{WORKDIR_REL}'
+
 # Export RUNFILES_DIR / RUNFILES_MANIFEST_FILE so run.sh's own runfiles
 # init (and any pre-apply hook's) finds the same source of truth instead
 # of re-discovering it via $0.runfiles fallbacks.
@@ -36,5 +41,4 @@ runfiles_export_envvars
 exec "$(rlocation '{RUN_SH_PATH}')" \
   "$(rlocation '{TERRAFORM_PATH}')" \
   '{VERB}' \
-  '{ROOT_NAME}' \
   "$@"

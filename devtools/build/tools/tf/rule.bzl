@@ -46,6 +46,16 @@ def _tf_runner_impl(ctx):
     gen_paths = [_rloc(f, ws) for f in ctx.files.generated]
     tfvars_paths = [_rloc(f, ws) for f in ctx.files.tfvars]
 
+    # Workdir = the bazel-bin directory of the tf_root that owns
+    # `generated`. We compute it as the directory containing the first
+    # generated file (workspace-relative, so the wrapper can prepend
+    # $BUILD_WORKSPACE_DIRECTORY/bazel-bin/ at run time and reach the
+    # real directory rather than the unmaterialized runfiles tree).
+    first_gen = ctx.files.generated[0]
+    if first_gen.short_path.startswith("../"):
+        fail("tf_runner: `generated` files must live in the main workspace, got " + first_gen.short_path)
+    workdir_rel = first_gen.short_path.rsplit("/", 1)[0]
+
     # Each module's files are pre-enumerated as `<subdir>|<relpath>|<rloc>`
     # triples — manifest mode has no directory subtree to `cp -R`, so
     # run.sh copies file-by-file. `relpath` preserves any nested layout
@@ -90,7 +100,7 @@ def _tf_runner_impl(ctx):
             "{TERRAFORM_PATH}": _rloc(terraform, ws),
             "{RUN_SH_PATH}": _rloc(ctx.file._run_sh, ws),
             "{VERB}": ctx.attr.verb,
-            "{ROOT_NAME}": ctx.attr.root_name,
+            "{WORKDIR_REL}": workdir_rel,
             "{GEN_FILES_NL}": "\n".join(gen_paths),
             "{TFVARS_NL}": "\n".join(tfvars_paths),
             "{MODULES_NL}": "\n".join(module_entries),
@@ -120,10 +130,6 @@ tf_runner = rule(
         "verb": attr.string(
             mandatory = True,
             values = ["plan", "apply", "destroy"],
-        ),
-        "root_name": attr.string(
-            mandatory = True,
-            doc = "Stable workdir key (typically <package>_<name>).",
         ),
         "generated": attr.label_list(
             allow_files = True,

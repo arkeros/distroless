@@ -1,23 +1,38 @@
 #!/usr/bin/env bash
-# Per-root terraform runner. Generated `.tf.json` files live in the read-only
-# Bazel runfiles tree; copy them to a stable workdir keyed by the root name so
-# terraform's mutable state (.terraform/, lockfiles) survives between runs and
-# two roots don't fight over the same directory.
+# Per-root terraform runner. The bazel-bin output directory of the
+# generating `tf_root` IS the terraform working directory — it already
+# contains main.tf.json, backend.tf.json, providers.tf.json,
+# .terraform.lock.hcl, .terraformrc, and the _providers/ filesystem
+# mirror.
+#
+# Terraform's mutable state (.terraform/, terraform.tfstate*) is
+# created in the same dir; it survives until `bazel clean`. State
+# proper lives in the GCS backend, so a clean only forces a re-init,
+# not a re-apply.
+#
+# This script:
+#   1. Resolves $WORK = dirname(rlocation(main.tf.json)).
+#   2. Substitutes the @@MIRROR_PATH@@ placeholder in $WORK/.terraformrc
+#      into a sibling $WORK/.terraformrc.runtime — leaves the bazel
+#      output untouched so subsequent rebuilds don't churn.
+#   3. Exports TF_CLI_CONFIG_FILE → the substituted file.
+#   4. Stages tfvars / module-subdir files (from other packages) into
+#      $WORK if any are declared.
+#   5. Runs pre-apply hooks (apply only).
+#   6. cd $WORK, terraform init, then the verb.
 #
 # Args:
-#   $1  — terraform binary (already resolved to an absolute path by the wrapper)
+#   $1  — terraform binary (already resolved to an absolute path)
 #   $2  — verb: plan | apply | destroy
-#   $3  — root name (used as the workdir key)
-#   $4+ — extra flags forwarded to the terraform invocation
+#   $3+ — extra flags forwarded to the terraform invocation
 #
 # Env (newline-separated rlocation paths; unset/empty means "none"):
-#   TFRUNNER_GEN_FILES — generated `*.tf.json` files
+#   TFRUNNER_GEN_FILES — generated `*.tf.json` + lockfile/.terraformrc/mirror
 #   TFRUNNER_TFVARS    — `*.auto.tfvars.json` files
 #   TFRUNNER_MODULES   — `<subdir>|<relpath>|<rloc>` triples (one per file)
 #   TFRUNNER_PRE_APPLY — pre-apply executables (only run on `apply`)
 #
 # Env (control):
-#   TF_WORKDIR        — base directory for per-root workspaces (default ~/.cache/senku-tf)
 #   TF_AUTO_APPROVE   — if non-empty, pass `-auto-approve` to apply/destroy
 #   TF_INIT_UPGRADE   — if non-empty, pass `-upgrade` to init (refresh lockfile)
 #   TF_PLAN_JSON_OUT  — if set (plan only), save the binary plan via `-out=` and
@@ -38,8 +53,7 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
 
 TERRAFORM_BIN="$1"
 VERB="$2"
-ROOT_NAME="$3"
-shift 3
+shift 2
 
 # Bazel labels can't contain newlines or whitespace, so newline-separated
 # lists are unambiguous. The `-n` guard avoids a stray empty element when
@@ -71,27 +85,26 @@ if ! [ -t 1 ]; then
   NO_COLOR=(-no-color)
 fi
 
-WORK="${TF_WORKDIR:-$HOME/.cache/senku-tf}/$ROOT_NAME"
-mkdir -p "$WORK"
+# Resolve the workdir as the real bazel-bin directory of the
+# generating tf_root. We DON'T use the runfiles tree here: under
+# --nobuild_runfile_links (the workspace default) the runfiles dir is
+# only a manifest, not a materialized tree, so terraform's
+# filesystem_mirror would find an empty `_providers/` and fall back to
+# the network. The bazel-bin dir, by contrast, is always materialized
+# — symlinked via $BUILD_WORKSPACE_DIRECTORY/bazel-bin/.
+if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
+  echo "tf/run.sh: BUILD_WORKSPACE_DIRECTORY is unset; this script must be run via 'bazel run' (or an aspect-cli runnable that exports the var)" >&2
+  exit 1
+fi
+if [[ -z "${TFRUNNER_WORKDIR_REL:-}" ]]; then
+  echo "tf/run.sh: TFRUNNER_WORKDIR_REL not set by the wrapper template" >&2
+  exit 1
+fi
+WORK="${BUILD_WORKSPACE_DIRECTORY}/bazel-bin/${TFRUNNER_WORKDIR_REL}"
 
-# Wipe Bazel-owned files (everything we generate) before re-syncing. State,
-# lockfiles, and `.terraform/` survive.
-find "$WORK" -maxdepth 1 -name "*.tf.json" -delete
-find "$WORK" -maxdepth 1 -name "*.auto.tfvars.json" -delete
-# Module subdirs are also Bazel-owned; nuke each one once before re-staging.
-declare -A SEEN_SUBDIRS=()
-for entry in "${MODULES[@]}"; do
-  subdir="${entry%%|*}"
-  if [[ -z "${SEEN_SUBDIRS[$subdir]:-}" ]]; then
-    rm -rf "${WORK:?}/$subdir"
-    SEEN_SUBDIRS["$subdir"]=1
-  fi
-done
-
-for f in "${GEN_FILES[@]}"; do
-  cp "$(rlocation "$f")" "$WORK/"
-done
-
+# Stage tfvars and module subdir files into WORK. These can come from
+# other packages, so they aren't necessarily already in $WORK. cp
+# overwrites, which is what we want when an input has changed.
 for tf in "${TFVARS[@]}"; do
   cp "$(rlocation "$tf")" "$WORK/"
 done
@@ -103,6 +116,17 @@ for entry in "${MODULES[@]}"; do
   mkdir -p "$(dirname "$dest")"
   cp "$src" "$dest"
 done
+
+# Substitute @@MIRROR_PATH@@ in .terraformrc to the absolute workdir
+# path. We write to a sibling `.terraformrc.runtime` rather than
+# overwriting the bazel output (which would cause cache churn on
+# subsequent builds). TF_CLI_CONFIG_FILE points terraform at the
+# substituted file; the original .terraformrc is harmless because
+# terraform doesn't auto-read it from cwd.
+if [[ -f "$WORK/.terraformrc" ]]; then
+  sed "s|@@MIRROR_PATH@@|$WORK|g" "$WORK/.terraformrc" > "$WORK/.terraformrc.runtime"
+  export TF_CLI_CONFIG_FILE="$WORK/.terraformrc.runtime"
+fi
 
 if [[ "$VERB" == "apply" ]]; then
   # Pre-apply hooks have their own runfiles trees as part of THIS binary's

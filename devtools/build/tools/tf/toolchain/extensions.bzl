@@ -135,22 +135,34 @@ def _provider_url(source, version, platform):
     )
 
 def _provider_archive_repo_impl(rctx):
-    """Download + unzip one provider for one platform; expose its
-    binary as a `:files` filegroup for the hub repo to symlink from."""
-    rctx.download_and_extract(
+    """Download one provider zip for one platform; expose it verbatim
+    as a `:files` filegroup. The hub repo symlinks it into the
+    per-root mirror tree as a packed `.zip` (terraform's filesystem
+    mirror accepts both packed and unpacked layouts; we use packed
+    because the lockfile h1 verification is computed against the zip
+    by `dirhash.HashZip` and matches what terraform's own packed-mirror
+    code path expects byte-for-byte. The unpacked layout requires
+    terraform to re-derive h1 from the extracted file, which has
+    proven brittle in practice — the same provider+version produces
+    different h1 strings between `dirhash.HashZip` and a re-extraction)."""
+    _, ptype = rctx.attr.source.split("/")
+    zip_name = "terraform-provider-{ptype}_{version}_{platform}.zip".format(
+        ptype = ptype,
+        version = rctx.attr.version,
+        platform = rctx.attr.platform,
+    )
+    rctx.download(
         url = _provider_url(rctx.attr.source, rctx.attr.version, rctx.attr.platform),
+        output = zip_name,
         sha256 = rctx.attr.sha256,
-        type = "zip",
     )
     rctx.file("BUILD.bazel", """\
 filegroup(
     name = "files",
-    # Provider zips contain exactly one binary at the root, named
-    # terraform-provider-<type>_v<version>... — the prefix is stable.
-    srcs = glob(["terraform-provider-*"]),
+    srcs = ["{zip}"],
     visibility = ["//visibility:public"],
 )
-""")
+""".format(zip = zip_name))
 
 _provider_archive_repo = repository_rule(
     implementation = _provider_archive_repo_impl,

@@ -32,23 +32,35 @@ def _short_name(source):
     `required_providers` key and the lockfile-section identifier."""
     return source.split("/")[-1]
 
+_LOCKFILE_HEADER = """# This file is maintained automatically by "terraform init".
+# Manual edits may be lost in future updates.
+
+"""
+
 def _render_lockfile(infos):
+    """Render the document terraform itself would write after a fresh
+    init against our filesystem mirror. Matching its output byte-for-byte
+    keeps `terraform init` from rewriting the bazel output, which would
+    cause cache churn on every plan."""
     blocks = []
     for info in infos:
         for platform in PLATFORMS:
             if platform not in info.hashes:
                 fail("provider {} missing hash for {}".format(info.source, platform))
-        hash_lines = ",\n    ".join(['"%s"' % info.hashes[p] for p in PLATFORMS])
+        # Terraform sorts the hashes alphabetically (by full `h1:…`
+        # string) on write; mimic that.
+        sorted_hashes = sorted([info.hashes[p] for p in PLATFORMS])
+        hash_lines = "\n".join(['    "%s",' % h for h in sorted_hashes])
         blocks.append(
             'provider "registry.terraform.io/{source}" {{\n'.format(source = info.source) +
             '  version     = "{version}"\n'.format(version = info.version) +
             '  constraints = "{version}"\n'.format(version = info.version) +
             "  hashes = [\n" +
-            "    " + hash_lines + ",\n" +
+            hash_lines + "\n" +
             "  ]\n" +
             "}\n",
         )
-    return "\n".join(blocks)
+    return _LOCKFILE_HEADER + "\n".join(blocks)
 
 # `@@MIRROR_PATH@@` is substituted by `run.sh` (and by the manual
 # `setup-terraformrc.sh` helper) with the absolute path of the bazel-bin
@@ -66,7 +78,10 @@ _TERRAFORMRC = """provider_installation {
 """
 
 def _render_required_providers(infos):
-    """Emit the `terraform { required_providers { ... } }` JSON block."""
+    """Emit `terraform { required_providers { … } }` as a single
+    nested-object JSON document. (`required_providers` is a meta-block,
+    not a block-list; terraform expects a single object, not an array
+    of objects, even in JSON syntax.)"""
     required = {}
     for info in infos:
         required[_short_name(info.source)] = {
@@ -74,24 +89,9 @@ def _render_required_providers(infos):
             "version": info.version,
         }
     return json.encode_indent(
-        {"terraform": [{"required_providers": [required]}]},
+        {"terraform": {"required_providers": required}},
         indent = "  ",
     ) + "\n"
-
-# Terraform's filesystem-mirror layout is rigid:
-#   <mirror>/<hostname>/<namespace>/<type>/<version>/<os_arch>/<binary>
-# We pin <hostname> to registry.terraform.io (the only registry we use)
-# and split <source> into <namespace>/<type>.
-def _mirror_path(gen_dir, info, platform, basename):
-    namespace, ptype = info.source.split("/")
-    return "{gen_dir}/_providers/registry.terraform.io/{namespace}/{ptype}/{version}/{platform}/{basename}".format(
-        gen_dir = gen_dir,
-        namespace = namespace,
-        ptype = ptype,
-        version = info.version,
-        platform = platform,
-        basename = basename,
-    )
 
 def _tf_root_provider_artifacts_impl(ctx):
     infos = [dep[TerraformProviderInfo] for dep in ctx.attr.providers]
@@ -116,18 +116,59 @@ def _tf_root_provider_artifacts_impl(ctx):
     ctx.actions.write(output = providers_json, content = _render_required_providers(infos))
     outputs.append(providers_json)
 
-    # 4. Mirror tree.
+    # 4. Mirror tree (packed). Same layout `terraform providers mirror`
+    # produces — every file (zips + index JSONs) sits flat under
+    # `<host>/<ns>/<type>/`, no per-version subdirectory:
+    #
+    #   <host>/<ns>/<type>/index.json        — known versions
+    #   <host>/<ns>/<type>/<version>.json    — archive map per platform
+    #   <host>/<ns>/<type>/terraform-provider-<type>_<version>_<os>_<arch>.zip
     for info in infos:
+        namespace, ptype = info.source.split("/")
+        prefix = "{gen_dir}/_providers/registry.terraform.io/{ns}/{ptype}".format(
+            gen_dir = gen_dir,
+            ns = namespace,
+            ptype = ptype,
+        )
+
+        # Per-platform archive symlinks + per-archive entries for the
+        # version index. The url is relative to the version index file
+        # itself — i.e. just the zip basename.
+        archives_index = {}
         for platform in PLATFORMS:
             if platform not in info.archives:
                 fail("provider {} missing archive for {}".format(info.source, platform))
             files = info.archives[platform].to_list()
-            # Each provider zip contains exactly one binary at the root
-            # named `terraform-provider-<type>_v<version>...`.
-            for f in files:
-                out = ctx.actions.declare_file(_mirror_path(gen_dir, info, platform, f.basename))
-                ctx.actions.symlink(output = out, target_file = f)
-                outputs.append(out)
+            if len(files) != 1:
+                fail("provider {} archive for {} should be exactly one zip; got {}".format(info.source, platform, len(files)))
+            zip_file = files[0]
+            out = ctx.actions.declare_file("{}/{}".format(prefix, zip_file.basename))
+            ctx.actions.symlink(output = out, target_file = zip_file)
+            outputs.append(out)
+            archives_index[platform] = {
+                "url": zip_file.basename,
+                "hashes": [info.hashes[platform]],
+            }
+
+        index_json = ctx.actions.declare_file(prefix + "/index.json")
+        ctx.actions.write(
+            output = index_json,
+            content = json.encode_indent(
+                {"versions": {info.version: {}}},
+                indent = "  ",
+            ),
+        )
+        outputs.append(index_json)
+
+        version_json = ctx.actions.declare_file("{}/{}.json".format(prefix, info.version))
+        ctx.actions.write(
+            output = version_json,
+            content = json.encode_indent(
+                {"archives": archives_index},
+                indent = "  ",
+            ),
+        )
+        outputs.append(version_json)
 
     return [DefaultInfo(files = depset(outputs))]
 

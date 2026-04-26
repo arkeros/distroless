@@ -22,12 +22,7 @@ tf_root(
             value = GAR_REGISTRY + "/" + GAR_REPOSITORY_PREFIX,
         ),
     ],
-    required_providers = {
-        "google": {
-            "source": "hashicorp/google",
-            "version": "~> 7.0",
-        },
-    },
+    providers = ["@terraform_providers//:google"],
     visibility = ["//visibility:public"],
 )
 

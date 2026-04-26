@@ -184,12 +184,7 @@ tf_root(
         ),
     ],
     image_push = ":image_push_gar",
-    required_providers = {
-        "google": {
-            "source": "hashicorp/google",
-            "version": "~> 7.0",
-        },
-    },
+    providers = ["@terraform_providers//:google"],
     visibility = ["//visibility:public"],
 )
 

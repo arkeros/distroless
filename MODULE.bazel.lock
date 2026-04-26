@@ -365,7 +365,7 @@
   "moduleExtensions": {
     "//devtools/build/tools/tf/toolchain:extensions.bzl%terraform": {
       "general": {
-        "bzlTransitiveDigest": "IBvRAREf9d/7wfOXPdpInae7phcqRpQAUYt0dku5bfY=",
+        "bzlTransitiveDigest": "a2xI8WZp0PfD17phgsUgubAUk3VjdsIKq1Kbc7TC6Nk=",
         "usagesDigest": "UuFtCjmDwbC8Ez2pQIyqwM3oPncQojYbe3nR7qRcqdc=",
         "recordedInputs": [],
         "generatedRepoSpecs": {

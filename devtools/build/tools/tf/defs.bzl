@@ -24,6 +24,10 @@ emitted as strings and resolved by Terraform at plan time.
 
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load(
+    ":lockfile.bzl",
+    _tf_root_provider_artifacts = "tf_root_provider_artifacts",
+)
+load(
     ":render.bzl",
     _IMAGE_URI = "IMAGE_URI",
     _render_main_with_image = "render_main_with_image",
@@ -144,6 +148,7 @@ def tf_root(
         modules = None,
         pre_apply = None,
         image_push = None,
+        providers = None,
         visibility = None):
     """Emit `.tf.json` files + plan/apply runnables for one Terraform root.
 
@@ -158,9 +163,21 @@ def tf_root(
             convention for new roots. Pass an explicit value only when the
             existing state lives at a different prefix (legacy roots) and
             you'd rather not migrate it.
-        required_providers: Optional dict for `terraform.required_providers`.
-            Defaults to None — emit no `required_providers` block, providers
-            are inferred from resource types in the JSON.
+        required_providers: Legacy escape hatch — explicit
+            `terraform.required_providers` dict written into
+            `backend.tf.json`. Mutually exclusive with `providers`. Use
+            `providers` for new code; this is kept for the rare case
+            where a root needs a hand-rolled spec the central
+            `terraform.MODULE.bazel` doesn't cover.
+        providers: List of `tf_provider_target` labels (typically
+            `["@terraform_providers//:google", …]`). Each provider's
+            source/version is rendered into a sibling
+            `providers.tf.json`; its multi-platform hashes drive the
+            generated `.terraform.lock.hcl`; its archive files become
+            the filesystem-mirror tree under `_providers/`. Together
+            these turn the bazel-bin output dir into a self-contained
+            terraform working directory — `terraform init` resolves
+            providers from the mirror without hitting the network.
         required_version: Terraform CLI version constraint.
         backend_bucket: GCS bucket holding state.
         tfvars: Optional list of labels whose default outputs are JSON files
@@ -186,6 +203,9 @@ def tf_root(
     tfvars = tfvars or []
     modules = modules or {}
     pre_apply = list(pre_apply or [])
+    providers = providers or []
+    if providers and required_providers:
+        fail("tf_root({}): pass either `providers` (recommended) or `required_providers` (legacy), not both.".format(name))
     if backend_prefix == None:
         backend_prefix = native.package_name()
 
@@ -246,18 +266,26 @@ def tf_root(
 
     generated = [":" + backend_target, ":" + main_target]
 
+    # When `providers` is set, the artifacts rule emits four more files
+    # into the same `<name>/` subdir: providers.tf.json (the
+    # required_providers block, kept separate so `tf_root` doesn't need
+    # macro-time access to provider metadata), .terraform.lock.hcl,
+    # .terraformrc (with @@MIRROR_PATH@@ placeholder; substituted by
+    # the runner), and the `_providers/` filesystem-mirror tree.
+    if providers:
+        artifacts_target = "_{}_artifacts".format(name)
+        _tf_root_provider_artifacts(
+            name = artifacts_target,
+            providers = providers,
+            gen_dir = name,
+            visibility = ["//visibility:private"],
+        )
+        generated.append(":" + artifacts_target)
+
     native.filegroup(
         name = name,
         srcs = generated,
         visibility = visibility,
-    )
-
-    # Stable workdir key. Two tf_roots in different packages (or with different
-    # names) get distinct directories, so terraform's .terraform/ + state
-    # lockfiles don't collide.
-    root_name = "{}_{}".format(
-        native.package_name().replace("/", "_"),
-        name,
     )
 
     # Per-verb runners. The `tf_runner` rule resolves the terraform
@@ -265,11 +293,15 @@ def tf_root(
     # generated wrapper script — no `bazel run`-only `args = [...]`
     # injection — so direct-spawn callers (e.g. `aspect plan` via
     # `runnable`) work without bouncing through `bazel run`.
+    #
+    # The workdir is the bazel-bin output dir of this tf_root (run.sh
+    # resolves it at runtime via rlocation), so two roots in distinct
+    # packages naturally get distinct working directories without an
+    # explicit key.
     for verb in ("plan", "apply", "destroy"):
         tf_runner(
             name = "{}.{}".format(name, verb),
             verb = verb,
-            root_name = root_name,
             generated = generated,
             tfvars = tfvars,
             modules = {label: subdir for subdir, label in modules.items()},

@@ -31,6 +31,16 @@ db = sql_database_instance(
         "ip_configuration": [{
             "ipv4_enabled": False,
             "private_network": "projects/{}/global/networks/default".format(PROJECT),
+            "ssl_mode": "ENCRYPTED_ONLY",
+        }],
+        "backup_configuration": [{
+            "enabled": True,
+            "point_in_time_recovery_enabled": True,
+            "start_time": "03:00",
+        }],
+        "database_flags": [{
+            "name": "cloudsql.enable_pgaudit",
+            "value": "on",
         }],
     },
 )

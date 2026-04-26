@@ -219,6 +219,95 @@ def google_cloud_run_v2_service_iam_member(
         attrs = _IAM_MEMBER_ATTRS,
     )
 
+def google_cloud_run_v2_job(
+        name,
+        location,
+        project = None,
+        job_name = None,
+        template = None,
+        labels = None,
+        annotations = None,
+        deletion_protection = None,
+        launch_stage = None,
+        depends_on = None):
+    """`google_cloud_run_v2_job` — Cloud Run v2 Job.
+
+    `name` is the Terraform block key; `job_name` is the TF schema's `name`
+    field (the Cloud Run Job name) and defaults to the block key.
+    Nested `template` is passed as a dict/list shaped like Terraform JSON;
+    for the convenience macro that builds it from flat kwargs, see
+    `cronjob_cloudrun`.
+    """
+    body = {
+        "location": location,
+        "name": job_name or name,
+    }
+    if project != None:
+        body["project"] = project
+    if labels != None:
+        body["labels"] = labels
+    if annotations != None:
+        body["annotations"] = annotations
+    if deletion_protection != None:
+        body["deletion_protection"] = deletion_protection
+    if launch_stage != None:
+        body["launch_stage"] = launch_stage
+    if template != None:
+        body["template"] = template if type(template) == type([]) else [template]
+    if depends_on != None:
+        body["depends_on"] = depends_on
+    return resource(
+        rtype = "google_cloud_run_v2_job",
+        name = name,
+        body = body,
+        attrs = ("id", "name", "location"),
+    )
+
+# ---------- cloud scheduler ------------------------------------------------
+
+def google_cloud_scheduler_job(
+        name,
+        region,
+        schedule,
+        time_zone,
+        http_target,
+        project = None,
+        scheduler_name = None,
+        description = None,
+        attempt_deadline = None,
+        retry_config = None,
+        depends_on = None):
+    """`google_cloud_scheduler_job` — cron trigger.
+
+    `name` is the Terraform block key; `scheduler_name` is the TF schema's
+    `name` field (the Cloud Scheduler job name) and defaults to the block key.
+    `attempt_deadline` is a duration string (e.g. `"300s"`); `retry_config`
+    is a dict (or list of one) shaped like the Terraform JSON block.
+    """
+    body = {
+        "region": region,
+        "name": scheduler_name or name,
+        "schedule": schedule,
+        "time_zone": time_zone,
+        "http_target": http_target if type(http_target) == type([]) else [http_target],
+    }
+    if project != None:
+        body["project"] = project
+    if description != None:
+        body["description"] = description
+    if attempt_deadline != None:
+        body["attempt_deadline"] = attempt_deadline
+    if retry_config != None:
+        body["retry_config"] = retry_config if type(retry_config) == type([]) else [retry_config]
+    if depends_on != None:
+        body["depends_on"] = depends_on
+    return resource(
+        rtype = "google_cloud_scheduler_job",
+        name = name,
+        body = body,
+        attrs = ("id", "name"),
+    )
+
 # ---------- artifact registry -----------------------------------------------
 
 def artifact_registry_repository(

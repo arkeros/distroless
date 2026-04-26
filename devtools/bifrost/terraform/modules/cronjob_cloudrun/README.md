@@ -1,6 +1,8 @@
-# `cronjob_cloudrun` Terraform module (PoC)
+# `cronjob_cloudrun` Starlark module (PoC)
 
 Cloud Run Job triggered by Cloud Scheduler, provisioned via the google provider. This module does not touch Kubernetes — the Cloud Run control plane is the reconciler.
+
+The implementation is the [`cronjob_cloudrun`](./defs.bzl) Starlark macro: callers `load(...)` it from a `tf_root`-using BUILD file and pass flat kwargs.
 
 > **Status:** proof of concept.
 
@@ -24,11 +26,6 @@ Cloud Run natively references Secret Manager via `env.value_source.secret_key_re
 
 Not applicable — Cloud Run isn't Kubernetes. This module uses typed `google_*` resources exclusively.
 
-## Inputs / outputs / verification
+## Inputs / outputs
 
-See [`variables.tf`](./variables.tf), [`outputs.tf`](./outputs.tf).
-
-```bash
-bazel test //devtools/bifrost/terraform/modules/cronjob_cloudrun:lint
-bazel run  //devtools/bifrost/terraform/modules/cronjob_cloudrun:validate
-```
+See the `cronjob_cloudrun` macro in [`defs.bzl`](./defs.bzl) for argument shapes and the struct fields it returns. A worked usage example lives at [`examples/basic_starlark`](./examples/basic_starlark).

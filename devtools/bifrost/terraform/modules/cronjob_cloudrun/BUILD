@@ -1,27 +1,8 @@
-load("//devtools/build/tools/tf:lint.bzl", "tf_script_binary", "tf_script_test")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
-_HCL_SRCS = glob(
-    ["**/*.tf"],
-    allow_empty = False,
-)
-
-filegroup(
-    name = "module",
-    srcs = _HCL_SRCS,
+bzl_library(
+    name = "defs",
+    srcs = ["defs.bzl"],
     visibility = ["//visibility:public"],
-)
-
-# Lint, not a test. Semantic validation requires provider downloads; see
-# :validate for the local-only target.
-tf_script_test(
-    name = "lint",
-    size = "small",
-    srcs = _HCL_SRCS,
-    script = "//devtools/bifrost/terraform/modules:fmt_check.sh",
-)
-
-tf_script_binary(
-    name = "validate",
-    srcs = _HCL_SRCS,
-    script = "//devtools/bifrost/terraform/modules:validate.sh",
+    deps = ["//devtools/build/tools/tf/resources:gcp"],
 )

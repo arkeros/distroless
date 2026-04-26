@@ -23,7 +23,6 @@ svc = service_kubernetes(
     },
     image = "europe-docker.pkg.dev/senku-prod/api/api@sha256:" + ("1" * 64),
     namespace = "default",
-    port = 8080,
     probes = {
         "liveness_path": "/healthz",
         "readiness_path": "/ready",

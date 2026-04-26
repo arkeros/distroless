@@ -92,7 +92,8 @@ def service_kubernetes(
         vpa_enabled = True,
         service_account_id = None,
         labels = None,
-        field_manager = "terraform"):
+        field_manager = "terraform",
+        depends_on = None):
     """Deployment + Service + HPA (+optional Secret/PDB/VPA) for a K8s web workload.
 
     Returns one struct whose `.tf` body holds:
@@ -143,6 +144,10 @@ def service_kubernetes(
             Defaults to `svc-<workload_name>`.
         labels: Extra labels merged with `{app.kubernetes.io/name: <workload_name>}`.
         field_manager: SSA field-manager name. Default `"terraform"`.
+        depends_on: Optional list of terraform addresses (e.g.
+            `[migrate.addr]`) appended to the Deployment's `depends_on`.
+            Use this for sibling resources that must complete before pods
+            roll out — typically a one-shot migration Job.
     """
     workload_name = workload_name or name
     runtime_account_id = service_account_id or "svc-{}".format(workload_name)
@@ -269,6 +274,8 @@ def service_kubernetes(
     deployment_depends_on = [k8s_sa.addr]
     if secret_dependency:
         deployment_depends_on.append(secret_dependency)
+    if depends_on:
+        deployment_depends_on = deployment_depends_on + list(depends_on)
 
     deployment = kubernetes_manifest(
         name = "{}_deployment".format(name),

@@ -49,6 +49,37 @@ def kubernetes_manifest(
         attrs = ("manifest",),
     )
 
+def kubernetes_job_v1(
+        name,
+        metadata,
+        spec,
+        wait_for_completion = None,
+        depends_on = None):
+    """`kubernetes_job_v1` — typed (non-SSA) K8s Job.
+
+    Useful for migration jobs that must complete before a Deployment rolls
+    out: pass `wait_for_completion = True` and list this resource in the
+    consumer's `depends_on`. Typed-resource semantics: terraform tracks
+    completion state via the K8s API rather than via SSA.
+
+    `metadata` and `spec` accept either a single dict (wrapped) or an
+    already-shaped list-of-one for callers passing the JSON shape directly.
+    """
+    body = {
+        "metadata": metadata if type(metadata) == type([]) else [metadata],
+        "spec": spec if type(spec) == type([]) else [spec],
+    }
+    if wait_for_completion != None:
+        body["wait_for_completion"] = wait_for_completion
+    if depends_on != None:
+        body["depends_on"] = depends_on
+    return resource(
+        rtype = "kubernetes_job_v1",
+        name = name,
+        body = body,
+        attrs = ("id",),
+    )
+
 def kubernetes_secret_v1(
         name,
         metadata,

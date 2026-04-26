@@ -308,6 +308,29 @@ def google_cloud_scheduler_job(
         attrs = ("id", "name"),
     )
 
+# ---------- secret manager -------------------------------------------------
+
+def secret_manager_secret(name, secret_id, project = None, replication = None, labels = None):
+    """`google_secret_manager_secret` — Secret Manager parent secret.
+
+    `replication` accepts a dict; `{"auto": [{}]}` is the common default
+    for region-replicated secrets. Pass `{"user_managed": [{"replicas": [...]}]}`
+    when you need explicit region pinning.
+    """
+    body = {"secret_id": secret_id}
+    if project != None:
+        body["project"] = project
+    if replication != None:
+        body["replication"] = replication if type(replication) == type([]) else [replication]
+    if labels != None:
+        body["labels"] = labels
+    return resource(
+        rtype = "google_secret_manager_secret",
+        name = name,
+        body = body,
+        attrs = ("id", "name", "secret_id"),
+    )
+
 # ---------- secret manager (ephemeral) -------------------------------------
 
 def ephemeral_google_secret_manager_secret_version(name, project, secret, version):
@@ -332,6 +355,43 @@ def ephemeral_google_secret_manager_secret_version(name, project, secret, versio
         tf = {"ephemeral": {rtype: {name: body}}},
         addr = "ephemeral.{}.{}".format(rtype, name),
         secret_data = "${ephemeral.%s.%s.secret_data}" % (rtype, name),
+    )
+
+# ---------- cloud sql ------------------------------------------------------
+
+def sql_database_instance(
+        name,
+        region,
+        database_version,
+        instance_name = None,
+        project = None,
+        settings = None,
+        deletion_protection = None,
+        depends_on = None):
+    """`google_sql_database_instance` — Cloud SQL instance.
+
+    `instance_name` is the TF schema's `name` field (the Cloud SQL instance
+    name). Defaults to the block key `name`. `settings` is the nested
+    settings block as a dict (or list-of-one).
+    """
+    body = {
+        "name": instance_name or name,
+        "region": region,
+        "database_version": database_version,
+    }
+    if project != None:
+        body["project"] = project
+    if settings != None:
+        body["settings"] = settings if type(settings) == type([]) else [settings]
+    if deletion_protection != None:
+        body["deletion_protection"] = deletion_protection
+    if depends_on != None:
+        body["depends_on"] = depends_on
+    return resource(
+        rtype = "google_sql_database_instance",
+        name = name,
+        body = body,
+        attrs = ("id", "name", "connection_name", "private_ip_address", "public_ip_address", "self_link"),
     )
 
 # ---------- artifact registry -----------------------------------------------
@@ -440,6 +500,28 @@ def service_account_iam_member(name, service_account_id, role, member, condition
         name = name,
         body = body,
         attrs = ["id", "etag"],
+    )
+
+def secret_manager_secret_iam_member(name, secret_id, role, member, project = None, condition = None):
+    """`google_secret_manager_secret_iam_member` — non-authoritative.
+
+    `secret_id` is the TF schema's `secret_id` field (typically a reference
+    like `${google_secret_manager_secret.foo.id}`).
+    """
+    body = {
+        "secret_id": secret_id,
+        "role": role,
+        "member": member,
+    }
+    if project != None:
+        body["project"] = project
+    if condition != None:
+        body["condition"] = condition if type(condition) == type([]) else [condition]
+    return resource(
+        rtype = "google_secret_manager_secret_iam_member",
+        name = name,
+        body = body,
+        attrs = ("id", "etag"),
     )
 
 def storage_bucket_iam_member(name, bucket, role, member, condition = None):

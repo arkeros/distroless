@@ -251,7 +251,11 @@ func verifySha256(path, wantHex string) error {
 }
 
 func httpGet(url string) ([]byte, error) {
-	client := &http.Client{Timeout: 30 * time.Second}
+	// Sized for the worst case caller: a provider zip can be ~150 MB
+	// (hashicorp/google), which on a slow link runs well past 30s. The
+	// SHA256SUMS fetch sharing this client doesn't care — it's a few
+	// hundred bytes either way, so a longer ceiling never bites it.
+	client := &http.Client{Timeout: 5 * time.Minute}
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err

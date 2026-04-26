@@ -53,6 +53,13 @@ def _tf_runner_impl(ctx):
     module_entries = []
     module_files = []
     for target, subdir in ctx.attr.modules.items():
+        # `subdir` lands inside a single-quoted bash string in runner.sh.tpl;
+        # a literal `'` would close the quoting and let arbitrary shell through.
+        if "'" in subdir:
+            fail("tf_runner: module subdir for {} must not contain a single quote: {}".format(
+                target.label,
+                subdir,
+            ))
         pkg = target.label.package
         pkg_prefix = pkg + "/" if pkg else ""
         for f in target[DefaultInfo].files.to_list():

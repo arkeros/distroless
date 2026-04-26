@@ -6,3 +6,10 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = ["//devtools/build/tools/tf:defs"],
 )
+
+bzl_library(
+    name = "k8s",
+    srcs = ["k8s.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//devtools/build/tools/tf:defs"],
+)

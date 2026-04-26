@@ -1,6 +1,8 @@
-# `cronjob_kubernetes` Terraform module (PoC)
+# `cronjob_kubernetes` Starlark module (PoC)
 
-A module for a Kubernetes CronJob with the same architectural shape as the `service` module: Terraform provisions the infrastructure shell via SSA, External Secrets Operator resolves secrets at runtime.
+A module for a Kubernetes CronJob with the same architectural shape as the `service` module: Terraform provisions the infrastructure shell via SSA, secrets flow through ephemeral resources into a content-hashed `kubernetes_secret_v1`.
+
+The implementation is the [`cronjob_kubernetes`](./defs.bzl) Starlark macro; callers `load(...)` it from a `tf_root`-using BUILD file and pass flat kwargs.
 
 > **Status:** proof of concept. See [`service_kubernetes/README.md`](../service_kubernetes/README.md) for the broader migration note.
 
@@ -28,11 +30,6 @@ Same model as `service`:
 - Secrets via `ephemeral + kubernetes_secret_v1.data_wo` (typed carve-out); content-hashed Secret name.
 - `image` digest-pinned; `secret_env[*].version` explicit integer (`"latest"` rejected).
 
-## Inputs / outputs / verification
+## Inputs / outputs
 
-See [`variables.tf`](./variables.tf), [`outputs.tf`](./outputs.tf), and the `service` README for the verification workflow — the pattern is identical.
-
-```bash
-bazel test //devtools/bifrost/terraform/modules/cronjob_kubernetes:lint
-bazel run  //devtools/bifrost/terraform/modules/cronjob_kubernetes:validate
-```
+See the `cronjob_kubernetes` macro in [`defs.bzl`](./defs.bzl) for argument shapes and the struct fields it returns. A worked usage example lives at [`examples/basic_starlark`](./examples/basic_starlark).

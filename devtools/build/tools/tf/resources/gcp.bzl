@@ -308,6 +308,32 @@ def google_cloud_scheduler_job(
         attrs = ("id", "name"),
     )
 
+# ---------- secret manager (ephemeral) -------------------------------------
+
+def ephemeral_google_secret_manager_secret_version(name, project, secret, version):
+    """`ephemeral "google_secret_manager_secret_version"` block.
+
+    Ephemeral resources (terraform 1.10+) flow secret material through plan
+    and apply without persisting it in state. Use to feed Secret Manager
+    versions into a `kubernetes_secret_v1.data_wo` map without writing the
+    plaintext to terraform state.
+
+    The returned struct exposes `.secret_data` as the interpolation string
+    (`${ephemeral.google_secret_manager_secret_version.<name>.secret_data}`)
+    so callers don't hand-format reference paths.
+    """
+    body = {
+        "project": project,
+        "secret": secret,
+        "version": version,
+    }
+    rtype = "google_secret_manager_secret_version"
+    return struct(
+        tf = {"ephemeral": {rtype: {name: body}}},
+        addr = "ephemeral.{}.{}".format(rtype, name),
+        secret_data = "${ephemeral.%s.%s.secret_data}" % (rtype, name),
+    )
+
 # ---------- artifact registry -----------------------------------------------
 
 def artifact_registry_repository(

@@ -6,23 +6,21 @@ the calling package:
 
 - `.terraform.lock.hcl` — multi-platform lockfile that pins every
   declared provider with its `h1:` hashes.
-- `.terraformrc`        — CLI config with a `filesystem_mirror`
-  block pointing at the sibling `_providers/` tree. Contains an
-  `@@MIRROR_PATH@@` placeholder that the runner script substitutes
-  with the absolute cwd at terraform-launch time (filesystem_mirror
-  requires absolute paths).
 - `providers.tf.json`   — `terraform { required_providers { … } }`
   block, kept in its own file so `tf_root`'s `main.tf.json` writer
   doesn't need to know about provider deps.
-- `_providers/registry.terraform.io/<src>/<ver>/<os_arch>/<binary>`
-  for every provider × platform — symlinks pointing at the
-  `_provider_archive_repo` files materialized by the toolchain
-  module extension.
+- `_providers/registry.terraform.io/<src>/<ver>/{index.json,
+  <ver>.json, terraform-provider-…zip}` for every declared
+  provider — symlinks + index JSONs in the layout `terraform
+  providers mirror` produces.
 
-Together these files turn the bazel-bin output dir into a
-self-contained terraform working directory: `cd
-bazel-bin/<package>/<name>/ && terraform init` works offline (modulo
-the placeholder substitution; see `run.sh`).
+`.terraformrc` is **NOT** emitted here. `filesystem_mirror.path`
+requires an absolute path that's only knowable at run time (the
+bazel-bin path is per-host); the runner script writes a fresh
+`.terraformrc` into the workdir at terraform-launch time. This keeps
+the bazel artifacts rule cleanly hermetic — same output across
+hosts — and avoids the placeholder/substitution dance an
+absolute-path-baked-in `.terraformrc` would require.
 """
 
 load(":provider.bzl", "PLATFORMS", "TerraformProviderInfo")
@@ -62,21 +60,6 @@ def _render_lockfile(infos):
         )
     return _LOCKFILE_HEADER + "\n".join(blocks)
 
-# `@@MIRROR_PATH@@` is substituted by `run.sh` (and by the manual
-# `setup-terraformrc.sh` helper) with the absolute path of the bazel-bin
-# dir hosting `_providers/`. Filesystem-mirror paths in terraform must
-# be absolute — the only thing not knowable at Bazel build time.
-_TERRAFORMRC = """provider_installation {
-  filesystem_mirror {
-    path    = "@@MIRROR_PATH@@/_providers"
-    include = ["registry.terraform.io/*/*"]
-  }
-  direct {
-    exclude = ["registry.terraform.io/*/*"]
-  }
-}
-"""
-
 def _render_required_providers(infos):
     """Emit `terraform { required_providers { … } }` as a single
     nested-object JSON document. (`required_providers` is a meta-block,
@@ -104,19 +87,14 @@ def _tf_root_provider_artifacts_impl(ctx):
     ctx.actions.write(output = lockfile, content = _render_lockfile(infos))
     outputs.append(lockfile)
 
-    # 2. .terraformrc
-    terraformrc = ctx.actions.declare_file(gen_dir + "/.terraformrc")
-    ctx.actions.write(output = terraformrc, content = _TERRAFORMRC)
-    outputs.append(terraformrc)
-
-    # 3. providers.tf.json — kept separate from main.tf.json so the
+    # 2. providers.tf.json — kept separate from main.tf.json so the
     # tf_root macro doesn't need to know provider metadata at macro
     # time. Terraform auto-loads every *.tf.json in the workdir.
     providers_json = ctx.actions.declare_file(gen_dir + "/providers.tf.json")
     ctx.actions.write(output = providers_json, content = _render_required_providers(infos))
     outputs.append(providers_json)
 
-    # 4. Mirror tree (packed). Same layout `terraform providers mirror`
+    # 3. Mirror tree (packed). Same layout `terraform providers mirror`
     # produces — every file (zips + index JSONs) sits flat under
     # `<host>/<ns>/<type>/`, no per-version subdirectory:
     #

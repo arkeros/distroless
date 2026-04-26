@@ -79,20 +79,36 @@ automatically (the lockfile + mirror are regenerated on next
 
 ## Manual `terraform` invocation
 
-The bazel-bin output dir IS the terraform working directory. To run
-terraform commands directly (without going through the
-`:<name>.plan/apply/destroy` wrappers):
+The bazel-bin output dir IS the terraform working directory. The
+wrapper (`bazel run :<name>.plan` and friends) writes a
+`.terraformrc` into that dir at run time pointing at the sibling
+`_providers/` mirror; once any wrapper has run, the dir is
+self-sufficient for direct `terraform` calls:
+
+```
+bazel run //infra/cloud/gcp/lb:terraform.plan    # writes .terraformrc
+cd bazel-bin/infra/cloud/gcp/lb/terraform/
+TF_CLI_CONFIG_FILE=$(pwd)/.terraformrc terraform plan
+```
+
+For a first-time manual invocation without ever going through the
+wrapper, write `.terraformrc` yourself:
 
 ```
 bazel build //infra/cloud/gcp/lb:terraform
 cd bazel-bin/infra/cloud/gcp/lb/terraform/
-
-# .terraformrc ships with an @@MIRROR_PATH@@ placeholder the wrapper
-# normally substitutes at run time. For manual use, do it once:
-sed "s|@@MIRROR_PATH@@|$(pwd)|g" .terraformrc > .terraformrc.runtime
-export TF_CLI_CONFIG_FILE=$(pwd)/.terraformrc.runtime
-
-terraform init    # resolves providers from ./_providers, no network
+cat > .terraformrc <<EOF
+provider_installation {
+  filesystem_mirror {
+    path    = "$(pwd)/_providers"
+    include = ["registry.terraform.io/*/*"]
+  }
+  direct {
+    exclude = ["registry.terraform.io/*/*"]
+  }
+}
+EOF
+TF_CLI_CONFIG_FILE=$(pwd)/.terraformrc terraform init
 terraform plan
 ```
 
@@ -104,23 +120,23 @@ the GCS backend, so a clean only forces a re-init, not a re-apply.
 
 | File | Source | Purpose |
 |---|---|---|
-| `main.tf.json`        | `tf_root.docs`              | Resources, outputs, data sources |
-| `backend.tf.json`     | `tf_root.backend_*`         | `terraform { backend "gcs" { … } }` |
-| `providers.tf.json`   | `tf_root.providers`         | `terraform { required_providers { … } }` |
-| `.terraform.lock.hcl` | `tf_root.providers`         | Multi-platform `h1:` hashes |
-| `.terraformrc`        | `tf_root.providers`         | `provider_installation { filesystem_mirror { … } direct { exclude = [*] } }` |
-| `_providers/…`        | `tf_root.providers`         | Provider zip archives + index JSONs in the layout `terraform providers mirror` produces |
+| `main.tf.json`        | `tf_root.docs`      | Resources, outputs, data sources |
+| `backend.tf.json`     | `tf_root.backend_*` | `terraform { backend "gcs" { … } }` |
+| `providers.tf.json`   | `tf_root.providers` | `terraform { required_providers { … } }` |
+| `.terraform.lock.hcl` | `tf_root.providers` | Multi-platform `h1:` hashes |
+| `_providers/…`        | `tf_root.providers` | Provider zip archives + index JSONs in the layout `terraform providers mirror` produces |
 
-Bazel-managed; regenerated on every `bazel build` if any input
-changes. Terraform's own outputs (`.terraform/`, `.terraformrc.runtime`,
-`tfplan.bin`) live in the same dir but are not bazel-tracked.
+All bazel-managed; regenerated on every `bazel build` if any input
+changes. `.terraformrc`, `.terraform/`, and `tfplan.bin` live in the
+same dir but are written at run time by the wrapper or by
+terraform — not bazel-tracked, not part of any rule's declared
+outputs.
 
 ## How `init` stays offline
 
-The `.terraformrc` instructs terraform to resolve every
-`registry.terraform.io/*/*` provider from the local
-`_providers/` mirror and to **never** fall back to direct (network)
-lookup:
+The wrapper writes a `.terraformrc` into the workdir at run time
+that points terraform at the local `_providers/` mirror and forbids
+network fallback:
 
 ```
 provider_installation {
@@ -134,9 +150,11 @@ provider_installation {
 }
 ```
 
-The wrapper substitutes `<absolute path>` from
-`$BUILD_WORKSPACE_DIRECTORY/bazel-bin/<rel>` at run time and exports
-`TF_CLI_CONFIG_FILE` to point terraform at the substituted file.
+`filesystem_mirror.path` requires an absolute path that's only
+knowable at run time (the bazel-bin path is per-host), so
+`.terraformrc` is a runtime artifact rather than a bazel output.
+The `direct { exclude = … }` block makes terraform fail loudly if
+anything ever tried to fall through to `registry.terraform.io`.
 
 `.terraform.lock.hcl` is rendered byte-identically to what `terraform
 init` would write itself (alphabetized hashes, standard header), so

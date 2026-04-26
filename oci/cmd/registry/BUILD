@@ -5,7 +5,7 @@ load(
     "//devtools/bifrost/modules:cloudrun.bzl",
     "service_cloudrun",
 )
-load("//devtools/build/tools/tf:defs.bzl", "IMAGE_URI", "tf_root")
+load("//devtools/build/tools/tf:defs.bzl", "IMAGE_URI", "output", "tf_root")
 load(
     "//devtools/build/tools/tf/resources:gcp.bzl",
     "google_provider",
@@ -167,18 +167,21 @@ tf_root(
         google_provider(project = PROJECT),
         sa,
     ] + services + [
-        {"output": {"lb_backends": {
-            "value": {"registry": LB_BACKEND},
-            "description": "LB backends exposed for external (terraform-only) consumers. In-repo callers (//infra/cloud/gcp/lb) load `LB_BACKEND` from `:defs.bzl` directly — same content, no `terraform_remote_state` round-trip.",
-        }}},
-        {"output": {"service_account_email": {
-            "value": sa.email,
-            "description": "Runtime GSA shared across every regional Cloud Run service. Grant downstream IAM (e.g. pull credentials, Secret Manager) here once — every region picks it up.",
-        }}},
-        {"output": {"service_uris": {
-            "value": SERVICE_URIS,
-            "description": "Cloud Run `*.run.app` URL per region. Not reachable directly because of `ingress = INTERNAL_LOAD_BALANCER`; exposed for `gcloud` smoke tests and debugging.",
-        }}},
+        output(
+            "lb_backends",
+            description = "LB backends exposed for external (terraform-only) consumers. In-repo callers (//infra/cloud/gcp/lb) load `LB_BACKEND` from `:defs.bzl` directly — same content, no `terraform_remote_state` round-trip.",
+            value = {"registry": LB_BACKEND},
+        ),
+        output(
+            "service_account_email",
+            description = "Runtime GSA shared across every regional Cloud Run service. Grant downstream IAM (e.g. pull credentials, Secret Manager) here once — every region picks it up.",
+            value = sa.email,
+        ),
+        output(
+            "service_uris",
+            description = "Cloud Run `*.run.app` URL per region. Not reachable directly because of `ingress = INTERNAL_LOAD_BALANCER`; exposed for `gcloud` smoke tests and debugging.",
+            value = SERVICE_URIS,
+        ),
     ],
     image_push = ":image_push_gar",
     required_providers = {

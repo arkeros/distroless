@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//devtools/build/tools/tf:defs.bzl", "tf_root")
+load("//devtools/build/tools/tf:defs.bzl", "output", "tf_root")
 load("//devtools/build/tools/tf/resources:gcp.bzl", "google_provider")
 load(
     ":defs.bzl",
@@ -16,10 +16,11 @@ tf_root(
         google_provider(project = GAR_PROJECT),
         ARTIFACT_REGISTRY_API,
         CONTAINERS_REPO,
-        {"output": {"repository_url": {
-            "value": GAR_REGISTRY + "/" + GAR_REPOSITORY_PREFIX,
-            "description": "Pull/push host + repo path. Prepend to an image name for a full reference, e.g. `<repository_url>/registry@sha256:<digest>`.",
-        }}},
+        output(
+            "repository_url",
+            description = "Pull/push host + repo path. Prepend to an image name for a full reference, e.g. `<repository_url>/registry@sha256:<digest>`.",
+            value = GAR_REGISTRY + "/" + GAR_REPOSITORY_PREFIX,
+        ),
     ],
     required_providers = {
         "google": {

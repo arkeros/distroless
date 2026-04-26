@@ -16,6 +16,6 @@ terraform.provider(
     source = "hashicorp/google",
     version = "7.29.0",
 )
-use_repo(terraform, "terraform_toolchains", "terraform_providers")
+use_repo(terraform, "terraform_providers", "terraform_toolchains")
 
 register_toolchains("@terraform_toolchains//:terraform_toolchain")

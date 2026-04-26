@@ -183,18 +183,10 @@ jobs:
             common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
 
       - name: Install Aspect CLI
-        run: |
-          set -euo pipefail
-          # Pinned via top-of-file env vars. No official setup-aspect-cli
-          # action exists yet; this is the documented Linux CI install
-          # pattern. Hermetic: sha256 verified against the pinned digest.
-          curl -fsSL \
-            "https://github.com/aspect-build/aspect-cli/releases/download/${ASPECT_CLI_VERSION}/aspect-cli-x86_64-unknown-linux-musl" \
-            -o /tmp/aspect
-          echo "${ASPECT_CLI_SHA256}  /tmp/aspect" | sha256sum -c -
-          chmod +x /tmp/aspect
-          sudo mv /tmp/aspect /usr/local/bin/aspect
-          aspect --version
+        uses: ./.github/actions/setup-aspect
+        with:
+          version: ${{ env.ASPECT_CLI_VERSION }}
+          sha256: ${{ env.ASPECT_CLI_SHA256 }}
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
@@ -241,18 +233,10 @@ jobs:
             common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
 
       - name: Install Aspect CLI
-        run: |
-          set -euo pipefail
-          # Pinned via top-of-file env vars. No official setup-aspect-cli
-          # action exists yet; this is the documented Linux CI install
-          # pattern. Hermetic: sha256 verified against the pinned digest.
-          curl -fsSL \
-            "https://github.com/aspect-build/aspect-cli/releases/download/${ASPECT_CLI_VERSION}/aspect-cli-x86_64-unknown-linux-musl" \
-            -o /tmp/aspect
-          echo "${ASPECT_CLI_SHA256}  /tmp/aspect" | sha256sum -c -
-          chmod +x /tmp/aspect
-          sudo mv /tmp/aspect /usr/local/bin/aspect
-          aspect --version
+        uses: ./.github/actions/setup-aspect
+        with:
+          version: ${{ env.ASPECT_CLI_VERSION }}
+          sha256: ${{ env.ASPECT_CLI_SHA256 }}
 
       - name: Authenticate to Google Cloud
         id: auth

@@ -1,0 +1,26 @@
+name: Setup Aspect CLI
+description: Download a pinned Aspect CLI release, verify its sha256, and install it to /usr/local/bin.
+inputs:
+  version:
+    description: 'Aspect CLI release tag (e.g. v2026.17.17).'
+    required: true
+  sha256:
+    description: 'sha256 of the aspect-cli-x86_64-unknown-linux-musl asset for the pinned version.'
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Install Aspect CLI
+      shell: bash
+      run: |
+        set -euo pipefail
+        # No official setup-aspect-cli action exists yet; this is the
+        # documented Linux CI install pattern. Hermetic — sha256 verified
+        # against the input before we move the binary onto $PATH.
+        curl -fsSL \
+          "https://github.com/aspect-build/aspect-cli/releases/download/${{ inputs.version }}/aspect-cli-x86_64-unknown-linux-musl" \
+          -o /tmp/aspect
+        echo "${{ inputs.sha256 }}  /tmp/aspect" | sha256sum -c -
+        chmod +x /tmp/aspect
+        sudo mv /tmp/aspect /usr/local/bin/aspect
+        aspect --version

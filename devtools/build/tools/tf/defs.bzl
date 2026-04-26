@@ -59,6 +59,18 @@ def var(name):
     """Reference a Terraform input variable: `${var.<name>}`."""
     return "${var.%s}" % name
 
+def output(name, value, description = None):
+    """Declare a Terraform `output`. Sugar over `{"output": {name: {...}}}`.
+
+    Pass these into `tf_root(docs = [...])` alongside `resource` structs;
+    `tf_root` lifts `.tf` off and merges them into the root document. Outputs
+    land in the state file and are readable by other roots via `remote_state`.
+    """
+    body = {"value": value}
+    if description != None:
+        body["description"] = description
+    return struct(tf = {"output": {name: body}})
+
 def remote_state(name, prefix, outputs, bucket = _DEFAULT_BUCKET):
     """Read another tf_root's outputs via `terraform_remote_state`.
 

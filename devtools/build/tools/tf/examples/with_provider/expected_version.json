@@ -1,0 +1,28 @@
+{
+  "archives": {
+    "darwin_amd64": {
+      "hashes": [
+        "h1:aKrtVbk3naU8dxw5phrOK2PtN02dPkBV/3+3eAl36TU="
+      ],
+      "url": "terraform-provider-google_7.29.0_darwin_amd64.zip"
+    },
+    "darwin_arm64": {
+      "hashes": [
+        "h1:SQaFVC55GTev4MsXkmyFWTtH0OhyJXGV7Txi6ZguLsc="
+      ],
+      "url": "terraform-provider-google_7.29.0_darwin_arm64.zip"
+    },
+    "linux_amd64": {
+      "hashes": [
+        "h1:o0puBmN8n9phQ3SK5z5dcjRCn7fL48rqSKduDv5QbiE="
+      ],
+      "url": "terraform-provider-google_7.29.0_linux_amd64.zip"
+    },
+    "linux_arm64": {
+      "hashes": [
+        "h1:gEx4zyCsc4WwhuSViF3H90jXdp/qePjClyEoW7vjFVI="
+      ],
+      "url": "terraform-provider-google_7.29.0_linux_arm64.zip"
+    }
+  }
+}

@@ -19,6 +19,14 @@ go_binary(
 
 go_test(
     name = "repin_test",
-    srcs = ["main_test.go"],
+    srcs = [
+        "check_test.go",
+        "main_test.go",
+    ],
+    data = [
+        "//bazel/include:terraform.MODULE.bazel",
+        "//bazel/include:terraform.providers.lock.bzl",
+    ],
     embed = [":repin_lib"],
+    deps = ["@com_github_bazelbuild_buildtools//build"],
 )

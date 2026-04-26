@@ -75,6 +75,22 @@ def output(name, value, description = None):
         body["description"] = description
     return struct(tf = {"output": {name: body}})
 
+def variable(name, type = "string", description = None, default = None, sensitive = None):
+    """Declare a Terraform input `variable`. Sugar over `{"variable": {name: {...}}}`.
+
+    Reference the value with `var(name)` (which returns `${var.<name>}`).
+    Omit `default` to require the value at plan time (`-input=false` then
+    fails fast when `$TF_VAR_<name>` isn't set).
+    """
+    body = {"type": type}
+    if description != None:
+        body["description"] = description
+    if default != None:
+        body["default"] = default
+    if sensitive != None:
+        body["sensitive"] = sensitive
+    return struct(tf = {"variable": {name: body}})
+
 def remote_state(name, prefix, outputs, bucket = _DEFAULT_BUCKET):
     """Read another tf_root's outputs via `terraform_remote_state`.
 

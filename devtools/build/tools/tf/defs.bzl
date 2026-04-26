@@ -45,7 +45,7 @@ def resource(rtype, name, body, attrs = ()):
 
     `.tf` is the JSON dict that goes into the root. Each name in `attrs` becomes
     a struct field whose value is the interpolation string `${rtype.name.attr}`,
-    so callers can do `cloud_run_service(service_account_email = sa.email, ...)`
+    so callers can do `service_cloudrun(service_account_email = sa.email, ...)`
     without hand-formatting reference strings.
     """
     refs = {a: "${%s.%s.%s}" % (rtype, name, a) for a in attrs}
@@ -80,6 +80,15 @@ def remote_state(name, prefix, outputs, bucket = _DEFAULT_BUCKET):
     )
 
 # ---------- merge -----------------------------------------------------------
+
+def merge_tf(*structs_or_dicts):
+    """Merge any mix of resource-structs (with `.tf`) and raw dicts.
+
+    Convenience over `_merge` for callers composing several `resource(...)`
+    structs into one bundle: lifts `.tf` off each struct then runs the
+    same three-level deep merge.
+    """
+    return _merge(*[d.tf if hasattr(d, "tf") else d for d in structs_or_dicts])
 
 def _merge(*docs):
     """Three-level deep merge of Terraform-JSON-shaped dicts; later docs win.

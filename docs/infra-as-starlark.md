@@ -73,7 +73,7 @@ orchestrates the runs.
 BUILD files (Starlark)
     │
     ├── service_account(...)         ── struct(.tf, .email, .id, ...)
-    ├── cloud_run_service(...)       ── struct(.tf, .uri, .id, ...)
+    ├── service_cloudrun(...)       ── struct(.tf, .uri, .id, ...)
     ├── var("project_id")            ── "${var.project_id}"
     ├── remote_state(...)            ── struct(.tf, .<output>, ...)
     │
@@ -204,7 +204,7 @@ comments, per-root retries). Same source of truth, two surfaces.
 
 ```python
 load("//devtools/build/tools/tf:defs.bzl",
-     "service_account", "cloud_run_service", "tf_root", "var")
+     "service_account", "service_cloudrun", "tf_root", "var")
 
 REGIONS = ["us-central1", "europe-west3", "asia-northeast1"]
 
@@ -216,7 +216,7 @@ sa = service_account(
 )
 
 services = [
-    cloud_run_service(
+    service_cloudrun(
         name = "registry_%s" % r.replace("-", "_"),
         project = var("project_id"),
         region = r,
@@ -317,11 +317,11 @@ via `needs:` on push.
 
 ### Step 6 — Delete the HCL twin of `service_cloudrun` and its example
 
-Once the registry root is fully on the Starlark `cloud_run_service` macro,
+Once the registry root is fully on the Starlark `service_cloudrun` macro,
 the parallel HCL implementation becomes drift-prone. Delete it:
 
-- `devtools/bifrost/terraform/modules/service_cloudrun/{main,outputs,variables,versions}.tf`
-- `devtools/bifrost/terraform/modules/service_cloudrun/examples/`
+- `devtools/bifrost/modules/service_cloudrun/{main,outputs,variables,versions}.tf`
+- `devtools/bifrost/modules/service_cloudrun/examples/`
 - `infra/cloud/gcp/lb/examples/hello/` (the only HCL consumer)
 
 Bifrost's `service_cloudrun` then exists only in `defs.bzl` — Starlark is the
@@ -338,7 +338,7 @@ in this PR — defer until the first non-prod env is actually needed.
 - One DAG declaration. CI doesn't re-encode it.
 - Hermetic Terraform binary version (toolchain), no `setup-terraform` race.
 - Local and CI run the same command. Reproducing a CI failure is `bazel run`.
-- Reuse: `cloud_run_service(...)` defined once, used from registry and any
+- Reuse: `service_cloudrun(...)` defined once, used from registry and any
   future service. Resource-level abstractions instead of HCL modules.
 - Loops in Starlark. Region fan-out doesn't need `for_each` + `each.value`.
 
@@ -455,7 +455,7 @@ Two valid options:
    GAR; staging Cloud Run pulls from the same registry. Simpler, cheaper,
    but blurs the env boundary (a botched prod push could affect staging).
 2. **Per-env GAR.** Each env has its own `gar` root + its own image_push
-   target. `cloud_run_service` references the env's GAR. Strict isolation
+   target. `service_cloudrun` references the env's GAR. Strict isolation
    but doubles the push cost and makes the build's image-push step env-aware.
 
 Recommend **shared GAR until staging's isolation requirements force it
@@ -555,9 +555,9 @@ devtools/build/tools/tf/
 ├── run.sh                — per-root plan/apply runner
 └── BUILD                 — exposes the toolchain + script
 
-devtools/bifrost/terraform/modules/
+devtools/bifrost/modules/
 └── service_cloudrun/
-    └── defs.bzl          — cloud_run_service Starlark macro
+    └── defs.bzl          — service_cloudrun Starlark macro
 
 infra/cloud/gcp/
 ├── gar/{BUILD,defs.bzl}  — tf_root + GAR identity constants

@@ -1,7 +1,4 @@
-load(
-    "//devtools/bifrost/terraform/modules/service_kubernetes:defs.bzl",
-    "service_kubernetes",
-)
+load("//devtools/bifrost/modules:kubernetes.bzl", "service_kubernetes")
 load("//devtools/build/tools/tf:defs.bzl", "tf_root")
 load(
     "//devtools/build/tools/tf/resources:gcp.bzl",
@@ -12,11 +9,11 @@ load(
 )
 load("//devtools/build/tools/tf/resources:k8s.bzl", "kubernetes_job_v1")
 
-# Composition smoke target — never applied, never planned. Demonstrates
-# wiring service_kubernetes to sibling resources: a Cloud SQL instance
-# whose private IP feeds the service's env, a Secret Manager secret
-# holding the DB password, and a migration Job that must complete before
-# the Deployment rolls out.
+# Composition smoke target — never planned, never applied, just analyzed.
+# Demonstrates the three integration idioms that don't fit in a basic
+# example: cross-resource env wiring (DB hostname → service env), a
+# sibling depends_on (migration Job → Deployment), and an IAM grant on
+# the runtime GSA (DB password access).
 PROJECT = "senku-prod"
 
 REGION = "europe-west1"
@@ -45,7 +42,8 @@ db_password = secret_manager_secret(
 )
 
 # Migration Job — typed (not SSA) so terraform tracks completion via the
-# K8s API. Name with the image digest if you want per-version migrations.
+# K8s API. wait_for_completion = True blocks the apply on this Job
+# finishing before the Deployment rolls out.
 migrate = kubernetes_job_v1(
     name = "migrate",
     metadata = {
@@ -76,22 +74,15 @@ api = service_kubernetes(
     name = "api",
     autoscaling = {
         "max": 5,
-        "min": 1,
+        "min": 2,
     },
-    # Pin Deployment ordering to the migration Job. Without this, terraform
-    # plans the two in either order and pods may roll out with a stale
-    # schema. service_kubernetes appends this to its internal Deployment
-    # depends_on list (alongside the SA and env Secret).
     depends_on = [migrate.addr],
-    # DB hostname wired through Starlark — `db.private_ip_address` is the
-    # interpolation `${google_sql_database_instance.api.private_ip_address}`.
     env = {
         "DB_HOST": db.private_ip_address,
         "DB_NAME": "api",
     },
     image = "europe-docker.pkg.dev/senku-prod/api/api@sha256:" + ("1" * 64),
     namespace = NAMESPACE,
-    port = 8080,
     probes = {
         "liveness_path": "/healthz",
         "readiness_path": "/ready",
@@ -111,16 +102,6 @@ api = service_kubernetes(
     },
 )
 
-# Grant the runtime GSA access to the DB password secret. service_kubernetes
-# returns `service_account_email`, which slots straight into a
-# `member = "serviceAccount:..."` reference.
-secret_grant = secret_manager_secret_iam_member(
-    name = "api_db_password",
-    member = "serviceAccount:{}".format(api.service_account_email),
-    role = "roles/secretmanager.secretAccessor",
-    secret_id = db_password.id,
-)
-
 tf_root(
     name = "terraform",
     docs = [
@@ -132,7 +113,12 @@ tf_root(
         db_password,
         migrate,
         api,
-        secret_grant,
+        secret_manager_secret_iam_member(
+            name = "api_db_password",
+            member = "serviceAccount:{}".format(api.service_account_email),
+            role = "roles/secretmanager.secretAccessor",
+            secret_id = db_password.id,
+        ),
     ],
     required_providers = {
         "google": {

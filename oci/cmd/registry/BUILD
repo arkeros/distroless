@@ -2,8 +2,8 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_img//img:push.bzl", "image_push")
 load(
-    "//devtools/bifrost/terraform/modules/service_cloudrun:defs.bzl",
-    "cloud_run_service",
+    "//devtools/bifrost/modules:cloudrun.bzl",
+    "service_cloudrun",
 )
 load("//devtools/build/tools/tf:defs.bzl", "IMAGE_URI", "tf_root")
 load(
@@ -105,7 +105,7 @@ sa = service_account(
 )
 
 # Cloud Run service per region. Resources are inlined directly via the
-# `cloud_run_service` Starlark macro — no Terraform `module` block, no
+# `service_cloudrun` Starlark macro — no Terraform `module` block, no
 # bifrost HCL files copied into the workdir. Each call produces both the
 # `google_cloud_run_v2_service.registry_<region>` and (because public=True)
 # its `google_cloud_run_v2_service_iam_member.registry_<region>_public`.
@@ -117,7 +117,7 @@ sa = service_account(
 # must accept anonymous invokes — the ingress filter is what keeps the
 # service off the open internet.
 services = [
-    cloud_run_service(
+    service_cloudrun(
         name = "registry_" + region.replace("-", "_"),
         args = [
             "--upstream=" + UPSTREAM,

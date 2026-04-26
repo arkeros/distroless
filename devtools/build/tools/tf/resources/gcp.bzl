@@ -115,7 +115,7 @@ def service_account(name, project, account_id, display_name = None):
 #
 # The convenience composer that builds a full Cloud Run service from
 # bifrost-style flat inputs lives at
-# `//devtools/bifrost/terraform/modules/service_cloudrun:defs.bzl`.
+# `//devtools/bifrost/modules:cloudrun.bzl`.
 # ---------------------------------------------------------------------------
 
 _CLOUD_RUN_V2_SERVICE_ATTRS = ("uri", "id", "name", "location")
@@ -145,7 +145,7 @@ def google_cloud_run_v2_service(
     `name` field (the Cloud Run service name) and defaults to the block key.
     Nested blocks (`template`, `traffic`, `scaling`, `binary_authorization`)
     are passed as dicts/lists shaped like Terraform JSON; for the convenience
-    macro that builds them from flat kwargs, see `cloud_run_service`.
+    macro that builds them from flat kwargs, see `service_cloudrun`.
     """
     body = {
         "location": location,

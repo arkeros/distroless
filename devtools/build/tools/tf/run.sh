@@ -17,9 +17,13 @@
 #   TFRUNNER_PRE_APPLY — pre-apply executables (only run on `apply`)
 #
 # Env (control):
-#   TF_WORKDIR       — base directory for per-root workspaces (default ~/.cache/senku-tf)
-#   TF_AUTO_APPROVE  — if non-empty, pass `-auto-approve` to apply/destroy
-#   TF_INIT_UPGRADE  — if non-empty, pass `-upgrade` to init (refresh lockfile)
+#   TF_WORKDIR        — base directory for per-root workspaces (default ~/.cache/senku-tf)
+#   TF_AUTO_APPROVE   — if non-empty, pass `-auto-approve` to apply/destroy
+#   TF_INIT_UPGRADE   — if non-empty, pass `-upgrade` to init (refresh lockfile)
+#   TF_PLAN_JSON_OUT  — if set (plan only), save the binary plan via `-out=` and
+#                       write `terraform show -json` output to this path. Used by
+#                       `aspect plan` in CI to feed the structured PR-comment
+#                       renderer. No effect on local interactive runs.
 set -euo pipefail
 
 # --- begin runfiles.bash initialization v3 ---
@@ -122,7 +126,30 @@ case "$VERB" in
   plan)
     # `-input=false` keeps plan non-blocking: a missing variable fails fast
     # instead of stalling on a terminal prompt.
-    exec "$TERRAFORM_BIN" plan -input=false "${NO_COLOR[@]}" "$@"
+    PLAN_ARGS=(-input=false "${NO_COLOR[@]}")
+    if [[ -n "${TF_PLAN_JSON_OUT:-}" ]]; then
+      # CI path: capture a binary plan so we can emit JSON for the
+      # structured PR-comment renderer. We can't `exec` here — we still
+      # need to run `terraform show -json` after plan returns.
+      BIN_PLAN="$WORK/tfplan.bin"
+      rm -f "$BIN_PLAN" "$TF_PLAN_JSON_OUT"
+      PLAN_ARGS+=("-out=$BIN_PLAN")
+      set +e
+      "$TERRAFORM_BIN" plan "${PLAN_ARGS[@]}" "$@"
+      RC=$?
+      set -e
+      if [[ $RC -eq 0 && -f "$BIN_PLAN" ]]; then
+        # If `show -json` itself fails, drop the partial output so the
+        # renderer falls back to its CAUTION-with-text-log path rather
+        # than choking on a half-written JSON document.
+        if ! "$TERRAFORM_BIN" show -json "$BIN_PLAN" > "$TF_PLAN_JSON_OUT"; then
+          echo "WARN: terraform show -json failed; skipping structured plan" >&2
+          rm -f "$TF_PLAN_JSON_OUT"
+        fi
+      fi
+      exit "$RC"
+    fi
+    exec "$TERRAFORM_BIN" plan "${PLAN_ARGS[@]}" "$@"
     ;;
   apply|destroy)
     # No `-input=false` here: the y/n confirmation prompt is the default

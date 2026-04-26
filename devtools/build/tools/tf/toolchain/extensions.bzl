@@ -176,7 +176,17 @@ _provider_archive_repo = repository_rule(
 
 def _archive_repo_name(source, version, platform):
     """Repo name for the per-platform archive of one provider.
-    Stable + collision-free since (source, version, platform) is unique."""
+
+    The (source, version, platform) tuple is embedded in the name on
+    purpose — it's part of the cache-invalidation contract, not just a
+    uniqueness key. Bumping a version intentionally produces a *new*
+    repo name, which makes Bazel's repo cache treat the new archive as
+    a wholly fresh entity and re-run `download_and_extract` against the
+    new sha256. Don't refactor this to a version-less name to mimic
+    `go_deps`: terraform providers have no MVS-style resolution, so
+    the version *is* the key, and embedding it here means in-place
+    mutation of repo state on bump never happens.
+    """
     return "terraform_provider_{src}_{ver}_{plat}".format(
         src = source.replace("/", "_"),
         ver = version.replace(".", "_"),
@@ -241,6 +251,25 @@ def _terraform_extension_impl(mctx):
                 "source": p.source,
                 "version": p.version,
             }
+
+    # Reject multiple versions of the same provider source. The hub
+    # exposes targets keyed by `_short_name(source)` (e.g. "google"),
+    # so two versions of `hashicorp/google` would emit two BUILD
+    # targets named `google` and the hub repo would fail to load with
+    # a confusing "duplicate target" error. Surface it here with a
+    # message that points the user at where to reconcile.
+    versions_by_source = {}
+    for p in providers.values():
+        versions_by_source.setdefault(p["source"], []).append(p["version"])
+    for source, versions in versions_by_source.items():
+        if len(versions) > 1:
+            fail(("terraform provider {source} is pinned to multiple " +
+                  "versions ({versions}). Reconcile in the " +
+                  "`terraform.provider(...)` tags across MODULE.bazel " +
+                  "files so exactly one version is selected.").format(
+                source = source,
+                versions = ", ".join(sorted(versions)),
+            ))
 
     _terraform_repo(name = "terraform_toolchains", version = version)
 

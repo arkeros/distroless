@@ -30,10 +30,9 @@ def google_provider(project, region = None, **kwargs):
 def project_service(name, project, service, disable_on_destroy = True):
     """`google_project_service` — enable a GCP API on a project.
 
-    `disable_on_destroy = False` is the right default for shared APIs, since
-    a destroy here shouldn't disable APIs other roots depend on. We default
-    to True (terraform's default) and let the caller override for shared
-    services.
+    Defaults to `disable_on_destroy = True` (terraform's own default).
+    Pass `False` for shared APIs, so destroying this root doesn't disable
+    an API other roots depend on.
     """
     return resource(
         rtype = "google_project_service",

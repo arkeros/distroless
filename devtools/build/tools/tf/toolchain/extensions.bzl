@@ -59,12 +59,13 @@ def _terraform_repo_impl(rctx):
     constraints = _PLATFORM_CONSTRAINTS[platform]
 
     rctx.file("BUILD.bazel", """\
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@senku//devtools/build/tools/tf/toolchain:toolchain.bzl", "tf_toolchain")
 
-sh_binary(
+native_binary(
     name = "terraform_bin",
-    srcs = ["terraform"],
+    src = "terraform",
+    out = "terraform_bin",
     visibility = ["//visibility:public"],
 )
 

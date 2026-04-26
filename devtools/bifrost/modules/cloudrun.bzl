@@ -313,9 +313,9 @@ def cronjob_cloudrun(
         time_zone = schedule["time_zone"],
         http_target = {
             "http_method": "POST",
-            "uri": "https://{region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/{project}/jobs/{job_name}:run".format(
-                region = region,
+            "uri": "https://run.googleapis.com/v2/projects/{project}/locations/{region}/jobs/{job_name}:run".format(
                 project = project,
+                region = region,
                 job_name = job_name,
             ),
             "oauth_token": [{"service_account_email": scheduler_sa.email}],

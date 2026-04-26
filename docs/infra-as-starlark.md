@@ -163,10 +163,15 @@ def tf_root(name, docs, backend_prefix, pre_apply = [], visibility = None):
         )
 ```
 
-`run.sh` copies the generated files out of the read-only runfiles tree into
-`~/.cache/senku-tf/<root>/`, runs each `pre_apply` target (image push, tfvars
-materialization), then `terraform init` + the requested verb. State stays in
-GCS — Bazel never tries to own it.
+`run.sh` `cd`s into the bazel-bin output dir of the tf_root
+(resolved at run time as `$BUILD_WORKSPACE_DIRECTORY/bazel-bin/<rel>`),
+runs each `pre_apply` target (image push, tfvars materialization),
+substitutes the `@@MIRROR_PATH@@` placeholder in `.terraformrc` to a
+sibling runtime file, then `terraform init` + the requested verb.
+`init` resolves providers from the sibling `_providers/` filesystem
+mirror (no network); state stays in GCS — Bazel never tries to own
+it. See [`devtools/build/tools/tf/README.md`](../devtools/build/tools/tf/README.md)
+for the full per-root layout and provider workflow.
 
 ## Cross-root orchestration (Aspect CLI, not Bazel)
 
@@ -404,7 +409,7 @@ def gar_root(env):
         name = env + "_terraform",
         backend_prefix = "infra/cloud/gcp/gar/" + env,    # one prefix per env
         docs = [google_provider(project = cfg.project), api, repo, ...],
-        required_providers = {...},
+        providers = ["@terraform_providers//:google"],
         visibility = ["//visibility:public"],
     )
 ```

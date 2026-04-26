@@ -17,10 +17,10 @@ load("//devtools/build/tools/tf:defs.bzl", "merge_tf")
 load(
     "//devtools/build/tools/tf/resources:gcp.bzl",
     "google_cloud_run_v2_job",
+    "google_cloud_run_v2_job_iam_member",
     "google_cloud_run_v2_service",
     "google_cloud_run_v2_service_iam_member",
     "google_cloud_scheduler_job",
-    "project_iam_member",
     "service_account",
 )
 
@@ -216,10 +216,10 @@ def cronjob_cloudrun(
     """Cloud Run v2 Job + Cloud Scheduler trigger + runtime/scheduler GSAs.
 
     Returns one struct holding five resources: runtime GSA, scheduler GSA,
-    `roles/run.invoker` binding for the scheduler, the Cloud Run Job, and
-    its Cloud Scheduler trigger. Attribute refs on the returned struct
-    point at the Job; the runtime/scheduler GSA emails are exposed for
-    downstream IAM grants.
+    the Cloud Run Job, a job-scoped `roles/run.invoker` binding granting
+    the scheduler GSA permission to invoke this job, and the Cloud Scheduler
+    trigger. Attribute refs on the returned struct point at the Job; the
+    runtime/scheduler GSA emails are exposed for downstream IAM grants.
 
     Args:
         name: Terraform block-key prefix.
@@ -262,13 +262,6 @@ def cronjob_cloudrun(
         display_name = "Cloud Scheduler invoker for {}".format(job_name),
     )
 
-    invoker = project_iam_member(
-        name = "{}_scheduler_invoker".format(name),
-        project = project,
-        role = "roles/run.invoker",
-        member = "serviceAccount:{}".format(scheduler_sa.email),
-    )
-
     container = {
         "image": image,
         "args": list(args),
@@ -298,6 +291,15 @@ def cronjob_cloudrun(
         },
     )
 
+    invoker = google_cloud_run_v2_job_iam_member(
+        name = "{}_scheduler_invoker".format(name),
+        project = project,
+        location = job_resource.location,
+        job_name = job_resource.name,
+        role = "roles/run.invoker",
+        member = "serviceAccount:{}".format(scheduler_sa.email),
+    )
+
     cs = cloud_scheduler or {}
     retry_count = cs.get("retry_count", 0)
     attempt_deadline_seconds = cs.get("attempt_deadline_seconds")
@@ -323,7 +325,7 @@ def cronjob_cloudrun(
     )
 
     return struct(
-        tf = merge_tf(runtime_sa, scheduler_sa, invoker, job_resource, trigger),
+        tf = merge_tf(runtime_sa, scheduler_sa, job_resource, invoker, trigger),
         addr = job_resource.addr,
         id = job_resource.id,
         name = job_resource.name,

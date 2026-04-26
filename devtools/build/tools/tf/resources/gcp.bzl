@@ -219,6 +219,39 @@ def google_cloud_run_v2_service_iam_member(
         attrs = _IAM_MEMBER_ATTRS,
     )
 
+def google_cloud_run_v2_job_iam_member(
+        name,
+        location,
+        job_name,
+        role,
+        member,
+        project = None,
+        condition = None,
+        depends_on = None):
+    """`google_cloud_run_v2_job_iam_member` — single IAM principal binding.
+
+    `name` is the Terraform block key; `job_name` is the TF schema's `name`
+    field (the target Cloud Run Job's name).
+    """
+    body = {
+        "location": location,
+        "name": job_name,
+        "role": role,
+        "member": member,
+    }
+    if project != None:
+        body["project"] = project
+    if condition != None:
+        body["condition"] = condition
+    if depends_on != None:
+        body["depends_on"] = depends_on
+    return resource(
+        rtype = "google_cloud_run_v2_job_iam_member",
+        name = name,
+        body = body,
+        attrs = _IAM_MEMBER_ATTRS,
+    )
+
 def google_cloud_run_v2_job(
         name,
         location,

@@ -12,10 +12,10 @@
 #
 # This script:
 #   1. Resolves $WORK = dirname(rlocation(main.tf.json)).
-#   2. Substitutes the @@MIRROR_PATH@@ placeholder in $WORK/.terraformrc
-#      into a sibling $WORK/.terraformrc.runtime — leaves the bazel
-#      output untouched so subsequent rebuilds don't churn.
-#   3. Exports TF_CLI_CONFIG_FILE → the substituted file.
+#   2. Writes a fresh $WORK/.terraformrc with the absolute mirror path
+#      baked in. Not a bazel-tracked output (the abs path is per-host),
+#      so subsequent rebuilds don't churn.
+#   3. Exports TF_CLI_CONFIG_FILE → that file.
 #   4. Stages tfvars / module-subdir files (from other packages) into
 #      $WORK if any are declared.
 #   5. Runs pre-apply hooks (apply only).
@@ -27,7 +27,7 @@
 #   $3+ — extra flags forwarded to the terraform invocation
 #
 # Env (newline-separated rlocation paths; unset/empty means "none"):
-#   TFRUNNER_GEN_FILES — generated `*.tf.json` + lockfile/.terraformrc/mirror
+#   TFRUNNER_GEN_FILES — generated `*.tf.json` + lockfile + mirror tree
 #   TFRUNNER_TFVARS    — `*.auto.tfvars.json` files
 #   TFRUNNER_MODULES   — `<subdir>|<relpath>|<rloc>` triples (one per file)
 #   TFRUNNER_PRE_APPLY — pre-apply executables (only run on `apply`)

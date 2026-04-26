@@ -1,13 +1,15 @@
 # `tf_root` — Starlark-generated Terraform roots
 
 Generates `main.tf.json` + `backend.tf.json` + `providers.tf.json` +
-`.terraform.lock.hcl` + `.terraformrc` + a filesystem-mirror tree of
-provider zips for one Terraform root, plus `:<name>.{plan,apply,destroy}`
-runnable targets that exec terraform against the generated dir.
+`.terraform.lock.hcl` + a filesystem-mirror tree of provider zips for
+one Terraform root, plus `:<name>.{plan,apply,destroy}` runnable
+targets that exec terraform against the generated dir.
 
 The output is a self-contained terraform working directory:
 `bazel-bin/<package>/<name>/`. `bazel run :<name>.plan` runs terraform
-in that dir; `terraform init` resolves providers from the local
+in that dir; the wrapper writes a `.terraformrc` into the same dir at
+run time (the absolute mirror path is per-host, so it's not a bazel
+output), and `terraform init` resolves providers from the local
 mirror, never from `registry.terraform.io`.
 
 For the broader design rationale (why Starlark-generated `.tf.json`

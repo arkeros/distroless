@@ -266,12 +266,13 @@ def tf_root(
 
     generated = [":" + backend_target, ":" + main_target]
 
-    # When `providers` is set, the artifacts rule emits four more files
-    # into the same `<name>/` subdir: providers.tf.json (the
+    # When `providers` is set, the artifacts rule emits three more
+    # files into the same `<name>/` subdir: providers.tf.json (the
     # required_providers block, kept separate so `tf_root` doesn't need
-    # macro-time access to provider metadata), .terraform.lock.hcl,
-    # .terraformrc (with @@MIRROR_PATH@@ placeholder; substituted by
-    # the runner), and the `_providers/` filesystem-mirror tree.
+    # macro-time access to provider metadata), .terraform.lock.hcl, and
+    # the `_providers/` filesystem-mirror tree. The runner writes a
+    # fresh .terraformrc into $WORK at run time with the absolute mirror
+    # path baked in (per-host, so not a bazel output).
     if providers:
         artifacts_target = "_{}_artifacts".format(name)
         _tf_root_provider_artifacts(

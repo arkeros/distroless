@@ -9,7 +9,7 @@
 // order. Idempotent on a correctly-pinned spec.
 //
 // Run via `bazel run //devtools/build/tools/tf/providers/repin` —
-// Bazel sets `BUILD_WORKING_DIRECTORY` so the tool finds the workspace
+// Bazel sets `BUILD_WORKSPACE_DIRECTORY` so the tool finds the workspace
 // root regardless of the cwd from which it was invoked.
 package main
 
@@ -104,7 +104,7 @@ func main() {
 }
 
 func workspaceRoot() string {
-	if w := os.Getenv("BUILD_WORKING_DIRECTORY"); w != "" {
+	if w := os.Getenv("BUILD_WORKSPACE_DIRECTORY"); w != "" {
 		return w
 	}
 	w, err := os.Getwd()

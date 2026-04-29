@@ -1,0 +1,3 @@
+# Bazel-native SSR for panellet
+
+Panellet exists to demonstrate how much of the JS build/dev/prod story can live inside Bazel; SSR is therefore implemented as new Bazel rules (`react_ssr_app`, `react_ssr_layer`) over Hono + react-router data mode + `createStaticHandler`, with the dev server running the same SSR code as prod (process-restarted on rebuild via ibazel). Vite, Next, and Remix's framework mode were rejected because their dev models aren't hermetic, their file-based routing can't be expressed in Starlark, and adopting them would orphan panellet's existing Bazel-orchestrated infrastructure (Starlark-defined routes, StyleX pipeline, asset and i18n pipelines) — the very investments that make panellet a Bazel demo in the first place.

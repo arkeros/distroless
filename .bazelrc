@@ -3,6 +3,11 @@ startup --digest_function=BLAKE3
 
 import %workspace%/bazel/defaults.bazelrc
 
+# Support for seekable eStargz layers
+# with the containerd stargz-snapshotter
+common --@rules_img//img/settings:estargz=enabled
+common --@rules_img//img/settings:compress=zstd
+
 # Avoid overloading the remote cache with tar outputs.
 # See https://github.com/bazel-contrib/tar.bzl/blob/main/README.md#remote-cache-and-rbe
 common --modify_execution_info=Tar=+no-remote-cache

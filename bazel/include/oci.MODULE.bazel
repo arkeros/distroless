@@ -12,6 +12,7 @@ single_version_override(
     patches = [
         "//bazel/patches:rules_distroless_version_sort.patch",
         "//bazel/patches:rules_distroless_virtual_provides.patch",
+        "//bazel/patches:rules_distroless_package_metadata.patch",
     ],
     version = "0.6.2",
 )
@@ -28,23 +29,26 @@ git_override(
 
 git_override(
     module_name = "grype.bzl",
-    commit = "19aaa83e94429f826a5fbbf08b138986d4766615",
+    commit = "dd4310dda411d3a19e3419e310455027a1a3bfe7",
     remote = "https://github.com/arkeros/grype.bzl.git",
 )
 
 apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
 apt.install(
     name = "debian13",
+    distro = "debian-13",
     lock = "//oci/distroless:debian13.lock.json",
     manifest = "//oci/distroless:debian13.yaml",
 )
 apt.install(
     name = "nginx_stable",
+    distro = "debian-13",
     lock = "//oci/distroless/nginx:nginx-stable.lock.json",
     manifest = "//oci/distroless/nginx:nginx-stable.yaml",
 )
 apt.install(
     name = "nginx_mainline",
+    distro = "debian-13",
     lock = "//oci/distroless/nginx:nginx-mainline.lock.json",
     manifest = "//oci/distroless/nginx:nginx-mainline.yaml",
 )

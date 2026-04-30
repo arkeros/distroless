@@ -68,6 +68,11 @@ exports_files(["gazelle_python.yaml"])
 # gazelle:map_kind py_binary py_binary @aspect_rules_py//py:defs.bzl
 # gazelle:map_kind py_test py_test @aspect_rules_py//py:defs.bzl
 # gazelle:resolve py python.runfiles @rules_python//python/runfiles
+#
+# Both `cyclonedx.bzl` and `sbom.bzl` ship under a single `sbom` bzl_library
+# upstream; map gazelle's per-file import lookup to the same combined label.
+# gazelle:resolve bzl @supply_chain_tools//sbom:cyclonedx.bzl @supply_chain_tools//sbom
+# gazelle:resolve bzl @supply_chain_tools//sbom:sbom.bzl @supply_chain_tools//sbom
 
 gazelle_binary(
     name = "gazelle_bin",

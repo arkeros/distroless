@@ -1,5 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_img//img:image.bzl", "image_from_binary")
+load("@rules_img//img:load.bzl", "image_load")
 load("@rules_img//img:push.bzl", "image_push")
 load(
     "//devtools/bifrost/modules:cloudrun.bzl",
@@ -21,8 +23,8 @@ load(
     "OCI_REGISTRY",
     "OCI_REPOSITORY_PREFIX",
 )
-load("//oci:go_image.bzl", "go_images_all_arch")
-load("//oci/distroless/common:variables.bzl", "COMPRESSION", "DEBUG_MODE")
+load("//oci:supply_chain.bzl", "image_supply_chain")
+load("//oci/distroless/common:variables.bzl", "DEBIAN13_WONTFIX_CVES", "DEBUG_MODE")
 load(
     ":defs.bzl",
     "LB_BACKEND",
@@ -51,12 +53,39 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
-go_images_all_arch(
-    name = "image",
-    binary = ":registry",
-    distro = "debian13",
-    static = True,
+[
+    image_from_binary(
+        name = "image" + mode,
+        base = "//oci/distroless/static:static%s_nonroot_debian13" % mode,
+        binary = ":registry",
+        # This particular Go app is a statically linked binary with no runfiles deps.
+        include_runfiles = False,
+        platforms = [
+            "//bazel/platforms:linux_amd64",
+            "//bazel/platforms:linux_arm64",
+        ],
+    )
+    for mode in DEBUG_MODE
+]
+
+image_supply_chain(
+    ignore_cves = DEBIAN13_WONTFIX_CVES,
+    image = ":image",
 )
+
+[
+    image_load(
+        name = "image%s_load" % mode,
+        image = ":image%s" % mode,
+        tag_list = [
+            "bazel/%s:%s" % (
+                package_name(),
+                "image%s" % mode,
+            ),
+        ],
+    )
+    for mode in DEBUG_MODE
+]
 
 # Two push destinations per mode: GHCR for the public `distroless.io` mirror,
 # GAR for the Cloud Run deploy path (Cloud Run can't pull from GHCR directly).
@@ -64,7 +93,7 @@ go_images_all_arch(
 [
     image_push(
         name = "image" + mode + "_push_" + dest_suffix,
-        image = ":image" + mode + "_nonroot",
+        image = ":image" + mode,
         registry = registry,
         repository = repository_prefix + "/registry",
         stamp = "force",
@@ -97,6 +126,12 @@ UPSTREAM = "ghcr.io"
 
 REPOSITORY_PREFIX = "arkeros/senku"
 
+CATALOG = [
+    # TODO: keep sorted and up-to-date
+    "bash",
+    "nginx",
+]
+
 sa = service_account(
     name = "registry",
     account_id = "svc-registry",
@@ -122,6 +157,9 @@ services = [
         args = [
             "--upstream=" + UPSTREAM,
             "--repository-prefix=" + REPOSITORY_PREFIX,
+        ] + [
+            "--repo=" + image
+            for image in CATALOG
         ],
         # Sentinel substituted with the digest URI at Bazel build time
         # (see `tf_root.image_push` below). No `var.image` round-trip.

@@ -7,19 +7,6 @@ bzl_library(
 )
 
 bzl_library(
-    name = "go_image",
-    srcs = ["go_image.bzl"],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":config",
-        ":oci_image",
-        "//oci/distroless/common:variables",
-        "@bazel_lib//lib:transitions",
-        "@rules_img//img:image",
-    ],
-)
-
-bzl_library(
     name = "js_image",
     srcs = ["js_image.bzl"],
     visibility = ["//visibility:public"],
@@ -65,9 +52,19 @@ bzl_library(
     srcs = ["oci_image.bzl"],
     visibility = ["//visibility:public"],
     deps = [
-        "@grype.bzl//:grype",
+        ":supply_chain",
         "@rules_img//img:image",
         "@rules_img//img:load",
         "@rules_img//img:push",
+    ],
+)
+
+bzl_library(
+    name = "supply_chain",
+    srcs = ["supply_chain.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@grype.bzl//grype:defs",
+        "@supply_chain_tools//sbom",
     ],
 )

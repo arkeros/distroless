@@ -53,7 +53,7 @@ use_repo(apt, "debian13", "nginx_mainline", "nginx_stable")
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(
     name = "grype_database",
-    sha256 = "e3e5f92e7a546baf43383bf63f448ab675cb4d87ef4051b67bc1db442c98fa56",
-    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.4_2026-04-27T00:41:03Z_1777274060.tar.zst",
+    sha256 = "4341d479ff3943b6802e192d873da98b1c9e1fb984c9519cec37809fe61a0def",
+    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.4_2026-04-28T16:49:18Z_1777448533.tar.zst",
 )
 use_repo(grype_db, "grype_database")

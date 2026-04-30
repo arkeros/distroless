@@ -15,7 +15,7 @@
 //	def get_<tool>_url(version, filename):
 //	    return "<url_template>".format(version, filename)
 //
-// It matches the shape used by grype.bzl/syft.bzl and is consumed by a
+// It matches the shape used by grype.bzl and is consumed by a
 // module extension that downloads the binary and registers a toolchain.
 package toolversions
 

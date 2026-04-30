@@ -94,7 +94,7 @@ def frontend_image(
     oci_image(
         name = name + "_" + arch,
         # Wrap in Label() so the default resolves to @senku regardless of the
-        # caller's repo — same cross-repo pattern as go_image.bzl's base.
+        # caller's repo.
         base = base or Label("//oci/distroless/nginx:nginx_%s_nonroot_%s_%s" % (NGINX_FRONTEND_DEFAULT_CHANNEL, arch, distro)),
         layers = layers,
         platform = ARCHITECTURE_PLATFORMS[arch],

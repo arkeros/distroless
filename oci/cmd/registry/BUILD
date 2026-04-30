@@ -67,7 +67,7 @@ go_images_all_arch(
         image = ":image" + mode + "_nonroot",
         registry = registry,
         repository = repository_prefix + "/registry",
-        stamp = "enabled",
+        stamp = "force",
         tag_list = [
             "debug" if mode else "latest",
             "{{.STABLE_MONOREPO_IMAGE_TAG_VERSION}}" + mode.replace("_", "-"),

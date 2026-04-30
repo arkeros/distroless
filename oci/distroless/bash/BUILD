@@ -56,7 +56,7 @@ package(default_visibility = ["//visibility:public"])
         image = ":bash" + mode + "_nonroot_debian13",
         registry = OCI_REGISTRY,
         repository = OCI_REPOSITORY_PREFIX + "/bash",
-        stamp = "enabled",
+        stamp = "force",
         tag_list = [
             "debug" if mode else "latest",
             "{{.STABLE_MONOREPO_IMAGE_TAG_VERSION}}" + mode.replace("_", "-"),

@@ -110,7 +110,7 @@ tar(
         image = ":nginx_" + version_label + mode + "_nonroot_debian13",
         registry = OCI_REGISTRY,
         repository = OCI_REPOSITORY_PREFIX + "/nginx",
-        stamp = "enabled",
+        stamp = "force",
         tag_list = [
             version_label + ("-debug" if mode else ""),
             short_version + ("-debug" if mode else ""),

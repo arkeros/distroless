@@ -245,7 +245,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jaschaephraim/lrserver v0.0.0-20240306232639-afed386b3640 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jedib0t/go-pretty/v6 v6.7.8 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -437,7 +436,6 @@ require (
 
 tool (
 	github.com/anchore/grype/cmd/grype
-	github.com/anchore/syft/cmd/syft
 	github.com/bazelbuild/bazel-watcher/cmd/ibazel
 	github.com/bazelbuild/buildtools/buildifier
 	github.com/bazelbuild/buildtools/buildozer

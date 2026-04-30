@@ -4,7 +4,7 @@ load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@rules_img//img:push.bzl", "image_push")
 load("//oci:config.bzl", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
-load("//oci/distroless/common:variables.bzl", "COMPRESSION", "DEBUG_MODE")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN13_WONTFIX_CVES", "DEBUG_MODE")
 load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "bash_layers")
 
 package(default_visibility = ["//visibility:public"])
@@ -14,12 +14,15 @@ package(default_visibility = ["//visibility:public"])
         name = "bash",
         architectures = BASH_ARCHITECTURES[distro],
         base = "//oci/distroless/cc",
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless bash image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/bash/BUILD",
         },
         distro = distro,
         entrypoint = ["/usr/bin/bash"],
+        # CVE-2025-69720: ncurses (libtinfo6) wontfix on Debian 13.
+        ignore_cves = DEBIAN13_WONTFIX_CVES + ["CVE-2025-69720"],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless bash image",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/bash/BUILD",

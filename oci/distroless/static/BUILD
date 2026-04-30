@@ -3,7 +3,7 @@ load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless:platforms.bzl", BUSYBOX_ARCHITECTURES = "ALL_ARCHITECTURES")
-load("//oci/distroless/common:variables.bzl", "COMPRESSION")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN13_WONTFIX_CVES")
 load(":busybox.bzl", "busybox_layer")
 load(":config.bzl", "STATIC_ARCHITECTURES", "STATIC_DISTROS", "static_debug_layers", "static_layers")
 
@@ -40,12 +40,14 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         architectures = STATIC_ARCHITECTURES[distro],
         debug_entrypoint = ["/busybox/sh"],
         debug_env = {"PATH": _DEFAULT_PATH + ":/busybox"},
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_layers = static_debug_layers,
         distro = distro,
         env = {
             "PATH": _DEFAULT_PATH,
             "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt",
         },
+        ignore_cves = DEBIAN13_WONTFIX_CVES,
         layers = static_layers,
     )
     for distro in STATIC_DISTROS

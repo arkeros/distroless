@@ -29,3 +29,27 @@ DEBUG_MODE = ["", "_debug"]
 USERS = ["root", "nonroot"]
 
 COMPRESSION = "zstd"
+
+# Debian 13 (trixie) glibc CVEs flagged by Debian Security Tracker as
+# "wontfix" — Debian has triaged them and will not backport upstream patches.
+# Every image based on debian-13 inherits these from libc6/glibc, so the
+# allow-list lives here rather than per-image. The companion
+# `_cve_test_stale_ignores` test fails if any of these vanish from the scan,
+# so we'll notice if upstream ever ships a fix.
+# Common (universal: every Debian-13 image transitively includes glibc).
+DEBIAN13_WONTFIX_CVES = [
+    # glibc (libc6)
+    "CVE-2026-4046",
+    "CVE-2026-4437",
+    "CVE-2026-5435",
+    "CVE-2026-5450",
+    "CVE-2026-5928",
+]
+
+# Busybox: only present in `*_debug_*` variants via `static_debug_layers`.
+# Apply via `distroless_matrix(debug_ignore_cves = ...)`.
+BUSYBOX_WONTFIX_CVES = [
+    "CVE-2023-39810",
+    "CVE-2026-26157",
+    "CVE-2026-26158",
+]

@@ -2,7 +2,7 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
-load("//oci/distroless/common:variables.bzl", "COMPRESSION")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN13_WONTFIX_CVES")
 load(":config.bzl", "CC_ARCHITECTURES", "CC_DISTROS", "CC_PACKAGES", "cc_layers")
 
 package(default_visibility = ["//visibility:public"])
@@ -26,7 +26,9 @@ package(default_visibility = ["//visibility:public"])
         name = "cc",
         architectures = CC_ARCHITECTURES[distro],
         base = "//oci/distroless/static",
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         distro = distro,
+        ignore_cves = DEBIAN13_WONTFIX_CVES,
         layers = cc_layers,
     )
     for distro in CC_DISTROS

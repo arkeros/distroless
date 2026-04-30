@@ -64,6 +64,7 @@ def distroless_matrix(
         debug_env = None,
         debug_annotations = None,
         debug_index_annotations = None,
+        debug_ignore_cves = None,
         **kwargs):
     """Generates release/debug OCI images plus per-user manifest indexes.
 
@@ -84,6 +85,9 @@ def distroless_matrix(
         debug_env: optional debug environment overlay.
         debug_annotations: optional debug image annotations override.
         debug_index_annotations: optional debug index annotations override.
+        debug_ignore_cves: optional list extending kwargs["ignore_cves"] for
+            debug images only — useful when debug layers add packages
+            (e.g. busybox) not present in the release image.
         **kwargs: passed through to oci_image (e.g. ignore_cves, fail_on_severity).
     """
 
@@ -135,6 +139,10 @@ def distroless_matrix(
 
             resolved_debug_layers = _resolve_layers(effective_debug_layers, debug_context) if effective_debug_layers != None else []
 
+            debug_kwargs = _copy_dict(kwargs)
+            if debug_ignore_cves:
+                debug_kwargs["ignore_cves"] = (debug_kwargs.get("ignore_cves") or []) + debug_ignore_cves
+
             _emit_image(
                 name = debug_name,
                 arch = arch,
@@ -145,7 +153,7 @@ def distroless_matrix(
                 entrypoint = effective_debug_entrypoint,
                 env = effective_debug_env,
                 annotations = effective_debug_annotations,
-                **kwargs
+                **debug_kwargs
             )
 
     for (mode, mode_annotations) in [

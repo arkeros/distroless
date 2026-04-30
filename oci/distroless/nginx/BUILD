@@ -7,17 +7,12 @@ load("@rules_img//img:push.bzl", "image_push")
 load("@tar.bzl", "tar")
 load("//oci:config.bzl", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
-load("//oci/distroless/common:variables.bzl", "COMPRESSION", "DEBUG_MODE")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN13_WONTFIX_CVES", "DEBUG_MODE")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
-# CVE-2022-4899: libzstd, disputed - fixed in 2022 (https://github.com/facebook/zstd/issues/3200)
 NGINX_IGNORE_CVES = {
-    "stable": [
-        "CVE-2022-4899",
-    ],
-    "mainline": [
-        "CVE-2022-4899",
-    ],
+    "stable": [],
+    "mainline": [],
 }
 
 package(default_visibility = ["//visibility:public"])
@@ -55,6 +50,7 @@ tar(
         name = "nginx_stable",
         architectures = NGINX_ARCHITECTURES[distro],
         base = "//oci/distroless/cc",
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
@@ -67,7 +63,7 @@ tar(
             "-g",
             "daemon off;",
         ],
-        ignore_cves = NGINX_IGNORE_CVES["stable"],
+        ignore_cves = NGINX_IGNORE_CVES["stable"] + DEBIAN13_WONTFIX_CVES,
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
@@ -82,6 +78,7 @@ tar(
         name = "nginx_mainline",
         architectures = NGINX_ARCHITECTURES[distro],
         base = "//oci/distroless/cc",
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
@@ -94,7 +91,7 @@ tar(
             "-g",
             "daemon off;",
         ],
-        ignore_cves = NGINX_IGNORE_CVES["mainline"],
+        ignore_cves = NGINX_IGNORE_CVES["mainline"] + DEBIAN13_WONTFIX_CVES,
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",

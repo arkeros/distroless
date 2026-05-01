@@ -90,8 +90,8 @@ def distroless_matrix(
             debug images only — useful when debug layers add packages
             (e.g. busybox) not present in the release image.
         debug_vex: optional list of VEX document labels extending
-            kwargs["vex"] for debug images only — useful when debug layers
-            add packages whose CVEs need separate justifications. Mirrors
+            kwargs["vex"] for debug images only — for justifications that
+            apply only to packages added by debug layers. Mirrors
             debug_ignore_cves in shape.
         **kwargs: passed through to oci_image (e.g. ignore_cves, fail_on_severity).
     """

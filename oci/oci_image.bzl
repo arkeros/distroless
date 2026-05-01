@@ -20,12 +20,11 @@ def oci_image(
         name: Target name.
         fail_on_severity: CVE severity threshold for the policy test.
             Default "high".
-        ignore_cves: List of CVE IDs to allow-list in the policy test. Prefer
-            `vex` for anything with a defensible justification; reserve this
-            for unjustifiable noise.
-        vex: List of OpenVEX document labels (see //oci:vex.bzl). Statements
-            with status=not_affected or fixed remove matching results from
-            the grype scan before the policy test evaluates severity.
+        ignore_cves: List of CVE IDs to allow-list (flat).
+        vex: List of OpenVEX document labels (see //oci:vex.bzl). Statement
+            CVE IDs are extracted at action time and added to the
+            suppression set; a sibling `_stale_vex` test fires when a
+            statement no longer corresponds to a scan match.
         **kwargs: Passed to image_manifest (base, layers, entrypoint, env, etc.).
     """
     image_manifest(

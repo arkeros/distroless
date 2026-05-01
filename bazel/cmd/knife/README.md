@@ -21,13 +21,13 @@ After that, `knife` is available from the repo root.
 Display package versions from an apt lock file:
 
 ```bash
-knife apt versions oci/distroless/debian13.lock.json
+knife apt versions oci/distroless/debian.lock.json
 ```
 
 Filter by architecture:
 
 ```bash
-knife apt versions --arch amd64 oci/distroless/debian13.lock.json
+knife apt versions --arch amd64 oci/distroless/debian.lock.json
 ```
 
 ### apt update
@@ -35,7 +35,7 @@ knife apt versions --arch amd64 oci/distroless/debian13.lock.json
 Update Debian snapshot timestamps in a manifest YAML file:
 
 ```bash
-knife apt update oci/distroless/debian13.yaml
+knife apt update oci/distroless/debian.yaml
 ```
 
 This command:

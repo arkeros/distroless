@@ -175,7 +175,7 @@ func findOp(segments []string) int {
 
 // ExtractRepo extracts the repository name from the request path.
 // e.g., /v2/redis/manifests/latest → redis
-// e.g., /v2/go/debian13/tags/list → go/debian13
+// e.g., /v2/go/debian/tags/list → go/debian
 func ExtractRepo(path string) string {
 	rest := strings.TrimPrefix(path, "/v2/")
 	segments := strings.Split(rest, "/")

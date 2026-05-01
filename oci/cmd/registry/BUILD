@@ -24,7 +24,7 @@ load(
     "OCI_REPOSITORY_PREFIX",
 )
 load("//oci:supply_chain.bzl", "image_supply_chain")
-load("//oci/distroless/common:variables.bzl", "DEBIAN13_WONTFIX_CVES", "DEBUG_MODE")
+load("//oci/distroless/common:variables.bzl", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 load(
     ":defs.bzl",
     "LB_BACKEND",
@@ -56,7 +56,7 @@ go_binary(
 [
     image_from_binary(
         name = "image" + mode,
-        base = "//oci/distroless/static:static%s_nonroot_debian13" % mode,
+        base = "//oci/distroless/static:static%s_nonroot_debian" % mode,
         binary = ":registry",
         # This particular Go app is a statically linked binary with no runfiles deps.
         include_runfiles = False,
@@ -69,7 +69,7 @@ go_binary(
 ]
 
 image_supply_chain(
-    ignore_cves = DEBIAN13_WONTFIX_CVES,
+    ignore_cves = DEBIAN_WONTFIX_CVES,
     image = ":image",
 )
 

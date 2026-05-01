@@ -28,7 +28,7 @@ jobs:
         uses: arkeros/senku/.github/actions/update-debian-packages@main
         with:
           manifests: >-
-            oci/distroless/debian13.yaml
+            oci/distroless/debian.yaml
             oci/distroless/nginx/nginx-stable.yaml
             oci/distroless/nginx/nginx-mainline.yaml
           token: ${{ secrets.RENOVATE_TOKEN }}

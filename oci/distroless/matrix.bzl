@@ -65,12 +65,13 @@ def distroless_matrix(
         debug_annotations = None,
         debug_index_annotations = None,
         debug_ignore_cves = None,
+        debug_vex = None,
         **kwargs):
     """Generates release/debug OCI images plus per-user manifest indexes.
 
     Args:
         name: image family name and target stem.
-        distro: distro key such as "debian13".
+        distro: distro key such as "debian".
         architectures: architectures included in the matrix.
         layers: callback taking a context struct and returning release layers.
         base: optional base package or explicit target stem label.
@@ -88,6 +89,10 @@ def distroless_matrix(
         debug_ignore_cves: optional list extending kwargs["ignore_cves"] for
             debug images only — useful when debug layers add packages
             (e.g. busybox) not present in the release image.
+        debug_vex: optional list of VEX document labels extending
+            kwargs["vex"] for debug images only — useful when debug layers
+            add packages whose CVEs need separate justifications. Mirrors
+            debug_ignore_cves in shape.
         **kwargs: passed through to oci_image (e.g. ignore_cves, fail_on_severity).
     """
 
@@ -142,6 +147,8 @@ def distroless_matrix(
             debug_kwargs = _copy_dict(kwargs)
             if debug_ignore_cves:
                 debug_kwargs["ignore_cves"] = (debug_kwargs.get("ignore_cves") or []) + debug_ignore_cves
+            if debug_vex:
+                debug_kwargs["vex"] = (debug_kwargs.get("vex") or []) + debug_vex
 
             _emit_image(
                 name = debug_name,

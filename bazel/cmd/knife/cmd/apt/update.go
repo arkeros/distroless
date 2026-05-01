@@ -27,7 +27,7 @@ func newCmdUpdate() *cobra.Command {
   2. Updating all source URLs in the specified YAML file with the new timestamp
 
 Examples:
-  knife apt update oci/distroless/debian13.yaml`,
+  knife apt update oci/distroless/debian.yaml`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.Path = args[0]
@@ -73,7 +73,7 @@ func (o *updateOptions) Run() error {
 		return err
 	}
 
-	// Derive the lock target name from the manifest filename (e.g., debian13.yaml -> @debian13//:lock)
+	// Derive the lock target name from the manifest filename (e.g., debian.yaml -> @debian//:lock)
 	base := filepath.Base(path)
 	name := strings.TrimSuffix(base, filepath.Ext(base))
 

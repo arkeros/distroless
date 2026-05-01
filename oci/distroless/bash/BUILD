@@ -5,8 +5,8 @@ load("@rules_img//img:push.bzl", "image_push")
 load("//oci:config.bzl", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
 load("//oci:vex.bzl", "vex_document")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
-load("//oci/distroless/common:glibc_vex.bzl", "GLIBC_STRIPPED_GCONV_VEX")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN13_WONTFIX_CVES", "DEBUG_MODE")
+load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NCURSES_FIXED_VEX_STATEMENTS")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "bash_layers")
 
 package(default_visibility = ["//visibility:public"])
@@ -15,7 +15,15 @@ vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/bash/BUILD",
-    statements = [GLIBC_STRIPPED_GCONV_VEX],
+    statements = GLIBC_FIXED_VEX_STATEMENTS + NCURSES_FIXED_VEX_STATEMENTS,
+    timestamp = "2026-05-01T00:00:00Z",
+)
+
+vex_document(
+    name = "debug_vex",
+    author = "rafael@arquero.cat",
+    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/bash/BUILD#debug",
+    statements = BUSYBOX_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-01T00:00:00Z",
 )
 
@@ -29,10 +37,10 @@ vex_document(
             "org.opencontainers.image.description": "Distroless bash image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/bash/BUILD",
         },
+        debug_vex = [":debug_vex"],
         distro = distro,
         entrypoint = ["/usr/bin/bash"],
-        # CVE-2025-69720: ncurses (libtinfo6) wontfix on Debian 13.
-        ignore_cves = DEBIAN13_WONTFIX_CVES + ["CVE-2025-69720"],
+        ignore_cves = DEBIAN_WONTFIX_CVES,
         index_annotations = {
             "org.opencontainers.image.description": "Distroless bash image",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/bash/BUILD",
@@ -67,7 +75,7 @@ vex_document(
 [
     image_push(
         name = "bash" + mode + "_push",
-        image = ":bash" + mode + "_nonroot_debian13",
+        image = ":bash" + mode + "_nonroot_debian",
         registry = OCI_REGISTRY,
         repository = OCI_REPOSITORY_PREFIX + "/bash",
         stamp = "force",
@@ -90,7 +98,7 @@ container_structure_test(
         "test.workload-isolation-type": "firecracker",
         "test.init-dockerd": "true",
     },
-    image = ":bash_nonroot_amd64_debian13.oci_layout",
+    image = ":bash_nonroot_amd64_debian.oci_layout",
     tags = ["requires-docker"],
 )
 

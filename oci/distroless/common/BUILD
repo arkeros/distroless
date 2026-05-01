@@ -215,8 +215,8 @@ home(
 )
 
 bzl_library(
-    name = "glibc_vex",
-    srcs = ["glibc_vex.bzl"],
+    name = "debian_fixed_vex",
+    srcs = ["debian_fixed_vex.bzl"],
     deps = ["//oci:vex"],
 )
 

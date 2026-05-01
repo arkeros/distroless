@@ -57,7 +57,7 @@ func TestRewritePath(t *testing.T) {
 		{"/v2/redis/manifests/latest", "/v2/arkeros/senku/redis/manifests/latest"},
 		{"/v2/redis/blobs/sha256:abc123", "/v2/arkeros/senku/redis/blobs/sha256:abc123"},
 		{"/v2/redis/tags/list", "/v2/arkeros/senku/redis/tags/list"},
-		{"/v2/go/debian13/manifests/v1.0.0", "/v2/arkeros/senku/go/debian13/manifests/v1.0.0"},
+		{"/v2/go/debian/manifests/v1.0.0", "/v2/arkeros/senku/go/debian/manifests/v1.0.0"},
 	}
 
 	for _, tt := range tests {
@@ -78,7 +78,7 @@ func TestExtractRepo(t *testing.T) {
 		{"/v2/redis/manifests/latest", "redis"},
 		{"/v2/redis/blobs/sha256:abc123", "redis"},
 		{"/v2/redis/tags/list", "redis"},
-		{"/v2/go/debian13/manifests/v1.0.0", "go/debian13"},
+		{"/v2/go/debian/manifests/v1.0.0", "go/debian"},
 		// Repos with op-like names must not be misclassified.
 		{"/v2/org/manifests/manifests/latest", "org/manifests"},
 		{"/v2/org/blobs/blobs/sha256:abc", "org/blobs"},
@@ -281,11 +281,11 @@ func TestTagsList(t *testing.T) {
 
 func TestTagsListMultiSegmentRepo(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	upstream.MustPushImage(t, "arkeros/senku/go/debian13", "v1.0.0")
+	upstream.MustPushImage(t, "arkeros/senku/go/debian", "v1.0.0")
 
 	srv := newTestProxy(t, upstream)
 
-	resp, err := http.Get(srv.URL + "/v2/go/debian13/tags/list")
+	resp, err := http.Get(srv.URL + "/v2/go/debian/tags/list")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -302,8 +302,8 @@ func TestTagsListMultiSegmentRepo(t *testing.T) {
 	if err := json.Unmarshal(body, &result); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if result.Name != "go/debian13" {
-		t.Errorf("name = %q, want %q", result.Name, "go/debian13")
+	if result.Name != "go/debian" {
+		t.Errorf("name = %q, want %q", result.Name, "go/debian")
 	}
 }
 

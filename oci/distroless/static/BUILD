@@ -1,28 +1,37 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
-load("@rules_tar//tar/filter:defs.bzl", "tar_filter")
 load("//oci:vex.bzl", "vex_document")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless:platforms.bzl", BUSYBOX_ARCHITECTURES = "ALL_ARCHITECTURES")
-load("//oci/distroless/common:glibc_vex.bzl", "GLIBC_STRIPPED_GCONV_VEX")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN13_WONTFIX_CVES", "GLIBC_STRIPPED_GCONV")
+load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES")
 load(":busybox.bzl", "busybox_layer")
 load(":config.bzl", "STATIC_ARCHITECTURES", "STATIC_DISTROS", "static_debug_layers", "static_layers")
 
 package(default_visibility = ["//visibility:public"])
 
+vex_document(
+    name = "vex",
+    author = "rafael@arquero.cat",
+    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/static/BUILD",
+    statements = GLIBC_FIXED_VEX_STATEMENTS,
+    timestamp = "2026-05-01T00:00:00Z",
+)
+
+vex_document(
+    name = "debug_vex",
+    author = "rafael@arquero.cat",
+    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/static/BUILD#debug",
+    statements = BUSYBOX_FIXED_VEX_STATEMENTS,
+    timestamp = "2026-05-01T00:00:00Z",
+)
+
 _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-# `base-files`'s apt closure transitively pulls in libc6 (every Debian
-# package depends on it). The static layer thus ships a full unstripped
-# libc6 even though static binaries don't need it at runtime — and any
-# image stacked on this base inherits the IBM gconv files unless we strip
-# them here. tar_filter on the merged flatten output handles it without
-# changing the closure-ref pattern (which is needed for SBOM metadata).
 [
     flatten(
-        name = "static_{}_{}_layer_raw".format(arch, distro),
+        name = "static_" + arch + "_" + distro + "_layer",
         compress = COMPRESSION,
         deduplicate = True,
         tars = [
@@ -44,25 +53,6 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ]
 
 [
-    tar_filter(
-        name = "static_{}_{}_layer.tar.zst".format(arch, distro),
-        src = ":static_{}_{}_layer_raw".format(arch, distro),
-        compress = "@rules_tar//tar/compress:zstd",
-        patterns = GLIBC_STRIPPED_GCONV,
-    )
-    for distro in STATIC_DISTROS
-    for arch in STATIC_ARCHITECTURES[distro]
-]
-
-vex_document(
-    name = "vex",
-    author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/static/BUILD",
-    statements = [GLIBC_STRIPPED_GCONV_VEX],
-    timestamp = "2026-05-01T00:00:00Z",
-)
-
-[
     distroless_matrix(
         name = "static",
         architectures = STATIC_ARCHITECTURES[distro],
@@ -70,12 +60,13 @@ vex_document(
         debug_env = {"PATH": _DEFAULT_PATH + ":/busybox"},
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_layers = static_debug_layers,
+        debug_vex = [":debug_vex"],
         distro = distro,
         env = {
             "PATH": _DEFAULT_PATH,
             "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt",
         },
-        ignore_cves = DEBIAN13_WONTFIX_CVES,
+        ignore_cves = DEBIAN_WONTFIX_CVES,
         layers = static_layers,
         vex = [":vex"],
     )
@@ -102,7 +93,7 @@ vex_document(
             "test_" + user + ".yaml",
         ],
         driver = "tar",
-        image = ":static_" + user + "_amd64_debian13.tar",
+        image = ":static_" + user + "_amd64_debian.tar",
     )
     for user in [
         "root",
@@ -122,7 +113,7 @@ container_structure_test(
         "test.workload-isolation-type": "firecracker",
         "test.init-dockerd": "true",
     },
-    image = ":static_debug_nonroot_amd64_debian13.oci_layout",
+    image = ":static_debug_nonroot_amd64_debian.oci_layout",
     tags = ["requires-docker"],
 )
 

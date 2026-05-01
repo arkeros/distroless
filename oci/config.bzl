@@ -5,14 +5,14 @@ OCI_REPOSITORY_PREFIX = "arkeros/senku"
 # GAR destination is owned by `//infra/cloud/gcp/gar:defs.bzl` (the root that
 # provisions it). Load `GAR_REGISTRY` / `GAR_REPOSITORY_PREFIX` from there.
 
-GO_DISTROS = ["debian13"]
+GO_DISTROS = ["debian"]
 GO_ARCHITECTURES = {
-    "debian13": ["amd64", "arm64"],
+    "debian": ["amd64", "arm64"],
 }
 
-PYTHON_DISTROS = ["debian13"]
+PYTHON_DISTROS = ["debian"]
 PYTHON_ARCHITECTURES = {
-    "debian13": ["amd64", "arm64"],
+    "debian": ["amd64", "arm64"],
 }
 
 PYTHON_PACKAGES = [
@@ -38,7 +38,7 @@ PYTHON_PACKAGES = [
     "libffi8",
 ]
 
-NODEJS_DISTROS = ["debian13"]
+NODEJS_DISTROS = ["debian"]
 NODEJS_ARCHITECTURES = {
-    "debian13": ["amd64", "arm64"],
+    "debian": ["amd64", "arm64"],
 }

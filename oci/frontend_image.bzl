@@ -48,7 +48,7 @@ def _statics_layer(name, srcs, owner, ownername, strip_prefix):
 def frontend_image(
         name,
         arch,
-        distro = "debian13",
+        distro = "debian",
         srcs = None,
         statics_layer = None,
         base = None,
@@ -63,7 +63,7 @@ def frontend_image(
     Args:
         name: target name
         arch: target architecture (e.g., "amd64")
-        distro: distribution to use (default: debian13)
+        distro: distribution to use (default: debian)
         srcs: static files to serve
         statics_layer: pre-built tar layer label, or list of labels composed
             as multiple OCI layers (py_image_layer style). List form is
@@ -101,7 +101,7 @@ def frontend_image(
         **kwargs
     )
 
-def frontend_images_all_arch(name, srcs = None, statics_layer = None, base = None, distro = "debian13", **kwargs):
+def frontend_images_all_arch(name, srcs = None, statics_layer = None, base = None, distro = "debian", **kwargs):
     """Build frontend images for all architectures serving static files with nginx.
 
     Static files are placed in /var/www/html on top of the nginx base image.
@@ -120,7 +120,7 @@ def frontend_images_all_arch(name, srcs = None, statics_layer = None, base = Non
             Mutually exclusive with srcs.
         base: base image per arch, as a dict {"amd64": "//my:image_amd64", ...}.
             Defaults to the nginx stable nonroot image.
-        distro: distribution to use (default: debian13)
+        distro: distribution to use (default: debian)
         **kwargs: passed to frontend_image (owner, ownername, strip_prefix, ignore_cves)
     """
     if srcs and statics_layer:

@@ -19,10 +19,10 @@ docker pull ghcr.io/arkeros/senku/nginx:latest
 
 ```bash
 # Load into Docker
-bazel run //distroless/nginx:nginx_mainline_nonroot_arm64_debian13_load
+bazel run //distroless/nginx:nginx_mainline_nonroot_arm64_debian_load
 
 # Run
-docker run --rm -p 8080:8080 bazel/distroless/nginx:nginx-mainline-nonroot-arm64-debian13
+docker run --rm -p 8080:8080 bazel/distroless/nginx:nginx-mainline-nonroot-arm64-debian
 ```
 
 The default configuration listens on port **8080** and serves from `/var/www/html`.
@@ -40,7 +40,7 @@ Override by mounting your own config:
 docker run --rm -p 8080:8080 \
   -v ./my-site:/var/www/html:ro \
   -v ./my.conf:/etc/nginx/conf.d/default.conf:ro \
-  bazel/distroless/nginx:nginx-mainline-nonroot-arm64-debian13
+  bazel/distroless/nginx:nginx-mainline-nonroot-arm64-debian
 ```
 
 ## Frontend Images
@@ -95,7 +95,7 @@ Each channel produces images for:
 - **Architectures**: `amd64`, `arm64`
 - **Debug**: includes busybox shell
 
-Target naming: `nginx_{mainline,stable}[_debug]_{root,nonroot}_{amd64,arm64}_debian13`
+Target naming: `nginx_{mainline,stable}[_debug]_{root,nonroot}_{amd64,arm64}_debian`
 
 ## Updating
 

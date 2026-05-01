@@ -27,10 +27,10 @@ def _argmax_channel(tags):
 # `latest` intentionally tracks the highest supported nginx stream.
 NGINX_LATEST_CHANNEL = _argmax_channel(NGINX_TAGS)
 
-NGINX_DISTROS = ["debian13"]
+NGINX_DISTROS = ["debian"]
 
 NGINX_ARCHITECTURES = {
-    "debian13": ["amd64", "arm64"],
+    "debian": ["amd64", "arm64"],
 }
 
 def nginx_layers(version_label):

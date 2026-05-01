@@ -15,16 +15,3 @@ fileExistenceTests:
   - name: 'libstdc++'
     path: '/usr/lib/x86_64-linux-gnu/libstdc++.so.6'
     shouldExist: true
-  # CVE-2026-4046 mitigation: IBM1390/IBM1399 gconv modules stripped from
-  # libc6 via tar_filter. Negative assertions guard against accidental
-  # un-strip; the positive assertion guards against accidental whole-dir
-  # nuke from over-eager glob patterns.
-  - name: 'IBM1390 gconv stripped'
-    path: '/usr/lib/x86_64-linux-gnu/gconv/IBM1390.so'
-    shouldExist: false
-  - name: 'IBM1399 gconv stripped'
-    path: '/usr/lib/x86_64-linux-gnu/gconv/IBM1399.so'
-    shouldExist: false
-  - name: 'gconv dir intact (CP1252 retained)'
-    path: '/usr/lib/x86_64-linux-gnu/gconv/CP1252.so'
-    shouldExist: true

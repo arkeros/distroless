@@ -8,8 +8,8 @@ load("@tar.bzl", "tar")
 load("//oci:config.bzl", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
 load("//oci:vex.bzl", "vex_document")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
-load("//oci/distroless/common:glibc_vex.bzl", "GLIBC_STRIPPED_GCONV_VEX")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN13_WONTFIX_CVES", "DEBUG_MODE")
+load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
 NGINX_IGNORE_CVES = {
@@ -23,7 +23,15 @@ vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
-    statements = [GLIBC_STRIPPED_GCONV_VEX],
+    statements = GLIBC_FIXED_VEX_STATEMENTS,
+    timestamp = "2026-05-01T00:00:00Z",
+)
+
+vex_document(
+    name = "debug_vex",
+    author = "rafael@arquero.cat",
+    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#debug",
+    statements = BUSYBOX_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-01T00:00:00Z",
 )
 
@@ -65,6 +73,7 @@ tar(
             "org.opencontainers.image.description": "Distroless nginx stable image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
+        debug_vex = [":debug_vex"],
         distro = distro,
         entrypoint = [
             "/usr/sbin/nginx",
@@ -73,7 +82,7 @@ tar(
             "-g",
             "daemon off;",
         ],
-        ignore_cves = NGINX_IGNORE_CVES["stable"] + DEBIAN13_WONTFIX_CVES,
+        ignore_cves = NGINX_IGNORE_CVES["stable"] + DEBIAN_WONTFIX_CVES,
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
@@ -94,6 +103,7 @@ tar(
             "org.opencontainers.image.description": "Distroless nginx mainline image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
+        debug_vex = [":debug_vex"],
         distro = distro,
         entrypoint = [
             "/usr/sbin/nginx",
@@ -102,7 +112,7 @@ tar(
             "-g",
             "daemon off;",
         ],
-        ignore_cves = NGINX_IGNORE_CVES["mainline"] + DEBIAN13_WONTFIX_CVES,
+        ignore_cves = NGINX_IGNORE_CVES["mainline"] + DEBIAN_WONTFIX_CVES,
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
@@ -116,7 +126,7 @@ tar(
 [
     image_push(
         name = "nginx_" + version_label + mode + "_push",
-        image = ":nginx_" + version_label + mode + "_nonroot_debian13",
+        image = ":nginx_" + version_label + mode + "_nonroot_debian",
         registry = OCI_REGISTRY,
         repository = OCI_REPOSITORY_PREFIX + "/nginx",
         stamp = "force",
@@ -174,7 +184,7 @@ container_structure_test(
         "test.workload-isolation-type": "firecracker",
         "test.init-dockerd": "true",
     },
-    image = ":nginx_stable_nonroot_amd64_debian13.oci_layout",
+    image = ":nginx_stable_nonroot_amd64_debian.oci_layout",
     tags = ["requires-docker"],
 )
 
@@ -187,7 +197,7 @@ container_structure_test(
         "test.workload-isolation-type": "firecracker",
         "test.init-dockerd": "true",
     },
-    image = ":nginx_mainline_nonroot_amd64_debian13.oci_layout",
+    image = ":nginx_mainline_nonroot_amd64_debian.oci_layout",
     tags = ["requires-docker"],
 )
 

@@ -1,8 +1,12 @@
 "Shared distroless distro metadata and platform mappings."
 
 VERSIONS = [
-    # ("debian12", "bookworm", "12"),
-    ("debian13", "trixie", "13"),
+    # (distro_key, codename, version_id) — distro_key matches the apt.install
+    # name in MODULE.bazel; codename + version_id flow into /etc/os-release.
+    # "13/sid" matches the PRETTY_NAME convention real Debian sid systems use
+    # ("Debian GNU/Linux trixie/sid") — sid is the in-flight feed between
+    # released stable versions, so it has no clean numeric version_id.
+    ("debian", "sid", "13/sid"),
 ]
 
 VARIANTS = {
@@ -16,4 +20,4 @@ ARCHITECTURE_PLATFORMS = {
 }
 
 ALL_ARCHITECTURES = ["amd64", "arm64"]
-ALL_DISTROS = ["debian13"]
+ALL_DISTROS = ["debian"]

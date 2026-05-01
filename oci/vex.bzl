@@ -128,8 +128,6 @@ def vex_document(name, id, author, timestamp, statements, version = 1, **kwargs)
         materially.
       **kwargs: Forwarded to the underlying rule (visibility, tags, ...).
     """
-    if not statements:
-        fail("vex_document: statements must be non-empty")
 
     doc = {
         "@context": _CONTEXT,

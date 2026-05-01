@@ -17,9 +17,6 @@ vex_document(
     timestamp = "2026-05-01T00:00:00Z",
 )
 
-# Debug variants stack a busybox-static layer on top of the release image
-# (see static_debug_layers). Busybox CVEs only show up in debug scans, so
-# keep their justification scoped to the debug image only.
 vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",

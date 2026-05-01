@@ -8,6 +8,7 @@ def oci_image(
         name,
         fail_on_severity = "high",
         ignore_cves = None,
+        vex = None,
         **kwargs):
     """Build an OCI container image with SBOM + CVE scanning.
 
@@ -19,7 +20,12 @@ def oci_image(
         name: Target name.
         fail_on_severity: CVE severity threshold for the policy test.
             Default "high".
-        ignore_cves: List of CVE IDs to allow-list in the policy test.
+        ignore_cves: List of CVE IDs to allow-list in the policy test. Prefer
+            `vex` for anything with a defensible justification; reserve this
+            for unjustifiable noise.
+        vex: List of OpenVEX document labels (see //oci:vex.bzl). Statements
+            with status=not_affected or fixed remove matching results from
+            the grype scan before the policy test evaluates severity.
         **kwargs: Passed to image_manifest (base, layers, entrypoint, env, etc.).
     """
     image_manifest(
@@ -30,6 +36,7 @@ def oci_image(
     image_supply_chain(
         fail_on_severity = fail_on_severity,
         ignore_cves = ignore_cves,
+        vex = vex,
         image = ":" + name,
     )
 

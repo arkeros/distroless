@@ -1,0 +1,33 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://example.com/vex/example",
+  "author": "test@example.com",
+  "statements": [
+    {
+      "impact_statement": "example never calls iconv() with IBM1390/1399",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "products": [
+        {
+          "@id": "pkg:oci/example"
+        }
+      ],
+      "status": "not_affected",
+      "vulnerability": {
+        "name": "CVE-2026-4046"
+      }
+    },
+    {
+      "products": [
+        {
+          "@id": "pkg:oci/example"
+        }
+      ],
+      "status": "fixed",
+      "vulnerability": {
+        "name": "CVE-2025-0001"
+      }
+    }
+  ],
+  "timestamp": "2026-04-30T00:00:00Z",
+  "version": 1
+}

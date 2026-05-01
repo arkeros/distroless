@@ -10,7 +10,7 @@ load("@grype.bzl//grype:defs.bzl", "grype_scan", "grype_test")
 load("@supply_chain_tools//sbom:cyclonedx.bzl", "cyclonedx")
 load("@supply_chain_tools//sbom:sbom.bzl", "sbom")
 
-def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, database = "@grype_database"):
+def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database"):
     """Attach SBOM + CVE scan + policy test to an OCI image.
 
     Generates three targets, named after `image`'s base label:
@@ -25,6 +25,11 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, dat
         package_metadata patch).
       fail_on_severity: Threshold for `<base>_cve_test`. Default "high".
       ignore_cves: List of CVE IDs to allow-list. None = no allow-list.
+        Prefer `vex` for anything that has a defensible justification; reserve
+        `ignore_cves` for unjustifiable noise (e.g. distro wontfix).
+      vex: List of OpenVEX document labels (see //oci:vex.bzl). Statements
+        with status=not_affected or fixed remove matching results from the
+        scan before `_cve_test` evaluates severity.
       database: Grype vulnerability DB target. Default `@grype_database`.
     """
     base = image.rsplit(":", 1)[-1]
@@ -35,6 +40,7 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, dat
         name = base + "_cve_scan",
         database = database,
         sbom = ":" + base + "_sbom",
+        vex = vex,
     )
     grype_test(
         name = base + "_cve_test",

@@ -68,3 +68,9 @@ bzl_library(
         "@supply_chain_tools//sbom",
     ],
 )
+
+bzl_library(
+    name = "vex",
+    srcs = ["vex.bzl"],
+    visibility = ["//visibility:public"],
+)

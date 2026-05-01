@@ -37,6 +37,7 @@ lazy_bazel_env(
         # "flake8": "@pip//flake8:pkg",
         # "prettier": "//tools/format:prettier",
         "bifrost": "//devtools/bifrost/cli",
+        "exevm": "//devtools/workstation:exevm",
         "knife": "//bazel/cmd/knife",
     } | {
         t: "@multitool//tools/" + t

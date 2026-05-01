@@ -113,9 +113,9 @@ jobs:
 
       - name: Download SBOM
         run: |
-          bazel build --output_groups=sbom --remote_download_outputs=all "${{ matrix.target }}"
-          SBOM_FILE=$(bazel cquery "${{ matrix.target }}" --output=files --output_groups=sbom)
-          cp "$SBOM_FILE" sbom.spdx.json
+          bazel build --remote_download_outputs=all "${{ matrix.target }}_sbom"
+          SBOM_FILE=$(bazel cquery "${{ matrix.target }}_sbom" --output=files)
+          cp "$SBOM_FILE" sbom.cdx.json
 
       - name: Attest provenance
         uses: actions/attest@v4
@@ -129,7 +129,7 @@ jobs:
         with:
           subject-name: ${{ matrix.image }}
           subject-digest: ${{ matrix.digest }}
-          sbom-path: sbom.spdx.json
+          sbom-path: sbom.cdx.json
           push-to-registry: true
 
   # ---------------------------------------------------------------------------

@@ -51,6 +51,47 @@ apt.install(
 )
 use_repo(apt, "debian", "nginx_mainline", "nginx_stable", "workstation")
 
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+
+# Out-of-band binaries baked into //devtools/workstation. Versions are
+# pinned; refresh by re-fetching:
+#
+#   curl -fsSL https://api.github.com/repos/bazelbuild/bazelisk/releases/latest | jq -r .tag_name
+#   curl -fsSL https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/stable
+#
+# then updating the URLs and per-arch sha256s here.
+http_file(
+    name = "bazelisk_amd64",
+    downloaded_file_path = "bazelisk",
+    executable = True,
+    sha256 = "5a408715e932c0250d28bd84555f12edbf70117de42f9181691c736eacc4a992",
+    url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-amd64",
+)
+
+http_file(
+    name = "bazelisk_arm64",
+    downloaded_file_path = "bazelisk",
+    executable = True,
+    sha256 = "e20e8b0f4f240091b7a55bf17b9398bd4f40ee70ae0208dff95dd4c445fb4010",
+    url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-arm64",
+)
+
+http_file(
+    name = "claude_amd64",
+    downloaded_file_path = "claude",
+    executable = True,
+    sha256 = "ba363b2410a47120d2d4b8ece2e11fe0bbc5d59adb1329e8fb87ea0f370f4e46",
+    url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.118/linux-x64/claude",
+)
+
+http_file(
+    name = "claude_arm64",
+    downloaded_file_path = "claude",
+    executable = True,
+    sha256 = "b77b22fe93c15409f3c64be67950fe11e5fc17d1cd327891596cb87dd9be0492",
+    url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.118/linux-arm64/claude",
+)
+
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(
     name = "grype_database",

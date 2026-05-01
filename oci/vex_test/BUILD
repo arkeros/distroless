@@ -9,6 +9,7 @@ vex_document(
     id = "https://example.com/vex/example",
     statements = [
         vex_statement(
+            expires = "2026-07-29",
             impact_statement = "example never calls iconv() with IBM1390/1399",
             justification = "vulnerable_code_not_in_execute_path",
             products = ["pkg:oci/example"],
@@ -16,6 +17,7 @@ vex_document(
             vulnerability = "CVE-2026-4046",
         ),
         vex_statement(
+            expires = "2026-07-29",
             products = ["pkg:oci/example"],
             status = "fixed",
             vulnerability = "CVE-2025-0001",

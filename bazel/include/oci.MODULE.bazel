@@ -20,7 +20,7 @@ register_toolchains("//bazel/toolchains/grype")
 
 git_override(
     module_name = "grype.bzl",
-    commit = "560bd755d7203c2f444e99b3a5b6b17d9ffd7ec9",
+    commit = "3faf01f19537ba685f9deb9c12b3742b1815c583",
     remote = "https://github.com/arkeros/grype.bzl.git",
 )
 
@@ -43,7 +43,13 @@ apt.install(
     lock = "//oci/distroless/nginx:nginx-mainline.lock.json",
     manifest = "//oci/distroless/nginx:nginx-mainline.yaml",
 )
-use_repo(apt, "debian", "nginx_mainline", "nginx_stable")
+apt.install(
+    name = "workstation",
+    distro = "debian-unstable",
+    lock = "//devtools/workstation:debian.lock.json",
+    manifest = "//devtools/workstation:debian.yaml",
+)
+use_repo(apt, "debian", "nginx_mainline", "nginx_stable", "workstation")
 
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(

@@ -5,6 +5,15 @@
 which validates status/justification combinations at loading phase so
 malformed documents fail the build before they reach a scanner.
 
+NOTE: vex_statement requires an `expires` field (RFC3339 date) that is a
+**senku-flavored extension** to the OpenVEX 0.2.0 spec — the spec has no
+native expiry mechanism. The field appears in the emitted JSON; OpenVEX
+consumers that don't recognize it (every consumer except this repo's
+grype.bzl integration today) will silently skip it. grype.bzl validates
+the date action-side: must be present, not past, and ≤90 days in the
+future. The mechanism forces periodic re-justification — silencing
+decisions are debts with due dates, not permanent settlements.
+
 Example:
     load("//oci:vex.bzl", "vex_document", "vex_statement")
 
@@ -20,6 +29,7 @@ Example:
                 status = "not_affected",
                 justification = "vulnerable_code_not_in_execute_path",
                 impact_statement = "registry never feeds untrusted input through iconv() with IBM1390/IBM1399",
+                expires = "2026-07-29",  # ≤90d from authoring; re-justify or delete
             ),
         ],
     )
@@ -43,10 +53,26 @@ _JUSTIFICATIONS = [
     "inline_mitigations_already_exist",
 ]
 
+def _validate_expires_format(expires):
+    """Loading-phase shape check for an RFC3339 date (YYYY-MM-DD).
+
+    Action-time validation (not in past, not >90d in future) lives in
+    grype.bzl's test runner — Starlark has no datetime access without
+    breaking hermeticity.
+    """
+    if type(expires) != "string" or len(expires) != 10:
+        fail("vex_statement: expires=%r must be RFC3339 date YYYY-MM-DD" % expires)
+    if expires[4] != "-" or expires[7] != "-":
+        fail("vex_statement: expires=%r must be RFC3339 date YYYY-MM-DD" % expires)
+    for i in [0, 1, 2, 3, 5, 6, 8, 9]:
+        if not expires[i].isdigit():
+            fail("vex_statement: expires=%r must be RFC3339 date YYYY-MM-DD" % expires)
+
 def vex_statement(
         vulnerability,
         products,
         status,
+        expires,
         justification = None,
         impact_statement = None,
         action_statement = None):
@@ -57,6 +83,10 @@ def vex_statement(
       products: List of product identifiers, ideally PURLs
         (e.g. "pkg:oci/registry" or "pkg:oci/registry@sha256:...").
       status: One of "not_affected", "affected", "fixed", "under_investigation".
+      expires: RFC3339 date "YYYY-MM-DD" — review-by deadline. The build
+        fails when this date is past or more than 90 days in the future
+        (see grype.bzl test runner). Forces re-justification rather than
+        permanent silencing — bump the date or delete the statement.
       justification: Required when status == "not_affected". One of
         component_not_present, vulnerable_code_not_present,
         vulnerable_code_not_in_execute_path,
@@ -81,11 +111,13 @@ def vex_statement(
         fail("vex_statement: status=affected requires an action_statement")
     if not products:
         fail("vex_statement: products must be non-empty")
+    _validate_expires_format(expires)
 
     stmt = {
         "vulnerability": {"name": vulnerability},
         "products": [{"@id": p} for p in products],
         "status": status,
+        "expires": expires,
     }
     if justification:
         stmt["justification"] = justification

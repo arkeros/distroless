@@ -4,6 +4,7 @@
   "author": "test@example.com",
   "statements": [
     {
+      "expires": "2026-07-29",
       "impact_statement": "example never calls iconv() with IBM1390/1399",
       "justification": "vulnerable_code_not_in_execute_path",
       "products": [
@@ -17,6 +18,7 @@
       }
     },
     {
+      "expires": "2026-07-29",
       "products": [
         {
           "@id": "pkg:oci/example"

@@ -4,19 +4,7 @@ CC_ARCHITECTURES = {
     "debian13": ["amd64", "arm64"],
 }
 
-CC_PACKAGES = {
-    "debian12": [
-        "libc6",
-        "libssl3",
-    ],
-    "debian13": [
-        "libc6",
-        "libssl3t64",
-    ],
-}
-
 def cc_layers(ctx):
     return [
-        ":{}_{}_layer".format(ctx.arch, ctx.distro),
-        "@{}//libstdc++6/{}".format(ctx.distro, ctx.arch),
+        ":{}_{}_layer.tar.zst".format(ctx.arch, ctx.distro),
     ]

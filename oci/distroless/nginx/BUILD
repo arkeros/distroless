@@ -6,7 +6,9 @@ load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@rules_img//img:push.bzl", "image_push")
 load("@tar.bzl", "tar")
 load("//oci:config.bzl", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
+load("//oci:vex.bzl", "vex_document")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
+load("//oci/distroless/common:glibc_vex.bzl", "GLIBC_STRIPPED_GCONV_VEX")
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN13_WONTFIX_CVES", "DEBUG_MODE")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
@@ -16,6 +18,14 @@ NGINX_IGNORE_CVES = {
 }
 
 package(default_visibility = ["//visibility:public"])
+
+vex_document(
+    name = "vex",
+    author = "rafael@arquero.cat",
+    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
+    statements = [GLIBC_STRIPPED_GCONV_VEX],
+    timestamp = "2026-05-01T00:00:00Z",
+)
 
 tar(
     name = "nginx_conf_layer",
@@ -69,6 +79,7 @@ tar(
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
         layers = nginx_layers("stable"),
+        vex = [":vex"],
     )
     for distro in NGINX_DISTROS
 ]
@@ -97,6 +108,7 @@ tar(
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
         layers = nginx_layers("mainline"),
+        vex = [":vex"],
     )
     for distro in NGINX_DISTROS
 ]

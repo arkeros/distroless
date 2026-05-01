@@ -215,6 +215,12 @@ home(
 )
 
 bzl_library(
+    name = "glibc_vex",
+    srcs = ["glibc_vex.bzl"],
+    deps = ["//oci:vex"],
+)
+
+bzl_library(
     name = "variables",
     srcs = ["variables.bzl"],
 )

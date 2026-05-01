@@ -8,7 +8,7 @@ STATIC_ARCHITECTURES = {
 
 def static_layers(ctx):
     return [
-        ":static_{}_{}_layer".format(ctx.arch, ctx.distro),
+        ":static_{}_{}_layer.tar.zst".format(ctx.arch, ctx.distro),
     ]
 
 def static_debug_layers(ctx):

@@ -39,7 +39,9 @@ COMPRESSION = "zstd"
 # Common (universal: every Debian-13 image transitively includes glibc).
 DEBIAN13_WONTFIX_CVES = [
     # glibc (libc6)
-    "CVE-2026-4046",
+    # CVE-2026-4046: silenced via VEX (//oci/distroless/common:debian13_vex)
+    # because the vulnerable code path (IBM1390/IBM1399 gconv modules) is
+    # stripped at build time — see GLIBC_STRIPPED_GCONV.
     "CVE-2026-4437",
     "CVE-2026-5435",
     "CVE-2026-5450",
@@ -52,4 +54,16 @@ BUSYBOX_WONTFIX_CVES = [
     "CVE-2023-39810",
     "CVE-2026-26157",
     "CVE-2026-26158",
+]
+
+# gconv modules stripped from libc6 in every layer that ships it. Stripping
+# turns the VEX claim from `vulnerable_code_not_in_execute_path` (narrative,
+# fragile) into `vulnerable_code_not_present` (mechanically checkable).
+#
+# IBM1390/IBM1399: EBCDIC code pages for Japanese mainframe interop. Source of
+# CVE-2026-4046 (iconv() assertion-failure DoS). Nothing in our stack iconv()s
+# through them.
+GLIBC_STRIPPED_GCONV = [
+    "**/gconv/IBM1390.so",
+    "**/gconv/IBM1399.so",
 ]

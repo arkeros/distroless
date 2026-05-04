@@ -31,4 +31,5 @@ jobs:
             oci/distroless/debian.yaml
             oci/distroless/nginx/nginx-stable.yaml
             oci/distroless/nginx/nginx-mainline.yaml
+            devtools/workstation/debian.yaml:workstation
           token: ${{ secrets.RENOVATE_TOKEN }}

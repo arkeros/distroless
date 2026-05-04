@@ -2,7 +2,10 @@ name: Update Debian Packages
 description: Update Debian packages and lockfiles and create a PR if changed
 inputs:
   manifests:
-    description: 'Space-separated list of manifest file paths relative to repo root'
+    description: |
+      Space-separated list of manifest entries. Each entry is `<path>` or
+      `<path>:<repo>`. When the bazel repo name does not match
+      `basename(path, .yaml) | tr - _`, supply it explicitly with `:<repo>`.
     required: true
   token:
     description: 'GitHub token for creating PRs and enabling auto-merge'
@@ -21,9 +24,14 @@ runs:
       id: update-packages
       shell: bash
       run: |
-        for manifest in ${{ inputs.manifests }}; do
+        for entry in ${{ inputs.manifests }}; do
+          manifest="${entry%%:*}"
+          if [ "$entry" = "$manifest" ]; then
+            repo=$(basename "$manifest" .yaml | tr '-' '_')
+          else
+            repo="${entry#*:}"
+          fi
           knife apt update "$PWD/$manifest"
-          repo=$(basename "$manifest" .yaml | tr '-' '_')
           bazel run "@${repo}//:lock"
         done
 

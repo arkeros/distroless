@@ -49,7 +49,7 @@ importers:
         version: 19.2.5(react@19.2.5)
       react-router:
         specifier: ^7.14.1
-        version: 7.14.2(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+        version: 7.15.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       relay-runtime:
         specifier: ^20.1.1
         version: 20.1.1
@@ -798,8 +798,8 @@ packages:
     peerDependencies:
       react: ^19.2.5
 
-  react-router@7.14.2:
-    resolution: {integrity: sha512-yCqNne6I8IB6rVCH7XUvlBK7/QKyqypBFGv+8dj4QBFJiiRX+FG7/nkdAvGElyvVZ/HQP5N19wzteuTARXi5Gw==}
+  react-router@7.15.0:
+    resolution: {integrity: sha512-HW9vYwuM8f4yx66Izy8xfrzCM+SBJluoZcCbww9A1TySax11S5Vgw6fi3ZjMONw9J4gQwngL7PzkyIpJJpJ7RQ==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       react: '>=18'
@@ -1603,7 +1603,7 @@ snapshots:
       react: 19.2.5
       scheduler: 0.27.0
 
-  react-router@7.14.2(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
+  react-router@7.15.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
     dependencies:
       cookie: 1.1.1
       react: 19.2.5

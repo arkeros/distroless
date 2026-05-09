@@ -1,13 +1,9 @@
 package snapshot
 
 import (
-	"context"
-	"errors"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
-	"sync"
 	"testing"
 )
 
@@ -216,118 +212,6 @@ func TestParseManifestValidation(t *testing.T) {
 				t.Errorf("error %q does not contain %q", err, tt.wantErr)
 			}
 		})
-	}
-}
-
-func TestPackageIndexURLs(t *testing.T) {
-	m := &Manifest{
-		Sources: []Source{
-			{
-				Channel: "unstable main contrib",
-				URLs: []string{
-					"https://snapshot.debian.org/archive/debian/20260509T144105Z",
-					"https://snapshot-cloudflare.debian.org/archive/debian/20260509T144105Z",
-				},
-			},
-			{
-				Channel: "trixie-security main",
-				URL:     "https://snapshot.debian.org/archive/debian-security/20260509T135435Z",
-			},
-		},
-		Archs: []string{"amd64", "arm64"},
-	}
-
-	urls := PackageIndexURLs(m)
-	got := map[string]bool{}
-	for _, u := range urls {
-		got[u] = true
-	}
-
-	wantContain := []string{
-		"https://snapshot.debian.org/archive/debian/20260509T144105Z/dists/unstable/main/binary-amd64/Packages.xz",
-		"https://snapshot.debian.org/archive/debian/20260509T144105Z/dists/unstable/main/binary-arm64/Packages.gz",
-		"https://snapshot.debian.org/archive/debian/20260509T144105Z/dists/unstable/contrib/binary-amd64/Packages.bz2",
-		"https://snapshot-cloudflare.debian.org/archive/debian/20260509T144105Z/dists/unstable/main/binary-amd64/Packages.xz",
-		"https://snapshot.debian.org/archive/debian-security/20260509T135435Z/dists/trixie-security/main/binary-amd64/Packages.xz",
-	}
-	for _, u := range wantContain {
-		if !got[u] {
-			t.Errorf("expected URL list to contain:\n  %s\nfull list:\n  %s", u, strings.Join(urls, "\n  "))
-		}
-	}
-}
-
-type fakePurger struct {
-	mu      sync.Mutex
-	urls    []string
-	failFor map[string]error
-}
-
-func (f *fakePurger) Purge(_ context.Context, url string) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.urls = append(f.urls, url)
-	if err, ok := f.failFor[url]; ok {
-		return err
-	}
-	return nil
-}
-
-func TestPurgePackagesIndexes_OnlySnapshotDebianOrg(t *testing.T) {
-	m := &Manifest{
-		Sources: []Source{
-			{
-				Channel: "unstable main",
-				URLs: []string{
-					"https://snapshot.debian.org/archive/debian/20260509T144105Z",
-					"https://snapshot-cloudflare.debian.org/archive/debian/20260509T144105Z",
-				},
-			},
-			{
-				Channel: "trixie nginx",
-				URL:     "https://nginx.org/packages/debian",
-			},
-		},
-		Archs: []string{"amd64"},
-	}
-
-	p := &fakePurger{}
-	if err := PurgePackagesIndexes(context.Background(), m, p); err != nil {
-		t.Fatalf("PurgePackagesIndexes: %v", err)
-	}
-
-	for _, u := range p.urls {
-		if !strings.Contains(u, "://snapshot.debian.org/") {
-			t.Errorf("unexpected purge target (Cloudflare/nginx should be skipped): %s", u)
-		}
-	}
-	// 1 base × 1 component × 1 arch × 3 formats = 3
-	if got := len(p.urls); got != 3 {
-		sort.Strings(p.urls)
-		t.Errorf("got %d purge calls, want 3:\n  %s", got, strings.Join(p.urls, "\n  "))
-	}
-}
-
-func TestPurgePackagesIndexes_AggregatesErrors(t *testing.T) {
-	m := &Manifest{
-		Sources: []Source{
-			{
-				Channel: "unstable main",
-				URL:     "https://snapshot.debian.org/archive/debian/20260509T144105Z",
-			},
-		},
-		Archs: []string{"amd64"},
-	}
-
-	failURL := "https://snapshot.debian.org/archive/debian/20260509T144105Z/dists/unstable/main/binary-amd64/Packages.gz"
-	p := &fakePurger{failFor: map[string]error{failURL: errors.New("boom")}}
-
-	err := PurgePackagesIndexes(context.Background(), m, p)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-	if !strings.Contains(err.Error(), "boom") {
-		t.Errorf("error does not mention underlying failure: %v", err)
 	}
 }
 

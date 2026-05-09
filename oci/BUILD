@@ -94,7 +94,7 @@ bzl_library(
     deps = [
         ":config",
         ":cosign_policy",
-        "@cosign",
+        "@cosign.bzl//:cosign",
         "@rules_img//img:push",
     ],
 )

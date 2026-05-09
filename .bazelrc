@@ -20,6 +20,13 @@ common --modify_execution_info=GrypeScan=+no-remote-exec
 
 build --workspace_status_command=bazel/workspace_status.sh
 
+# Enforce ADR 0006 at analysis time: any `image_push` to the public mirror
+# surface (`ghcr.io/arkeros/senku/*`) without the `mirror_push_managed` tag
+# fails the build. Wired here (not as a `--config=`) so the policy is
+# unrepresentable in local dev too — there's no `bazel build` invocation
+# that bypasses it. See `//oci:aspects.bzl`.
+common --aspects=//oci:aspects.bzl%mirror_push_enforcement_aspect
+
 # Remote cache (GCS)
 common:gcs --remote_cache=https://storage.googleapis.com/bazel-senku-remote-cache
 common:gcs --google_default_credentials

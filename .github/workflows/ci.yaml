@@ -14,15 +14,14 @@ env:
   ASPECT_CLI_SHA256: db45968e114c22af0e0d3dddadfb7091c81983f66499eed9d01d782bb09483d0
 
 jobs:
-  push:
-    name: Push images
+  publish:
+    name: Publish mirror images
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
-    outputs:
-      matrix: ${{ steps.meta.outputs.matrix }}
+      id-token: write   # for cosign keyless OIDC (Fulcio + Rekor)
+      packages: write   # for GHCR push + cosign sig/attest artifacts
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -49,88 +48,106 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push images and collect metadata
-        id: meta
+      # Load consumer-side cosign policy (regex + issuer) from the same
+      # Starlark source that mirror_push uses for the predicate's BUILDER_ID.
+      # See //oci:cosign_policy.bzl. Renames to the workflow file or branch
+      # only need to be done in that one Starlark file.
+      - name: Load cosign policy
         run: |
           set -euxo pipefail
-          # Skip `_gar` push targets — `aspect apply` re-pushes those via
-          # the registry root's `pre_apply` hook, against the same digest.
-          # build only mirrors images to GHCR (the public-facing copy).
-          TARGETS=$(bazel query 'kind("image_push rule", //...)' --output=label | grep -v '_gar$')
-          MATRIX="[]"
-          for TARGET in $TARGETS; do
-            bazel run "$TARGET"
+          bazel build //oci:cosign_policy_env
+          cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
 
-            MANIFEST=$(bazel cquery "$TARGET" --output=files --output_groups=deploy_manifest)
-            bazel build --output_groups=deploy_manifest --remote_download_outputs=all "$TARGET"
+      # Bazel-native cosign signing per ADR 0006. `mirror_push` macros emit
+      # <name>_push, <name>_sign, <name>_attest, optional <name>_attest_sbom.
+      # Discover via `cosign_sign rule` since that's unambiguous: every mirror
+      # image has exactly one. The matching push/attest targets follow naming.
+      # We collect (BASE, registry, repository, digest) tuples for the
+      # post-publish positive verify step.
+      - name: Push, sign, and attest mirror images
+        id: publish
+        run: |
+          set -euxo pipefail
+          SIGN_TARGETS=$(bazel query 'kind("cosign_sign rule", //...)' --output=label)
+          PUBLISHED=""
+          for SIGN_TARGET in $SIGN_TARGETS; do
+            BASE=${SIGN_TARGET%_sign}
+            echo "::group::${BASE}"
+            bazel run "${BASE}_push"
+            bazel run "${BASE}_sign"
+            bazel run "${BASE}_attest"
+            HAS_SBOM=0
+            if bazel query "${BASE}_attest_sbom" 2>/dev/null | grep -q .; then
+              bazel run "${BASE}_attest_sbom"
+              HAS_SBOM=1
+            fi
+
+            # Capture the just-pushed digest for the positive verify step.
+            bazel build --output_groups=deploy_manifest --remote_download_outputs=all "${BASE}_push"
+            MANIFEST=$(bazel cquery "${BASE}_push" --output=files --output_groups=deploy_manifest)
             REGISTRY=$(jq -r '.operations[0].registry' "$MANIFEST")
             REPOSITORY=$(jq -r '.operations[0].repository' "$MANIFEST")
             DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
-
-            IMAGE_TARGET=$(bazel query "labels(image, $TARGET)" --output=label)
-            TAG=$(jq -r '.operations[0].tags[] | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+(-debug)?$"))' "$MANIFEST")
-
-            MATRIX=$(echo "$MATRIX" | jq -c --arg image "${REGISTRY}/${REPOSITORY}" --arg tag "$TAG" --arg digest "$DIGEST" --arg target "$IMAGE_TARGET" '. + [{"image": $image, "tag": $tag, "digest": $digest, "target": $target}]')
+            PUBLISHED+="${REGISTRY}/${REPOSITORY}@${DIGEST} ${HAS_SBOM}"$'\n'
+            echo "::endgroup::"
           done
-          echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
+          # Persist for the next step. EOF-delimited heredoc handles newlines.
+          {
+            echo 'PUBLISHED<<EOF'
+            printf '%s' "$PUBLISHED"
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
 
-  attest:
-    name: Attest ${{ matrix.image }}:${{ matrix.tag }}
-    if: github.event_name == 'push'
-    needs: [push]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-      packages: write
-      attestations: write
-    strategy:
-      matrix: ${{ fromJSON(needs.push.outputs.matrix) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: v1.27.0
-          bazelisk-cache: true
-          repository-cache: true
-          external-cache: true
-          cache-save: false
-          bazelrc: |
-            common --config=ci
-            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
-
-      - name: Login to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download SBOM
+      # Positive test: every just-published image must verify under the
+      # production policy with both predicate types. Catches mis-attested
+      # predicates, wrong type strings, Rekor-upload misconfig, and OIDC
+      # subject drift between producer (BUILDER_ID) and consumer (regex).
+      - name: Verify just-published images (positive test)
         run: |
-          bazel build --remote_download_outputs=all "${{ matrix.target }}_sbom"
-          SBOM_FILE=$(bazel cquery "${{ matrix.target }}_sbom" --output=files)
-          cp "$SBOM_FILE" sbom.cdx.json
+          set -euo pipefail
+          COSIGN=$(bazel cquery @cosign_toolchains//:cosign_bin --output=files)
+          while IFS=' ' read -r REF HAS_SBOM; do
+            [[ -z "$REF" ]] && continue
+            echo "::group::verify ${REF}"
+            "${COSIGN}" verify-attestation \
+                --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
+                --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
+                --type=slsaprovenance \
+                "${REF}" > /dev/null
+            if [[ "${HAS_SBOM}" == "1" ]]; then
+              "${COSIGN}" verify-attestation \
+                  --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
+                  --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
+                  --type=cyclonedx \
+                  "${REF}" > /dev/null
+            fi
+            echo "OK: ${REF}"
+            echo "::endgroup::"
+          done <<< "${PUBLISHED}"
 
-      - name: Attest provenance
-        uses: actions/attest@v4
-        with:
-          subject-name: ${{ matrix.image }}
-          subject-digest: ${{ matrix.digest }}
-          push-to-registry: true
-
-      - name: Attest SBOM
-        uses: actions/attest@v4
-        with:
-          subject-name: ${{ matrix.image }}
-          subject-digest: ${{ matrix.digest }}
-          sbom-path: sbom.cdx.json
-          push-to-registry: true
+      # Negative test: production verify policy must REJECT a real-but-wrong-
+      # identity image (Google's distroless, signed by their workflow). If a
+      # future PR widens the verify regex, this assertion starts failing-when-
+      # it-should-fail and CI catches it. Per ADR 0006.
+      - name: Verify policy is strict (negative test)
+        run: |
+          set -euo pipefail
+          COSIGN=$(bazel cquery @cosign_toolchains//:cosign_bin --output=files)
+          STDERR=$(mktemp)
+          # Negative case: rejects a correctly-signed-but-wrong-identity image.
+          if "${COSIGN}" verify-attestation \
+              --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
+              --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
+              --type=slsaprovenance \
+              gcr.io/distroless/static-debian12:nonroot 2> "${STDERR}"; then
+            echo "ERROR: verify policy is too permissive — accepted gcr.io/distroless/static-debian12:nonroot, which was signed by Google's distroless workflow, not ours." >&2
+            echo "--- cosign stderr ---" >&2
+            cat "${STDERR}" >&2
+            exit 1
+          fi
+          echo "OK: verify policy correctly rejects the signed-by-Google reference."
+          echo "--- cosign rejection reason (for the record) ---"
+          cat "${STDERR}"
 
   # ---------------------------------------------------------------------------
   # Terraform deploys, orchestrated via Aspect CLI.

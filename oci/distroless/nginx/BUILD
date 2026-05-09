@@ -3,9 +3,8 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@jq.bzl//jq:jq.bzl", "jq_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
-load("@rules_img//img:push.bzl", "image_push")
 load("@tar.bzl", "tar")
-load("//oci:config.bzl", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
+load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
@@ -124,12 +123,11 @@ tar(
 ]
 
 [
-    image_push(
-        name = "nginx_" + version_label + mode + "_push",
+    mirror_push(
+        name = "nginx_" + version_label + mode,
         image = ":nginx_" + version_label + mode + "_nonroot_debian",
-        registry = OCI_REGISTRY,
-        repository = OCI_REPOSITORY_PREFIX + "/nginx",
-        stamp = "force",
+        repository = "nginx",
+        sbom = ":nginx_" + version_label + mode + "_nonroot_debian_sbom",
         tag_list = [
             version_label + ("-debug" if mode else ""),
             short_version + ("-debug" if mode else ""),

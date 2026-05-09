@@ -1,8 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
-load("@rules_img//img:push.bzl", "image_push")
-load("//oci:config.bzl", "OCI_REGISTRY", "OCI_REPOSITORY_PREFIX")
+load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NCURSES_FIXED_VEX_STATEMENTS")
@@ -73,12 +72,11 @@ vex_document(
 ]
 
 [
-    image_push(
-        name = "bash" + mode + "_push",
+    mirror_push(
+        name = "bash" + mode,
         image = ":bash" + mode + "_nonroot_debian",
-        registry = OCI_REGISTRY,
-        repository = OCI_REPOSITORY_PREFIX + "/bash",
-        stamp = "force",
+        repository = "bash",
+        sbom = ":bash" + mode + "_nonroot_debian_sbom",
         tag_list = [
             "debug" if mode else "latest",
             "{{.STABLE_MONOREPO_IMAGE_TAG_VERSION}}" + mode.replace("_", "-"),

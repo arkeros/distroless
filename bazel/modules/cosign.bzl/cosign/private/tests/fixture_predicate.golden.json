@@ -1,0 +1,17 @@
+{
+	"buildDefinition": {
+		"buildType": "https://example.com/test-build-type/v1",
+		"externalParameters": {
+			"bazelTarget": "//test:fixture",
+			"sourceUri": "git+https://example.com/repo.git@deadbeef"
+		},
+		"internalParameters": {
+			"monorepoVersion": "1.2.3-test"
+		}
+	},
+	"runDetails": {
+		"builder": {
+			"id": "https://example.com/builder/test@refs/heads/main"
+		}
+	}
+}

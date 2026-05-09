@@ -23,6 +23,7 @@ load(
     "OCI_REGISTRY",
     "OCI_REPOSITORY_PREFIX",
 )
+load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:supply_chain.bzl", "image_supply_chain")
 load("//oci/distroless/common:variables.bzl", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 load(
@@ -68,10 +69,13 @@ go_binary(
     for mode in DEBUG_MODE
 ]
 
-image_supply_chain(
-    ignore_cves = DEBIAN_WONTFIX_CVES,
-    image = ":image",
-)
+[
+    image_supply_chain(
+        ignore_cves = DEBIAN_WONTFIX_CVES,
+        image = ":image" + mode,
+    )
+    for mode in DEBUG_MODE
+]
 
 [
     image_load(
@@ -87,15 +91,34 @@ image_supply_chain(
     for mode in DEBUG_MODE
 ]
 
-# Two push destinations per mode: GHCR for the public `distroless.io` mirror,
-# GAR for the Cloud Run deploy path (Cloud Run can't pull from GHCR directly).
-# Same image, same digest, two hosts — pushed independently.
+# GHCR — the public `distroless.io` mirror surface. Signed + SLSA-attested
+# via mirror_push (ADR 0006). External consumers verify with cosign.
+[
+    mirror_push(
+        name = "image" + mode,
+        image = ":image" + mode,
+        repository = "registry",
+        sbom = ":image" + mode + "_sbom",
+        tag_list = [
+            "debug" if mode else "latest",
+            "{{.STABLE_MONOREPO_IMAGE_TAG_VERSION}}" + mode.replace("_", "-"),
+            "{{.STABLE_MONOREPO_SHORT_VERSION}}" + mode.replace("_", "-"),
+        ],
+        tags = ["manual"],
+    )
+    for mode in DEBUG_MODE
+]
+
+# GAR — internal Cloud Run deploy substrate. Same digest as the GHCR copy,
+# different registry. IAM-trusted, NOT cosign-trusted: out of mirror_push
+# scope per ADR 0006. `aspect apply` re-pushes against the same digest via
+# the registry root's pre_apply hook.
 [
     image_push(
-        name = "image" + mode + "_push_" + dest_suffix,
+        name = "image" + mode + "_push_gar",
         image = ":image" + mode,
-        registry = registry,
-        repository = repository_prefix + "/registry",
+        registry = GAR_REGISTRY,
+        repository = GAR_REPOSITORY_PREFIX + "/registry",
         stamp = "force",
         tag_list = [
             "debug" if mode else "latest",
@@ -105,10 +128,6 @@ image_supply_chain(
         tags = ["manual"],
     )
     for mode in DEBUG_MODE
-    for dest_suffix, registry, repository_prefix in [
-        ("ghcr", OCI_REGISTRY, OCI_REPOSITORY_PREFIX),
-        ("gar", GAR_REGISTRY, GAR_REPOSITORY_PREFIX),
-    ]
 ]
 
 # ---------------------------------------------------------------------------

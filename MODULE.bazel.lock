@@ -853,6 +853,21 @@
         }
       }
     },
+    "@@cosign.bzl+//cosign:extensions.bzl%cosign": {
+      "general": {
+        "bzlTransitiveDigest": "lfvT6KcU9vj0c/4dvEmLUK44b9Pifrrom1ecyoXkRW4=",
+        "usagesDigest": "KDX8K9Dslk55rcW5O5KP9J0GnHVijnOh0MjMIJvmF74=",
+        "recordedInputs": [],
+        "generatedRepoSpecs": {
+          "cosign_toolchains": {
+            "repoRuleId": "@@cosign.bzl+//cosign:extensions.bzl%_cosign_repo",
+            "attributes": {
+              "version": "3.0.6"
+            }
+          }
+        }
+      }
+    },
     "@@grype.bzl+//grype:extensions.bzl%grype_database": {
       "general": {
         "bzlTransitiveDigest": "wxwS3i2YCjHA0Xa4qWCYJJzDiiMwagPfhZttafK57o0=",

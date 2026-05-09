@@ -4,6 +4,7 @@ load("@rules_img//img:image.bzl", "image_index")
 load("//oci/distroless:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//oci/distroless/common:variables.bzl", "NONROOT")
 load("//oci:oci_image.bzl", "oci_image")
+load("//oci:supply_chain.bzl", "image_sbom")
 
 USER_VARIANTS = [
     ("root", 0, "/"),
@@ -168,11 +169,17 @@ def distroless_matrix(
         ("_debug", effective_debug_index_annotations),
     ]:
         for (user, _, _) in USER_VARIANTS:
+            index_name = _index_name(name, mode, user, distro)
             image_index(
-                name = _index_name(name, mode, user, distro),
+                name = index_name,
                 annotations = mode_annotations,
                 manifests = [
                     _image_name(name, mode, user, arch, distro)
                     for arch in architectures
                 ],
             )
+
+            # Index-level CycloneDX SBOM, used as the predicate for mirror_push's
+            # SBOM attestation. Per-arch CVE testing already runs via oci_image;
+            # this is just the unified-across-archs materials manifest.
+            image_sbom(image = ":" + index_name)

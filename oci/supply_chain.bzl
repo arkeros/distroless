@@ -10,6 +10,24 @@ load("@grype.bzl//grype:defs.bzl", "grype_scan", "grype_test")
 load("@supply_chain_tools//sbom:cyclonedx.bzl", "cyclonedx")
 load("@supply_chain_tools//sbom:sbom.bzl", "sbom")
 
+def image_sbom(image):
+    """Attach a CycloneDX SBOM to an OCI image, without CVE scanning or gating.
+
+    Lighter-weight counterpart to `image_supply_chain` for cases where the SBOM
+    is the only supply-chain artifact needed (e.g. the index target of a
+    multi-arch image, where per-arch CVE testing already happens via `oci_image`
+    and the index just needs a unified SBOM for `mirror_push`'s SBOM attestation).
+
+    Generates `<base>_sbom` (CycloneDX 1.6 JSON) named after `image`'s base label.
+
+    Args:
+      image: Label of the OCI image. Same reachability requirements as
+        `image_supply_chain` — transitive deps must carry `PackageMetadataInfo`.
+    """
+    base = image.rsplit(":", 1)[-1]
+    sbom(name = base + "_sbom_raw", target = image)
+    cyclonedx(name = base + "_sbom", sbom = ":" + base + "_sbom_raw")
+
 def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database"):
     """Attach SBOM + CVE scan + policy test to an OCI image.
 
@@ -40,8 +58,7 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
     """
     base = image.rsplit(":", 1)[-1]
 
-    sbom(name = base + "_sbom_raw", target = image)
-    cyclonedx(name = base + "_sbom", sbom = ":" + base + "_sbom_raw")
+    image_sbom(image = image)
     grype_scan(
         name = base + "_cve_scan",
         database = database,

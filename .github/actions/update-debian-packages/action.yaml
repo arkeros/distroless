@@ -65,7 +65,9 @@ runs:
 
         # If no sha256 values changed in lock files, only snapshot URLs were
         # updated — the actual binaries are identical. Discard and skip.
-        if ! git diff -- '**/*.lock.json' | grep -qE '^[+-].*"sha256"'; then
+        # Avoid `grep -q` here: with `pipefail`, an early grep exit can SIGPIPE
+        # `git diff` and make a matching pipeline look like "no match".
+        if ! git diff -- '**/*.lock.json' | grep -E '^[+-].*"sha256"' >/dev/null; then
           print_update_diff
           echo "Only snapshot URLs changed, no binary package changes. Skipping."
           git checkout -- .

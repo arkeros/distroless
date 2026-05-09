@@ -62,14 +62,11 @@ func (o *updateOptions) Run() error {
 	}
 	slog.Info("Found latest debian-security snapshot", "timestamp", securityTimestamp)
 
-	manifest, err := snapshot.ParseManifest(path)
-	if err != nil {
+	if _, err := snapshot.ParseManifest(path); err != nil {
 		return err
 	}
 
-	manifest.UpdateTimestamps(debianTimestamp, securityTimestamp)
-
-	if err := manifest.WriteFile(path); err != nil {
+	if err := snapshot.UpdateTimestampsInFile(path, debianTimestamp, securityTimestamp); err != nil {
 		return err
 	}
 

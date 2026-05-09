@@ -73,8 +73,7 @@ func TestParseManifest(t *testing.T) {
 	}
 }
 
-func TestUpdateManifestTimestamps(t *testing.T) {
-	// Copy fixture to tmpdir since WriteFile modifies the file in place
+func TestUpdateTimestampsInFile(t *testing.T) {
 	fixture, err := os.ReadFile("testdata/manifest_with_header.yaml")
 	if err != nil {
 		t.Fatalf("failed to read fixture: %v", err)
@@ -85,56 +84,79 @@ func TestUpdateManifestTimestamps(t *testing.T) {
 		t.Fatalf("failed to write test file: %v", err)
 	}
 
-	manifest, err := ParseManifest(path)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	manifest.UpdateTimestamps("20260401T120000Z", "20260401T060000Z")
-
-	if err := manifest.WriteFile(path); err != nil {
-		t.Fatalf("failed to write manifest: %v", err)
+	if err := UpdateTimestampsInFile(path, "20260401T120000Z", "20260401T060000Z"); err != nil {
+		t.Fatalf("UpdateTimestampsInFile: %v", err)
 	}
 
 	result, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read result: %v", err)
 	}
-
 	resultStr := string(result)
 
-	// Debian URLs should use the debian timestamp
 	if !strings.Contains(resultStr, "archive/debian/20260401T120000Z") {
 		t.Error("expected debian URLs to be updated with debian timestamp")
 	}
-
-	// Security URLs should use the security timestamp
 	if !strings.Contains(resultStr, "archive/debian-security/20260401T060000Z") {
 		t.Error("expected security URLs to be updated with security timestamp")
 	}
-
-	// Old timestamps should be gone
 	if strings.Contains(resultStr, "20260320T143128Z") {
 		t.Error("old debian timestamp should not be present")
 	}
 	if strings.Contains(resultStr, "20260320T001422Z") {
 		t.Error("old security timestamp should not be present")
 	}
-
-	// Header comment should be preserved
 	if !strings.Contains(resultStr, "Anytime this file is changed") {
 		t.Error("header comment should be preserved")
 	}
 }
 
-func TestSplitHeaderAllComments(t *testing.T) {
-	content := "# comment one\n# comment two\n"
-	header, body := splitHeader(content)
-	if header != "# comment one\n# comment two\n" {
-		t.Errorf("header = %q, want all-comment content", header)
+func TestUpdateTimestampsInFilePreservesInlineComments(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "manifest.yaml")
+	original := `# header comment
+version: 1
+sources:
+  - channel: unstable main contrib
+    urls:
+      - https://snapshot.debian.org/archive/debian/20260101T000000Z
+      - https://snapshot-cloudflare.debian.org/archive/debian/20260101T000000Z
+archs:
+  - amd64
+packages:
+  - libc6      # important: pinned for ABI compat
+  - bash       # GNU bash, required by util-linux
+  # block comment between items
+  - util-linux
+`
+	if err := os.WriteFile(path, []byte(original), 0o644); err != nil {
+		t.Fatalf("failed to write fixture: %v", err)
 	}
-	if body != "" {
-		t.Errorf("body = %q, want empty", body)
+
+	if err := UpdateTimestampsInFile(path, "20260201T120000Z", "20260201T060000Z"); err != nil {
+		t.Fatalf("UpdateTimestampsInFile: %v", err)
+	}
+
+	got, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read: %v", err)
+	}
+	gotStr := string(got)
+
+	wantSubstrings := []string{
+		"# header comment",
+		"# important: pinned for ABI compat",
+		"# GNU bash, required by util-linux",
+		"# block comment between items",
+		"20260201T120000Z",
+	}
+	for _, s := range wantSubstrings {
+		if !strings.Contains(gotStr, s) {
+			t.Errorf("expected output to contain %q, got:\n%s", s, gotStr)
+		}
+	}
+	if strings.Contains(gotStr, "20260101T000000Z") {
+		t.Errorf("old timestamp not removed:\n%s", gotStr)
 	}
 }
 
@@ -193,22 +215,3 @@ func TestParseManifestValidation(t *testing.T) {
 	}
 }
 
-func TestIsSecurityChannel(t *testing.T) {
-	tests := []struct {
-		channel string
-		want    bool
-	}{
-		{"trixie main contrib", false},
-		{"trixie-security main", true},
-		{"trixie-updates main", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.channel, func(t *testing.T) {
-			got := isSecurityChannel(tt.channel)
-			if got != tt.want {
-				t.Errorf("isSecurityChannel(%q) = %v, want %v", tt.channel, got, tt.want)
-			}
-		})
-	}
-}

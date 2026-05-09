@@ -39,12 +39,16 @@ apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
 # UsrMerge layout (the only one supported on bookworm+). Without it, packages
 # that ship the same path under both /bin and /usr/bin produce duplicate-path
 # errors when assembling OCI layers. https://wiki.debian.org/UsrMerge
+#
+# `package_template` overrides the upstream rules_distroless per-.deb BUILD
+# template with our own (loads `dpkg_statusd` + `package_metadata`).
 apt.install(
     name = "debian",
     distro = "debian-unstable",
     lock = "//oci/distroless:debian.lock.json",
     manifest = "//oci/distroless:debian.yaml",
     mergedusr = True,
+    package_template = "//oci/distroless/common:package.BUILD.tmpl",
 )
 apt.install(
     name = "nginx_stable",
@@ -52,6 +56,7 @@ apt.install(
     lock = "//oci/distroless/nginx:nginx-stable.lock.json",
     manifest = "//oci/distroless/nginx:nginx-stable.yaml",
     mergedusr = True,
+    package_template = "//oci/distroless/common:package.BUILD.tmpl",
 )
 apt.install(
     name = "nginx_mainline",
@@ -59,6 +64,7 @@ apt.install(
     lock = "//oci/distroless/nginx:nginx-mainline.lock.json",
     manifest = "//oci/distroless/nginx:nginx-mainline.yaml",
     mergedusr = True,
+    package_template = "//oci/distroless/common:package.BUILD.tmpl",
 )
 apt.install(
     name = "workstation",
@@ -66,6 +72,7 @@ apt.install(
     lock = "//devtools/workstation:debian.lock.json",
     manifest = "//devtools/workstation:debian.yaml",
     mergedusr = True,
+    package_template = "//oci/distroless/common:package.BUILD.tmpl",
 )
 use_repo(apt, "debian", "nginx_mainline", "nginx_stable", "workstation")
 

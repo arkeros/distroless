@@ -40,8 +40,13 @@ def _resolve_image_ref(ref, context):
         return "{}:{}{}".format(ref, ref.rsplit("/", 1)[-1], suffix)
     return ref + suffix
 
+# Parent dirs companion to per-package dpkg_statusd outputs from
+# //oci/distroless/common:package.BUILD.tmpl. See
+# //oci/distroless/common:dpkg_status_d_dirs for rationale.
+_DPKG_STATUS_D_DIRS = "//oci/distroless/common:dpkg_status_d_dirs"
+
 def _resolve_layers(layers_fn, context):
-    return layers_fn(struct(**context))
+    return [_DPKG_STATUS_D_DIRS] + layers_fn(struct(**context))
 
 def _emit_image(arch, uid, working_dir, **kwargs):
     kwargs["platform"] = ARCHITECTURE_PLATFORMS[arch]

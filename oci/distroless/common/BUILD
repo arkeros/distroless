@@ -6,6 +6,13 @@ load(":variables.bzl", "COMPRESSION", "MTIME", "NOBODY", "NONROOT", "OS_RELEASE"
 
 package(default_visibility = ["//visibility:public"])
 
+# Per-.deb BUILD template consumed by `apt.install(package_template = ...)`.
+# Extends the upstream rules_distroless template with a `package_metadata`
+# target (so SBOM generators see each .deb's purl) and a `dpkg_statusd`
+# target (so syft/grype can catalog Debian packages on the runtime image
+# filesystem, per https://github.com/GoogleContainerTools/distroless/blob/main/PACKAGE_METADATA.md).
+exports_files(["package.BUILD.tmpl"])
+
 COMMON_ARCHITECTURES = ALL_ARCHITECTURES
 
 COMMON_DISTROS = ALL_DISTROS
@@ -31,6 +38,27 @@ tar(
     # ],
     compress = COMPRESSION,
     mtree = ["./tmp gname=root uname=root time=1501783453.0 mode=1777 gid=0 uid=0 type=dir"],
+)
+
+# Companion to per-package `dpkg_statusd` outputs (declared by our
+# //oci/distroless/common:package.BUILD.tmpl). Upstream rules_distroless's
+# dpkg_statusd.sh emits only file entries (./var/lib/dpkg/status.d/<pkg> +
+# .md5sums), no parent directory entries. Vanilla `tar -x` synthesizes
+# parents implicitly, but syft's stereoscope (image layer indexer) treats
+# orphan files as invisible — its dpkg cataloger then reports zero
+# packages and `grype <image>` returns false negatives on every Debian CVE.
+# This layer ships the parent dirs once per image so the per-package
+# entries become discoverable.
+tar(
+    name = "dpkg_status_d_dirs",
+    srcs = [],
+    compress = COMPRESSION,
+    mtree = [
+        "./var type=dir uid=0 gid=0 mode=0755 time=" + MTIME,
+        "./var/lib type=dir uid=0 gid=0 mode=0755 time=" + MTIME,
+        "./var/lib/dpkg type=dir uid=0 gid=0 mode=0755 time=" + MTIME,
+        "./var/lib/dpkg/status.d type=dir uid=0 gid=0 mode=0755 time=" + MTIME,
+    ],
 )
 
 # Create awk symlink for mawk

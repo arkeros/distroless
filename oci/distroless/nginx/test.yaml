@@ -11,6 +11,15 @@ fileExistenceTests:
   - name: 'default server config exists'
     path: '/etc/nginx/conf.d/default.conf'
     shouldExist: true
+  # Without these per-Google PACKAGE_METADATA.md files, syft's dpkg cataloger
+  # returns zero packages and `grype <image>` reports false negatives on every
+  # Debian CVE. nginx is the leaf package; libc6 covers the base closure.
+  - name: 'dpkg status.d entry for nginx'
+    path: '/var/lib/dpkg/status.d/nginx'
+    shouldExist: true
+  - name: 'dpkg status.d entry for libc6'
+    path: '/var/lib/dpkg/status.d/libc6'
+    shouldExist: true
 commandTests:
   - name: 'nginx config is valid'
     command: '/usr/sbin/nginx'

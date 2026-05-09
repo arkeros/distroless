@@ -11,7 +11,7 @@ go_library(
     visibility = ["//bazel/cmd/knife:__subpackages__"],
     deps = [
         "//bazel/pkg/toolversions",
-        "@com_github_google_go_github_v85//github",
+        "@com_github_google_go_github_v86//github",
         "@com_github_spf13_cobra//:cobra",
     ],
 )

@@ -22,12 +22,10 @@ single_version_override(
     version = "0.6.2",
 )
 
-register_toolchains("//bazel/toolchains/grype")
-
-cosign = use_extension("@cosign.bzl//cosign:extensions.bzl", "cosign")
-use_repo(cosign, "cosign_toolchains")
-
-register_toolchains("@cosign_toolchains//:all")
+register_toolchains(
+    "//bazel/toolchains/cosign",
+    "//bazel/toolchains/grype",
+)
 
 git_override(
     module_name = "grype.bzl",

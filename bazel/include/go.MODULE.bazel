@@ -30,6 +30,51 @@ go_deps.module_override(
     ],
     path = "github.com/anchore/syft",
 )
+
+# Upstream modules that ship their own BUILD.bazel files referencing
+# `@rules_go` from a context where it isn't visible under bzlmod, or
+# wiring proto rules that don't resolve under gazelle's go_deps layout.
+# Regenerate them via gazelle (`clean` deletes the stale BUILDs first).
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    path = "github.com/buildkite/agent/v3",
+)
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    path = "github.com/lestrrat-go/jwx/v3",
+)
+
+# certificate-transparency-go has a proto whose `option go_package` points at
+# a `client/multilog/configpb` path that doesn't exist on disk; the .pb.go
+# next to it lives at `client/configpb`. Rely on the committed .pb.go and
+# skip proto generation so importpaths match the on-disk Go layout.
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:proto disable",
+    ],
+    path = "github.com/google/certificate-transparency-go",
+)
+
+# Same as above but the upstream BUILDs also wire `proto_library` /
+# `go_proto_library` with cross-package proto deps that don't resolve.
+# Disabling proto generation lets gazelle keep the go_library outputs
+# while dropping the broken proto plumbing — cosign consumes the
+# generated `.pb.go` sources committed in-tree, not the bazel-built ones.
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:proto disable",
+    ],
+    path = "github.com/in-toto/attestation",
+)
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    directives = [
+        "gazelle:proto disable",
+    ],
+    path = "github.com/sigstore/rekor-tiles/v2",
+)
 use_repo(
     go_deps,
     "com_github_anchore_grype",
@@ -40,6 +85,7 @@ use_repo(
     "com_github_google_go_github_v86",
     "com_github_hashicorp_hcl_v2",
     "com_github_mikefarah_yq_v4",
+    "com_github_sigstore_cosign_v3",
     "com_github_spf13_cobra",
     "com_github_yannh_kubeconform",
     "com_github_zclconf_go_cty",

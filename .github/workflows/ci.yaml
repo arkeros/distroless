@@ -105,7 +105,7 @@ jobs:
       - name: Verify just-published images (positive test)
         run: |
           set -euo pipefail
-          COSIGN=$(bazel cquery @cosign_toolchains//:cosign_bin --output=files)
+          COSIGN=$(bazel cquery //bazel/toolchains/cosign:compiled_cosign_toolchain --output=files)
           while IFS=' ' read -r REF HAS_SBOM; do
             [[ -z "$REF" ]] && continue
             echo "::group::verify ${REF}"
@@ -132,7 +132,7 @@ jobs:
       - name: Verify policy is strict (negative test)
         run: |
           set -euo pipefail
-          COSIGN=$(bazel cquery @cosign_toolchains//:cosign_bin --output=files)
+          COSIGN=$(bazel cquery //bazel/toolchains/cosign:compiled_cosign_toolchain --output=files)
           STDERR=$(mktemp)
           # Negative case: rejects a correctly-signed-but-wrong-identity image.
           if "${COSIGN}" verify-attestation \

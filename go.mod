@@ -14,7 +14,7 @@ require (
 	github.com/zclconf/go-cty v1.18.1
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
 	golang.org/x/mod v0.36.0
-	golang.org/x/text v0.36.0
+	golang.org/x/text v0.37.0
 	k8s.io/api v0.35.4
 	k8s.io/apimachinery v0.35.4
 	knative.dev/serving v0.49.0

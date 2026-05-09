@@ -24,6 +24,24 @@ runs:
       id: update-packages
       shell: bash
       run: |
+        print_update_diff() {
+          echo "::group::Debian package update diff"
+          echo "Changed files:"
+          git diff --name-status || true
+          echo
+          echo "Diff stat:"
+          git diff --stat || true
+          echo
+          echo "Lockfile sha256 changes:"
+          git diff -- '**/*.lock.json' | grep -E '^[+-].*"sha256"' || true
+          echo
+          echo "Lockfile package/version/url changes (first 400 lines):"
+          git diff -- '**/*.lock.json' \
+            | grep -E '^[+-].*"(name|version|sha256|urls?)"' \
+            | sed -n '1,400p' || true
+          echo "::endgroup::"
+        }
+
         for entry in ${{ inputs.manifests }}; do
           manifest="${entry%%:*}"
           if [ "$entry" = "$manifest" ]; then
@@ -31,8 +49,12 @@ runs:
           else
             repo="${entry#*:}"
           fi
+          echo "::group::Update ${manifest} (${repo})"
           knife apt update "$PWD/$manifest"
+          echo "Snapshot URLs in ${manifest}:"
+          grep -nE 'snapshot(-cloudflare)?\.debian\.org/archive/(debian|debian-security)/[0-9]{8}T[0-9]{6}Z' "$manifest" || true
           bazel run "@${repo}//:lock"
+          echo "::endgroup::"
         done
 
         if [ -z "$(git diff --name-only)" ]; then
@@ -44,12 +66,14 @@ runs:
         # If no sha256 values changed in lock files, only snapshot URLs were
         # updated — the actual binaries are identical. Discard and skip.
         if ! git diff -- '**/*.lock.json' | grep -qE '^[+-].*"sha256"'; then
+          print_update_diff
           echo "Only snapshot URLs changed, no binary package changes. Skipping."
           git checkout -- .
           echo "update_needed=false" >> $GITHUB_OUTPUT
           exit 0
         fi
 
+        print_update_diff
         echo "update_needed=true" >> $GITHUB_OUTPUT
     - name: Create Pull Request
       if: steps.update-packages.outputs.update_needed == 'true'

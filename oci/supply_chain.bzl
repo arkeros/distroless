@@ -7,6 +7,7 @@ aspect_hints side-channels.
 """
 
 load("@grype.bzl//grype:defs.bzl", "grype_scan", "grype_test")
+load("@jq.bzl//jq:jq.bzl", "jq")
 load("@supply_chain_tools//sbom:cyclonedx.bzl", "cyclonedx")
 load("@supply_chain_tools//sbom:sbom.bzl", "sbom")
 
@@ -26,7 +27,20 @@ def image_sbom(image):
     """
     base = image.rsplit(":", 1)[-1]
     sbom(name = base + "_sbom_raw", target = image)
-    cyclonedx(name = base + "_sbom", sbom = ":" + base + "_sbom_raw")
+    cyclonedx(name = base + "_sbom_predupe", sbom = ":" + base + "_sbom_raw")
+
+    # supply_chain_tools' cyclonedx tool emits one component per
+    # `PackageMetadataInfo`-bearing target it walks, deduping only by metadata
+    # file path. A package shipped through multiple flatten layers (e.g.
+    # libc6 in both the cc base and the nginx layer) ends up as duplicate
+    # components with identical purls. Collapse by purl so consumers see one
+    # row per distinct package; ordering is sorted-by-purl, deterministic.
+    jq(
+        name = base + "_sbom",
+        srcs = [":" + base + "_sbom_predupe"],
+        out = base + "_sbom.json",
+        filter = ".components |= unique_by(.purl)",
+    )
 
 def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database"):
     """Attach SBOM + CVE scan + policy test to an OCI image.

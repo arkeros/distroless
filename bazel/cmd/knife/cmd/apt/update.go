@@ -1,11 +1,13 @@
 package apt
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -68,6 +70,24 @@ func (o *updateOptions) Run() error {
 
 	if err := snapshot.UpdateTimestampsInFile(path, debianTimestamp, securityTimestamp); err != nil {
 		return err
+	}
+
+	// Re-parse so the URLs we purge match the file we just wrote.
+	manifest, err := snapshot.ParseManifest(path)
+	if err != nil {
+		return err
+	}
+
+	// Purge Fastly cache for the rewritten Packages indexes. snapshot.debian.org
+	// is Fastly-fronted; without busting, geographically-distributed CI runners
+	// can resolve against differently-cached `Packages.xz` blobs and produce
+	// lockfiles that disagree on package versions.
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	if err := snapshot.PurgePackagesIndexes(ctx, manifest, &snapshot.HTTPPurger{}); err != nil {
+		slog.Warn("PURGE had errors (best-effort)", "err", err)
+	} else {
+		slog.Info("Purged Fastly cache for Packages indexes")
 	}
 
 	// Derive the lock target name from the manifest filename (e.g., debian.yaml -> @debian//:lock)

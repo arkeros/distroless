@@ -25,29 +25,38 @@ git_override(
 )
 
 apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
+
+# `mergedusr = True` rewrites /bin, /sbin, /lib* under /usr to match Debian's
+# UsrMerge layout (the only one supported on bookworm+). Without it, packages
+# that ship the same path under both /bin and /usr/bin produce duplicate-path
+# errors when assembling OCI layers. https://wiki.debian.org/UsrMerge
 apt.install(
     name = "debian",
     distro = "debian-unstable",
     lock = "//oci/distroless:debian.lock.json",
     manifest = "//oci/distroless:debian.yaml",
+    mergedusr = True,
 )
 apt.install(
     name = "nginx_stable",
     distro = "debian-unstable",
     lock = "//oci/distroless/nginx:nginx-stable.lock.json",
     manifest = "//oci/distroless/nginx:nginx-stable.yaml",
+    mergedusr = True,
 )
 apt.install(
     name = "nginx_mainline",
     distro = "debian-unstable",
     lock = "//oci/distroless/nginx:nginx-mainline.lock.json",
     manifest = "//oci/distroless/nginx:nginx-mainline.yaml",
+    mergedusr = True,
 )
 apt.install(
     name = "workstation",
     distro = "debian-unstable",
     lock = "//devtools/workstation:debian.lock.json",
     manifest = "//devtools/workstation:debian.yaml",
+    mergedusr = True,
 )
 use_repo(apt, "debian", "nginx_mainline", "nginx_stable", "workstation")
 

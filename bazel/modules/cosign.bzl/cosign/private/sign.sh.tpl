@@ -16,7 +16,6 @@ fi
 
 REPOSITORY=""
 RECURSIVE=""
-REFERRERS_MODE=""
 EXTRA_ARGS=()
 
 while (( $# > 0 )); do
@@ -24,8 +23,6 @@ while (( $# > 0 )); do
     --repository) shift; REPOSITORY="$1"; shift ;;
     --repository=*) REPOSITORY="${1#--repository=}"; shift ;;
     --recursive) RECURSIVE="--recursive"; shift ;;
-    --registry-referrers-mode) shift; REFERRERS_MODE="$1"; shift ;;
-    --registry-referrers-mode=*) REFERRERS_MODE="${1#--registry-referrers-mode=}"; shift ;;
     *) EXTRA_ARGS+=("$1"); shift ;;
   esac
 done
@@ -47,7 +44,6 @@ fi
 exec "${COSIGN}" sign \
   --yes \
   ${RECURSIVE:+"${RECURSIVE}"} \
-  ${REFERRERS_MODE:+--registry-referrers-mode "${REFERRERS_MODE}"} \
   ${KEY_ARGS[@]+"${KEY_ARGS[@]}"} \
   ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   "${REPOSITORY}@${DIGEST}"

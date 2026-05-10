@@ -74,7 +74,7 @@ cosign verify-attestation \
     --type=cyclonedx \
     distroless.io/<image>:<tag> \
   | jq -r '.payload | @base64d | fromjson | .predicate' \
-  | grype sbom:-
+  | grype
 ```
 
 Quick package summary:

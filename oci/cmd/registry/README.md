@@ -71,6 +71,7 @@ registry --upstream=ghcr.io --repository-prefix=arkeros/senku --port=8080
 - `GET /v2/<name>/manifests/<reference>` — pull manifests
 - `GET /v2/<name>/blobs/<digest>` — pull blobs (including redirect passthrough)
 - `GET /v2/<name>/tags/list` — list tags
+- `GET /v2/<name>/referrers/<digest>` — list OCI 1.1 referrers (signatures, SBOMs, attestations)
 
 Push is not supported; images are pushed directly to GHCR via CI.
 

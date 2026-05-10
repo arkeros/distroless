@@ -41,6 +41,8 @@ cosign verify-attestation \
 
 ### CycloneDX SBOM attestation
 
+Verify only:
+
 ```bash
 cosign verify-attestation \
     --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
@@ -49,7 +51,45 @@ cosign verify-attestation \
     ghcr.io/arkeros/senku/<image>:<tag>
 ```
 
-`cosign verify-attestation` prints the DSSE envelope on success; pipe through `jq -r '.payload | @base64d | fromjson | .predicate'` to extract the SBOM itself.
+`cosign verify-attestation` prints the DSSE envelope on success. The actual CycloneDX BOM is base64-encoded inside `.payload` as an in-toto Statement; `.predicate` is what CycloneDX consumers want.
+
+Verify and extract the BOM as raw CycloneDX JSON:
+
+```bash
+cosign verify-attestation \
+    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
+    --type=cyclonedx \
+    ghcr.io/arkeros/senku/<image>:<tag> \
+  | jq -r '.payload | @base64d | fromjson | .predicate' \
+  > sbom.cdx.json
+```
+
+Verify and pipe straight into a vulnerability scanner (no temp file):
+
+```bash
+cosign verify-attestation \
+    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
+    --type=cyclonedx \
+    ghcr.io/arkeros/senku/<image>:<tag> \
+  | jq -r '.payload | @base64d | fromjson | .predicate' \
+  | grype sbom:-
+```
+
+Quick package summary:
+
+```bash
+cosign verify-attestation \
+    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
+    --type=cyclonedx \
+    ghcr.io/arkeros/senku/<image>:<tag> \
+  | jq -r '.payload | @base64d | fromjson | .predicate.components[]
+           | "\(.name) \(.version)"'
+```
+
+Note that `cosign tree` and `oras discover` will *not* tell you which referrer is the SBOM — under cosign 3.x's bundle format every referrer is labelled `https://sigstore.dev/cosign/sign/v1` at the discovery layer, with the actual `predicateType` (`cyclonedx.org/bom`, `slsa.dev/provenance/v0.2`, etc.) one indirection deeper inside the DSSE envelope. `cosign verify-attestation --type=…` is the only built-in tool that reads that deep, which is why the recipes above all start there rather than picking a leaf digest by hand.
 
 ## Inspect referrers directly
 

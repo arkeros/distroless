@@ -9,9 +9,9 @@ OS_RELEASE = dict(
     ID = "debian",
     VERSION_ID = "{VERSION}",
     VERSION = "Debian GNU/Linux {VERSION} ({CODENAME})",
-    HOME_URL = "https://github.com/arkeros/astrograde",
-    SUPPORT_URL = "https://github.com/arkeros/astrograde/blob/main/distroless/README.md",
-    BUG_REPORT_URL = "https://github.com/arkeros/astrograde/issues/new",
+    HOME_URL = "https://github.com/arkeros/senku",
+    SUPPORT_URL = "https://github.com/arkeros/senku/blob/main/oci/distroless/README.md",
+    BUG_REPORT_URL = "https://github.com/arkeros/senku/issues/new",
 )
 
 NOBODY = 65534

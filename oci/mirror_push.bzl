@@ -41,11 +41,6 @@ def mirror_push(
     independently re-runnable (cosign is idempotent on `<repo>@<digest>`)
     so transient sign/attest failures retry without re-pushing.
 
-    Signatures and attestations are written via the OCI 1.1 referrers API
-    (`subject` field on the manifest) rather than the legacy `.sig`/`.att`
-    sibling-tag scheme. Consumers must discover via the referrers endpoint
-    or any tool that follows OCI 1.1 (cosign 2.x+, oras, crane).
-
     Args:
       name: Base name. Sub-targets are derived as `<name>_<step>`.
       image: Label of the image (rules_img `image_index` / `image_manifest`)
@@ -118,7 +113,6 @@ def mirror_push(
         name = name + "_sign",
         image = image,
         repository = full_url,
-        referrers_mode = "oci-1-1",
         tags = tags,
         visibility = visibility,
     )
@@ -129,7 +123,6 @@ def mirror_push(
         repository = full_url,
         type = "slsaprovenance",
         predicate = ":" + name + "_predicate",
-        referrers_mode = "oci-1-1",
         tags = tags,
         visibility = visibility,
     )
@@ -141,7 +134,6 @@ def mirror_push(
             repository = full_url,
             type = "cyclonedx",
             predicate = sbom,
-            referrers_mode = "oci-1-1",
             tags = tags,
             visibility = visibility,
         )

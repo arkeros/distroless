@@ -140,6 +140,12 @@ func cacheControl(path string) string {
 			return "public, max-age=31536000, immutable"
 		}
 		return mutableShort
+	case "referrers":
+		// OCI 1.1 referrers list (subject → list of attached
+		// signatures/SBOMs/attestations). Always keyed by digest, but
+		// the list itself is mutable as new referrers can be pushed.
+		// Same SWR policy as other mutable list-shaped responses.
+		return mutableShort
 	case "blobs":
 		// 307 to a presigned ghcr URL. The `se=` expiry is rounded
 		// down to the next 5-min wall-clock boundary on a 10-min
@@ -161,12 +167,12 @@ func RewritePath(path, repositoryPrefix string) string {
 }
 
 // findOp scans path segments from the tail to find the first OCI operation
-// segment ("manifests", "blobs", or "tags") and returns its index.
-// Returns -1 if no operation segment is found.
+// segment ("manifests", "blobs", "tags", or "referrers") and returns its
+// index. Returns -1 if no operation segment is found.
 func findOp(segments []string) int {
 	for i := len(segments) - 1; i >= 0; i-- {
 		switch segments[i] {
-		case "manifests", "blobs", "tags":
+		case "manifests", "blobs", "tags", "referrers":
 			return i
 		}
 	}

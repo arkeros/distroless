@@ -78,11 +78,14 @@ func TestExtractRepo(t *testing.T) {
 		{"/v2/redis/manifests/latest", "redis"},
 		{"/v2/redis/blobs/sha256:abc123", "redis"},
 		{"/v2/redis/tags/list", "redis"},
+		{"/v2/redis/referrers/sha256:abc123", "redis"},
 		{"/v2/go/debian/manifests/v1.0.0", "go/debian"},
+		{"/v2/go/debian/referrers/sha256:def456", "go/debian"},
 		// Repos with op-like names must not be misclassified.
 		{"/v2/org/manifests/manifests/latest", "org/manifests"},
 		{"/v2/org/blobs/blobs/sha256:abc", "org/blobs"},
 		{"/v2/org/tags/tags/list", "org/tags"},
+		{"/v2/org/referrers/referrers/sha256:abc", "org/referrers"},
 	}
 
 	for _, tt := range tests {
@@ -104,6 +107,7 @@ func TestIsBlob(t *testing.T) {
 		{"/v2/org/blobs/blobs/sha256:abc", true},
 		{"/v2/redis/manifests/latest", false},
 		{"/v2/redis/tags/list", false},
+		{"/v2/redis/referrers/sha256:abc", false},
 	}
 
 	for _, tt := range tests {
@@ -518,6 +522,79 @@ func TestCacheControlBlobRedirect(t *testing.T) {
 
 	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=120, stale-while-revalidate=120, stale-if-error=120"; got != want {
 		t.Errorf("Cache-Control = %q, want %q", got, want)
+	}
+}
+
+func TestCacheControlReferrers(t *testing.T) {
+	// `/v2/<repo>/referrers/<digest>` is mutable list-shaped (new
+	// signatures/SBOMs/attestations can be attached at any time), so it
+	// gets the same SWR policy as catalog and tags/list.
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v2/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.Header().Set("Content-Type", "application/vnd.oci.image.index.v1+json")
+		fmt.Fprint(w, `{"schemaVersion":2,"mediaType":"application/vnd.oci.image.index.v1+json","manifests":[]}`)
+	}))
+	defer upstream.Close()
+
+	p := proxy.New(strings.TrimPrefix(upstream.URL, "http://"), "arkeros/senku", proxy.Insecure())
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/v2/redis/referrers/sha256:abc123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if got, want := resp.Header.Get("Cache-Control"), "public, max-age=900, stale-while-revalidate=3600, stale-if-error=86400"; got != want {
+		t.Errorf("Cache-Control = %q, want %q", got, want)
+	}
+}
+
+func TestProxyReferrersForwardsRewrittenPath(t *testing.T) {
+	// Verifies that a referrers request rewrites the path with the repo
+	// prefix and forwards the upstream response intact. Fails today
+	// without `referrers` in the op set: `ExtractRepo` would otherwise
+	// return the full sub-path and the auth scope wouldn't match.
+	const indexBody = `{"schemaVersion":2,"mediaType":"application/vnd.oci.image.index.v1+json","manifests":[{"mediaType":"application/vnd.oci.image.manifest.v1+json","digest":"sha256:111","size":7023,"artifactType":"application/spdx+json"}]}`
+
+	var receivedPath string
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v2/" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		receivedPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/vnd.oci.image.index.v1+json")
+		fmt.Fprint(w, indexBody)
+	}))
+	defer upstream.Close()
+
+	p := proxy.New(strings.TrimPrefix(upstream.URL, "http://"), "arkeros/senku", proxy.Insecure())
+	srv := httptest.NewServer(p)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/v2/redis/referrers/sha256:abc123")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	if want := "/v2/arkeros/senku/redis/referrers/sha256:abc123"; receivedPath != want {
+		t.Errorf("upstream received path = %q, want %q", receivedPath, want)
+	}
+	if ct := resp.Header.Get("Content-Type"); ct != "application/vnd.oci.image.index.v1+json" {
+		t.Errorf("Content-Type = %q, want index media type", ct)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != indexBody {
+		t.Errorf("body = %q, want %q", string(body), indexBody)
 	}
 }
 

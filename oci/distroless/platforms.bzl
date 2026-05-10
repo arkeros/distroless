@@ -3,10 +3,14 @@
 VERSIONS = [
     # (distro_key, codename, version_id) — distro_key matches the apt.install
     # name in MODULE.bazel; codename + version_id flow into /etc/os-release.
-    # "13/sid" matches the PRETTY_NAME convention real Debian sid systems use
-    # ("Debian GNU/Linux trixie/sid") — sid is the in-flight feed between
-    # released stable versions, so it has no clean numeric version_id.
-    ("debian", "sid", "13/sid"),
+    # `version_id` must be parseable per os-release(5) — no slashes, no spaces.
+    # We track Debian unstable (sid), so version_id is "unstable": that's the
+    # value grype's debian distro normaliser maps to the sid CVE feed
+    # (debian:sid is *not* recognised, debian:unstable is). An earlier "13/sid"
+    # was both spec-non-compliant (slash) and silently broke vuln scanning by
+    # parsing as neither debian:13 nor debian:unstable, leaving every Debian
+    # matcher dormant and producing misleading 0-vuln output.
+    ("debian", "sid", "unstable"),
 ]
 
 VARIANTS = {

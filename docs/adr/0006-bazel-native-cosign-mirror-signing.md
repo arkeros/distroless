@@ -162,23 +162,23 @@ Three places per image, all keyed on the same registry digest (`<repo>@sha256:<h
 
 ## Addendum (2026-05-10): OCI 1.1 referrers
 
-`mirror_push` now writes signatures and attestations via the **OCI 1.1 referrers API** (the `subject` field on a separate manifest) rather than the legacy cosign sibling-tag scheme (`<repo>:sha256-<hex>.sig` / `.att`). The `referrers_mode = "oci-1-1"` attribute, plumbed through `cosign_sign` and `cosign_attest`, is baked into every call inside the macro.
+The "Where does a published signature live?" section above describes a *pre-3.x cosign* world where signatures land as `<repo>:sha256-<hex>.sig` and attestations as `<repo>:sha256-<hex>.att` sibling tags. **That is not actually how mirror_push has ever published.** Cosign 3.x defaults `--new-bundle-format=true`, and the bundle code path (`signDigestBundle` → `WriteBundle` for sign; equivalent `WriteBundle` for attest) writes via the **OCI 1.1 referrers API** (subject-bearing manifest, discoverable via `GET /v2/<repo>/referrers/<digest>`) regardless of `--registry-referrers-mode`. So mirror_push has been writing referrer manifests since the cosign-bzl rollout — there have never been any `.sig`/`.att` sibling tags on `ghcr.io/arkeros/senku/*`. (Empirically verified by direct probe: every `<digest>.sig` and `<digest>.att` lookup returns `MANIFEST_UNKNOWN`.)
 
-**Why.** The sibling-tag scheme is a cosign convention, not a registry-spec one. Three frictions made the switch worth doing now:
+The `referrers_mode = "oci-1-1"` attribute on `cosign_sign` / `cosign_attest`, baked into `mirror_push`, is *defensive depth* — not a flip:
 
-- **Interop.** Tools that follow the OCI 1.1 spec (`oras discover`, `crane`, OCI distribution-spec registries) find referrer artifacts uniformly. Sibling tags require knowing cosign's tag conventions to discover.
-- **Tag-immutability policies.** The `<repo>:<tag>.sig` scheme conflicts with registry policies that lock tags as immutable — re-signing a digest needs to overwrite a tag.
-- **Mirror replication.** Registry mirrors that filter or transform tags don't necessarily replicate the `.sig` siblings; referrers (which are content-addressed) replicate cleanly.
+- It only affects the legacy non-bundle code path (when something passes `--new-bundle-format=false` at runtime), forcing OCI 1.1 referrers there too. Most callers don't need to set it.
+- Setting it requires `COSIGN_EXPERIMENTAL=1` (cosign gates the flag itself behind that env var, even though the underlying semantics aren't experimental anymore in cosign 3.x). The wrapper auto-exports it so callers don't have to.
+- Value if the cosign default ever flips back: the explicit attr keeps mirror_push on referrers regardless.
 
-**What changes operationally.** The "Where does a published signature live?" section above describes the pre-flip layout (`<repo>:sha256-<hex>.sig`/`.att`). It is now superseded for new signatures: replacements are referrer manifests, discovered via `GET /v2/<repo>/referrers/<digest>`. Use `oras discover` or `crane manifest` to enumerate. The Rekor/transparency-log story is unchanged.
+**What did change in this round (the work behind this addendum):**
 
-**What does not change.** The trust root (keyless OIDC), the verify policy regex (`CERTIFICATE_IDENTITY_REGEXP` in `oci/cosign_policy.bzl`), the SLSA L2 claim, and the consumer-facing `cosign verify-attestation` command are all identical. Cosign 2.x+ discovers referrers by default — consumers don't need a new flag.
+- `oci/pkg/proxy` (the `distroless.io` registry proxy) gained handling for `GET /v2/<name>/referrers/<digest>`. Before, the path passed through to GHCR but the auth-scope was malformed because `findOp` didn't recognize `referrers`, so verifying via `distroless.io` didn't work. It does now.
+- Verification guidance was published at `oci/distroless/README.md` with the cosign / oras / crane discovery commands.
+- A `referrers_mode` attribute landed in the cosign rules and was wired into `mirror_push` as defensive depth (with the env-var auto-set above).
 
-**Migration considerations.**
+**What does not change.** The trust root (keyless OIDC), the verify policy regex (`CERTIFICATE_IDENTITY_REGEXP` in `oci/cosign_policy.bzl`), the SLSA L2 claim, and the consumer-facing `cosign verify-attestation` command are all identical. Cosign 2.x+ already discovers referrers by default — consumers don't need a new flag.
 
-- **Stale `.sig`/`.att` tags.** Pre-flip signatures remain on GHCR as orphan tags. Cosign verify won't find them anymore (it follows the referrers API), so they're dead-weight. Manual `gh api` / `crane delete` cleanup is possible but not load-bearing — they're harmless beyond storage cost.
-- **`distroless.io` proxy.** The pull-only proxy at `oci/cmd/registry` did not support `/v2/<name>/referrers/<digest>` before this flip; it now does (`findOp` was extended in tandem). Consumers verifying via the vanity domain need the proxy redeploy that includes that fix.
-- **External documentation.** Public verify guidance lives at `oci/distroless/README.md` — updated alongside this flip with the OCI 1.1 referrers details.
+**No legacy-tag cleanup is required** — see the empirical note above. The `sha256-<hex>` tags visible via `crane ls` are spec-mandated OCI 1.1 referrers-fallback indices (an `application/vnd.oci.image.index.v1+json` listing referrer manifests), not legacy cosign siblings; deleting them would break referrers discovery for clients that fall back to the tag scheme.
 
 ## Next steps
 

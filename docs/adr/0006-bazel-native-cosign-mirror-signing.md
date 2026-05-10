@@ -164,17 +164,13 @@ Three places per image, all keyed on the same registry digest (`<repo>@sha256:<h
 
 The "Where does a published signature live?" section above describes a *pre-3.x cosign* world where signatures land as `<repo>:sha256-<hex>.sig` and attestations as `<repo>:sha256-<hex>.att` sibling tags. **That is not actually how mirror_push has ever published.** Cosign 3.x defaults `--new-bundle-format=true`, and the bundle code path (`signDigestBundle` → `WriteBundle` for sign; equivalent `WriteBundle` for attest) writes via the **OCI 1.1 referrers API** (subject-bearing manifest, discoverable via `GET /v2/<repo>/referrers/<digest>`) regardless of `--registry-referrers-mode`. So mirror_push has been writing referrer manifests since the cosign-bzl rollout — there have never been any `.sig`/`.att` sibling tags on `ghcr.io/arkeros/senku/*`. (Empirically verified by direct probe: every `<digest>.sig` and `<digest>.att` lookup returns `MANIFEST_UNKNOWN`.)
 
-The `referrers_mode = "oci-1-1"` attribute on `cosign_sign` / `cosign_attest`, baked into `mirror_push`, is *defensive depth* — not a flip:
-
-- It only affects the legacy non-bundle code path (when something passes `--new-bundle-format=false` at runtime), forcing OCI 1.1 referrers there too. Most callers don't need to set it.
-- Setting it requires `COSIGN_EXPERIMENTAL=1` (cosign gates the flag itself behind that env var, even though the underlying semantics aren't experimental anymore in cosign 3.x). The wrapper auto-exports it so callers don't have to.
-- Value if the cosign default ever flips back: the explicit attr keeps mirror_push on referrers regardless.
+A `referrers_mode = "oci-1-1"` attribute exists on `cosign_sign` / `cosign_attest` (with the wrapper auto-exporting `COSIGN_EXPERIMENTAL=1` when set, since cosign gates the flag itself behind that env var). It is **not** wired into `mirror_push` because doing so would have been a no-op for the bundle path that already writes referrers, while adding the env-var dance to every signing run for no behavior change. The attribute is reserved for callers that explicitly opt out of bundle format (`--new-bundle-format=false`) or as defensive depth if the cosign default ever flips back.
 
 **What did change in this round (the work behind this addendum):**
 
 - `oci/pkg/proxy` (the `distroless.io` registry proxy) gained handling for `GET /v2/<name>/referrers/<digest>`. Before, the path passed through to GHCR but the auth-scope was malformed because `findOp` didn't recognize `referrers`, so verifying via `distroless.io` didn't work. It does now.
 - Verification guidance was published at `oci/distroless/README.md` with the cosign / oras / crane discovery commands.
-- A `referrers_mode` attribute landed in the cosign rules and was wired into `mirror_push` as defensive depth (with the env-var auto-set above).
+- A `referrers_mode` attribute landed in the cosign rules with `COSIGN_EXPERIMENTAL=1` auto-export, available for explicit opt-in but not used by `mirror_push` itself.
 
 **What does not change.** The trust root (keyless OIDC), the verify policy regex (`CERTIFICATE_IDENTITY_REGEXP` in `oci/cosign_policy.bzl`), the SLSA L2 claim, and the consumer-facing `cosign verify-attestation` command are all identical. Cosign 2.x+ already discovers referrers by default — consumers don't need a new flag.
 

@@ -1,6 +1,6 @@
 # Distroless mirror images
 
-Public mirror of distroless container images at `ghcr.io/arkeros/senku/*` (also reachable via the `distroless.io` vanity domain — see [`//oci/cmd/registry`](../cmd/registry/README.md)).
+Public mirror of distroless container images. Pull from `distroless.io/<image>:<tag>` — the canonical bytes live at `ghcr.io/arkeros/senku/<image>:<tag>` and the `distroless.io` vanity domain is a proxy in front (see [`//oci/cmd/registry`](../cmd/registry/README.md)). Both surfaces verify against the same identity policy; the examples below use `distroless.io` because that's the consumer-facing entry point.
 
 Every image is published with three signed artifacts, all attached via the **OCI 1.1 referrers API** (the `subject` field of a separate manifest, not legacy `.sig` / `.att` sibling tags):
 
@@ -26,7 +26,7 @@ Cosign 3.x discovers referrers by default and accepts no flag on `verify` to alt
 cosign verify \
     --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
-    ghcr.io/arkeros/senku/<image>:<tag>
+    distroless.io/<image>:<tag>
 ```
 
 ### SLSA provenance attestation
@@ -36,7 +36,7 @@ cosign verify-attestation \
     --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=slsaprovenance \
-    ghcr.io/arkeros/senku/<image>:<tag>
+    distroless.io/<image>:<tag>
 ```
 
 ### CycloneDX SBOM attestation
@@ -48,7 +48,7 @@ cosign verify-attestation \
     --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=cyclonedx \
-    ghcr.io/arkeros/senku/<image>:<tag>
+    distroless.io/<image>:<tag>
 ```
 
 `cosign verify-attestation` prints the DSSE envelope on success. The actual CycloneDX BOM is base64-encoded inside `.payload` as an in-toto Statement; `.predicate` is what CycloneDX consumers want.
@@ -60,7 +60,7 @@ cosign verify-attestation \
     --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=cyclonedx \
-    ghcr.io/arkeros/senku/<image>:<tag> \
+    distroless.io/<image>:<tag> \
   | jq -r '.payload | @base64d | fromjson | .predicate' \
   > sbom.cdx.json
 ```
@@ -72,7 +72,7 @@ cosign verify-attestation \
     --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=cyclonedx \
-    ghcr.io/arkeros/senku/<image>:<tag> \
+    distroless.io/<image>:<tag> \
   | jq -r '.payload | @base64d | fromjson | .predicate' \
   | grype sbom:-
 ```
@@ -84,7 +84,7 @@ cosign verify-attestation \
     --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=cyclonedx \
-    ghcr.io/arkeros/senku/<image>:<tag> \
+    distroless.io/<image>:<tag> \
   | jq -r '.payload | @base64d | fromjson | .predicate.components[]
            | "\(.name) \(.version)"'
 ```
@@ -97,19 +97,20 @@ Useful for debugging — what's actually attached to a digest:
 
 ```bash
 # resolve digest first
-DIGEST=$(crane digest ghcr.io/arkeros/senku/<image>:<tag>)
+DIGEST=$(crane digest distroless.io/<image>:<tag>)
 
 # the image itself — no `subject` field, this is the signed thing
-crane manifest "ghcr.io/arkeros/senku/<image>@${DIGEST}" | jq
+crane manifest "distroless.io/<image>@${DIGEST}" | jq
 
 # enumerate referrers via the OCI 1.1 tag-fallback scheme
-# (ghcr.io doesn't serve /v2/<repo>/referrers/<digest> directly;
-# the spec mandates a `sha256-<hex>` tag pointing at an index of
-# referrer manifests, which is what cosign and oras both consume)
+# (neither ghcr.io nor the distroless.io proxy in front of it serve
+# /v2/<repo>/referrers/<digest> directly — both 303 to a 404. The
+# spec mandates a `sha256-<hex>` tag pointing at an index of referrer
+# manifests as the fallback, which is what cosign and oras consume.)
 HEX="${DIGEST#sha256:}"
-crane manifest "ghcr.io/arkeros/senku/<image>:sha256-${HEX}" | jq
+crane manifest "distroless.io/<image>:sha256-${HEX}" | jq
 bazel run @land_oras_oras//cmd/oras -- discover --format tree \
-    "ghcr.io/arkeros/senku/<image>@${DIGEST}"
+    "distroless.io/<image>@${DIGEST}"
 ```
 
 `oras discover` walks the referrers chain and prints a tree of the three attached Sigstore bundles. Their index `artifactType` is `application/vnd.oci.empty.v1+json` (the empty-config marker); the cosign-meaningful type lives inside each bundle's DSSE envelope and is what `cosign verify-attestation --type=...` keys off.

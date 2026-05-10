@@ -56,10 +56,17 @@ _attrs = {
         default = "",
         doc = (
             "Pass `--registry-referrers-mode=<value>` to cosign. " +
-            "`oci-1-1` uses the OCI 1.1 referrers API (subject field) instead " +
-            "of sibling `.att` tags. Requires registry support (ghcr.io, ECR, " +
-            "GAR, Harbor >=2.8, distribution >=2.8). Empty (default) leaves " +
-            "cosign's default in place (legacy)."
+            "`oci-1-1` forces the OCI 1.1 referrers API (subject field) on " +
+            "the legacy non-bundle code path. Requires registry support " +
+            "(ghcr.io, ECR, GAR, Harbor >=2.8, distribution >=2.8); also " +
+            "requires `COSIGN_EXPERIMENTAL=1`, which the wrapper auto-sets " +
+            "when this attr is `oci-1-1` so callers don't need to. " +
+            "**Most callers don't need this attr.** Cosign 3.x defaults " +
+            "`--new-bundle-format=true`, and the bundle path writes via " +
+            "OCI 1.1 referrers unconditionally — `--registry-referrers-mode` " +
+            "only governs the legacy non-bundle path. Set this attr only " +
+            "when `--new-bundle-format=false` is being passed at runtime, " +
+            "or as defensive depth against a future cosign default flip."
         ),
     ),
     "_attest_sh_tpl": attr.label(

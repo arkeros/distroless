@@ -51,6 +51,16 @@ if [[ -n "${COSIGN_KEY:-}" ]]; then
   KEY_ARGS+=("--key" "${COSIGN_KEY}")
 fi
 
+# `--registry-referrers-mode=oci-1-1` is gated behind COSIGN_EXPERIMENTAL=1
+# in the cosign CLI itself (see options/registry.go). Auto-set so opting
+# into the attribute is sufficient — caller doesn't need to know the env
+# dance. Note this only affects the legacy non-bundle code path; the
+# default `--new-bundle-format=true` already writes via OCI 1.1 referrers
+# regardless of this flag, so most callers don't need to set the attr.
+if [[ "${REFERRERS_MODE}" == "oci-1-1" ]]; then
+  export COSIGN_EXPERIMENTAL=1
+fi
+
 exec "${COSIGN}" attest \
   --yes \
   --type "${TYPE}" \

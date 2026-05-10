@@ -16,6 +16,7 @@ fi
 REPOSITORY=""
 PREDICATE=""
 TYPE=""
+REFERRERS_MODE=""
 EXTRA_ARGS=()
 
 while (( $# > 0 )); do
@@ -26,6 +27,8 @@ while (( $# > 0 )); do
     --predicate=*) PREDICATE="${1#--predicate=}"; shift ;;
     --type) shift; TYPE="$1"; shift ;;
     --type=*) TYPE="${1#--type=}"; shift ;;
+    --registry-referrers-mode) shift; REFERRERS_MODE="$1"; shift ;;
+    --registry-referrers-mode=*) REFERRERS_MODE="${1#--registry-referrers-mode=}"; shift ;;
     *) EXTRA_ARGS+=("$1"); shift ;;
   esac
 done
@@ -52,6 +55,7 @@ exec "${COSIGN}" attest \
   --yes \
   --type "${TYPE}" \
   --predicate "${PREDICATE}" \
+  ${REFERRERS_MODE:+--registry-referrers-mode "${REFERRERS_MODE}"} \
   ${KEY_ARGS[@]+"${KEY_ARGS[@]}"} \
   ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   "${REPOSITORY}@${DIGEST}"

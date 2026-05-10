@@ -43,6 +43,17 @@ _attrs = {
         default = True,
         doc = "Pass `--recursive` to `cosign sign` so multi-arch indexes have each per-platform manifest signed too.",
     ),
+    "referrers_mode": attr.string(
+        values = ["", "legacy", "oci-1-1"],
+        default = "",
+        doc = (
+            "Pass `--registry-referrers-mode=<value>` to cosign. " +
+            "`oci-1-1` uses the OCI 1.1 referrers API (subject field) instead " +
+            "of sibling `.sig` tags. Requires registry support (ghcr.io, ECR, " +
+            "GAR, Harbor >=2.8, distribution >=2.8). Empty (default) leaves " +
+            "cosign's default in place (legacy)."
+        ),
+    ),
     "_sign_sh_tpl": attr.label(
         default = "//cosign/private:sign.sh.tpl",
         allow_single_file = True,
@@ -71,6 +82,8 @@ def _cosign_sign_impl(ctx):
         fixed_args.extend(["--repository", ctx.attr.repository])
     if ctx.attr.recursive:
         fixed_args.append("--recursive")
+    if ctx.attr.referrers_mode:
+        fixed_args.extend(["--registry-referrers-mode", ctx.attr.referrers_mode])
 
     executable = ctx.actions.declare_file("cosign_sign_{}.sh".format(ctx.label.name))
     ctx.actions.expand_template(

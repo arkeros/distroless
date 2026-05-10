@@ -4,11 +4,13 @@ Public mirror of distroless container images at `ghcr.io/arkeros/senku/*` (also 
 
 Every image is published with three signed artifacts, all attached via the **OCI 1.1 referrers API** (the `subject` field of a separate manifest, not legacy `.sig` / `.att` sibling tags):
 
-| Artifact | Type | Predicate type |
+| Artifact | Inner predicate type | Verify with |
 |---|---|---|
-| Signature | `application/vnd.dev.cosign.simplesigning.v1+json` | — |
-| SLSA provenance | DSSE-wrapped in-toto attestation | `slsaprovenance` (SLSA v1.0) |
-| CycloneDX SBOM | DSSE-wrapped in-toto attestation | `cyclonedx` |
+| Signature | — (signature + cert only) | `cosign verify` |
+| SLSA provenance | `https://slsa.dev/provenance/v0.2` | `cosign verify-attestation --type=slsaprovenance` |
+| CycloneDX SBOM | `https://cyclonedx.org/bom` | `cosign verify-attestation --type=cyclonedx` |
+
+All three are stored on the registry as `application/vnd.dev.sigstore.bundle.v0.3+json` Sigstore bundles (cosign 3.x's default `--new-bundle-format`), so they're uniform on the wire — `oras discover` will show every entry's `artifactType` as `application/vnd.oci.empty.v1+json` (the index-entry marker) regardless of which artifact it is. The discrimination happens inside the bundle: cosign decodes it and inspects the inner DSSE envelope's predicate type.
 
 Each is bound to the image **digest**, not a tag. Consumers verify against the digest cosign resolves from the tag they pull.
 
@@ -16,7 +18,7 @@ Each is bound to the image **digest**, not a tag. Consumers verify against the d
 
 The verification policy (OIDC issuer + workflow subject) is the single source of truth in [`//oci:cosign_policy.bzl`](../cosign_policy.bzl). External consumers pin both `--certificate-oidc-issuer` and `--certificate-identity-regexp` so a signature minted from a different repo or workflow file is rejected.
 
-Cosign 2.x+ discovers OCI 1.1 referrers by default — no extra flag needed. If you're behind a registry proxy that doesn't yet support `/referrers/`, pass `--registry-referrers-mode=oci-1-1` to force the spec'd discovery path. (The `distroless.io` proxy supports it.)
+Cosign 3.x discovers referrers by default and accepts no flag on `verify` to alter that — nothing to configure on the consumer side.
 
 ### Signature
 
@@ -51,25 +53,26 @@ cosign verify-attestation \
 
 ## Inspect referrers directly
 
-Useful for debugging — what's actually attached to a digest, by media type:
+Useful for debugging — what's actually attached to a digest:
 
 ```bash
 # resolve digest first
 DIGEST=$(crane digest ghcr.io/arkeros/senku/<image>:<tag>)
 
-# enumerate referrers
-crane manifest "ghcr.io/arkeros/senku/<image>@${DIGEST}" | jq    # the image itself, has no `subject`
-oras discover --format tree "ghcr.io/arkeros/senku/<image>@${DIGEST}"
+# the image itself — no `subject` field, this is the signed thing
+crane manifest "ghcr.io/arkeros/senku/<image>@${DIGEST}" | jq
+
+# enumerate referrers via the OCI 1.1 tag-fallback scheme
+# (ghcr.io doesn't serve /v2/<repo>/referrers/<digest> directly;
+# the spec mandates a `sha256-<hex>` tag pointing at an index of
+# referrer manifests, which is what cosign and oras both consume)
+HEX="${DIGEST#sha256:}"
+crane manifest "ghcr.io/arkeros/senku/<image>:sha256-${HEX}" | jq
+bazel run @land_oras_oras//cmd/oras -- discover --format tree \
+    "ghcr.io/arkeros/senku/<image>@${DIGEST}"
 ```
 
-`oras discover` walks the referrers chain and prints a tree of attached signatures + attestations grouped by `artifactType`.
-
-You can also hit the registry endpoint directly:
-
-```bash
-curl -sSL -H "Accept: application/vnd.oci.image.index.v1+json" \
-    "https://ghcr.io/v2/arkeros/senku/<image>/referrers/${DIGEST}" | jq
-```
+`oras discover` walks the referrers chain and prints a tree of the three attached Sigstore bundles. Their index `artifactType` is `application/vnd.oci.empty.v1+json` (the empty-config marker); the cosign-meaningful type lives inside each bundle's DSSE envelope and is what `cosign verify-attestation --type=...` keys off.
 
 ## Why OCI 1.1 referrers
 

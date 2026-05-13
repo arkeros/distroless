@@ -35,11 +35,22 @@ def image_sbom(image):
     # libc6 in both the cc base and the nginx layer) ends up as duplicate
     # components with identical purls. Collapse by purl so consumers see one
     # row per distinct package; ordering is sorted-by-purl, deterministic.
+    #
+    # The same tool synthesizes `component.name` as `<purl-namespace>/<purl-name>`
+    # ("debian/nginx" rather than "nginx"), which prevents grype's dpkg matcher
+    # from doing an exact-direct-match against Debian's Security Tracker:
+    # syft reads the prefixed name into `pkg.Name`, the tracker has no
+    # "debian/nginx" entry, and the `upstream=<source>` fallback only kicks in
+    # when source != name (grype's handleDefaultUpstream filters
+    # name-equals-upstream qualifiers — package.go:492). Strip the prefix so
+    # source==name packages (nginx, bash, busybox, sqlite3, ...) get the same
+    # tracker coverage that `grype <image>` already gives consumers via
+    # /var/lib/dpkg/status.d.
     jq(
         name = base + "_sbom",
         srcs = [":" + base + "_sbom_predupe"],
         out = base + "_sbom.json",
-        filter = ".components |= unique_by(.purl)",
+        filter = '.components |= (map(.name |= sub("^debian/"; "")) | unique_by(.purl))',
     )
 
 def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database"):

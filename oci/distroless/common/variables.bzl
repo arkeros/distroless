@@ -52,3 +52,19 @@ BUSYBOX_WONTFIX_CVES = [
     # when this stops matching, forcing the entry to be removed.
     "CVE-2026-29004",
 ]
+
+# rust-coreutils (uutils) — ships in bash images for env/ls/cat (no
+# libsystemd0 dep, unlike GNU coreutils). Surfaced by the
+# `dpkg-matcher`-via-SBOM fix (`oci/supply_chain.bzl` strips the
+# `debian/` prefix so source==name packages get tracker matches); was
+# silently hidden before. TODO: triage — VEX with
+# vulnerable_code_not_in_execute_path if these utils' affected
+# subcommands aren't reachable from our images, bump the lockfile if
+# upstream rust-coreutils 0.9+ fixes them, or remove the package and
+# fall back to a GNU-coreutils slice. `_cve_test_stale_ignores` will
+# fail the moment any of these stop matching, forcing the entry out.
+RUST_COREUTILS_PENDING_TRIAGE_CVES = [
+    "CVE-2026-35341",
+    "CVE-2026-35352",
+    "CVE-2026-35368",
+]

@@ -25,7 +25,7 @@ load(
 )
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:supply_chain.bzl", "image_supply_chain")
-load("//oci/distroless/common:variables.bzl", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 load(
     ":defs.bzl",
     "LB_BACKEND",
@@ -71,7 +71,7 @@ go_binary(
 
 [
     image_supply_chain(
-        ignore_cves = DEBIAN_WONTFIX_CVES,
+        ignore_cves = DEBIAN_WONTFIX_CVES + (BUSYBOX_WONTFIX_CVES if mode == "_debug" else []),
         image = ":image" + mode,
     )
     for mode in DEBUG_MODE

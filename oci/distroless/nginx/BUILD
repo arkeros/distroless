@@ -5,7 +5,7 @@ load("@jq.bzl//jq:jq.bzl", "jq_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@tar.bzl", "tar")
 load("//oci:mirror_push.bzl", "mirror_push")
-load("//oci:vex.bzl", "vex_document")
+load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
@@ -18,20 +18,42 @@ NGINX_IGNORE_CVES = {
 
 package(default_visibility = ["//visibility:public"])
 
+# CVE-2013-0337 — nginx default config historically created
+# access.log/error.log with world-readable permissions, exposing log
+# contents to local users on shared hosts. Debian's tracker marks it
+# `<unfixed>` in sid and `<ignored>` "Minor issue" in trixie/bookworm/
+# bullseye, blocked on upstream nginx#376. Our image never creates
+# log files: nginx.conf:3 sets `error_log /dev/stderr`, nginx.conf:20
+# sets `access_log /dev/stdout`, and the entrypoint additionally pins
+# `-e /dev/stderr` so the error-log destination is fixed at the CLI
+# level regardless of any conf override. The file-creation code path
+# the CVE describes is never reached. Drops the moment Debian or
+# upstream lands a fix (`_cve_test_stale_vex` enforces).
+NGINX_VEX_STATEMENTS = [
+    vex_statement(
+        expires = "2026-08-11",
+        impact_statement = "nginx.conf routes error_log to /dev/stderr and access_log to /dev/stdout; entrypoint pins -e /dev/stderr. No log files are created on disk, so the world-readable log-file default is never reached.",
+        justification = "vulnerable_code_not_in_execute_path",
+        products = ["pkg:oci/nginx"],
+        status = "not_affected",
+        vulnerability = "CVE-2013-0337",
+    ),
+]
+
 vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
-    statements = GLIBC_FIXED_VEX_STATEMENTS,
-    timestamp = "2026-05-01T00:00:00Z",
+    statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_VEX_STATEMENTS,
+    timestamp = "2026-05-13T00:00:00Z",
 )
 
 vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#debug",
-    statements = BUSYBOX_FIXED_VEX_STATEMENTS,
-    timestamp = "2026-05-01T00:00:00Z",
+    statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_VEX_STATEMENTS,
+    timestamp = "2026-05-13T00:00:00Z",
 )
 
 tar(

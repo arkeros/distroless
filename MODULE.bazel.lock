@@ -4536,10 +4536,10 @@
             "https://files.pythonhosted.org/packages/e1/67/921ec3024056483db83953ae8e48079ad62b92db7880013ca77632921dd0/readme_renderer-44.0-py3-none-any.whl": "2fbca89b81a08526aadf1357a8c2ae889ec05fb03f5da67f9769c9a592166151"
           },
           "requests": {
+            "https://files.pythonhosted.org/packages/15/5a/4a949d170476de3c04ac036b5466422fbcbf348a917d8042eedf2cac7d1b/requests-2.34.1-py3-none-any.whl": "bf38a3ff993960d3dd819c08862c40b3c703306eb7c744fcd9f4ddbb95b548f0",
+            "https://files.pythonhosted.org/packages/24/36/7180e7f077c38108945dbbdf60fe04db681c3feb6e96419f8c6dc8723741/requests-2.34.1.tar.gz": "0fc5669f2b69704449fe1552360bd2a73a54512dfd03e65529157f1513322beb",
             "https://files.pythonhosted.org/packages/34/64/8860370b167a9721e8956ae116825caff829224fbca0ca6e7bf8ddef8430/requests-2.33.0.tar.gz": "c7ebc5e8b0f21837386ad0e1c8fe8b829fa5f544d8df3b2253bff14ef29d7652",
-            "https://files.pythonhosted.org/packages/43/b8/7a707d60fea4c49094e40262cc0e2ca6c768cca21587e34d3f705afec47e/requests-2.34.0.tar.gz": "7d62fe92f50eb82c529b0916bb445afa1531a566fc8f35ffdc64446e771b856a",
-            "https://files.pythonhosted.org/packages/56/5d/c814546c2333ceea4ba42262d8c4d55763003e767fa169adc693bd524478/requests-2.33.0-py3-none-any.whl": "3324635456fa185245e24865e810cecec7b4caf933d7eb133dcde67d48cee69b",
-            "https://files.pythonhosted.org/packages/ef/e6/e300fce5fe83c30520607a015dabd985df3251e188d234bfe9492e17a389/requests-2.34.0-py3-none-any.whl": "917520a21b767485ce7c588f4ebb917c436b24a31231b44228715eaeb5a52c60"
+            "https://files.pythonhosted.org/packages/56/5d/c814546c2333ceea4ba42262d8c4d55763003e767fa169adc693bd524478/requests-2.33.0-py3-none-any.whl": "3324635456fa185245e24865e810cecec7b4caf933d7eb133dcde67d48cee69b"
           },
           "requests-toolbelt": {
             "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl": "cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06",

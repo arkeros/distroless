@@ -25,4 +25,4 @@ manifest:
     urllib3: urllib3
   pip_repository:
     name: pip
-integrity: fac95a627fa7e87d9bf573b758ad035886220bb43b958dc7e595eaf23aa5bae0
+integrity: 24b44538cb44fd87e63e37486f3c1a0d999cf5af12b14dfa6be646384447c731

@@ -100,13 +100,25 @@ rpm.install(
     # tzdata stay declared because static composes them directly even
     # though glibc would otherwise pull ca-certificates transitively.
     packages = [
+        "bash",
         "busybox",
         "ca-certificates",
+        "coreutils",
         "glibc",
+        "grep",
+        "libacl",
+        "libattr",
+        "libcap",
         "libgcc",
+        "libselinux",
+        "libsepol",
         "libstdc++",
         "mailcap",
+        "mawk",
+        "ncurses-libs",
         "openssl-libs",
+        "pcre2",
+        "sed",
         "tzdata",
     ],
     # Per-arch subtrees (x86_64/, aarch64/) live under this base. Each

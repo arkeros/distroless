@@ -21,6 +21,12 @@
       }
     },
     "bash": {
+      "aarch64": {
+        "version": "5.3.9-3.1.hum1",
+        "sha256": "e3a9072b36eeb832f403b8f90305e7ef4709d3b904347fd5b9e9bb6afa8d42ca",
+        "path": "aarch64/Packages/b/bash-5.3.9-3.1.hum1.aarch64.rpm",
+        "size": 1944324
+      },
       "x86_64": {
         "version": "5.3.9-3.1.hum1",
         "sha256": "f4e27d04f05cd196e92d8a9f047927d4849ff32fd3b7f366b283e49e9edc5ac1",
@@ -181,6 +187,12 @@
       }
     },
     "grep": {
+      "aarch64": {
+        "version": "3.12-3.1.hum1",
+        "sha256": "45d21be64f1be7a5358edd767edff137f6d837b2e6424eb81fd75e3278549d7c",
+        "path": "aarch64/Packages/g/grep-3.12-3.1.hum1.aarch64.rpm",
+        "size": 311175
+      },
       "x86_64": {
         "version": "3.12-3.1.hum1",
         "sha256": "0090faacf4f3cd12c3c018ef9678a6195565da06f2b56d0db769a1c9b6927459",
@@ -362,6 +374,20 @@
         "size": 41317
       }
     },
+    "mawk": {
+      "aarch64": {
+        "version": "1:1.3.4-6.20260302.1.hum1",
+        "sha256": "943325fe9f40c0259a06dfa270f79a8aff16bf7d154b32ef8dc11783d4eaae39",
+        "path": "aarch64/Packages/m/mawk-1.3.4-6.20260302.1.hum1.aarch64.rpm",
+        "size": 163272
+      },
+      "x86_64": {
+        "version": "1:1.3.4-6.20260302.1.hum1",
+        "sha256": "e4d91bf5851eda6986c65a8b3a05e0c054c1606cf1587fa3bf1d7417cd969c98",
+        "path": "x86_64/Packages/m/mawk-1.3.4-6.20260302.1.hum1.x86_64.rpm",
+        "size": 168304
+      }
+    },
     "ncurses-base": {
       "noarch": {
         "version": "6.6-2.hum1",
@@ -371,6 +397,12 @@
       }
     },
     "ncurses-libs": {
+      "aarch64": {
+        "version": "6.6-2.hum1",
+        "sha256": "56d87a1be6cd3e48d7a0323fa4944c6664142a29c6a76591b3481be87249ad3e",
+        "path": "aarch64/Packages/n/ncurses-libs-6.6-2.hum1.aarch64.rpm",
+        "size": 345361
+      },
       "x86_64": {
         "version": "6.6-2.hum1",
         "sha256": "5dfeaed687bef3a879a893f7b9e75ceee44188dbcdf03e2c0ce198aa43d9b0b8",
@@ -459,6 +491,12 @@
       }
     },
     "sed": {
+      "aarch64": {
+        "version": "4.10-1.hum1",
+        "sha256": "db368c2aab227837f9171f649a5f2fe01a2e68b245d8063be7c4599a59274c66",
+        "path": "aarch64/Packages/s/sed-4.10-1.hum1.aarch64.rpm",
+        "size": 368251
+      },
       "x86_64": {
         "version": "4.10-1.hum1",
         "sha256": "639119cc364f3bff39e70ecf0c655d4669e02420ae0433a4d50f079070d0b24d",

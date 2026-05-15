@@ -86,6 +86,25 @@ alias(name = "package", actual = "{spoke}//:package")
 """.format(arch = arch, spoke = spoke),
             )
 
+    # Stub aliases for manifest roots not present in the lockfile (= user
+    # edited `packages` without running pin). The stub's BUILD.bazel is
+    # only loaded when something queries the missing label — so
+    # `bazel run @<name>//:pin` (the remediation tool) keeps working, but
+    # `bazel build //consumer/of/missing` surfaces a helpful error instead
+    # of Bazel's bare "no such target".
+    lock_keys = {pkg: True for pkg in rctx.attr.packages}
+    for pkg in rctx.attr.package_list:
+        if pkg in lock_keys:
+            continue
+        for arch in arches:
+            rctx.file(
+                "%s/%s/BUILD.bazel" % (pkg, arch),
+                'fail("rules_rpm: lockfile is stale — manifest root \\"{pkg}\\" is not in the lockfile. Run `bazel run @{name}//:pin` to refresh.")\n'.format(
+                    pkg = pkg,
+                    name = rctx.attr.name,
+                ),
+            )
+
     # The :pin runnable. `bazel run @<name>//:pin -- --update` walks the live
     # repo, resolves the declared package list, and rewrites the lockfile.
     rctx.file("BUILD.bazel", """

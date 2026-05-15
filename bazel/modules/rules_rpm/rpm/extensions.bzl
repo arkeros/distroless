@@ -46,23 +46,6 @@ def _rpm_extension_impl(mctx):
             lock = parse_lockfile(mctx, install.lock_file)
             lock_pkgs = lock["packages"]
 
-            # Staleness gate. The lockfile is the *closure* of `packages`
-            # (pin walks rpm:requires), so lock-only entries are legitimate
-            # auto-resolved transitives — we don't fail on those. But any
-            # manifest root absent from the lockfile means the user edited
-            # `packages` without running `bazel run @<name>//:pin`; fail
-            # early so the missing alias surfaces here instead of as a
-            # cryptic "no such target" at consumer analysis time.
-            missing = [p for p in install.packages if p not in lock_pkgs]
-            if missing:
-                fail(("rules_rpm: lockfile {lock} is stale for @{name} — " +
-                      "manifest roots not present in lockfile: {missing}. " +
-                      "Run `bazel run @{name}//:pin` to refresh.").format(
-                    name = install.name,
-                    lock = install.lock_file,
-                    missing = ", ".join(sorted(missing)),
-                ))
-
             # Spoke repos: one per (package, arch) — runs rpm-extract on the rpm bytes.
             # Bazel repo names disallow `+`; sanitize only the package portion of
             # the spoke name via `safe_repo_name`. Aliases under

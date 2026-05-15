@@ -27,7 +27,12 @@ ts_config(
     visibility = ["//visibility:public"],
 )
 
-exports_files(["gazelle_python.yaml"])
+exports_files([
+    "gazelle_python.yaml",
+    # Consumed by rules_rpm via @hummingbird//... — see bazel/include/oci.MODULE.bazel.
+    "hummingbird-release.pgp",
+    "hummingbird_install.json",
+])
 
 # Ignore the node_modules dir
 # gazelle:exclude node_modules

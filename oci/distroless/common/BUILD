@@ -2,7 +2,7 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_distroless//distroless:defs.bzl", "cacerts", "group", "home", "locale", "os_release", "passwd")
 load("@tar.bzl", "tar")
 load("//oci/distroless:platforms.bzl", "ALL_ARCHITECTURES", "ALL_DISTROS", "VERSIONS")
-load(":variables.bzl", "COMPRESSION", "MTIME", "NOBODY", "NONROOT", "OS_RELEASE", "ROOT", "quote")
+load(":variables.bzl", "COMPRESSION", "MTIME", "NOBODY", "NONROOT", "OS_RELEASE_BY_DISTRO", "ROOT", "quote")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -70,6 +70,17 @@ tar(
     ],
 )
 
+# /etc/os-release -> /usr/lib/os-release per os-release(5). Debian's
+# base-files package ships this symlink for free; Hummingbird's package
+# set doesn't include a `setup` / `filesystem` rpm (deliberate, see ADR
+# 0007), so we synthesize it senku-side.
+tar(
+    name = "etc_os_release_symlink",
+    mtree = [
+        "./etc/os-release type=link link=/usr/lib/os-release",
+    ],
+)
+
 # Create symlinks for rust-coreutils (avoids GNU coreutils which pulls in libsystemd0)
 # rust-coreutils is a multicall binary at /bin/coreutils.
 #
@@ -129,12 +140,19 @@ tar(
                 CODENAME = codename,
                 VERSION = version,
             ))
-            for (key, value) in OS_RELEASE.items()
+            for (key, value) in OS_RELEASE_BY_DISTRO[dist].items()
         },
         time = MTIME,
     )
     for (dist, codename, version) in VERSIONS
 ]
+
+# locale + cacerts here are Debian-shaped: locale extracts charmaps from
+# `libc-bin`, cacerts from Debian's `ca-certificates` package. Hummingbird's
+# equivalents live at different paths inside differently-named rpms
+# (glibc-common / ca-certificates with the RHEL ca-bundle layout) and need
+# their own extractor. Restrict this iteration to Debian until those are wired.
+_LOCALE_CACERTS_DISTROS = ["debian"]
 
 [
     locale(
@@ -144,7 +162,7 @@ tar(
         time = MTIME,
     )
     for arch in COMMON_ARCHITECTURES
-    for distro in COMMON_DISTROS
+    for distro in _LOCALE_CACERTS_DISTROS
 ]
 
 [
@@ -154,7 +172,7 @@ tar(
         time = MTIME,
     )
     for arch in COMMON_ARCHITECTURES
-    for distro in COMMON_DISTROS
+    for distro in _LOCALE_CACERTS_DISTROS
 ]
 
 # create /etc/group with the root, tty, and staff groups

@@ -3,7 +3,7 @@
 def quote(str):
     return '''"{}"'''.format(str)
 
-OS_RELEASE = dict(
+DEBIAN_OS_RELEASE = dict(
     PRETTY_NAME = "Distroless",
     NAME = "Debian GNU/Linux",
     ID = "debian",
@@ -13,6 +13,29 @@ OS_RELEASE = dict(
     SUPPORT_URL = "https://github.com/arkeros/senku/blob/main/oci/distroless/README.md",
     BUG_REPORT_URL = "https://github.com/arkeros/senku/issues/new",
 )
+
+# Hummingbird-derived images. `ID=hummingbird` is the scanner-routing key
+# (grype/trivy match exact-string only, no ID_LIKE fallback — see ADR 0007);
+# NAME / PRETTY_NAME carry the senku brand for human readers. VERSION_ID is
+# the Hummingbird snapshot revision (Unix timestamp from repomd.xml).
+HUMMINGBIRD_OS_RELEASE = dict(
+    PRETTY_NAME = "distroless.io (Hummingbird-derived)",
+    NAME = "distroless.io",
+    ID = "hummingbird",
+    ID_LIKE = "rhel fedora",
+    VERSION_ID = "{VERSION}",
+    HOME_URL = "https://github.com/arkeros/senku",
+    SUPPORT_URL = "https://github.com/arkeros/senku/blob/main/oci/distroless/README.md",
+    BUG_REPORT_URL = "https://github.com/arkeros/senku/issues/new",
+)
+
+OS_RELEASE_BY_DISTRO = {
+    "debian": DEBIAN_OS_RELEASE,
+    "hummingbird": HUMMINGBIRD_OS_RELEASE,
+}
+
+# Back-compat for any caller that still imports OS_RELEASE directly.
+OS_RELEASE = DEBIAN_OS_RELEASE
 
 NOBODY = 65534
 NONROOT = 65532

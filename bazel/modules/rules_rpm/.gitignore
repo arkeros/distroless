@@ -1,0 +1,8 @@
+bazel-*
+
+# Stray binaries produced by `go build ./...` outside Bazel — each tool
+# dir is named the same as its binary, so an out-of-tree go build drops
+# the binary in-tree.
+/rpm/tools/pin/pin
+/rpm/tools/rpm-extract/rpm-extract
+/rpm/tools/rpmdb-merge/rpmdb-merge

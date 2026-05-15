@@ -107,7 +107,9 @@ Package names listed inline in `MODULE.bazel` are the canonical intent. The pin 
 
 ## Snapshot strategy
 
-`repomd.xml` carries a `revision` (Unix timestamp; current public value: `1778835791`). The lockfile pins both `revision` and per-rpm SHA256. `revision` gives cache-friendly URLs and a moment-in-time anchor; per-rpm digests are the build-graph determinism backstop independent of URL stability. Closest analog to `snapshot.debian.org`'s timestamp pinning that exists in rpm-land — no public time-machine service for rpm distros, but the lockfile *is* the snapshot.
+`repomd.xml` carries a `revision` (Unix timestamp; observed values: `1778835791` early-afternoon 2026-05-15, `1778852516` ~3 hours later — Hummingbird's repo updates multiple times per day). The lockfile pins both `revision` and per-rpm SHA256. `revision` gives cache-friendly URLs and a moment-in-time anchor; per-rpm digests are the build-graph determinism backstop independent of URL stability. Closest analog to `snapshot.debian.org`'s timestamp pinning that exists in rpm-land — no public time-machine service for rpm distros, but the lockfile *is* the snapshot.
+
+**Implementation note (CDN behavior):** Hummingbird's CDN rejects `HEAD` requests with HTTP 403 and returns `302` redirects on `GET` to S3-backed URLs. The pin tool must use `GET` with redirect-following (Go's `http.Get` default; `curl -fsSL` equivalent). Never use `HEAD` to probe — even existence checks need a `GET` of metadata files, then inspect the body.
 
 ## rpmdb sqlite — two-binary architecture
 
@@ -174,7 +176,7 @@ The matrix factory in [[oci/distroless/matrix.bzl]] doesn't know which package m
 
 ## Operational considerations
 
-**Rebuild cadence is the actual competitive moat.** Chainguard's zero-CVE story is *continuous rebuild against current upstream*. Senku must match that or the zero claim drifts. Open question: daily or weekly run of `@hummingbird//:pin`? Recommend daily auto-PR with `_cve_test_stale_*` enforcement; merge gate is "scan still clean." Tracks closely to the existing [[oci/distroless/debian.yaml]] cadence with the same machinery.
+**Rebuild cadence is the actual competitive moat.** Chainguard's zero-CVE story is *continuous rebuild against current upstream*. Senku must match that or the zero claim drifts. Empirically, Hummingbird's `repomd.xml` revision bumped from `1778835791` to `1778852516` within ~3 hours during ADR drafting on 2026-05-15 — multiple updates per day. Daily auto-PR cadence is therefore the right floor; weekly would miss most upstream changes and let the wontfix window reopen. Recommend daily `@hummingbird//:pin` job with `_cve_test_stale_*` enforcement and "scan still clean" as the merge gate. Tracks closely to the existing [[oci/distroless/debian.yaml]] cadence with the same machinery, just faster.
 
 **Triple-scanner verification.** CI gates each image on grype + trivy + at least one third scanner (snyk or osv-scanner) reporting zero. Single-scanner verification has been shown to be insufficient by this same investigation; the upstream-feed-ingestion lag is a real risk and only diverges between vendors.
 

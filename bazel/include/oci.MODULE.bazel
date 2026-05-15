@@ -5,10 +5,16 @@ bazel_dep(name = "tar.bzl", version = "0.10.4")
 bazel_dep(name = "grype.bzl", version = "0.1.0")
 bazel_dep(name = "cosign.bzl", version = "0.0.0")
 bazel_dep(name = "container_structure_test", version = "1.22.1")
+bazel_dep(name = "rules_rpm", version = "0.0.0")
 
 local_path_override(
     module_name = "cosign.bzl",
     path = "bazel/modules/cosign.bzl",
+)
+
+local_path_override(
+    module_name = "rules_rpm",
+    path = "bazel/modules/rules_rpm",
 )
 
 single_version_override(
@@ -75,6 +81,29 @@ apt.install(
     package_template = "//oci/distroless/common:package.BUILD.tmpl",
 )
 use_repo(apt, "debian", "nginx_mainline", "nginx_stable", "workstation")
+
+# Hummingbird RPM repository — sourced from a public Hummingbird snapshot
+# (see ADR 0007). The lockfile pins `revision` + per-rpm SHA256; refresh
+# via `bazel run @hummingbird//:pin` once the pin tool is wired (currently
+# hand-written for the tracer-bullet tzdata-only state).
+rpm = use_extension("@rules_rpm//rpm:extensions.bzl", "rpm")
+rpm.install(
+    name = "hummingbird",
+    architectures = ["x86_64", "aarch64"],
+    gpg_key = "//:hummingbird-release.pgp",
+    lock_file = "//:hummingbird_install.json",
+    packages = [
+        "busybox",
+        "ca-certificates",
+        "mailcap",
+        "tzdata",
+    ],
+    # Per-arch subtrees (x86_64/, aarch64/) live under this base. Each
+    # lockfile entry's `path` prefixes the right subtree (noarch entries
+    # use either subtree — same bytes).
+    repo_url = "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
+)
+use_repo(rpm, "hummingbird")
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 

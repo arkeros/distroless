@@ -30,7 +30,7 @@ _install = tag_class(
         ),
         "packages": attr.string_list(
             mandatory = True,
-            doc = "Closed manifest of package names. The pin tool errors if any are missing upstream — no transitive auto-expansion.",
+            doc = "Root package names. The pin tool walks rpm:requires and writes the full transitive closure to the lockfile (same posture as @debian's apt resolver).",
         ),
         "lock_file": attr.label(
             mandatory = True,
@@ -44,13 +44,31 @@ def _rpm_extension_impl(mctx):
     for mod in mctx.modules:
         for install in mod.tags.install:
             lock = parse_lockfile(mctx, install.lock_file)
+            lock_pkgs = lock["packages"]
+
+            # Staleness gate. The lockfile is the *closure* of `packages`
+            # (pin walks rpm:requires), so lock-only entries are legitimate
+            # auto-resolved transitives — we don't fail on those. But any
+            # manifest root absent from the lockfile means the user edited
+            # `packages` without running `bazel run @<name>//:pin`; fail
+            # early so the missing alias surfaces here instead of as a
+            # cryptic "no such target" at consumer analysis time.
+            missing = [p for p in install.packages if p not in lock_pkgs]
+            if missing:
+                fail(("rules_rpm: lockfile {lock} is stale for @{name} — " +
+                      "manifest roots not present in lockfile: {missing}. " +
+                      "Run `bazel run @{name}//:pin` to refresh.").format(
+                    name = install.name,
+                    lock = install.lock_file,
+                    missing = ", ".join(sorted(missing)),
+                ))
 
             # Spoke repos: one per (package, arch) — runs rpm-extract on the rpm bytes.
             # Bazel repo names disallow `+`; sanitize only the package portion of
             # the spoke name via `safe_repo_name`. Aliases under
             # @<hub>//<pkg>/<arch> keep the original package name (Bazel package
             # paths accept `+`).
-            for pkg_name, arches in lock["packages"].items():
+            for pkg_name, arches in lock_pkgs.items():
                 for arch, entry in arches.items():
                     rpm_package_repo(
                         name = "{}__{}__{}".format(install.name, safe_repo_name(pkg_name), arch),
@@ -66,12 +84,12 @@ def _rpm_extension_impl(mctx):
             # plus a :pin target that runs the pin Go binary against the live repo.
             rpm_install_repo(
                 name = install.name,
-                packages = list(lock["packages"].keys()),
+                packages = list(lock_pkgs.keys()),
                 architectures = install.architectures,
                 repo_url = install.repo_url,
                 gpg_key = install.gpg_key,
                 lock_file = install.lock_file,
-                package_list = install.packages,  # closed manifest passed through to :pin
+                package_list = install.packages,  # roots passed through to :pin for re-resolution
             )
 
 rpm = module_extension(

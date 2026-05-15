@@ -81,6 +81,27 @@ tar(
     ],
 )
 
+# UsrMerge root symlinks for Hummingbird-derived images. RHEL's `filesystem`
+# rpm ships /lib, /lib64, /bin, /sbin as symlinks into /usr — these are
+# *load-bearing*: every RHEL ELF binary is compiled with interpreter
+# `/lib64/ld-linux-x86-64.so.2` (or aarch64 equivalent), and libgcc places
+# libgcc_s.so.1 under /lib64. Without these symlinks, no upstream-built
+# binary can find its dynamic linker on a Hummingbird-derived distroless.
+#
+# Debian images don't need this — their packages are pre-merged via
+# `mergedusr = True` in apt.install (mergedusr.dh symlinks everything into
+# /usr at .deb-install time). For RHEL-shape rpms the merge has to happen
+# at image-composition time instead.
+tar(
+    name = "usrmerge_symlinks_hummingbird",
+    mtree = [
+        "./bin type=link link=usr/bin",
+        "./sbin type=link link=usr/bin",
+        "./lib type=link link=usr/lib",
+        "./lib64 type=link link=usr/lib64",
+    ],
+)
+
 # Create symlinks for rust-coreutils (avoids GNU coreutils which pulls in libsystemd0)
 # rust-coreutils is a multicall binary at /bin/coreutils.
 #

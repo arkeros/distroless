@@ -26,11 +26,14 @@ fileExistenceTests:
     path: '/usr/lib64/libstdc++.so.6'
     shouldExist: true
   # libgcc ships to /lib64 in Hummingbird's rpm; everything else lands in
-  # /usr/lib64. On a real RHEL system /lib64 is the UsrMerge symlink to
-  # /usr/lib64 — senku's synthesized rootfs doesn't carry that today. Asserting
-  # the actual cpio path until a base-level /lib64 -> /usr/lib64 lands.
-  - name: 'libgcc_s'
-    path: '/lib64/libgcc_s.so.1'
+  # /usr/lib64. UsrMerge symlinks in the static base (/lib64 -> usr/lib64)
+  # make both paths resolve. Assert the canonical /usr/lib64 form and the
+  # /lib64 compatibility path the upstream ELF interpreter references.
+  - name: 'libgcc_s via /usr/lib64'
+    path: '/usr/lib64/libgcc_s.so.1'
+    shouldExist: true
+  - name: 'ld-linux via /lib64 (ELF interpreter path)'
+    path: '/lib64/ld-linux-x86-64.so.2'
     shouldExist: true
   - name: 'libssl'
     path: '/usr/lib64/libssl.so.3'

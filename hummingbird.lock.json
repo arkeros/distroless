@@ -113,6 +113,20 @@
         "path": "x86_64/Packages/t/tzdata-2026a-1.1.hum1.noarch.rpm",
         "size": 863462
       }
+    },
+    "zlib-ng-compat": {
+      "aarch64": {
+        "version": "2.3.3-5.1.hum1",
+        "sha256": "e9804e684cd7a39bd95cb45825950f1d6a81c9f5a8c51ead56c1da19a25e30b3",
+        "path": "aarch64/Packages/z/zlib-ng-compat-2.3.3-5.1.hum1.aarch64.rpm",
+        "size": 78429
+      },
+      "x86_64": {
+        "version": "2.3.3-5.1.hum1",
+        "sha256": "cdcc31e8a42acac61660e4e0e75076f1264873c4e7cd4f1406cb8ed9c35d598e",
+        "path": "x86_64/Packages/z/zlib-ng-compat-2.3.3-5.1.hum1.x86_64.rpm",
+        "size": 95262
+      }
     }
   }
 }

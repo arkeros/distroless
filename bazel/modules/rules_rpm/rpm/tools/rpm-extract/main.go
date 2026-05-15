@@ -91,18 +91,23 @@ func Extract(rpmPath, contentTarPath, headerBlobPath string) error {
 		if err != nil {
 			return fmt.Errorf("cpio next: %w", err)
 		}
-		if shouldStrip(ent.Filename()) {
+		name := ent.Filename()
+		if shouldStrip(name) {
 			// Drain regular-file content so the cpio reader advances. Symlinks
 			// and dirs carry no payload.
 			if isCpioRegular(ent) {
 				if _, err := io.CopyN(io.Discard, payload, int64(ent.Filesize())); err != nil {
-					return fmt.Errorf("drain stripped %q: %w", ent.Filename(), err)
+					return fmt.Errorf("drain stripped %q: %w", name, err)
 				}
 			}
 			continue
 		}
-		if err := writeCpioEntryAsTar(tw, ent, payload); err != nil {
-			return fmt.Errorf("write tar entry %q: %w", ent.Filename(), err)
+		rewritten, drop := mergedUsr(name)
+		if drop {
+			continue
+		}
+		if err := writeCpioEntryAsTar(tw, ent, payload, rewritten); err != nil {
+			return fmt.Errorf("write tar entry %q: %w", name, err)
 		}
 	}
 	return nil
@@ -119,6 +124,29 @@ func shouldStrip(filename string) bool {
 	return clean == "usr/lib/.build-id" || strings.HasPrefix(clean, "usr/lib/.build-id/")
 }
 
+// mergedUsr rewrites legacy root paths (/lib, /lib64, /bin, /sbin) onto
+// their /usr/* counterparts. RHEL's `filesystem` rpm ships the same as
+// runtime symlinks; senku deliberately doesn't pull `filesystem` (per ADR
+// 0007), so the merge happens at extract time. Mirrors Debian's
+// `mergedusr = True` behaviour in rules_distroless.
+//
+// Symlinks for these prefixes (e.g. `./lib64 -> usr/lib64`) are
+// re-synthesised by the static base — keeping per-package emission of
+// them would collide with the base layer's symlink.
+func mergedUsr(filename string) (rewritten string, drop bool) {
+	clean := strings.TrimPrefix(filename, "./")
+	for _, prefix := range []string{"lib64", "lib", "bin", "sbin"} {
+		// Drop the legacy root-symlink entries — base layer owns them.
+		if clean == prefix {
+			return "", true
+		}
+		if rest, ok := strings.CutPrefix(clean, prefix+"/"); ok {
+			return "./usr/" + prefix + "/" + rest, false
+		}
+	}
+	return filename, false
+}
+
 func isCpioRegular(ent *cpio.Cpio_newc_header) bool {
 	t := ent.Mode() &^ 07777
 	return t == 0 || t == cpio.S_ISREG
@@ -131,7 +159,7 @@ func isCpioRegular(ent *cpio.Cpio_newc_header) bool {
 // Type-vs-perm bits: the cpio Mode() word packs both — type bits above 07777,
 // permission bits below. Use `mode &^ 07777` to isolate the file-type value
 // and compare against the S_IS* constants directly.
-func writeCpioEntryAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cpio.Reader) error {
+func writeCpioEntryAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cpio.Reader, name string) error {
 	mode := ent.Mode()
 	typeflag := byte(tar.TypeReg)
 	var linkname string
@@ -151,7 +179,7 @@ func writeCpioEntryAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cp
 	}
 
 	hdr := &tar.Header{
-		Name:     ent.Filename(),
+		Name:     name,
 		Mode:     int64(mode & 07777),
 		Size:     int64(ent.Filesize()),
 		Typeflag: typeflag,

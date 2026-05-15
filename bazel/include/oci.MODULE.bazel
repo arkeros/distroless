@@ -102,6 +102,10 @@ rpm.install(
         "mailcap",
         "openssl-libs",
         "tzdata",
+        # openssl-libs links libz.so.1 at runtime. Hummingbird ships
+        # zlib-ng-compat (drop-in replacement for legacy zlib) rather than
+        # `zlib` directly; without it every TLS-using binary fails to load.
+        "zlib-ng-compat",
     ],
     # Per-arch subtrees (x86_64/, aarch64/) live under this base. Each
     # lockfile entry's `path` prefixes the right subtree (noarch entries

@@ -85,6 +85,7 @@ _VEX = {
             "@hummingbird//libgcc/x86_64",
             "@hummingbird//libstdc++/x86_64",
             "@hummingbird//openssl-libs/x86_64",
+            "@hummingbird//zlib-ng-compat/x86_64",
         ],
     ),
 ]
@@ -100,6 +101,7 @@ _VEX = {
             "@hummingbird//libgcc/aarch64",
             "@hummingbird//libstdc++/aarch64",
             "@hummingbird//openssl-libs/aarch64",
+            "@hummingbird//zlib-ng-compat/aarch64",
         ],
     ),
 ]

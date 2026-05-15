@@ -105,6 +105,7 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
             "//oci/distroless/common:tmp",
             "//oci/distroless/common:os_release_hummingbird",
             "//oci/distroless/common:etc_os_release_symlink",
+            "//oci/distroless/common:usrmerge_symlinks_hummingbird",
         ],
     )
     for arch in STATIC_ARCHITECTURES["hummingbird"]

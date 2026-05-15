@@ -81,6 +81,40 @@ func tarContainsPath(t *testing.T, tarPath, want string) bool {
 	}
 }
 
+func TestMergedUsr(t *testing.T) {
+	type result struct {
+		rewritten string
+		drop      bool
+	}
+	cases := map[string]result{
+		// Legacy root-prefix files get rewritten under /usr.
+		"./lib64/libgcc_s.so.1":            {"./usr/lib64/libgcc_s.so.1", false},
+		"./lib/firmware/foo":               {"./usr/lib/firmware/foo", false},
+		"./bin/bash":                       {"./usr/bin/bash", false},
+		"./sbin/ldconfig":                  {"./usr/sbin/ldconfig", false},
+		// The root symlink/dir entries themselves get dropped — the base
+		// layer synthesises /lib64 -> usr/lib64 etc.
+		"./lib64": {"", true},
+		"./lib":   {"", true},
+		"./bin":   {"", true},
+		"./sbin":  {"", true},
+		"lib64":   {"", true},
+		// Already-canonical paths are untouched.
+		"./usr/lib64/libc.so.6":   {"./usr/lib64/libc.so.6", false},
+		"./usr/bin/localedef":     {"./usr/bin/localedef", false},
+		"./etc/pki/ca-trust":      {"./etc/pki/ca-trust", false},
+		"./usr/share/zoneinfo/UTC": {"./usr/share/zoneinfo/UTC", false},
+		// Prefix-match guards: "libexec" must not match "lib".
+		"./libexec/foo":           {"./libexec/foo", false},
+	}
+	for in, want := range cases {
+		gotName, gotDrop := mergedUsr(in)
+		if gotName != want.rewritten || gotDrop != want.drop {
+			t.Errorf("mergedUsr(%q) = (%q, %v), want (%q, %v)", in, gotName, gotDrop, want.rewritten, want.drop)
+		}
+	}
+}
+
 func TestShouldStrip(t *testing.T) {
 	cases := map[string]bool{
 		"./usr/lib/.build-id/73":                    true,

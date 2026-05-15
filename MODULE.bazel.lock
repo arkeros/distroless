@@ -1140,9 +1140,9 @@
     "@@rules_rpm+//rpm:extensions.bzl%rpm": {
       "general": {
         "bzlTransitiveDigest": "9qWyhfjbNo8dzY44PiBUbpK+m5a9/CTPxjos3YS44f8=",
-        "usagesDigest": "BwiWRLLUvlBXatZaxw3pD9NQ9SMJPeA6zGrONfren3c=",
+        "usagesDigest": "zpKgAdRcncFs9WSN2uAGu1SQIHOgOhTgPjKf9BKyaJE=",
         "recordedInputs": [
-          "FILE:@@//hummingbird.lock.json a134d84520f32c3e452598e7341c6c260c8faf6a72990c59facf0f571917b634"
+          "FILE:@@//hummingbird.lock.json 01269971d3981b5881638e0a7077783f9a1dbe521e60b5695167688aa44b95af"
         ],
         "generatedRepoSpecs": {
           "hummingbird__busybox__aarch64": {
@@ -1310,6 +1310,28 @@
               "gpg_key": "@@//:hummingbird-release.pgp"
             }
           },
+          "hummingbird__zlib-ng-compat__aarch64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "zlib-ng-compat",
+              "arch": "aarch64",
+              "version": "2.3.3-5.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/z/zlib-ng-compat-2.3.3-5.1.hum1.aarch64.rpm",
+              "sha256": "e9804e684cd7a39bd95cb45825950f1d6a81c9f5a8c51ead56c1da19a25e30b3",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__zlib-ng-compat__x86_64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "zlib-ng-compat",
+              "arch": "x86_64",
+              "version": "2.3.3-5.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/z/zlib-ng-compat-2.3.3-5.1.hum1.x86_64.rpm",
+              "sha256": "cdcc31e8a42acac61660e4e0e75076f1264873c4e7cd4f1406cb8ed9c35d598e",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
           "hummingbird": {
             "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_install_repo",
             "attributes": {
@@ -1322,7 +1344,8 @@
                 "libstdc++",
                 "mailcap",
                 "openssl-libs",
-                "tzdata"
+                "tzdata",
+                "zlib-ng-compat"
               ],
               "architectures": [
                 "x86_64",
@@ -1340,7 +1363,8 @@
                 "libstdc++",
                 "mailcap",
                 "openssl-libs",
-                "tzdata"
+                "tzdata",
+                "zlib-ng-compat"
               ]
             }
           }

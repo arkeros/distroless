@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/sassoftware/go-rpmutils"
 	"github.com/sassoftware/go-rpmutils/cpio"
@@ -90,11 +91,37 @@ func Extract(rpmPath, contentTarPath, headerBlobPath string) error {
 		if err != nil {
 			return fmt.Errorf("cpio next: %w", err)
 		}
+		if shouldStrip(ent.Filename()) {
+			// Drain regular-file content so the cpio reader advances. Symlinks
+			// and dirs carry no payload.
+			if isCpioRegular(ent) {
+				if _, err := io.CopyN(io.Discard, payload, int64(ent.Filesize())); err != nil {
+					return fmt.Errorf("drain stripped %q: %w", ent.Filename(), err)
+				}
+			}
+			continue
+		}
 		if err := writeCpioEntryAsTar(tw, ent, payload); err != nil {
 			return fmt.Errorf("write tar entry %q: %w", ent.Filename(), err)
 		}
 	}
 	return nil
+}
+
+// shouldStrip drops cpio entries whose paths are useless on a distroless
+// image. Currently: `/usr/lib/.build-id/**` — the GDB build-id symlink tree
+// is only consumed by debugger tooling that distroless images don't ship,
+// and (per ADR 0007's cc bring-up) glibc-common's cpio places these symlinks
+// before their parent directory, which strict tar extractors reject. Same
+// posture as Wolfi/Chainguard distroless and `rpm --excludedocs`.
+func shouldStrip(filename string) bool {
+	clean := strings.TrimPrefix(filename, "./")
+	return clean == "usr/lib/.build-id" || strings.HasPrefix(clean, "usr/lib/.build-id/")
+}
+
+func isCpioRegular(ent *cpio.Cpio_newc_header) bool {
+	t := ent.Mode() &^ 07777
+	return t == 0 || t == cpio.S_ISREG
 }
 
 // writeCpioEntryAsTar translates one cpio entry to a tar entry. Paths are

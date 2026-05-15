@@ -6,7 +6,7 @@ The hub repo also exposes `:pin` as a runnable target that regenerates the
 lockfile from the declared package list.
 """
 
-load("//rpm/private:install.bzl", "rpm_install_repo", "rpm_package_repo")
+load("//rpm/private:install.bzl", "rpm_install_repo", "rpm_package_repo", "safe_repo_name")
 load("//rpm/private:lockfile.bzl", "parse_lockfile")
 
 _install = tag_class(
@@ -46,10 +46,14 @@ def _rpm_extension_impl(mctx):
             lock = parse_lockfile(mctx, install.lock_file)
 
             # Spoke repos: one per (package, arch) — runs rpm-extract on the rpm bytes.
+            # Bazel repo names disallow `+`; sanitize only the package portion of
+            # the spoke name via `safe_repo_name`. Aliases under
+            # @<hub>//<pkg>/<arch> keep the original package name (Bazel package
+            # paths accept `+`).
             for pkg_name, arches in lock["packages"].items():
                 for arch, entry in arches.items():
                     rpm_package_repo(
-                        name = "{}__{}__{}".format(install.name, pkg_name, arch),
+                        name = "{}__{}__{}".format(install.name, safe_repo_name(pkg_name), arch),
                         package = pkg_name,
                         arch = arch,
                         version = entry["version"],

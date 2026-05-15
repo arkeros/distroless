@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "repo": {
+    "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
+    "revision": "1778852516",
+    "repomd_sha256": "8e3c47564c76bd99d6abd22c5d0fce06991037ec36dc9de68504223618c0a32b"
+  },
+  "packages": {
+    "busybox": {
+      "aarch64": {
+        "version": "1:1.37.0-7.2.hum1",
+        "sha256": "143c4826f1c919cdc6010f24e527a78a3ad9d069c0fe4a4ab1ee80102d4d2f70",
+        "path": "aarch64/Packages/b/busybox-1.37.0-7.2.hum1.aarch64.rpm",
+        "size": 821487
+      },
+      "x86_64": {
+        "version": "1:1.37.0-7.2.hum1",
+        "sha256": "f219a2ef3276b1c4bcc2a4227781925836693d9c1c2ba144e1f3e17092b3020c",
+        "path": "x86_64/Packages/b/busybox-1.37.0-7.2.hum1.x86_64.rpm",
+        "size": 810268
+      }
+    },
+    "ca-certificates": {
+      "noarch": {
+        "version": "2025.2.80_v9.0.304-7.2.hum1",
+        "sha256": "42b35f662c0e28b3c856c695523ae58d399005777219d9edcda1109f5eb39f3a",
+        "path": "x86_64/Packages/c/ca-certificates-2025.2.80_v9.0.304-7.2.hum1.noarch.rpm",
+        "size": 1200162
+      }
+    },
+    "glibc": {
+      "aarch64": {
+        "version": "2.42-13.hum1",
+        "sha256": "d36ec5d63915034dee80f7ca1f4296bbb047fa3e2bd8c0fc47cfdea901471424",
+        "path": "aarch64/Packages/g/glibc-2.42-13.hum1.aarch64.rpm",
+        "size": 1932098
+      },
+      "x86_64": {
+        "version": "2.42-13.hum1",
+        "sha256": "20f840cb4e15bc7f72b4c5a543b5b2cfc075f93e9e447900d7f6c26cda045620",
+        "path": "x86_64/Packages/g/glibc-2.42-13.hum1.x86_64.rpm",
+        "size": 2334984
+      }
+    },
+    "glibc-common": {
+      "aarch64": {
+        "version": "2.42-13.hum1",
+        "sha256": "0a261df4e39b98609100cfd27087391ecabab4005dda6f16ea36928d263ab02a",
+        "path": "aarch64/Packages/g/glibc-common-2.42-13.hum1.aarch64.rpm",
+        "size": 336379
+      },
+      "x86_64": {
+        "version": "2.42-13.hum1",
+        "sha256": "7c9189a8ac41dac80101cb1afd5cf7a4f88a944d382cf6e2450ccfe0b7bb8679",
+        "path": "x86_64/Packages/g/glibc-common-2.42-13.hum1.x86_64.rpm",
+        "size": 348934
+      }
+    },
+    "libgcc": {
+      "aarch64": {
+        "version": "15.2.1-7.2.hum1",
+        "sha256": "c43c396f055d34ca4bdd33145f17af400cacd1307f890da91c8001ca86c6829a",
+        "path": "aarch64/Packages/l/libgcc-15.2.1-7.2.hum1.aarch64.rpm",
+        "size": 129633
+      },
+      "x86_64": {
+        "version": "15.2.1-7.2.hum1",
+        "sha256": "66270d6e3bd4507264a88cb576d21172906b99dd772d041fa3ed5bb19e9a248c",
+        "path": "x86_64/Packages/l/libgcc-15.2.1-7.2.hum1.x86_64.rpm",
+        "size": 146111
+      }
+    },
+    "libstdc++": {
+      "aarch64": {
+        "version": "15.2.1-7.2.hum1",
+        "sha256": "b7a09fdd04c14ee8a4c21b34ce5d5f951aad810e814849357de2220c7e71a117",
+        "path": "aarch64/Packages/l/libstdc++-15.2.1-7.2.hum1.aarch64.rpm",
+        "size": 886065
+      },
+      "x86_64": {
+        "version": "15.2.1-7.2.hum1",
+        "sha256": "acfd6b21cb917b997ed602a24ad55f42640d18f48296f794ca8a55ce08fb73b5",
+        "path": "x86_64/Packages/l/libstdc++-15.2.1-7.2.hum1.x86_64.rpm",
+        "size": 956826
+      }
+    },
+    "mailcap": {
+      "noarch": {
+        "version": "2.1.54-10.1.hum1",
+        "sha256": "0df72fe703eaa4db980463cdd24298e75a549323e0e36e59c71c1a12bc64d3e5",
+        "path": "x86_64/Packages/m/mailcap-2.1.54-10.1.hum1.noarch.rpm",
+        "size": 41317
+      }
+    },
+    "openssl-libs": {
+      "aarch64": {
+        "version": "1:3.5.6-0.3.hum1",
+        "sha256": "fb5754f304a26175351fb9b6125f4a8e78476ca9d77e68119a29633ab13d6cc9",
+        "path": "aarch64/Packages/o/openssl-libs-3.5.6-0.3.hum1.aarch64.rpm",
+        "size": 2231194
+      },
+      "x86_64": {
+        "version": "1:3.5.6-0.3.hum1",
+        "sha256": "8b9a6b227b04bb427f2d7bff7ab9e42b0ed6f8d62f25630745ff96f14fe52532",
+        "path": "x86_64/Packages/o/openssl-libs-3.5.6-0.3.hum1.x86_64.rpm",
+        "size": 2376298
+      }
+    },
+    "tzdata": {
+      "noarch": {
+        "version": "2026a-1.1.hum1",
+        "sha256": "af704da5d79cb20c1d36a7a170ea008db82001433d4a710cd37fdbb4def0bdb9",
+        "path": "x86_64/Packages/t/tzdata-2026a-1.1.hum1.noarch.rpm",
+        "size": 863462
+      }
+    }
+  }
+}

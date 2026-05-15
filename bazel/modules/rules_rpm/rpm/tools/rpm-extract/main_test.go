@@ -80,3 +80,21 @@ func tarContainsPath(t *testing.T, tarPath, want string) bool {
 		}
 	}
 }
+
+func TestShouldStrip(t *testing.T) {
+	cases := map[string]bool{
+		"./usr/lib/.build-id/73":                    true,
+		"./usr/lib/.build-id/73/abc":                true,
+		"usr/lib/.build-id/0f/a568":                 true,
+		"./usr/lib/.build-id":                       true,
+		"./usr/lib/.build-idx/foo":                  false, // prefix-match guard
+		"./usr/bin/localedef":                       false,
+		"./usr/share/zoneinfo/UTC":                  false,
+		"./etc/pki/ca-trust":                        false,
+	}
+	for in, want := range cases {
+		if got := shouldStrip(in); got != want {
+			t.Errorf("shouldStrip(%q) = %v, want %v", in, got, want)
+		}
+	}
+}

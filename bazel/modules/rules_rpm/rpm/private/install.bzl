@@ -11,6 +11,14 @@ Hub (`rpm_install_repo`): an aliases-only repo. Re-exports every spoke under
 shells out to the pin Go binary against the live repo.
 """
 
+# Bazel repo names must match `[A-Za-z0-9._-]+`. RPM package names use `+`
+# freely (libstdc++, gtk+, ...). We map `+` -> `.plus.` for the spoke repo
+# name only; the hub-side alias under `@<hub>//<pkg>/<arch>` keeps the
+# original `+` (Bazel package directories accept it). Both ends of the
+# aliasing must agree, hence the public helper.
+def safe_repo_name(s):
+    return s.replace("+", ".plus.")
+
 def _rpm_package_repo_impl(rctx):
     # Repository rules run before the analysis phase, so we can't invoke the
     # `rpm-extract` go_binary here (it's not built yet). The repo only
@@ -64,7 +72,7 @@ def _rpm_install_repo_impl(rctx):
     arches = rctx.attr.architectures + ["noarch"]
     for pkg in rctx.attr.packages:
         for arch in arches:
-            spoke = "@@{}__{}__{}".format(rctx.attr.name, pkg, arch)
+            spoke = "@@{}__{}__{}".format(rctx.attr.name, safe_repo_name(pkg), arch)
             rctx.file(
                 "%s/%s/BUILD.bazel" % (pkg, arch),
                 """

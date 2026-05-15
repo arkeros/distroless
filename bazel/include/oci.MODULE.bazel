@@ -91,11 +91,16 @@ rpm.install(
     name = "hummingbird",
     architectures = ["x86_64", "aarch64"],
     gpg_key = "//:hummingbird-release.pgp",
-    lock_file = "//:hummingbird_install.json",
+    lock_file = "//:hummingbird.lock.json",
     packages = [
         "busybox",
         "ca-certificates",
+        "glibc",
+        "glibc-common",
+        "libgcc",
+        "libstdc++",
         "mailcap",
+        "openssl-libs",
         "tzdata",
     ],
     # Per-arch subtrees (x86_64/, aarch64/) live under this base. Each

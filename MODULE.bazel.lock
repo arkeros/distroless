@@ -1139,23 +1139,12 @@
     },
     "@@rules_rpm+//rpm:extensions.bzl%rpm": {
       "general": {
-        "bzlTransitiveDigest": "oUZWkHn3M9vQYfFwHWaKeX+8jsD/Qg4Xnh3BMpn88ZY=",
-        "usagesDigest": "rpK4qUJI/vb4QoET4XKdlA7RJfWtfUoUqjGdqWXWRIM=",
+        "bzlTransitiveDigest": "9qWyhfjbNo8dzY44PiBUbpK+m5a9/CTPxjos3YS44f8=",
+        "usagesDigest": "BwiWRLLUvlBXatZaxw3pD9NQ9SMJPeA6zGrONfren3c=",
         "recordedInputs": [
-          "FILE:@@//hummingbird_install.json a4f868cc2dbf776b5ea7ed053ecd4683084fd559c566d7b4ad2601c76b93158c"
+          "FILE:@@//hummingbird.lock.json a134d84520f32c3e452598e7341c6c260c8faf6a72990c59facf0f571917b634"
         ],
         "generatedRepoSpecs": {
-          "hummingbird__busybox__x86_64": {
-            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
-            "attributes": {
-              "package": "busybox",
-              "arch": "x86_64",
-              "version": "1:1.37.0-7.2.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/b/busybox-1.37.0-7.2.hum1.x86_64.rpm",
-              "sha256": "f219a2ef3276b1c4bcc2a4227781925836693d9c1c2ba144e1f3e17092b3020c",
-              "gpg_key": "@@//:hummingbird-release.pgp"
-            }
-          },
           "hummingbird__busybox__aarch64": {
             "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
             "attributes": {
@@ -1164,6 +1153,17 @@
               "version": "1:1.37.0-7.2.hum1",
               "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/b/busybox-1.37.0-7.2.hum1.aarch64.rpm",
               "sha256": "143c4826f1c919cdc6010f24e527a78a3ad9d069c0fe4a4ab1ee80102d4d2f70",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__busybox__x86_64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "busybox",
+              "arch": "x86_64",
+              "version": "1:1.37.0-7.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/b/busybox-1.37.0-7.2.hum1.x86_64.rpm",
+              "sha256": "f219a2ef3276b1c4bcc2a4227781925836693d9c1c2ba144e1f3e17092b3020c",
               "gpg_key": "@@//:hummingbird-release.pgp"
             }
           },
@@ -1178,6 +1178,94 @@
               "gpg_key": "@@//:hummingbird-release.pgp"
             }
           },
+          "hummingbird__glibc__aarch64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "glibc",
+              "arch": "aarch64",
+              "version": "2.42-13.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/g/glibc-2.42-13.hum1.aarch64.rpm",
+              "sha256": "d36ec5d63915034dee80f7ca1f4296bbb047fa3e2bd8c0fc47cfdea901471424",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__glibc__x86_64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "glibc",
+              "arch": "x86_64",
+              "version": "2.42-13.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/g/glibc-2.42-13.hum1.x86_64.rpm",
+              "sha256": "20f840cb4e15bc7f72b4c5a543b5b2cfc075f93e9e447900d7f6c26cda045620",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__glibc-common__aarch64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "glibc-common",
+              "arch": "aarch64",
+              "version": "2.42-13.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/g/glibc-common-2.42-13.hum1.aarch64.rpm",
+              "sha256": "0a261df4e39b98609100cfd27087391ecabab4005dda6f16ea36928d263ab02a",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__glibc-common__x86_64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "glibc-common",
+              "arch": "x86_64",
+              "version": "2.42-13.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/g/glibc-common-2.42-13.hum1.x86_64.rpm",
+              "sha256": "7c9189a8ac41dac80101cb1afd5cf7a4f88a944d382cf6e2450ccfe0b7bb8679",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__libgcc__aarch64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "libgcc",
+              "arch": "aarch64",
+              "version": "15.2.1-7.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libgcc-15.2.1-7.2.hum1.aarch64.rpm",
+              "sha256": "c43c396f055d34ca4bdd33145f17af400cacd1307f890da91c8001ca86c6829a",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__libgcc__x86_64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "libgcc",
+              "arch": "x86_64",
+              "version": "15.2.1-7.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libgcc-15.2.1-7.2.hum1.x86_64.rpm",
+              "sha256": "66270d6e3bd4507264a88cb576d21172906b99dd772d041fa3ed5bb19e9a248c",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__libstdc.plus..plus.__aarch64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "libstdc++",
+              "arch": "aarch64",
+              "version": "15.2.1-7.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libstdc++-15.2.1-7.2.hum1.aarch64.rpm",
+              "sha256": "b7a09fdd04c14ee8a4c21b34ce5d5f951aad810e814849357de2220c7e71a117",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__libstdc.plus..plus.__x86_64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "libstdc++",
+              "arch": "x86_64",
+              "version": "15.2.1-7.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libstdc++-15.2.1-7.2.hum1.x86_64.rpm",
+              "sha256": "acfd6b21cb917b997ed602a24ad55f42640d18f48296f794ca8a55ce08fb73b5",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
           "hummingbird__mailcap__noarch": {
             "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
             "attributes": {
@@ -1186,6 +1274,28 @@
               "version": "2.1.54-10.1.hum1",
               "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/m/mailcap-2.1.54-10.1.hum1.noarch.rpm",
               "sha256": "0df72fe703eaa4db980463cdd24298e75a549323e0e36e59c71c1a12bc64d3e5",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__openssl-libs__aarch64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "openssl-libs",
+              "arch": "aarch64",
+              "version": "1:3.5.6-0.3.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/o/openssl-libs-3.5.6-0.3.hum1.aarch64.rpm",
+              "sha256": "fb5754f304a26175351fb9b6125f4a8e78476ca9d77e68119a29633ab13d6cc9",
+              "gpg_key": "@@//:hummingbird-release.pgp"
+            }
+          },
+          "hummingbird__openssl-libs__x86_64": {
+            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
+            "attributes": {
+              "package": "openssl-libs",
+              "arch": "x86_64",
+              "version": "1:3.5.6-0.3.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/o/openssl-libs-3.5.6-0.3.hum1.x86_64.rpm",
+              "sha256": "8b9a6b227b04bb427f2d7bff7ab9e42b0ed6f8d62f25630745ff96f14fe52532",
               "gpg_key": "@@//:hummingbird-release.pgp"
             }
           },
@@ -1206,7 +1316,12 @@
               "packages": [
                 "busybox",
                 "ca-certificates",
+                "glibc",
+                "glibc-common",
+                "libgcc",
+                "libstdc++",
                 "mailcap",
+                "openssl-libs",
                 "tzdata"
               ],
               "architectures": [
@@ -1215,11 +1330,16 @@
               ],
               "repo_url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
               "gpg_key": "@@//:hummingbird-release.pgp",
-              "lock_file": "@@//:hummingbird_install.json",
+              "lock_file": "@@//:hummingbird.lock.json",
               "package_list": [
                 "busybox",
                 "ca-certificates",
+                "glibc",
+                "glibc-common",
+                "libgcc",
+                "libstdc++",
                 "mailcap",
+                "openssl-libs",
                 "tzdata"
               ]
             }

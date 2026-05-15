@@ -3,9 +3,13 @@
 # BUILD_WORKSPACE_DIRECTORY is the consumer's source tree.
 set -euo pipefail
 
+# {TOOL} is runfiles-relative; resolve to absolute *before* cd so the exec
+# below survives the working-directory switch.
+TOOL_ABS="$(cd "$(dirname "{TOOL}")" && pwd)/$(basename "{TOOL}")"
+
 cd "${BUILD_WORKSPACE_DIRECTORY:?must be invoked via bazel run}"
 
-exec "{TOOL}" \
+exec "$TOOL_ABS" \
     --repo-url "{REPO_URL}" \
     --gpg-key "{GPG_KEY}" \
     --packages "{PACKAGES}" \

@@ -1,0 +1,52 @@
+schemaVersion: 2.0.0
+metadataTest:
+  envVars:
+    - key: PATH
+      value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-certificates.crt
+fileExistenceTests:
+  # Inherited from static base — re-check the Debian-compat SSL_CERT_FILE
+  # path here so a regression in the inherit chain fails this image's test.
+  - name: 'ca-certificates (debian-compat path)'
+    path: '/etc/ssl/certs/ca-certificates.crt'
+    shouldExist: true
+  - name: 'os-release canonical'
+    path: '/usr/lib/os-release'
+    shouldExist: true
+  # cc-specific. RHEL ships dynamic libraries under /usr/lib64 on x86_64
+  # (not /usr/lib/x86_64-linux-gnu — that's Debian's multiarch convention).
+  - name: 'glibc dynamic linker'
+    path: '/usr/lib64/ld-linux-x86-64.so.2'
+    shouldExist: true
+  - name: 'libc.so.6'
+    path: '/usr/lib64/libc.so.6'
+    shouldExist: true
+  - name: 'libstdc++'
+    path: '/usr/lib64/libstdc++.so.6'
+    shouldExist: true
+  # libgcc ships to /lib64 in Hummingbird's rpm; everything else lands in
+  # /usr/lib64. On a real RHEL system /lib64 is the UsrMerge symlink to
+  # /usr/lib64 — senku's synthesized rootfs doesn't carry that today. Asserting
+  # the actual cpio path until a base-level /lib64 -> /usr/lib64 lands.
+  - name: 'libgcc_s'
+    path: '/lib64/libgcc_s.so.1'
+    shouldExist: true
+  - name: 'libssl'
+    path: '/usr/lib64/libssl.so.3'
+    shouldExist: true
+  - name: 'libcrypto'
+    path: '/usr/lib64/libcrypto.so.3'
+    shouldExist: true
+  - name: 'rpmdb sqlite'
+    path: '/usr/lib/sysimage/rpm/rpmdb.sqlite'
+    shouldExist: true
+  - name: 'no shell'
+    path: '/bin/sh'
+    shouldExist: false
+fileContentTests:
+  # The full point of cc-on-Hummingbird: assert grype-routable identity is
+  # intact through the inherit-from-static base.
+  - name: 'os-release has ID=hummingbird'
+    path: '/usr/lib/os-release'
+    expectedContents: ['ID=.hummingbird.']

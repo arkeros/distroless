@@ -105,6 +105,11 @@ rpm.install(
         "ca-certificates",
         "coreutils",
         "glibc",
+        # nginx-core in Hummingbird is built with gperftools support and
+        # dynlinks libprofiler.so.0 + libtcmalloc.so.4 (RHEL-specific —
+        # upstream nginx doesn't ship this way). Skipping it makes nginx
+        # fail at load.
+        "gperftools-libs",
         "grep",
         "libacl",
         "libattr",
@@ -113,9 +118,17 @@ rpm.install(
         "libselinux",
         "libsepol",
         "libstdc++",
+        # gperftools-libs links libunwind for stack traces.
+        "libunwind",
+        # nginx-core links libcrypt.so.2 for module loading; not pulled by
+        # cc or bash since glibc doesn't ship libcrypt anymore (split out).
+        "libxcrypt",
         "mailcap",
         "mawk",
         "ncurses-libs",
+        "nginx",
+        "nginx-core",
+        "nginx-filesystem",
         "openssl-libs",
         "pcre2",
         "sed",

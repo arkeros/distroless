@@ -29,8 +29,20 @@ NGINX_LATEST_CHANNEL = _argmax_channel(NGINX_TAGS)
 
 NGINX_DISTROS = ["debian"]
 
+# Hummingbird ships a single nginx version per snapshot (1.30.x in the
+# current pin). pin picks the highest, which corresponds to upstream
+# nginx's mainline channel — so the hummingbird-derived image only
+# composes the mainline variant. Adding a hummingbird-stable image
+# would require version-constrained pinning (`nginx<1.29`), out of
+# scope for this slice. Stable stays debian-only until then.
+NGINX_CHANNEL_DISTROS = {
+    "stable": ["debian"],
+    "mainline": ["debian", "hummingbird"],
+}
+
 NGINX_ARCHITECTURES = {
     "debian": ["amd64", "arm64"],
+    "hummingbird": ["amd64", "arm64"],
 }
 
 def nginx_layers(version_label):
@@ -41,9 +53,15 @@ def nginx_layers(version_label):
     """
 
     def _layers(ctx):
-        return [
+        layers = [
             ":{}_{}_{}_layer".format(version_label, ctx.arch, ctx.distro),
             ":nginx_conf_layer",
         ]
+        if ctx.distro == "hummingbird":
+            # nginx adds nginx-core + nginx-filesystem on top of cc. The
+            # rpmdb merges everything from static + cc + this layer so
+            # syft sees the full package set.
+            layers.append(":rpmdb_nginx_{}_{}_hummingbird".format(version_label, ctx.arch))
+        return layers
 
     return _layers

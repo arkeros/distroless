@@ -3,13 +3,19 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@jq.bzl//jq:jq.bzl", "jq_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
+load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("@tar.bzl", "tar")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
-load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
+load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
+
+_HUMMINGBIRD_ARCH_MAP = {
+    "amd64": "x86_64",
+    "arm64": "aarch64",
+}
 
 NGINX_IGNORE_CVES = {
     "stable": [],
@@ -56,6 +62,42 @@ vex_document(
     timestamp = "2026-05-13T00:00:00Z",
 )
 
+# CVE-2013-0337 is a Debian-packaging artifact (the world-readable
+# default access_log path), not present in Hummingbird's nginx — grype's
+# hummingbird provider doesn't surface it, so applying the VEX would
+# trip `_cve_test_stale_vex`. Empty VEX is correct here.
+vex_document(
+    name = "vex_hummingbird",
+    author = "rafael@arquero.cat",
+    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird",
+    statements = [],
+    timestamp = "2026-05-15T00:00:00Z",
+)
+
+_IGNORE_CVES_BY_DISTRO = {
+    "debian": DEBIAN_WONTFIX_CVES,
+    "hummingbird": [],
+}
+
+_VEX_BY_DISTRO = {
+    "debian": [":vex"],
+    "hummingbird": [":vex_hummingbird"],
+}
+
+# Debian nginx ships /usr/sbin/nginx; Hummingbird ships /usr/bin/nginx. Same
+# binary, different conventional install location.
+_NGINX_BINARY_BY_DISTRO = {
+    "debian": "/usr/sbin/nginx",
+    "hummingbird": "/usr/bin/nginx",
+}
+
+_NGINX_DAEMON_OFF_FLAGS = [
+    "-e",
+    "/dev/stderr",
+    "-g",
+    "daemon off;",
+]
+
 tar(
     name = "nginx_conf_layer",
     srcs = [
@@ -70,9 +112,20 @@ tar(
     ],
 )
 
+# RHEL nginx-core ships /etc/nginx/mime.types.default but the canonical
+# /etc/nginx/mime.types is created by the package's %post scriptlet,
+# which distroless images deliberately don't run. Symlink the .default
+# into place so the `include /etc/nginx/mime.types` in nginx.conf resolves.
+tar(
+    name = "nginx_mime_types_symlink_hummingbird",
+    mtree = [
+        "./etc/nginx/mime.types type=link link=mime.types.default",
+    ],
+)
+
 [
     flatten(
-        name = version_label + "_" + arch + "_" + distro + "_layer",
+        name = version_label + "_" + arch + "_debian_layer",
         compress = COMPRESSION,
         deduplicate = True,
         tars = [
@@ -80,8 +133,48 @@ tar(
         ],
     )
     for version_label, apt_repo in NGINX_VERSIONS.items()
-    for distro in NGINX_DISTROS
-    for arch in NGINX_ARCHITECTURES[distro]
+    for arch in NGINX_ARCHITECTURES["debian"]
+]
+
+# Hummingbird nginx is mainline-only — see comment in config.bzl. The
+# rpm wrapper (`nginx`) requires nginx-core (the actual binary at
+# /usr/sbin/nginx) and nginx-filesystem (the /etc/nginx/* dir tree
+# we overlay our own config on top of). pcre2, openssl, zlib are
+# inherited from the cc base, but pcre2 is image-included via bash's
+# layer too — overlay flatten handles duplicates.
+[
+    flatten(
+        name = "mainline_" + arch + "_hummingbird_layer",
+        compress = COMPRESSION,
+        deduplicate = True,
+        tars = [
+            "@hummingbird//nginx/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//nginx-core/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//nginx-filesystem/noarch",
+            "@hummingbird//pcre2/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
+            # nginx-core links libcrypt.so.2 (split out of glibc in RHEL 9+)
+            # and gperftools' libprofiler.so.0 / libtcmalloc.so.4 (Hummingbird
+            # builds nginx with --with-debug + gperftools support).
+            "@hummingbird//libxcrypt/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//gperftools-libs/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//libunwind/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
+            ":nginx_mime_types_symlink_hummingbird",
+        ],
+    )
+    for arch in NGINX_ARCHITECTURES["hummingbird"]
+]
+
+# rpmdb tars (mainline only on hummingbird — see config.bzl).
+[
+    rpmdb_merge(
+        name = "rpmdb_nginx_mainline_" + arch + "_hummingbird",
+        targets = [
+            "//oci/distroless/static:static_{}_hummingbird_layer".format(arch),
+            "//oci/distroless/cc:cc_{}_hummingbird_layer".format(arch),
+            ":mainline_" + arch + "_hummingbird_layer",
+        ],
+    )
+    for arch in NGINX_ARCHITECTURES["hummingbird"]
 ]
 
 [
@@ -89,29 +182,23 @@ tar(
         name = "nginx_stable",
         architectures = NGINX_ARCHITECTURES[distro],
         base = "//oci/distroless/cc",
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
-        debug_vex = [":debug_vex"],
+        debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,
-        entrypoint = [
-            "/usr/sbin/nginx",
-            "-e",
-            "/dev/stderr",
-            "-g",
-            "daemon off;",
-        ],
-        ignore_cves = NGINX_IGNORE_CVES["stable"] + DEBIAN_WONTFIX_CVES,
+        entrypoint = [_NGINX_BINARY_BY_DISTRO[distro]] + _NGINX_DAEMON_OFF_FLAGS,
+        ignore_cves = NGINX_IGNORE_CVES["stable"] + _IGNORE_CVES_BY_DISTRO[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
         layers = nginx_layers("stable"),
-        vex = [":vex"],
+        vex = _VEX_BY_DISTRO[distro],
     )
-    for distro in NGINX_DISTROS
+    for distro in NGINX_CHANNEL_DISTROS["stable"]
 ]
 
 [
@@ -119,29 +206,23 @@ tar(
         name = "nginx_mainline",
         architectures = NGINX_ARCHITECTURES[distro],
         base = "//oci/distroless/cc",
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
-        debug_vex = [":debug_vex"],
+        debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,
-        entrypoint = [
-            "/usr/sbin/nginx",
-            "-e",
-            "/dev/stderr",
-            "-g",
-            "daemon off;",
-        ],
-        ignore_cves = NGINX_IGNORE_CVES["mainline"] + DEBIAN_WONTFIX_CVES,
+        entrypoint = [_NGINX_BINARY_BY_DISTRO[distro]] + _NGINX_DAEMON_OFF_FLAGS,
+        ignore_cves = NGINX_IGNORE_CVES["mainline"] + _IGNORE_CVES_BY_DISTRO[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
         layers = nginx_layers("mainline"),
-        vex = [":vex"],
+        vex = _VEX_BY_DISTRO[distro],
     )
-    for distro in NGINX_DISTROS
+    for distro in NGINX_CHANNEL_DISTROS["mainline"]
 ]
 
 [

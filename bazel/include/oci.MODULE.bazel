@@ -92,20 +92,22 @@ rpm.install(
     architectures = ["x86_64", "aarch64"],
     gpg_key = "//:hummingbird-release.pgp",
     lock_file = "//:hummingbird.lock.json",
+    # Closed manifest of *root* packages; pin walks rpm:requires and adds
+    # transitively reachable packages to the lockfile (same posture as
+    # @debian's apt resolver). Trim entries here only if you also want
+    # their transitives gone — bare-bones cc needs glibc + libgcc +
+    # libstdc++ + openssl-libs as roots; ca-certificates / mailcap /
+    # tzdata stay declared because static composes them directly even
+    # though glibc would otherwise pull ca-certificates transitively.
     packages = [
         "busybox",
         "ca-certificates",
         "glibc",
-        "glibc-common",
         "libgcc",
         "libstdc++",
         "mailcap",
         "openssl-libs",
         "tzdata",
-        # openssl-libs links libz.so.1 at runtime. Hummingbird ships
-        # zlib-ng-compat (drop-in replacement for legacy zlib) rather than
-        # `zlib` directly; without it every TLS-using binary fails to load.
-        "zlib-ng-compat",
     ],
     # Per-arch subtrees (x86_64/, aarch64/) live under this base. Each
     # lockfile entry's `path` prefixes the right subtree (noarch entries

@@ -67,6 +67,20 @@ type primaryPackage struct {
 	Checksum xmlValue       `xml:"checksum"`
 	Size     primarySize    `xml:"size"`
 	Location xmlHrefValue   `xml:"location"`
+	Format   primaryFormat  `xml:"format"`
+}
+
+type primaryFormat struct {
+	Provides primaryDepList `xml:"provides"`
+	Requires primaryDepList `xml:"requires"`
+}
+
+type primaryDepList struct {
+	Entries []primaryDepEntry `xml:"entry"`
+}
+
+type primaryDepEntry struct {
+	Name string `xml:"name,attr"`
 }
 
 type primaryVersion struct {
@@ -132,19 +146,41 @@ func main() {
 	}
 }
 
-// resolve walks each declared arch's repodata, picks the highest version per
-// (name, arch) across all primary.xml entries matching the closed manifest,
-// and errors if any declared package is missing for an expected arch.
+// pkgKey is a (name, arch) addressing key. arch is either a declared arch
+// like "x86_64"/"aarch64" or "noarch".
+type pkgKey struct {
+	name string
+	arch string
+}
+
+// candidate is a parsed primary.xml package entry plus the dependency edges
+// (requires/provides). One candidate per (name, arch) — when multiple
+// versions exist upstream we keep the highest per rpmvercmp.
+type candidate struct {
+	evr      string
+	sha256   string
+	path     string
+	size     int64
+	requires []string
+	provides []string
+}
+
+// resolve walks each declared arch's repodata, indexes every package (not
+// just the declared ones) with its requires/provides edges, then closes the
+// dependency graph starting from the declared seed. The lockfile receives
+// the *closure* — same posture as @debian's apt resolver: the user names
+// the roots, the lockfile carries every transitively reachable package.
+//
+// Errors when a declared package itself can't be found. Unresolved
+// requires (e.g. file-path deps that would need filelists.xml.gz to
+// resolve) are warned to stderr and skipped — runtime failure is the
+// backstop, but most cc-grade packages declare soname requires that
+// primary.xml fully covers.
 func resolve(repoURL string, declaredArches, declaredPkgs []string) (*lockfile, error) {
 	repoURL = strings.TrimRight(repoURL, "/")
-	wanted := map[string]bool{}
-	for _, p := range declaredPkgs {
-		wanted[p] = true
-	}
 
-	// best[name][arch] = current highest candidate.
-	best := map[string]map[string]lockEntry{}
-	bestVer := map[string]map[string]string{} // raw EVR string used for vercmp
+	candidates := map[pkgKey]candidate{}
+	bestEVR := map[pkgKey]string{}
 
 	var canonicalRevision, canonicalSha string
 	for i, arch := range declaredArches {
@@ -204,9 +240,6 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string) (*lockfile, 
 		}
 
 		for _, pkg := range pm.Packages {
-			if !wanted[pkg.Name] {
-				continue
-			}
 			// Drop entries for the wrong arch: a primary.xml carries every package
 			// available from that mirror — arch-specific ones for the directory's
 			// arch plus all noarch — never some other arch's binaries.
@@ -220,25 +253,55 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string) (*lockfile, 
 				continue
 			}
 
+			key := pkgKey{name: pkg.Name, arch: pkg.Arch}
 			evr := formatEVR(pkg.Version)
-			if cur, ok := bestVer[pkg.Name][pkg.Arch]; ok && rpmutils.Vercmp(evr, cur) <= 0 {
+			if cur, ok := bestEVR[key]; ok && rpmutils.Vercmp(evr, cur) <= 0 {
 				continue
 			}
-			if _, ok := best[pkg.Name]; !ok {
-				best[pkg.Name] = map[string]lockEntry{}
-				bestVer[pkg.Name] = map[string]string{}
-			}
-			bestVer[pkg.Name][pkg.Arch] = evr
-			best[pkg.Name][pkg.Arch] = lockEntry{
-				Version: evr,
-				Sha256:  pkg.Checksum.Value,
-				Path:    fmt.Sprintf("%s/%s", arch, pkg.Location.Href),
-				Size:    pkg.Size.Package,
+			bestEVR[key] = evr
+			candidates[key] = candidate{
+				evr:      evr,
+				sha256:   pkg.Checksum.Value,
+				path:     fmt.Sprintf("%s/%s", arch, pkg.Location.Href),
+				size:     pkg.Size.Package,
+				requires: depNames(pkg.Format.Requires.Entries),
+				provides: depNames(pkg.Format.Provides.Entries),
 			}
 		}
 	}
 
-	if err := validate(best, declaredArches, declaredPkgs); err != nil {
+	// Provides index: capability name -> set of keys offering it. Every
+	// candidate implicitly provides itself by package name so a `requires
+	// = "glibc"` entry resolves to the glibc candidate without needing the
+	// explicit self-provide.
+	providesIndex := map[string][]pkgKey{}
+	for key, c := range candidates {
+		providesIndex[key.name] = append(providesIndex[key.name], key)
+		for _, p := range c.provides {
+			providesIndex[p] = append(providesIndex[p], key)
+		}
+	}
+
+	closure, err := closeDeps(candidates, providesIndex, declaredArches, declaredPkgs)
+	if err != nil {
+		return nil, err
+	}
+
+	out := map[string]map[string]lockEntry{}
+	for key := range closure {
+		c := candidates[key]
+		if _, ok := out[key.name]; !ok {
+			out[key.name] = map[string]lockEntry{}
+		}
+		out[key.name][key.arch] = lockEntry{
+			Version: c.evr,
+			Sha256:  c.sha256,
+			Path:    c.path,
+			Size:    c.size,
+		}
+	}
+
+	if err := validate(out, declaredArches, declaredPkgs); err != nil {
 		return nil, err
 	}
 
@@ -249,8 +312,111 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string) (*lockfile, 
 			Revision:     canonicalRevision,
 			RepomdSha256: canonicalSha,
 		},
-		Packages: best,
+		Packages: out,
 	}, nil
+}
+
+// closeDeps walks the requires graph starting from declared roots until
+// fixpoint. Per arch, roots are the declared package names resolved to
+// either the arch-specific or noarch candidate (preferring arch-specific
+// when both exist). Self-references (glibc requires libc.so.6 which it
+// also provides) terminate via the closure-seen check.
+func closeDeps(candidates map[pkgKey]candidate, providesIndex map[string][]pkgKey, declaredArches, declaredPkgs []string) (map[pkgKey]bool, error) {
+	closure := map[pkgKey]bool{}
+	for _, arch := range declaredArches {
+		var worklist []pkgKey
+		for _, name := range declaredPkgs {
+			// Prefer arch-specific over noarch when both are present (rare).
+			if _, ok := candidates[pkgKey{name, arch}]; ok {
+				worklist = append(worklist, pkgKey{name, arch})
+				continue
+			}
+			if _, ok := candidates[pkgKey{name, "noarch"}]; ok {
+				worklist = append(worklist, pkgKey{name, "noarch"})
+				continue
+			}
+			return nil, fmt.Errorf("declared package %q not found in repo for arch %s", name, arch)
+		}
+		for len(worklist) > 0 {
+			cur := worklist[0]
+			worklist = worklist[1:]
+			if closure[cur] {
+				continue
+			}
+			closure[cur] = true
+			c := candidates[cur]
+			for _, req := range c.requires {
+				if skipRequire(req) {
+					continue
+				}
+				chosen, ok := pickProvider(providesIndex[req], arch)
+				if !ok {
+					// File-path requires (e.g. /usr/sbin/ldconfig) need
+					// filelists.xml.gz to resolve; pin only parses primary.
+					// Many file-path requires are scriptlet-only and have no
+					// runtime consequence, so warn instead of fail.
+					fmt.Fprintf(os.Stderr, "pin: warning: no provider for %q (required by %s.%s)\n", req, cur.name, cur.arch)
+					continue
+				}
+				worklist = append(worklist, chosen)
+			}
+		}
+	}
+	return closure, nil
+}
+
+// pickProvider chooses one candidate from a list of providers, preferring
+// the targetArch over noarch and picking the lexically-first name as the
+// tiebreaker. Producing a deterministic result keeps lockfiles diff-friendly.
+func pickProvider(providers []pkgKey, targetArch string) (pkgKey, bool) {
+	var compatible []pkgKey
+	for _, p := range providers {
+		if p.arch == targetArch || p.arch == "noarch" {
+			compatible = append(compatible, p)
+		}
+	}
+	if len(compatible) == 0 {
+		return pkgKey{}, false
+	}
+	sort.Slice(compatible, func(i, j int) bool {
+		if compatible[i].name != compatible[j].name {
+			return compatible[i].name < compatible[j].name
+		}
+		// Prefer arch-specific over noarch when both exist for the same name.
+		return compatible[i].arch == targetArch
+	})
+	return compatible[0], true
+}
+
+// skipRequire filters out dependency entries that are not real package
+// edges: rpmlib() machinery features handled by the package manager,
+// config() pseudo-deps for noarch config packages, file-path requires
+// that need filelists.xml.gz to resolve (we warn and continue),
+// solvable() runtime fingerprints, and rich/boolean conditional
+// expressions (`(X if Y)` form — rpm-4.13+ syntax used for
+// weak/conditional deps that we treat as out of scope).
+func skipRequire(name string) bool {
+	switch {
+	case strings.HasPrefix(name, "rpmlib("):
+		return true
+	case strings.HasPrefix(name, "config("):
+		return true
+	case strings.HasPrefix(name, "solvable:"):
+		return true
+	case strings.HasPrefix(name, "/"):
+		return true
+	case strings.HasPrefix(name, "("):
+		return true
+	}
+	return false
+}
+
+func depNames(entries []primaryDepEntry) []string {
+	out := make([]string, 0, len(entries))
+	for _, e := range entries {
+		out = append(out, e.Name)
+	}
+	return out
 }
 
 // validate enforces closed-manifest semantics: every declared package must

@@ -6,7 +6,7 @@ NGINX_VERSIONS = {
 # version_label -> short_version tag
 NGINX_TAGS = {
     "stable": "1.30",
-    "mainline": "1.29",
+    "mainline": "1.31",
 }
 
 def _version_parts(version):

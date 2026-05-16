@@ -201,7 +201,7 @@ The matrix factory in [[oci/distroless/matrix.bzl]] doesn't know which package m
 3. **`static` migrates to Hummingbird first.** Smallest dep closure (3 upstream packages); no glibc to wrangle; exercises the rules_rpm path on the simplest case. Validates the whole pipeline (lockfile → rpm-extract → rpmdb fragment → composed layer → scanner-zero verification with `ID=hummingbird`) end-to-end before the harder migrations.
 4. `cc` image migrated to Hummingbird — first glibc-bearing target. Validates the consumer-scanner-zero claim that motivates the whole ADR.
 5. `bash`, `nginx`, `python` migrated one at a time, each behind the same scanner-zero gate.
-6. `nodejs` distroless on Hummingbird — the marquee demo: ship a real distroless node, 30–50MB, without npm or node-gyp, on the same glibc Hummingbird's own 134MB `hi/nodejs` ships.
+6. `nodejs` distroless on Hummingbird — the marquee demo: ship a real distroless node, without npm or node-gyp, on the same glibc Hummingbird's own `hi/nodejs` ships. Tracer-bullet (shipped): nodejs.org prebuilt tarball on cc-hummingbird, ~95–145MB uncompressed per major (20/24/26), comparable to `hi/nodejs`'s 134MB. The ADR's earlier "30–50MB" estimate predated Node's growth and is unattainable from the `--enable-static-*` tarball regardless of stripping. Source-build with `--shared-{openssl,zlib,brotli,cares,nghttp2,libuv,zstd} --with-intl=system-icu` against Hummingbird's existing rpms (libicu alone unbundles ~30MB) is tracked in [#230](https://github.com/arkeros/senku/issues/230) and targets Chainguard-comparable ~60MB.
 
 ## See also
 

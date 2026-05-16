@@ -27,6 +27,11 @@ bazel_dep(name = "bazel_skylib", version = "1.9.0")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_go", version = "0.57.0")
 bazel_dep(name = "gazelle", version = "0.46.0")
+# Spoke BUILD.bazel files emit a `package_metadata` target per (package, arch)
+# so the supply-chain `gather_metadata` aspect surfaces each rpm as its own
+# component in the image SBOM (matching the per-`.deb` shape of
+# //oci/distroless/common:package.BUILD.tmpl).
+bazel_dep(name = "package_metadata", version = "0.0.10")
 
 # Vendored Go deps for the internal tools. Only rpm-extract is implemented
 # today; the use_repo list grows as rpmdb-merge (sqlite) and pin/rpm-extract

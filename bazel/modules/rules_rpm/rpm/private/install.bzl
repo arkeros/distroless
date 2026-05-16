@@ -19,6 +19,19 @@ shells out to the pin Go binary against the live repo.
 def safe_repo_name(s):
     return s.replace("+", ".plus.")
 
+def _rpm_purl(namespace, name, version, arch):
+    # purl-spec for rpm: pkg:rpm/<namespace>/<name>@<version>?arch=<arch>
+    # `namespace` is the upstream/distro identity ("hummingbird", "nginx.org",
+    # ...). Mirrors the shape syft emits from rpmdb-cataloged packages so
+    # grype's purl matchers route the lookup the same way for our image
+    # SBOM as they would for a `syft scan`-derived SBOM.
+    return "pkg:rpm/{ns}/{name}@{ver}?arch={arch}".format(
+        ns = namespace,
+        name = name,
+        ver = version,
+        arch = arch,
+    )
+
 def _rpm_package_repo_impl(rctx):
     # Repository rules run before the analysis phase, so we can't invoke the
     # `rpm-extract` go_binary here (it's not built yet). The repo only
@@ -30,11 +43,34 @@ def _rpm_package_repo_impl(rctx):
         output = "package.rpm",
     )
 
+    purl = _rpm_purl(
+        namespace = rctx.attr.purl_namespace,
+        name = rctx.attr.package,
+        version = rctx.attr.version,
+        arch = rctx.attr.arch,
+    )
+
+    # `package_metadata(purl=...)` + `package(default_package_metadata=...)`
+    # surfaces the rpm's identity to supply_chain_tools' gather_metadata
+    # aspect. Without this, the image SBOM lists rpm-extract's Go module deps
+    # as components instead of the actual rpm packages — see
+    # //oci/distroless/common:package.BUILD.tmpl for the apt-side analogue.
     rctx.file("BUILD.bazel", """
+load("@package_metadata//:defs.bzl", "package_metadata")
 load("@rules_rpm//rpm/private:per_package.bzl", "rpm_package")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_package_metadata = [":package_metadata"],
+    default_visibility = ["//visibility:public"],
+)
+
 exports_files(["package.rpm"])
+
+package_metadata(
+    name = "package_metadata",
+    purl = {purl},
+    visibility = ["//visibility:public"],
+)
 
 rpm_package(
     name = "package",
@@ -49,6 +85,7 @@ rpm_package(
         version = repr(rctx.attr.version),
         arch = repr(rctx.attr.arch),
         gpg_key = repr(str(rctx.attr.gpg_key)),
+        purl = repr(purl),
     ))
 
 rpm_package_repo = repository_rule(
@@ -60,6 +97,10 @@ rpm_package_repo = repository_rule(
         "url": attr.string(mandatory = True),
         "sha256": attr.string(mandatory = True),
         "gpg_key": attr.label(mandatory = True, allow_single_file = True),
+        "purl_namespace": attr.string(
+            mandatory = True,
+            doc = "purl namespace identifying the upstream (e.g. 'hummingbird', 'nginx.org'). Drives the `pkg:rpm/<namespace>/<name>` shape grype routes by.",
+        ),
     },
 )
 

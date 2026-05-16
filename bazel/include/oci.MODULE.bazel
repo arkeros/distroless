@@ -207,7 +207,7 @@ http_file(
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(
     name = "grype_database",
-    sha256 = "14a3e6948bc99af4737992c6c8cc6a8d6f044e9f617cd72c479f7ba05a4779c6",
-    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.4_2026-05-13T00:47:21Z_1778657102.tar.zst",
+    sha256 = "1d060ed43fdb2a203f81c6e071857f1a9e4e915e4f54c54de60b246815eda78d",
+    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.4_2026-05-15T00:46:06Z_1778829980.tar.zst",
 )
 use_repo(grype_db, "grype_database")

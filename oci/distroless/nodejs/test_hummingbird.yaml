@@ -1,0 +1,54 @@
+schemaVersion: 2.0.0
+metadataTest:
+  entrypoint: ['/nodejs/bin/node']
+  workdir: '/home/nonroot'
+  user: '65532'
+  envVars:
+    - key: NODE_ENV
+      value: production
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-certificates.crt
+fileExistenceTests:
+  - name: 'node binary'
+    path: '/nodejs/bin/node'
+    shouldExist: true
+  # ADR 0007 step 6: ship `bin/node` only — no npm, no node-gyp, no
+  # corepack. Asserting these stay absent guards the size budget.
+  - name: 'no npm'
+    path: '/nodejs/bin/npm'
+    shouldExist: false
+  - name: 'no npx'
+    path: '/nodejs/bin/npx'
+    shouldExist: false
+  - name: 'no corepack'
+    path: '/nodejs/bin/corepack'
+    shouldExist: false
+  - name: 'no node headers'
+    path: '/nodejs/include/node'
+    shouldExist: false
+  # Inherited cc/static surface. Re-checked here so a regression in any
+  # inherit step fails this image's tests too.
+  - name: 'glibc dynamic linker'
+    path: '/usr/lib64/ld-linux-x86-64.so.2'
+    shouldExist: true
+  - name: 'libstdc++'
+    path: '/usr/lib64/libstdc++.so.6'
+    shouldExist: true
+  - name: 'os-release canonical'
+    path: '/usr/lib/os-release'
+    shouldExist: true
+  - name: 'rpmdb sqlite'
+    path: '/usr/lib/sysimage/rpm/rpmdb.sqlite'
+    shouldExist: true
+  - name: 'no shell'
+    path: '/bin/sh'
+    shouldExist: false
+fileContentTests:
+  - name: 'os-release has ID=hummingbird'
+    path: '/usr/lib/os-release'
+    expectedContents: ['ID=.hummingbird.']
+commandTests:
+  - name: 'node executes'
+    command: '/nodejs/bin/node'
+    args: ['-e', 'console.log("ok")']
+    expectedOutput: ['^ok']

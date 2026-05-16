@@ -270,6 +270,22 @@
         "upstream": "acl-2.3.2-6.1.hum1.src.rpm"
       }
     },
+    "libatomic": {
+      "aarch64": {
+        "version": "15.2.1-7.2.hum1",
+        "sha256": "cc6b4e8abee915e8642d80a1b37f3c93b8637fa632c9ae11f445073cdbc8cee5",
+        "path": "aarch64/Packages/l/libatomic-15.2.1-7.2.hum1.aarch64.rpm",
+        "size": 56153,
+        "upstream": "gcc-15.2.1-7.2.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "15.2.1-7.2.hum1",
+        "sha256": "eb007f907d8b4fdbf98719b96c4c3aeae55e042ff3af63ab5976ff45c11b2741",
+        "path": "x86_64/Packages/l/libatomic-15.2.1-7.2.hum1.x86_64.rpm",
+        "size": 55287,
+        "upstream": "gcc-15.2.1-7.2.hum1.src.rpm"
+      }
+    },
     "libattr": {
       "aarch64": {
         "version": "2.5.2-8.1.hum1",

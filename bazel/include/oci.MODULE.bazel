@@ -115,6 +115,7 @@ rpm.install(
         "glibc",
         "grep",
         "libacl",
+        "libatomic",
         "libattr",
         "libcap",
         "libgcc",
@@ -191,6 +192,49 @@ rpm.install(
 use_repo(rpm, "hummingbird", "nginx_mainline_rpm", "nginx_stable_rpm")
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# Node.js runtime tarballs from nodejs.org. Consumed by //oci/distroless/nodejs
+# (ADR 0007 step 6, the "marquee demo" distroless node on Hummingbird's glibc).
+# Only `bin/node` is shipped in the image; npm/npx/corepack/headers/docs are
+# left in the bazel-out tree and never make it into the layer.
+#
+# To refresh:
+#   curl -fsSL https://nodejs.org/dist/index.json | jq '.[] | select(.version | startswith("v26."))[0]'
+#   curl -fsSL https://nodejs.org/dist/v<version>/SHASUMS256.txt | grep linux
+_NODEJS_TARBALL_BUILD_FILE_CONTENT = """\
+package(default_visibility = ["//visibility:public"])
+exports_files(["bin/node"])
+"""
+
+[
+    http_archive(
+        name = "nodejs_{}_{}".format(major, arch),
+        build_file_content = _NODEJS_TARBALL_BUILD_FILE_CONTENT,
+        sha256 = sha,
+        strip_prefix = "node-v{}-linux-{}".format(full_version, "x64" if arch == "amd64" else "arm64"),
+        url = "https://nodejs.org/dist/v{}/node-v{}-linux-{}.tar.xz".format(
+            full_version,
+            full_version,
+            "x64" if arch == "amd64" else "arm64",
+        ),
+    )
+    for major, full_version, sha_by_arch in [
+        ("20", "20.20.2", {
+            "amd64": "df770b2a6f130ed8627c9782c988fda9669fa23898329a61a871e32f965e007d",
+            "arm64": "73093db209e4e9e09dd7d15a47aeaab1b74833830df03efa5f942a1122c5fa71",
+        }),
+        ("24", "24.15.0", {
+            "amd64": "472655581fb851559730c48763e0c9d3bc25975c59d518003fc0849d3e4ba0f6",
+            "arm64": "f3d5a797b5d210ce8e2cb265544c8e482eaedcb8aa409a8b46da7e8595d0dda0",
+        }),
+        ("26", "26.1.0", {
+            "amd64": "9fc6f21b6c4a62439727123e510e9c39febb2f563738f4927cd3e0b288c9b3c9",
+            "arm64": "058f00fe6c84f804b4b96aab377f76ed57dd0be5f10af4dcc0fded172746f366",
+        }),
+    ]
+    for arch, sha in sha_by_arch.items()
+]
 
 # Out-of-band binaries baked into //devtools/workstation. Versions are
 # pinned; refresh by re-fetching:

@@ -31,15 +31,6 @@ def _image_name(name, mode, user, arch, distro):
 def _index_name(name, mode, user, distro):
     return "{}{}_{}_{}".format(name, mode, user, distro)
 
-def _resolve_image_ref(ref, context):
-    if ref == None:
-        return None
-
-    suffix = _image_name("", context["mode"], context["user"], context["arch"], context["distro"])
-    if ":" not in ref:
-        return "{}:{}{}".format(ref, ref.rsplit("/", 1)[-1], suffix)
-    return ref + suffix
-
 # Parent dirs companion to per-package dpkg_statusd outputs from
 # //oci/distroless/common:package.BUILD.tmpl. See
 # //oci/distroless/common:dpkg_status_d_dirs for rationale.
@@ -59,12 +50,10 @@ def distroless_matrix(
         distro,
         architectures,
         layers,
-        base = None,
         entrypoint = None,
         env = None,
         annotations = None,
         index_annotations = None,
-        debug_base = None,
         debug_layers = None,
         debug_entrypoint = None,
         debug_env = None,
@@ -75,21 +64,27 @@ def distroless_matrix(
         **kwargs):
     """Generates release/debug OCI images plus per-user manifest indexes.
 
+    Each image is composed from an explicit list of layers — no `base =`
+    inheritance. The `layers` callback returns the full layer composition
+    (rootfs + packages + rpmdb), and `debug_layers` does the same for the
+    `_debug` variant (typically adds busybox + a busybox-aware rpmdb).
+    See //oci/distroless/cc/config.bzl:cc_layers for the canonical pattern.
+
     Args:
         name: image family name and target stem.
         distro: distro key such as "debian".
         architectures: architectures included in the matrix.
-        layers: callback taking a context struct and returning release layers.
-        base: optional base package or explicit target stem label.
+        layers: callback `(ctx) -> [Label]` returning release layers.
+            ctx exposes name/mode/user/uid/arch/distro/working_dir.
         entrypoint: optional release entrypoint.
         env: optional release environment map.
         annotations: optional release image annotations.
         index_annotations: optional release index annotations.
-        debug_base: optional debug base package or explicit target stem label.
-        debug_layers: optional callback for debug layers. Defaults to release
-            layers when a base image exists, or no extra layers for root images.
+        debug_layers: callback for debug layers. Required if the debug
+            variant should differ from release (e.g. add busybox). When
+            None, debug_image == release_image (same layers, same env).
         debug_entrypoint: optional debug entrypoint override.
-        debug_env: optional debug environment overlay.
+        debug_env: optional debug environment overlay (merged onto env).
         debug_annotations: optional debug image annotations override.
         debug_index_annotations: optional debug index annotations override.
         debug_ignore_cves: optional list extending kwargs["ignore_cves"] for
@@ -106,7 +101,7 @@ def distroless_matrix(
     release_annotations = annotations or {}
     release_index_annotations = index_annotations if index_annotations != None else release_annotations
 
-    effective_debug_layers = debug_layers if debug_layers != None else (layers if base != None else None)
+    effective_debug_layers = debug_layers if debug_layers != None else layers
     effective_debug_entrypoint = debug_entrypoint if debug_entrypoint != None else entrypoint
     effective_debug_env = _merge_dicts(release_env, debug_env or {})
     effective_debug_annotations = debug_annotations if debug_annotations != None else release_annotations
@@ -131,7 +126,6 @@ def distroless_matrix(
                 arch = arch,
                 uid = uid,
                 working_dir = working_dir,
-                base = _resolve_image_ref(base, release_context),
                 layers = _resolve_layers(layers, release_context),
                 entrypoint = entrypoint,
                 env = release_env,
@@ -144,12 +138,6 @@ def distroless_matrix(
             debug_context["mode"] = "_debug"
             debug_context["debug_name"] = debug_name
 
-            resolved_debug_base = _resolve_image_ref(debug_base, debug_context)
-            if resolved_debug_base == None:
-                resolved_debug_base = _resolve_image_ref(base, debug_context) if base != None else ":" + release_name
-
-            resolved_debug_layers = _resolve_layers(effective_debug_layers, debug_context) if effective_debug_layers != None else []
-
             debug_kwargs = _copy_dict(kwargs)
             if debug_ignore_cves:
                 debug_kwargs["ignore_cves"] = (debug_kwargs.get("ignore_cves") or []) + debug_ignore_cves
@@ -161,8 +149,7 @@ def distroless_matrix(
                 arch = arch,
                 uid = uid,
                 working_dir = working_dir,
-                base = resolved_debug_base,
-                layers = resolved_debug_layers,
+                layers = _resolve_layers(effective_debug_layers, debug_context),
                 entrypoint = effective_debug_entrypoint,
                 env = effective_debug_env,
                 annotations = effective_debug_annotations,

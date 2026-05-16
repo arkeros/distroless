@@ -7,11 +7,17 @@ BASH_ARCHITECTURES = {
 }
 
 def bash_layers(ctx):
-    layers = [":{}_{}_layer".format(ctx.arch, ctx.distro)]
+    """Composition: static + (busybox if debug) + cc + bash + one rpmdb."""
+    layers = [
+        "//oci/distroless/static:static_{}_{}_layer".format(ctx.arch, ctx.distro),
+    ]
+    if ctx.mode == "_debug":
+        layers.append("//oci/distroless/static:busybox_{}_{}_layer".format(ctx.arch, ctx.distro))
+    layers += [
+        "//oci/distroless/cc:cc_{}_{}_layer".format(ctx.arch, ctx.distro),
+        ":{}_{}_layer".format(ctx.arch, ctx.distro),
+    ]
     if ctx.distro == "hummingbird":
-        # bash adds 5 packages on top of cc (bash, coreutils, sed, grep,
-        # mawk). cc inherits static's rpmdb via its `base`; layering this
-        # rpmdb on top overwrites the inherited one with the full
-        # 13-package set (3 static + 5 cc + 5 bash).
-        layers.append(":rpmdb_bash_{}_hummingbird".format(ctx.arch))
+        rpmdb = ":rpmdb_bash_debug_{}_hummingbird" if ctx.mode == "_debug" else ":rpmdb_bash_{}_hummingbird"
+        layers.append(rpmdb.format(ctx.arch))
     return layers

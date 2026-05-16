@@ -9,12 +9,22 @@ CC_ARCHITECTURES = {
 }
 
 def cc_layers(ctx):
-    layers = [":cc_{}_{}_layer".format(ctx.arch, ctx.distro)]
+    """Layer composition for cc images — no base inheritance.
+
+    Composes static's content layer + cc's packages explicitly (plus busybox
+    for the `_debug` variant) and one merged rpmdb on hummingbird. Dropping
+    `base =` means we ship one rpmdb per image instead of N along the
+    inheritance chain.
+
+    Used for both release and debug variants — branches on `ctx.mode`.
+    """
+    layers = [
+        "//oci/distroless/static:static_{}_{}_layer".format(ctx.arch, ctx.distro),
+    ]
+    if ctx.mode == "_debug":
+        layers.append("//oci/distroless/static:busybox_{}_{}_layer".format(ctx.arch, ctx.distro))
+    layers.append(":cc_{}_{}_layer".format(ctx.arch, ctx.distro))
     if ctx.distro == "hummingbird":
-        # cc inherits static's rpmdb layer via `base = //oci/distroless/static`,
-        # but adds 5 glibc-bearing packages. Overlay a fresh rpmdb at the same
-        # path (/usr/lib/sysimage/rpm/rpmdb.sqlite) covering static's set + cc's
-        # — otherwise syft would miss them and grype would fall through to NVD
-        # CPE matching (the silent-zero trap from ADR 0007 §rpmdb sqlite).
-        layers.append(":rpmdb_cc_{}_hummingbird".format(ctx.arch))
+        rpmdb = ":rpmdb_cc_debug_{}_hummingbird" if ctx.mode == "_debug" else ":rpmdb_cc_{}_hummingbird"
+        layers.append(rpmdb.format(ctx.arch))
     return layers

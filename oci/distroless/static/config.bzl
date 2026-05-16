@@ -21,10 +21,17 @@ def static_layers(ctx):
     return layers
 
 def static_debug_layers(ctx):
-    layers = [":busybox_{}_{}_layer".format(ctx.arch, ctx.distro)]
+    # Composition (no base inheritance): debug = release content + busybox.
+    # The release flatten provides rootfs, /etc/passwd, /etc/group,
+    # /etc/os-release, ca-certificates, tzdata, etc. Without it the debug
+    # image would be just busybox sitting on a bare filesystem.
+    layers = [
+        ":static_{}_{}_layer".format(ctx.arch, ctx.distro),
+        ":busybox_{}_{}_layer".format(ctx.arch, ctx.distro),
+    ]
     if ctx.distro == "hummingbird":
-        # Overrides the release rpmdb (same /usr/lib/sysimage/rpm path) with
-        # one that includes busybox — so grype routes its CVEs via the
+        # Replaces the static-release rpmdb at the same sqlite path with
+        # one that includes busybox — grype routes its CVEs via the
         # hummingbird provider rather than NVD-generic-via-binary-cataloger.
         layers.append(":rpmdb_debug_{}_hummingbird".format(ctx.arch))
     return layers

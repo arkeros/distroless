@@ -5,7 +5,7 @@ load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("//oci:vex.bzl", "vex_document")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load(":config.bzl", "CC_ARCHITECTURES", "CC_DISTROS", "cc_layers")
 
 package(default_visibility = ["//visibility:public"])
@@ -106,11 +106,11 @@ _VEX = {
     ),
 ]
 
-# Full-package rpmdb per arch. cc inherits static's rpmdb via `base`, but the
-# rpmdb at /usr/lib/sysimage/rpm/rpmdb.sqlite is a single sqlite file —
-# layering a partial rpmdb on top would clobber static's row set. So pass
-# both targets: aspect walks each flatten and dedupes by (package, arch),
-# producing a single rpmdb listing all 8 packages (static's 3 + cc's 5).
+# Full-package rpmdb per arch — single sqlite covering static's 3 noarch rows
+# plus cc's 6 glibc-bearing additions. Composition (no base inheritance) means
+# this is the ONLY rpmdb in the cc release image, not one of N along an
+# inheritance chain — saves ~1MB of duplicate rpmdb.sqlite layers vs the old
+# base-inheritance model.
 [
     rpmdb_merge(
         name = "rpmdb_cc_" + arch + "_hummingbird",
@@ -122,14 +122,30 @@ _VEX = {
     for arch in CC_ARCHITECTURES["hummingbird"]
 ]
 
+# Debug variant rpmdb — adds busybox rows. Same aspect walk pattern.
+[
+    rpmdb_merge(
+        name = "rpmdb_cc_debug_" + arch + "_hummingbird",
+        targets = [
+            "//oci/distroless/static:static_{}_hummingbird_layer".format(arch),
+            "//oci/distroless/static:busybox_{}_hummingbird_layer".format(arch),
+            ":cc_{}_hummingbird_layer".format(arch),
+        ],
+    )
+    for arch in CC_ARCHITECTURES["hummingbird"]
+]
+
 [
     distroless_matrix(
         name = "cc",
         architectures = CC_ARCHITECTURES[distro],
-        base = "//oci/distroless/static",
+        debug_entrypoint = ["/busybox/sh"],
+        debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
+        debug_layers = cc_layers,
         debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,
+        env = DEFAULT_ENV,
         ignore_cves = _IGNORE_CVES[distro],
         layers = cc_layers,
         vex = _VEX[distro],

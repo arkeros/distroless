@@ -9,7 +9,7 @@ load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
 exports_files([
@@ -192,8 +192,8 @@ _NGINX_RPM_REPO = {
     for arch in NGINX_ARCHITECTURES["hummingbird"]
 ]
 
-# rpmdb tars per (channel, arch). Merges static + cc + this nginx layer so
-# syft reports the full installed-package set.
+# rpmdb tars per (channel, arch). Merges static + cc + this nginx layer.
+# Single sqlite per image — no base inheritance, no duplicate rpmdb layers.
 [
     rpmdb_merge(
         name = "rpmdb_nginx_" + version_label + "_" + arch + "_hummingbird",
@@ -207,19 +207,36 @@ _NGINX_RPM_REPO = {
     for arch in NGINX_ARCHITECTURES["hummingbird"]
 ]
 
+# Debug rpmdbs add busybox rows.
+[
+    rpmdb_merge(
+        name = "rpmdb_nginx_debug_" + version_label + "_" + arch + "_hummingbird",
+        targets = [
+            "//oci/distroless/static:static_{}_hummingbird_layer".format(arch),
+            "//oci/distroless/static:busybox_{}_hummingbird_layer".format(arch),
+            "//oci/distroless/cc:cc_{}_hummingbird_layer".format(arch),
+            ":" + version_label + "_" + arch + "_hummingbird_layer",
+        ],
+    )
+    for version_label in NGINX_VERSIONS.keys()
+    for arch in NGINX_ARCHITECTURES["hummingbird"]
+]
+
 [
     distroless_matrix(
         name = "nginx_stable",
         architectures = NGINX_ARCHITECTURES[distro],
-        base = "//oci/distroless/cc",
+        debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
+        debug_layers = nginx_layers("stable"),
         debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,
         entrypoint = _NGINX_ENTRYPOINT,
+        env = DEFAULT_ENV,
         ignore_cves = NGINX_IGNORE_CVES["stable"] + _IGNORE_CVES_BY_DISTRO[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image",
@@ -235,15 +252,17 @@ _NGINX_RPM_REPO = {
     distroless_matrix(
         name = "nginx_mainline",
         architectures = NGINX_ARCHITECTURES[distro],
-        base = "//oci/distroless/cc",
+        debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
+        debug_layers = nginx_layers("mainline"),
         debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,
         entrypoint = _NGINX_ENTRYPOINT,
+        env = DEFAULT_ENV,
         ignore_cves = NGINX_IGNORE_CVES["mainline"] + _IGNORE_CVES_BY_DISTRO[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image",

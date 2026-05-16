@@ -49,7 +49,10 @@ NGINX_ARCHITECTURES = {
 }
 
 def nginx_layers(version_label):
-    """Returns a layers callback for the given nginx version.
+    """Composition: static + (busybox if debug) + cc + nginx + conf + one rpmdb.
+
+    No base inheritance — explicit layer list. Branches on ctx.mode for
+    busybox in debug variants.
 
     Args:
         version_label: "stable" or "mainline"
@@ -57,14 +60,20 @@ def nginx_layers(version_label):
 
     def _layers(ctx):
         layers = [
+            "//oci/distroless/static:static_{}_{}_layer".format(ctx.arch, ctx.distro),
+        ]
+        if ctx.mode == "_debug":
+            layers.append("//oci/distroless/static:busybox_{}_{}_layer".format(ctx.arch, ctx.distro))
+        layers += [
+            "//oci/distroless/cc:cc_{}_{}_layer".format(ctx.arch, ctx.distro),
             ":{}_{}_{}_layer".format(version_label, ctx.arch, ctx.distro),
             ":nginx_conf_layer",
         ]
         if ctx.distro == "hummingbird":
-            # nginx (from nginx.org's rpm) on top of cc — rpmdb merges
-            # static + cc + this layer so syft surfaces the full set
-            # (8 cc + nginx).
-            layers.append(":rpmdb_nginx_{}_{}_hummingbird".format(version_label, ctx.arch))
+            if ctx.mode == "_debug":
+                layers.append(":rpmdb_nginx_debug_{}_{}_hummingbird".format(version_label, ctx.arch))
+            else:
+                layers.append(":rpmdb_nginx_{}_{}_hummingbird".format(version_label, ctx.arch))
         return layers
 
     return _layers

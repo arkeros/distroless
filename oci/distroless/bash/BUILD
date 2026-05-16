@@ -6,7 +6,7 @@ load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NCURSES_FIXED_VEX_STATEMENTS")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "bash_layers")
 
 # Hummingbird arch dirs map differently than senku's debian-style names:
@@ -98,15 +98,17 @@ _VEX = {
     distroless_matrix(
         name = "bash",
         architectures = BASH_ARCHITECTURES[distro],
-        base = "//oci/distroless/cc",
+        debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless bash image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/bash/BUILD",
         },
+        debug_layers = bash_layers,
         debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,
         entrypoint = ["/usr/bin/bash"],
+        env = DEFAULT_ENV,
         ignore_cves = _IGNORE_CVES[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless bash image",
@@ -176,14 +178,27 @@ _VEX = {
     for arch in BASH_ARCHITECTURES["hummingbird"]
 ]
 
-# rpmdb tar per arch. Same pattern as cc/BUILD: aspect-walk static + cc +
-# this layer to gather every package's header. Result overwrites the
-# rpmdb inherited from cc with the bash superset.
+# rpmdb tar per arch. Aspect-walks static + cc + bash flattens; single sqlite
+# is the only rpmdb in the composed image (no inheritance, no dead layers).
 [
     rpmdb_merge(
         name = "rpmdb_bash_" + arch + "_hummingbird",
         targets = [
             "//oci/distroless/static:static_{}_hummingbird_layer".format(arch),
+            "//oci/distroless/cc:cc_{}_hummingbird_layer".format(arch),
+            ":" + arch + "_hummingbird_layer",
+        ],
+    )
+    for arch in BASH_ARCHITECTURES["hummingbird"]
+]
+
+# Debug rpmdb adds busybox rows.
+[
+    rpmdb_merge(
+        name = "rpmdb_bash_debug_" + arch + "_hummingbird",
+        targets = [
+            "//oci/distroless/static:static_{}_hummingbird_layer".format(arch),
+            "//oci/distroless/static:busybox_{}_hummingbird_layer".format(arch),
             "//oci/distroless/cc:cc_{}_hummingbird_layer".format(arch),
             ":" + arch + "_hummingbird_layer",
         ],

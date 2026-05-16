@@ -53,6 +53,23 @@ USERS = ["root", "nonroot"]
 
 COMPRESSION = "zstd"
 
+# Standard env every senku image carries. Previously inherited via
+# `base = //oci/distroless/static` (which set these on its distroless_matrix).
+# Composition-style images set this explicitly. `SSL_CERT_FILE` resolves on
+# both Debian (native path) and Hummingbird (Debian-compat symlink shipped
+# by Hummingbird's ca-certificates rpm).
+DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+DEFAULT_ENV = {
+    "PATH": DEFAULT_PATH,
+    "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt",
+}
+
+# Debug images append /busybox to PATH so the shell can resolve commands.
+DEFAULT_DEBUG_ENV = {
+    "PATH": DEFAULT_PATH + ":/busybox",
+}
+
 # Debian "no-DSA, Minor issue" CVEs that Debian Security has triaged but not
 # yet backported a fix for. We track Debian unstable (sid) so most fixes flow
 # in via lockfile bumps; this list is what's still pending upstream as of the

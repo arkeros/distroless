@@ -66,6 +66,7 @@ def _rpm_extension_impl(mctx):
                         sha256 = entry["sha256"],
                         gpg_key = install.gpg_key,
                         purl_namespace = purl_ns,
+                        upstream = entry.get("upstream", ""),
                     )
 
             # Hub repo: aliases all spokes under @<name>//<pkg>/<arch>:{content,header}

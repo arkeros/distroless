@@ -71,8 +71,9 @@ type primaryPackage struct {
 }
 
 type primaryFormat struct {
-	Provides primaryDepList `xml:"provides"`
-	Requires primaryDepList `xml:"requires"`
+	SourceRpm string         `xml:"sourcerpm"`
+	Provides  primaryDepList `xml:"provides"`
+	Requires  primaryDepList `xml:"requires"`
 }
 
 type primaryDepList struct {
@@ -94,10 +95,11 @@ type primarySize struct {
 }
 
 type lockEntry struct {
-	Version string `json:"version"`
-	Sha256  string `json:"sha256"`
-	Path    string `json:"path"`
-	Size    int64  `json:"size"`
+	Version  string `json:"version"`
+	Sha256   string `json:"sha256"`
+	Path     string `json:"path"`
+	Size     int64  `json:"size"`
+	Upstream string `json:"upstream,omitempty"`
 }
 
 type lockRepo struct {
@@ -161,6 +163,7 @@ type candidate struct {
 	sha256   string
 	path     string
 	size     int64
+	upstream string
 	requires []string
 	provides []string
 }
@@ -264,6 +267,7 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string) (*lockfile, 
 				sha256:   pkg.Checksum.Value,
 				path:     fmt.Sprintf("%s/%s", arch, pkg.Location.Href),
 				size:     pkg.Size.Package,
+				upstream: pkg.Format.SourceRpm,
 				requires: depNames(pkg.Format.Requires.Entries),
 				provides: depNames(pkg.Format.Provides.Entries),
 			}
@@ -294,10 +298,11 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string) (*lockfile, 
 			out[key.name] = map[string]lockEntry{}
 		}
 		out[key.name][key.arch] = lockEntry{
-			Version: c.evr,
-			Sha256:  c.sha256,
-			Path:    c.path,
-			Size:    c.size,
+			Version:  c.evr,
+			Sha256:   c.sha256,
+			Path:     c.path,
+			Size:     c.size,
+			Upstream: c.upstream,
 		}
 	}
 

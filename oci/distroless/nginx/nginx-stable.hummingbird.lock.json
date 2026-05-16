@@ -11,13 +11,15 @@
         "version": "2:1.30.1-1.el10.ngx",
         "sha256": "d77d73e4684ee149443740f11aca53e04f6da7e1ef647827f3afa5b1d8cdf6ef",
         "path": "aarch64/RPMS/nginx-1.30.1-1.el10.ngx.aarch64.rpm",
-        "size": 1089423
+        "size": 1089423,
+        "upstream": "nginx-1.30.1-1.el10.ngx.src.rpm"
       },
       "x86_64": {
         "version": "2:1.30.1-1.el10.ngx",
         "sha256": "248fc8d50fa94467102b3b584d7967ef470b0f3f7b1b8a4e51304835e13c0098",
         "path": "x86_64/RPMS/nginx-1.30.1-1.el10.ngx.x86_64.rpm",
-        "size": 1102989
+        "size": 1102989,
+        "upstream": "nginx-1.30.1-1.el10.ngx.src.rpm"
       }
     }
   }

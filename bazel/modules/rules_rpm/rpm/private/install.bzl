@@ -19,17 +19,34 @@ shells out to the pin Go binary against the live repo.
 def safe_repo_name(s):
     return s.replace("+", ".plus.")
 
-def _rpm_purl(namespace, name, version, arch):
-    # purl-spec for rpm: pkg:rpm/<namespace>/<name>@<version>?arch=<arch>
-    # `namespace` is the upstream/distro identity ("hummingbird", "nginx.org",
-    # ...). Mirrors the shape syft emits from rpmdb-cataloged packages so
-    # grype's purl matchers route the lookup the same way for our image
-    # SBOM as they would for a `syft scan`-derived SBOM.
-    return "pkg:rpm/{ns}/{name}@{ver}?arch={arch}".format(
+def _split_epoch(evr):
+    # RPM versions optionally carry an epoch prefix (`<epoch>:<ver>-<rel>`).
+    # purl-spec routes epoch into its own qualifier rather than baking it
+    # into the version field, so split here. Falls back to "0" for the
+    # implicit-epoch case.
+    if ":" in evr:
+        epoch, _, rest = evr.partition(":")
+        return epoch, rest
+    return "0", evr
+
+def _rpm_purl(namespace, name, version, arch, upstream):
+    # purl-spec for rpm: pkg:rpm/<namespace>/<name>@<ver>-<rel>?<qualifiers>
+    # `namespace` is the upstream/distro identity (e.g. "hummingbird",
+    # "nginx.org"). epoch + arch + upstream are encoded as qualifiers so
+    # the purl is purl-spec-conformant and interop-compatible with syft's
+    # rpmdb-cataloged shape (`epoch=N&arch=X&upstream=<src.rpm>`).
+    epoch, ver = _split_epoch(version)
+    parts = [
+        "arch=" + arch,
+        "epoch=" + epoch,
+    ]
+    if upstream:
+        parts.append("upstream=" + upstream)
+    return "pkg:rpm/{ns}/{name}@{ver}?{q}".format(
         ns = namespace,
         name = name,
-        ver = version,
-        arch = arch,
+        ver = ver,
+        q = "&".join(parts),
     )
 
 def _rpm_package_repo_impl(rctx):
@@ -48,6 +65,7 @@ def _rpm_package_repo_impl(rctx):
         name = rctx.attr.package,
         version = rctx.attr.version,
         arch = rctx.attr.arch,
+        upstream = rctx.attr.upstream,
     )
 
     # `package_metadata(purl=...)` + `package(default_package_metadata=...)`
@@ -100,6 +118,9 @@ rpm_package_repo = repository_rule(
         "purl_namespace": attr.string(
             mandatory = True,
             doc = "purl namespace identifying the upstream (e.g. 'hummingbird', 'nginx.org'). Drives the `pkg:rpm/<namespace>/<name>` shape grype routes by.",
+        ),
+        "upstream": attr.string(
+            doc = "Source-rpm filename from primary.xml's <rpm:sourcerpm>. Embedded as `?upstream=...` qualifier in the purl for provenance; optional, omitted when unset.",
         ),
     },
 )

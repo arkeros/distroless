@@ -3,7 +3,10 @@ NGINX_VERSIONS = {
     "mainline": "nginx_mainline",
 }
 
-# version_label -> short_version tag
+# version_label -> short_version tag. Bumped 1.29 -> 1.31 when the
+# nginx_mainline lockfile rolled to nginx 1.31.0-1~trixie (the
+# `nginx_mainline_lock_version_test` jq_test enforces this stays in
+# sync with the actual pinned version).
 NGINX_TAGS = {
     "stable": "1.30",
     "mainline": "1.31",

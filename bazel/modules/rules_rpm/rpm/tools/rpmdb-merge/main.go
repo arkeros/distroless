@@ -25,6 +25,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/klauspost/compress/zstd"
@@ -98,7 +99,32 @@ func loadConfig(path string) (*config, error) {
 // the Packages table, then reads the bytes back. We round-trip through the
 // filesystem because modernc.org/sqlite doesn't expose an in-memory-with-
 // readback path that yields valid on-disk bytes for tar emission.
+//
+// Determinism (see docs/adr/0007-hummingbird-rpm-base.md §Determinism):
+//
+//   - Headers are sorted by (Package, Version, Arch) before insertion so
+//     rowid assignment — and the b-tree page layout that follows from it —
+//     is independent of the order the upstream config JSON happened to list.
+//   - page_size and journal_mode are pinned via URL-level pragmas at
+//     connection open, before any other SQL touches the empty file.
+//     journal_mode=OFF avoids `-wal`/`-shm` artifacts leaking past close.
+//   - Packages.hnum is a plain INTEGER PRIMARY KEY (rowid alias), not
+//     AUTOINCREMENT — keeps the sqlite_sequence table out of the file.
+//   - All inserts run inside one transaction; a final VACUUM normalizes
+//     free-page layout so the on-disk image is a function of inputs only.
 func buildRpmdb(headers []headerEntry) ([]byte, error) {
+	sorted := make([]headerEntry, len(headers))
+	copy(sorted, headers)
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i].Package != sorted[j].Package {
+			return sorted[i].Package < sorted[j].Package
+		}
+		if sorted[i].Version != sorted[j].Version {
+			return sorted[i].Version < sorted[j].Version
+		}
+		return sorted[i].Arch < sorted[j].Arch
+	})
+
 	tmp, err := os.CreateTemp("", "rpmdb-*.sqlite")
 	if err != nil {
 		return nil, err
@@ -107,41 +133,59 @@ func buildRpmdb(headers []headerEntry) ([]byte, error) {
 	tmp.Close()
 	defer os.Remove(dbPath)
 
-	db, err := sql.Open("sqlite", "file:"+dbPath)
+	dsn := "file:" + dbPath + "?_pragma=page_size(4096)&_pragma=journal_mode(off)"
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := db.Exec(`CREATE TABLE Packages (hnum INTEGER PRIMARY KEY AUTOINCREMENT, blob BLOB NOT NULL)`); err != nil {
+	if _, err := db.Exec(`CREATE TABLE Packages (hnum INTEGER PRIMARY KEY, blob BLOB NOT NULL)`); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("create Packages: %w", err)
 	}
 
-	stmt, err := db.Prepare(`INSERT INTO Packages (blob) VALUES (?)`)
+	tx, err := db.Begin()
 	if err != nil {
 		db.Close()
 		return nil, err
 	}
-	for _, h := range headers {
+	stmt, err := tx.Prepare(`INSERT INTO Packages (blob) VALUES (?)`)
+	if err != nil {
+		tx.Rollback()
+		db.Close()
+		return nil, err
+	}
+	for _, h := range sorted {
 		blob, err := os.ReadFile(h.HeaderPath)
 		if err != nil {
 			stmt.Close()
+			tx.Rollback()
 			db.Close()
 			return nil, fmt.Errorf("read header %s: %w", h.HeaderPath, err)
 		}
 		stored := bytes.TrimPrefix(blob, rpmHeaderMagic)
 		if len(stored) == len(blob) {
 			stmt.Close()
+			tx.Rollback()
 			db.Close()
 			return nil, fmt.Errorf("header %s missing expected 0x8eade801 magic prefix", h.Package)
 		}
 		if _, err := stmt.Exec(stored); err != nil {
 			stmt.Close()
+			tx.Rollback()
 			db.Close()
 			return nil, fmt.Errorf("insert %s: %w", h.Package, err)
 		}
 	}
 	stmt.Close()
+	if err := tx.Commit(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("commit: %w", err)
+	}
+	if _, err := db.Exec(`VACUUM`); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("vacuum: %w", err)
+	}
 	if err := db.Close(); err != nil {
 		return nil, err
 	}
@@ -191,6 +235,9 @@ func writeTar(outPath string, sqliteBytes []byte, compress string) error {
 		}
 	}()
 
+	// USTAR + zeroed uid/gid + epoch mtime keeps the tar bytes stable
+	// across hosts; PAX/GNU formats would emit extended records whose
+	// presence depends on locale or build-host metadata.
 	epoch := time.Unix(0, 0)
 	dirs := []string{
 		"./usr",
@@ -204,6 +251,9 @@ func writeTar(outPath string, sqliteBytes []byte, compress string) error {
 			Mode:     0o755,
 			Typeflag: tar.TypeDir,
 			ModTime:  epoch,
+			Uid:      0,
+			Gid:      0,
+			Format:   tar.FormatUSTAR,
 		}); err != nil {
 			return err
 		}
@@ -215,6 +265,9 @@ func writeTar(outPath string, sqliteBytes []byte, compress string) error {
 		Size:     int64(len(sqliteBytes)),
 		Typeflag: tar.TypeReg,
 		ModTime:  epoch,
+		Uid:      0,
+		Gid:      0,
+		Format:   tar.FormatUSTAR,
 	}); err != nil {
 		return err
 	}

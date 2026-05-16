@@ -149,7 +149,19 @@ rpmdb_merge(
 )
 ```
 
-Per-package extraction is independent and cacheable; the merge runs once per image and reruns only when the package set changes. rpmdb sqlite schema is small (Packages table + ~10 secondary indexes); pure-Go via `modernc.org/sqlite` keeps the toolchain hermetic. Schema reference: rpm-tools' `rpmdb.c` and `librpmstrpool`.
+Per-package extraction is independent and cacheable; the merge runs once per image and reruns only when the package set changes. Pure-Go via `modernc.org/sqlite` keeps the toolchain hermetic.
+
+### Determinism
+
+`modernc.org/sqlite` keeps the *library* hermetic; the *output bytes* take explicit work. `rpmdb-merge` must:
+
+- **Sort inputs before insertion.** rpmdb's `Packages` table is `INTEGER PRIMARY KEY` (rowid alias); auto-assigned rowids follow insertion order, and b-tree page layout derives from rowids. Sort `header.blob`s by `(Name, EVR, Arch)` before the insert loop, and apply the same canonical ordering to every secondary-index population pass. Never iterate a Go map directly into a write.
+- **Zero senku-controlled install metadata.** The sqlite is synthesized directly (no `rpm --install` call), so every "install-time" tag is our choice, not librpm's. Set `RPMTAG_INSTALLTIME=0`, `RPMTAG_INSTALLTID=0` (librpm's default of `time(NULL)` is the canonical determinism trap), and fix `RPMTAG_INSTALLCOLOR` / `RPMTAG_INSTPREFIXES`. Pre-verify on `hi/curl` that syft's rpm-db cataloger reads only Name/EVR/Arch from each header — if any install-time field turns out to be consumed, switch that field to a canonical non-zero constant rather than zero.
+- **Pin SQLite knobs explicitly.** `PRAGMA page_size = 4096` before any write; `PRAGMA journal_mode = OFF` during build with a clean close so no `-wal`/`-shm` artifacts leak into the tar; no `AUTOINCREMENT` on any table (keeps `sqlite_sequence` out of the file entirely); single transaction, then `VACUUM` to normalize free-page layout.
+- **Schema fixture, version-pinned.** Check in the schema dump from `hi/curl`'s actual `rpmdb.sqlite` as a test fixture; `rpmdb-merge` builds *that* exact schema. If a future Hummingbird rpm-version bump shifts the schema, the fixture mismatch fails loudly instead of drifting silently into a "Packages table + ~10 secondary indexes" handwave. Schema reference for the implementer: rpm-tools' `rpmdb.c` and `librpmstrpool`.
+- **Byte-compare determinism test.** Build the merged rpmdb twice from identical inputs in the same Bazel action and `cmp` the outputs. Belongs in the `rpmdb-merge` package, not at the image level — regressions caught at the source binary, before they propagate into every image's layer hash.
+
+Tar wrapper around `rpmdb.sqlite` follows the canonical uid/gid/mode/mtime rules already applied to `content.tar`.
 
 ## Multi-vendor sourcing during transition
 

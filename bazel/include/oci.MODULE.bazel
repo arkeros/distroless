@@ -148,6 +148,16 @@ rpm.install(
     gpg_key = "//oci/distroless/nginx:nginx_signing.key",
     lock_file = "//oci/distroless/nginx:nginx-stable.hummingbird.lock.json",
     packages = ["nginx"],
+    # Surfaces `pkg:rpm/nginx.org/nginx@...` in the image SBOM so grype
+    # routes lookups to NVD-CPE rather than `pkg:rpm/nginx_stable_rpm/...`
+    # (no provider matches). Crucially decouples nginx from the
+    # `ID=hummingbird` image-scan routing: Hummingbird's secdb advisory
+    # for CVE-2026-42945 is release-suffix-strict (`< 1.30.1-1.hum1`)
+    # and would falsely flag nginx.org's `1.30.1-1.el10.ngx` even though
+    # the upstream fix is in 1.30.1 itself. With this namespace, grype's
+    # SBOM-scan correctly treats nginx as an nginx.org-provided package
+    # and applies NVD's upstream version-range matching.
+    purl_namespace = "nginx.org",
     repo_url = "https://nginx.org/packages/rhel/10",
 )
 rpm.install(
@@ -159,6 +169,7 @@ rpm.install(
     gpg_key = "//oci/distroless/nginx:nginx_signing.key",
     lock_file = "//oci/distroless/nginx:nginx-mainline.hummingbird.lock.json",
     packages = ["nginx"],
+    purl_namespace = "nginx.org",
     repo_url = "https://nginx.org/packages/mainline/rhel/10",
 )
 use_repo(rpm, "hummingbird", "nginx_mainline_rpm", "nginx_stable_rpm")

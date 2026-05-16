@@ -6,10 +6,28 @@ regular rule so it's inspectable, query-able, and varies per image without
 aspect_hints side-channels.
 """
 
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@grype.bzl//grype:defs.bzl", "grype_scan", "grype_test")
 load("@jq.bzl//jq:jq.bzl", "jq")
 load("@supply_chain_tools//sbom:cyclonedx.bzl", "cyclonedx")
 load("@supply_chain_tools//sbom:sbom.bzl", "sbom")
+
+# Components are routable by grype iff their purl prefix triggers a
+# distro-secdb provider lookup (rpm/deb/apk) OR they carry an explicit
+# `cpe` field for NVD-CPE matching. Anything else (notably `pkg:generic/`
+# for upstream-binary deps like nodejs.org's prebuilt node tarball) is a
+# silent-zero hazard — empirically verified: Node 18.0.0 produces 49 grype
+# matches with `cpe:` set, 0 without. See ADR 0007's disqualification of
+# SUSE/`bci-micro:16.0` and AlmaLinux `ID_LIKE` for the same anti-pattern.
+_SILENT_ZERO_FILTER = """
+.components | map(
+  select(
+    ((.purl // "") | test("^pkg:(rpm|deb|apk)/") | not) and
+    ((.cpe // "") == "")
+  )
+) | map({purl, name})
+""".strip()
 
 def image_sbom(image):
     """Attach a CycloneDX SBOM to an OCI image, without CVE scanning or gating.
@@ -103,4 +121,35 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
         ignore_cves = ignore_cves,
         scan_result = ":" + base + "_cve_scan",
         vex = vex,
+    )
+
+    # Silent-zero gate. Fails when the SBOM carries components that grype
+    # has no matcher for — see _SILENT_ZERO_FILTER above for the rationale.
+    # This is the structural guard for ADR 0007's "no fraud-by-silence"
+    # claim: a CVE scan that returns zero is only meaningful when every
+    # component is actually being checked. Without this, a nodejs.org
+    # tarball without `cpe` would pass `_cve_test` while silently skipping
+    # every Node CVE in the world.
+    #
+    # Decomposed `jq` + `diff_test` instead of `jq_test` because jq_test's
+    # error-message templating breaks on filters containing `""` and `(`,
+    # which any non-trivial routability check inevitably has.
+    jq(
+        name = base + "_silent_zero_violations",
+        srcs = [":" + base + "_sbom"],
+        out = base + "_silent_zero_violations.json",
+        filter = _SILENT_ZERO_FILTER,
+    )
+    write_file(
+        name = base + "_silent_zero_expected",
+        out = base + "_silent_zero_expected.json",
+        # Trailing empty string forces a final newline so diff_test matches
+        # jq's default trailing-newline output.
+        content = ["[]", ""],
+    )
+    diff_test(
+        name = base + "_cve_test_silent_zero",
+        file1 = ":" + base + "_silent_zero_expected",
+        file2 = ":" + base + "_silent_zero_violations",
+        failure_message = "SBOM contains components with neither a secdb-routable purl (pkg:rpm|deb|apk) nor a `cpe` field. See //bazel/patches:package_metadata_cpe.patch for how to attach `cpe=...` to a `package_metadata` target.",
     )

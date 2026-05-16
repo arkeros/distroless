@@ -1,0 +1,74 @@
+--- a/package_metadata.go
++++ b/package_metadata.go
+@@ -24,10 +24,13 @@
+ 	GetLabel() label.Label
+
+ 	// GetPURL returns the [package-url](https://github.com/package-url/purl-spec/blob/main/PURL-SPECIFICATION.rst) this `PackageMetadata` if for.
+ 	GetPURL() packageurl.PackageURL
+
++	// GetCPE returns the [CPE 2.3](https://nvd.nist.gov/products/cpe) identifier, or empty string if unset.
++	GetCPE() string
++
+ 	// ListAttributeKinds returns a slice of kinds of `PackageAttributeDescriptor`s included in this `PackageMetadata`.
+ 	ListAttributeKinds() []string
+ }
+
+ // ReadPackageMetadata deserializes `PackageMetadata` from the provided reader.
+@@ -87,10 +90,11 @@
+
+ type packageMetadata struct {
+ 	Label      label.Label
+ 	PURL       packageurl.PackageURL
+ 	Attributes map[string]string
++	CPE        string
+ }
+
+ /*
+  * PackageMetadata implementation
+  */
+@@ -106,10 +110,14 @@
+
+ func (p *packageMetadata) GetPURL() packageurl.PackageURL {
+ 	return p.PURL
+ }
+
++func (p *packageMetadata) GetCPE() string {
++	return p.CPE
++}
++
+ func (p *packageMetadata) ListAttributeKinds() []string {
+ 	return slices.Sorted(maps.Keys(p.Attributes))
+ }
+
+ /*
+@@ -120,10 +128,11 @@
+
+ type rawPackageMetadata struct {
+ 	Label      string            `json:"label"`
+ 	PURL       string            `json:"purl"`
+ 	Attributes map[string]string `json:"attributes"`
++	CPE        string            `json:"cpe,omitempty"`
+ }
+
+ func (p *packageMetadata) UnmarshalJSON(data []byte) error {
+ 	var rawMetadata rawPackageMetadata
+ 	if err := json.Unmarshal(data, &rawMetadata); err != nil {
+@@ -144,16 +153,18 @@
+
+ 	p.Attributes = rawMetadata.Attributes
+ 	if p.Attributes == nil {
+ 		p.Attributes = make(map[string]string)
+ 	}
++	p.CPE = rawMetadata.CPE
+
+ 	return nil
+ }
+
+ func (p *packageMetadata) MarshalJSON() ([]byte, error) {
+ 	return json.Marshal(&rawPackageMetadata{
+ 		Label:      p.Label.String(),
+ 		PURL:       p.PURL.String(),
+ 		Attributes: p.Attributes,
++		CPE:        p.CPE,
+ 	})
+ }

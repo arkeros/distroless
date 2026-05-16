@@ -44,11 +44,30 @@ archive_override(
 )
 
 # FIXME: drop archive_override after https://github.com/bazel-contrib/supply-chain/pull/158 is merged and released
+# FIXME: drop supply_chain_go_cpe.patch once upstream adds first-class CPE support
+# to `package_metadata` and propagates it through the cyclonedx generator. Required
+# by ADR 0007's silent-zero gate — see //bazel/patches:package_metadata_cpe.patch.
 archive_override(
     module_name = "supply-chain-go",
     integrity = "sha256-n934H5t5lmrAN/Dhq6jf59B02FpEJIYyC4YmVEf9obU=",
+    patch_strip = 1,
+    patches = [
+        "//bazel/patches:supply_chain_go_pkgmeta_cpe.patch",
+        "//bazel/patches:supply_chain_go_cyclonedx_cpe.patch",
+    ],
     strip_prefix = "supply-chain-19778b53bab50d308dea6dd46ee9f6cc7b5a4da2/lib/supplychain-go",
     urls = ["https://github.com/bazel-contrib/supply-chain/archive/19778b53bab50d308dea6dd46ee9f6cc7b5a4da2.tar.gz"],
+)
+
+# FIXME: drop package_metadata_cpe.patch once upstream lands an equivalent of the
+# `cpe` attribute on `package_metadata`. See companion supply_chain_go_cpe.patch
+# above — both must move together. ADR 0007 silent-zero rationale lives in the
+# patch header.
+single_version_override(
+    module_name = "package_metadata",
+    patch_strip = 1,
+    patches = ["//bazel/patches:package_metadata_cpe.patch"],
+    version = "0.0.10",
 )
 
 git_override(

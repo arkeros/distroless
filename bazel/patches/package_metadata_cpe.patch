@@ -1,0 +1,76 @@
+Add an optional `cpe` attribute to `package_metadata`.
+
+ADR 0007's competitive thesis is real-zero on the consumer scanner. For
+`pkg:rpm/...` and `pkg:deb/...` purls grype routes via distro secdb, but for
+`pkg:generic/...` (the canonical purl for non-packaged binaries like the
+nodejs.org tarball used in //oci/distroless/nodejs) grype has no routing —
+it only matches via an explicit `cpe` field on the CycloneDX component.
+Empirically verified: 50+ Node 18.0.0 CVEs match with `cpe:`, 0 without.
+
+Without this, a node distroless image's `_cve_test` silently reports zero
+Node CVEs, which is exactly the "fraud-by-silence" anti-pattern ADR 0007
+disqualified for SUSE/`bci-micro:16.0` and AlmaLinux's `ID_LIKE` remix.
+
+Companion patch in @supply-chain-go propagates `cpe` from the JSON into
+`cdx.Component.CPE`. The silent-zero gate in //oci:supply_chain.bzl asserts
+that every SBOM component has either a secdb-routable purl or a `cpe`.
+
+Track in the FIXME alongside the supply-chain archive_override — drop once
+upstream lands first-class CPE support on `package_metadata`.
+
+--- a/rules/package_metadata.bzl
++++ b/rules/package_metadata.bzl
+@@ -11,13 +11,17 @@ def _package_metadata_impl(ctx):
+
+     metadata = ctx.actions.declare_file("{}.package-metadata.json".format(ctx.attr.name))
+
++    content = {
++        "attributes": {a.kind: a.attributes.path for a in attributes},
++        "label": str(ctx.label),
++        "purl": ctx.attr.purl,
++    }
++    if ctx.attr.cpe:
++        content["cpe"] = ctx.attr.cpe
++
+     ctx.actions.write(
+         output = metadata,
+-        content = json.encode({
+-            "attributes": {a.kind: a.attributes.path for a in attributes},
+-            "label": str(ctx.label),
+-            "purl": ctx.attr.purl,
+-        }),
++        content = json.encode(content),
+     )
+
+     return [
+@@ -54,6 +58,14 @@ _package_metadata = rule(
+ package.
+ """.strip(),
+         ),
++        "cpe": attr.string(
++            doc = """
++Optional [CPE 2.3](https://nvd.nist.gov/products/cpe) identifier. Required for
++SBOM components whose `purl` is not natively routable by `grype` (i.e. anything
++other than `pkg:rpm/...` or `pkg:deb/...`), since grype's NVD-CPE matcher only
++fires on an explicit `cpe` field.
++""".strip(),
++        ),
+     },
+     provides = [
+         PackageMetadataInfo,
+@@ -69,6 +81,7 @@ def package_metadata(
+         name,
+         purl,
+         attributes = [],
++        cpe = "",
+         # Common attributes (subset since this target is non-configurable).
+         visibility = None,
+         tags = None):
+@@ -77,6 +90,7 @@ def package_metadata(
+         name = name,
+         purl = purl,
+         attributes = attributes,
++        cpe = cpe,
+
+         # Common attributes.
+         visibility = visibility,

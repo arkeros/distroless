@@ -1,0 +1,17 @@
+--- a/cmd/cyclonedx/cyclonedx.go
++++ b/cmd/cyclonedx/cyclonedx.go
+@@ -96,10 +96,14 @@
+ 		// Add version if available
+ 		if purl.Version != "" {
+ 			component.Version = purl.Version
+ 		}
+
++		if cpe := pkgMetadata.GetCPE(); cpe != "" {
++			component.CPE = cpe
++		}
++
+ 		components = append(components, component)
+ 	}
+
+ 	bom := cdx.NewBOM()
+ 	bom.Version = 1

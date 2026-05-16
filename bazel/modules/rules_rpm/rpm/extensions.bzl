@@ -40,6 +40,9 @@ _install = tag_class(
         "purl_namespace": attr.string(
             doc = "purl namespace identifying the upstream (`pkg:rpm/<namespace>/<name>...`). Defaults to `name`. Set explicitly when consumers expect a different identity than the hub name — e.g. nginx_stable_rpm uses 'nginx.org' for grype-routable provenance.",
         ),
+        "distro": attr.string(
+            doc = "Consumer-side distro routing key emitted as `?distro=<value>` on every package's purl. Drives grype's per-package secdb routing — `hummingbird-1` to route to the hummingbird secdb provider, `rhel-10` for nginx.org-built RHEL10 rpms, etc. Optional; omitted from the purl when unset (which forces grype back to NVD-CPE / no-secdb matching).",
+        ),
     },
 )
 
@@ -67,6 +70,7 @@ def _rpm_extension_impl(mctx):
                         gpg_key = install.gpg_key,
                         purl_namespace = purl_ns,
                         upstream = entry.get("upstream", ""),
+                        purl_distro = install.distro,
                     )
 
             # Hub repo: aliases all spokes under @<name>//<pkg>/<arch>:{content,header}

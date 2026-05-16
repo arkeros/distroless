@@ -1139,8 +1139,8 @@
     },
     "@@rules_rpm+//rpm:extensions.bzl%rpm": {
       "general": {
-        "bzlTransitiveDigest": "qhVNSn7h5i+5ZwK816MspqMykqCAgHMkeI0Jbv/cL9U=",
-        "usagesDigest": "0QZ8wlAcAYPtEFu+etrCWhbSrQl77eu7mmQUv8H+eBc=",
+        "bzlTransitiveDigest": "5/7jzFTs35EHVm93WQalpGSRb9rWFTmx4AfbvroSxW0=",
+        "usagesDigest": "hDh4Ig74N0UrLIAWDbsuX+CBfQ1cy4hKOwgmpP67JY8=",
         "recordedInputs": [
           "FILE:@@//hummingbird.lock.json acbe04148135c2c8e6291936ba36eba9f74b2a06508865dc02935ff4a68f8a37",
           "FILE:@@//oci/distroless/nginx/nginx-stable.hummingbird.lock.json a0fd217e52e370bbc92301f5ae0ededb9cc98f010c1c0cc682cf1a921637998b",
@@ -1157,7 +1157,8 @@
               "sha256": "dc7e867fb6f0dc0abb657d5aeb6339cb1d1a1356efc9f31034b3c8b82bfd0c00",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "audit-4.1.4-1.1.hum1.src.rpm"
+              "upstream": "audit-4.1.4-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__audit-libs__x86_64": {
@@ -1170,7 +1171,8 @@
               "sha256": "820a317cb64fbbc5f0d2c3ddc4eb2d48f061e28611d4bafd81f35d019ce39cd1",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "audit-4.1.4-1.1.hum1.src.rpm"
+              "upstream": "audit-4.1.4-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__bash__aarch64": {
@@ -1183,7 +1185,8 @@
               "sha256": "e3a9072b36eeb832f403b8f90305e7ef4709d3b904347fd5b9e9bb6afa8d42ca",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "bash-5.3.9-3.1.hum1.src.rpm"
+              "upstream": "bash-5.3.9-3.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__bash__x86_64": {
@@ -1196,7 +1199,8 @@
               "sha256": "f4e27d04f05cd196e92d8a9f047927d4849ff32fd3b7f366b283e49e9edc5ac1",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "bash-5.3.9-3.1.hum1.src.rpm"
+              "upstream": "bash-5.3.9-3.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__busybox__aarch64": {
@@ -1209,7 +1213,8 @@
               "sha256": "143c4826f1c919cdc6010f24e527a78a3ad9d069c0fe4a4ab1ee80102d4d2f70",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "busybox-1.37.0-7.2.hum1.src.rpm"
+              "upstream": "busybox-1.37.0-7.2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__busybox__x86_64": {
@@ -1222,7 +1227,8 @@
               "sha256": "f219a2ef3276b1c4bcc2a4227781925836693d9c1c2ba144e1f3e17092b3020c",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "busybox-1.37.0-7.2.hum1.src.rpm"
+              "upstream": "busybox-1.37.0-7.2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__ca-certificates__noarch": {
@@ -1235,7 +1241,8 @@
               "sha256": "42b35f662c0e28b3c856c695523ae58d399005777219d9edcda1109f5eb39f3a",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "ca-certificates-2025.2.80_v9.0.304-7.2.hum1.src.rpm"
+              "upstream": "ca-certificates-2025.2.80_v9.0.304-7.2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__coreutils__aarch64": {
@@ -1248,7 +1255,8 @@
               "sha256": "74f9947339204e4150fe9d0f76594ef0671b6fe9fa3dbc760b9f990960380c8d",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "coreutils-9.11-2.hum1.src.rpm"
+              "upstream": "coreutils-9.11-2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__coreutils__x86_64": {
@@ -1261,7 +1269,8 @@
               "sha256": "861eefe217858c38fe4bb3eb61aa091ecaa3b3b24f06d42b833e61019f5e668d",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "coreutils-9.11-2.hum1.src.rpm"
+              "upstream": "coreutils-9.11-2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__coreutils-common__aarch64": {
@@ -1274,7 +1283,8 @@
               "sha256": "aad7ad01d145200c0a42b24d43aa457808f23c229851400bab4c383217b404fa",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "coreutils-9.11-2.hum1.src.rpm"
+              "upstream": "coreutils-9.11-2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__coreutils-common__x86_64": {
@@ -1287,7 +1297,8 @@
               "sha256": "08ad2b3e6fcd2af3e3fce0de75b48df9ae709464ba1fc931bea406f597d5d18c",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "coreutils-9.11-2.hum1.src.rpm"
+              "upstream": "coreutils-9.11-2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__crypto-policies__noarch": {
@@ -1300,7 +1311,8 @@
               "sha256": "3972b5b41cf31ca9d97a0b5a2d8d053cb4d8965ec10dd9fb608a580c4bc5e2bd",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "crypto-policies-20251128-4.git19878fe.1.hum1.src.rpm"
+              "upstream": "crypto-policies-20251128-4.git19878fe.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__crypto-policies-config-default__noarch": {
@@ -1313,7 +1325,8 @@
               "sha256": "4ab5e6b399d96045f23302e2e9424902dea211ab8515e7bc38b762f722efb791",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "crypto-policies-20251128-4.git19878fe.1.hum1.src.rpm"
+              "upstream": "crypto-policies-20251128-4.git19878fe.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__filesystem__aarch64": {
@@ -1326,7 +1339,8 @@
               "sha256": "ebfe94ff5dc837c68d945835a3cc3751f89a9b7106e0e4710de710b9502a3945",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "filesystem-3.18-56.1.hum1.src.rpm"
+              "upstream": "filesystem-3.18-56.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__filesystem__x86_64": {
@@ -1339,7 +1353,8 @@
               "sha256": "00135959ded010a116953cc7eddfc1dd8c1c1d1ce727911c1637012ffc624249",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "filesystem-3.18-56.1.hum1.src.rpm"
+              "upstream": "filesystem-3.18-56.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__findutils__x86_64": {
@@ -1352,7 +1367,8 @@
               "sha256": "66a637bdcb0fa4ba2033bdcc48b2f4b0ec0c655b96124e33a58bd68e1771f417",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "findutils-4.10.0-7.1.hum1.src.rpm"
+              "upstream": "findutils-4.10.0-7.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__glibc__aarch64": {
@@ -1365,7 +1381,8 @@
               "sha256": "d36ec5d63915034dee80f7ca1f4296bbb047fa3e2bd8c0fc47cfdea901471424",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "glibc-2.42-13.hum1.src.rpm"
+              "upstream": "glibc-2.42-13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__glibc__x86_64": {
@@ -1378,7 +1395,8 @@
               "sha256": "20f840cb4e15bc7f72b4c5a543b5b2cfc075f93e9e447900d7f6c26cda045620",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "glibc-2.42-13.hum1.src.rpm"
+              "upstream": "glibc-2.42-13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__glibc-all-langpacks__aarch64": {
@@ -1391,7 +1409,8 @@
               "sha256": "2ccadd1ea55eb83d87c6ef3c87d81b20fad9ba3d10e2419194058371d88d8084",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "glibc-2.42-13.hum1.src.rpm"
+              "upstream": "glibc-2.42-13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__glibc-all-langpacks__x86_64": {
@@ -1404,7 +1423,8 @@
               "sha256": "28e4dfc298847ae65ef9eec9350a2e195ea9ba5459d45aa687c312af72459844",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "glibc-2.42-13.hum1.src.rpm"
+              "upstream": "glibc-2.42-13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__glibc-common__aarch64": {
@@ -1417,7 +1437,8 @@
               "sha256": "0a261df4e39b98609100cfd27087391ecabab4005dda6f16ea36928d263ab02a",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "glibc-2.42-13.hum1.src.rpm"
+              "upstream": "glibc-2.42-13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__glibc-common__x86_64": {
@@ -1430,7 +1451,8 @@
               "sha256": "7c9189a8ac41dac80101cb1afd5cf7a4f88a944d382cf6e2450ccfe0b7bb8679",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "glibc-2.42-13.hum1.src.rpm"
+              "upstream": "glibc-2.42-13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__gmp__aarch64": {
@@ -1443,7 +1465,8 @@
               "sha256": "1ee035bcd18be24d33c673b1fc5fa82c804eb80bb701fe673d606f3ee355623e",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gmp-6.3.0-5.1.hum1.src.rpm"
+              "upstream": "gmp-6.3.0-5.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__gmp__x86_64": {
@@ -1456,7 +1479,8 @@
               "sha256": "f78cf24edbf5b5621e7cac09b7cb40a5dda0355ac5c3ae5107a530e22384b9d9",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gmp-6.3.0-5.1.hum1.src.rpm"
+              "upstream": "gmp-6.3.0-5.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__gnulib-l10n__noarch": {
@@ -1469,7 +1493,8 @@
               "sha256": "845bedf7c003d30d88f9c6fd2bc90d59510a690f5bb3030576ebc85976442d6f",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gnulib-l10n-20241231-2.1.hum1.src.rpm"
+              "upstream": "gnulib-l10n-20241231-2.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__grep__aarch64": {
@@ -1482,7 +1507,8 @@
               "sha256": "45d21be64f1be7a5358edd767edff137f6d837b2e6424eb81fd75e3278549d7c",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "grep-3.12-3.1.hum1.src.rpm"
+              "upstream": "grep-3.12-3.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__grep__x86_64": {
@@ -1495,7 +1521,8 @@
               "sha256": "0090faacf4f3cd12c3c018ef9678a6195565da06f2b56d0db769a1c9b6927459",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "grep-3.12-3.1.hum1.src.rpm"
+              "upstream": "grep-3.12-3.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__hummingbird-gpg-keys__noarch": {
@@ -1508,7 +1535,8 @@
               "sha256": "5b70172fe980d459aad334730038fc898d457d6e26293244bbb585c41e118be8",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm"
+              "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__hummingbird-release__noarch": {
@@ -1521,7 +1549,8 @@
               "sha256": "391f810e070df0fd05d6f96e97e9d4205f62b4b984bab704acbe545c8364d09d",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm"
+              "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__hummingbird-repos__noarch": {
@@ -1534,7 +1563,8 @@
               "sha256": "3757ee130c11990507410184f1cf6dd3b864cde16b3d0ed49b3c1352289d5bb6",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm"
+              "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libacl__aarch64": {
@@ -1547,7 +1577,8 @@
               "sha256": "a8df38473058664db111b64f1249a0fb4e7203019e191e207ef555a2e4525a76",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "acl-2.3.2-6.1.hum1.src.rpm"
+              "upstream": "acl-2.3.2-6.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libacl__x86_64": {
@@ -1560,7 +1591,8 @@
               "sha256": "c93d3b9ae0a3e98321346460c5a37bf40c7b7764e32560ae2d82133a462fb157",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "acl-2.3.2-6.1.hum1.src.rpm"
+              "upstream": "acl-2.3.2-6.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libattr__aarch64": {
@@ -1573,7 +1605,8 @@
               "sha256": "8860c090d05d9743f1edf66b10cb8406e67bec73114389c742883fb741a06c69",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "attr-2.5.2-8.1.hum1.src.rpm"
+              "upstream": "attr-2.5.2-8.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libattr__x86_64": {
@@ -1586,7 +1619,8 @@
               "sha256": "ccfb7e5741694119a74dcb27fe280723f3d887e543b5c2a37b973bf01337c2ab",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "attr-2.5.2-8.1.hum1.src.rpm"
+              "upstream": "attr-2.5.2-8.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libcap__aarch64": {
@@ -1599,7 +1633,8 @@
               "sha256": "a1e489766172db7a62082d27748a78a27f4e129c43a5d5767aae91717e0a6486",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libcap-2.78-1.1.hum1.src.rpm"
+              "upstream": "libcap-2.78-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libcap__x86_64": {
@@ -1612,7 +1647,8 @@
               "sha256": "5ebc5b65b42dc10bf702a9baca9a75f3b94cf1971315ed078e2fa4f1d7a266e5",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libcap-2.78-1.1.hum1.src.rpm"
+              "upstream": "libcap-2.78-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libcap-ng__aarch64": {
@@ -1625,7 +1661,8 @@
               "sha256": "573da159b58241c2c80f780a8f02324cee95aef431ec9454a3aa47123b3134a2",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libcap-ng-0.9.3-1.hum1.src.rpm"
+              "upstream": "libcap-ng-0.9.3-1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libcap-ng__x86_64": {
@@ -1638,7 +1675,8 @@
               "sha256": "989249c1dd96fc075000c2ee837959b14328674e2315f679642ded40a2a2bf38",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libcap-ng-0.9.3-1.hum1.src.rpm"
+              "upstream": "libcap-ng-0.9.3-1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libeconf__aarch64": {
@@ -1651,7 +1689,8 @@
               "sha256": "ad83bb8005508a2c845149ae67cdc9d3d9747852ac777a62f61ea74f3290cf3e",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libeconf-0.7.9-3.1.hum1.src.rpm"
+              "upstream": "libeconf-0.7.9-3.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libeconf__x86_64": {
@@ -1664,7 +1703,8 @@
               "sha256": "c9bd037f02395f062e7e81d0802231e25895016dd15dfe4f6b7f54fca01200c4",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libeconf-0.7.9-3.1.hum1.src.rpm"
+              "upstream": "libeconf-0.7.9-3.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libffi__x86_64": {
@@ -1677,7 +1717,8 @@
               "sha256": "9661dce38dc5d62f510e5f0e9142f4b98d2a017d9ad51315935e498535a90d4d",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libffi-3.5.2-2.1.hum1.src.rpm"
+              "upstream": "libffi-3.5.2-2.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libgcc__aarch64": {
@@ -1690,7 +1731,8 @@
               "sha256": "c43c396f055d34ca4bdd33145f17af400cacd1307f890da91c8001ca86c6829a",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-15.2.1-7.2.hum1.src.rpm"
+              "upstream": "gcc-15.2.1-7.2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libgcc__x86_64": {
@@ -1703,7 +1745,8 @@
               "sha256": "66270d6e3bd4507264a88cb576d21172906b99dd772d041fa3ed5bb19e9a248c",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-15.2.1-7.2.hum1.src.rpm"
+              "upstream": "gcc-15.2.1-7.2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libselinux__aarch64": {
@@ -1716,7 +1759,8 @@
               "sha256": "745e5ed95149a71da6debcdf8b71e85eaccb1cad2844add89e20549a149df9d7",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libselinux-3.10-1.1.hum1.src.rpm"
+              "upstream": "libselinux-3.10-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libselinux__x86_64": {
@@ -1729,7 +1773,8 @@
               "sha256": "e0d82043d23ba775db03262a84a1cc3d26a1a8ae6605741de4a5a4883cd8aa55",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libselinux-3.10-1.1.hum1.src.rpm"
+              "upstream": "libselinux-3.10-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libsepol__aarch64": {
@@ -1742,7 +1787,8 @@
               "sha256": "e7062e0755389350afa2c50fc37eb6da877915b9c573344078bfddada727f7c1",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libsepol-3.10-1.1.hum1.src.rpm"
+              "upstream": "libsepol-3.10-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libsepol__x86_64": {
@@ -1755,7 +1801,8 @@
               "sha256": "0e42913213de2ac9818997218f23d3c954effe44b88cefe5e843d2c39846c4b2",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libsepol-3.10-1.1.hum1.src.rpm"
+              "upstream": "libsepol-3.10-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libstdc.plus..plus.__aarch64": {
@@ -1768,7 +1815,8 @@
               "sha256": "b7a09fdd04c14ee8a4c21b34ce5d5f951aad810e814849357de2220c7e71a117",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-15.2.1-7.2.hum1.src.rpm"
+              "upstream": "gcc-15.2.1-7.2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libstdc.plus..plus.__x86_64": {
@@ -1781,7 +1829,8 @@
               "sha256": "acfd6b21cb917b997ed602a24ad55f42640d18f48296f794ca8a55ce08fb73b5",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-15.2.1-7.2.hum1.src.rpm"
+              "upstream": "gcc-15.2.1-7.2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__libtasn1__x86_64": {
@@ -1794,7 +1843,8 @@
               "sha256": "be2bec2ce58659fe905ace38c6f6c1f50d54f0af1e462588982bc29c8d2c8256",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libtasn1-4.21.0-1.1.hum1.src.rpm"
+              "upstream": "libtasn1-4.21.0-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__mailcap__noarch": {
@@ -1807,7 +1857,8 @@
               "sha256": "0df72fe703eaa4db980463cdd24298e75a549323e0e36e59c71c1a12bc64d3e5",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "mailcap-2.1.54-10.1.hum1.src.rpm"
+              "upstream": "mailcap-2.1.54-10.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__mawk__aarch64": {
@@ -1820,7 +1871,8 @@
               "sha256": "943325fe9f40c0259a06dfa270f79a8aff16bf7d154b32ef8dc11783d4eaae39",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "mawk-1.3.4-6.20260302.1.hum1.src.rpm"
+              "upstream": "mawk-1.3.4-6.20260302.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__mawk__x86_64": {
@@ -1833,7 +1885,8 @@
               "sha256": "e4d91bf5851eda6986c65a8b3a05e0c054c1606cf1587fa3bf1d7417cd969c98",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "mawk-1.3.4-6.20260302.1.hum1.src.rpm"
+              "upstream": "mawk-1.3.4-6.20260302.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__ncurses-base__noarch": {
@@ -1846,7 +1899,8 @@
               "sha256": "76fa50a0c206675e14d501e2037a5e3c6572a97e0a4888ef8e2e3afc19165b27",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "ncurses-6.6-2.hum1.src.rpm"
+              "upstream": "ncurses-6.6-2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__ncurses-libs__aarch64": {
@@ -1859,7 +1913,8 @@
               "sha256": "56d87a1be6cd3e48d7a0323fa4944c6664142a29c6a76591b3481be87249ad3e",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "ncurses-6.6-2.hum1.src.rpm"
+              "upstream": "ncurses-6.6-2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__ncurses-libs__x86_64": {
@@ -1872,7 +1927,8 @@
               "sha256": "5dfeaed687bef3a879a893f7b9e75ceee44188dbcdf03e2c0ce198aa43d9b0b8",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "ncurses-6.6-2.hum1.src.rpm"
+              "upstream": "ncurses-6.6-2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__openssl-fips-provider-so__aarch64": {
@@ -1885,7 +1941,8 @@
               "sha256": "b4d8dbfa599ae15eea3317eee80d8313b3ce59801d8e2c4b0d21ed8ffc7efeff",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "openssl-fips-provider-3.0.7-1.1.hum1.src.rpm"
+              "upstream": "openssl-fips-provider-3.0.7-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__openssl-fips-provider-so__x86_64": {
@@ -1898,7 +1955,8 @@
               "sha256": "3c6a788d5cca4d2caa2f020ea18afd1f51d6ab7be4d73e5f1c84e5ec80149c4f",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "openssl-fips-provider-3.0.7-1.1.hum1.src.rpm"
+              "upstream": "openssl-fips-provider-3.0.7-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__openssl-libs__aarch64": {
@@ -1911,7 +1969,8 @@
               "sha256": "fb5754f304a26175351fb9b6125f4a8e78476ca9d77e68119a29633ab13d6cc9",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "openssl-3.5.6-0.3.hum1.src.rpm"
+              "upstream": "openssl-3.5.6-0.3.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__openssl-libs__x86_64": {
@@ -1924,7 +1983,8 @@
               "sha256": "8b9a6b227b04bb427f2d7bff7ab9e42b0ed6f8d62f25630745ff96f14fe52532",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "openssl-3.5.6-0.3.hum1.src.rpm"
+              "upstream": "openssl-3.5.6-0.3.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__p11-kit__x86_64": {
@@ -1937,7 +1997,8 @@
               "sha256": "05ca421caa32ce2aae407e2c2b10b0dc9dc36b5172486c45cc19a2b417236a53",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "p11-kit-0.26.2-1.1.hum1.src.rpm"
+              "upstream": "p11-kit-0.26.2-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__p11-kit-trust__x86_64": {
@@ -1950,7 +2011,8 @@
               "sha256": "d82f9b4e435b5245bceb7ebbd8d0844da4c0e80c72831e91baa6139ca8aed274",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "p11-kit-0.26.2-1.1.hum1.src.rpm"
+              "upstream": "p11-kit-0.26.2-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__pam-libs__aarch64": {
@@ -1963,7 +2025,8 @@
               "sha256": "1509c3144b4f79edf20b5003dac54d633268ab6e5c432f9180b1c0dc67d25d65",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "pam-1.7.2-1.1.hum1.src.rpm"
+              "upstream": "pam-1.7.2-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__pam-libs__x86_64": {
@@ -1976,7 +2039,8 @@
               "sha256": "7ba937990725cc89e9660899d5f57dccec72d40002ce9df8463e5f5a0878fb66",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "pam-1.7.2-1.1.hum1.src.rpm"
+              "upstream": "pam-1.7.2-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__pcre2__aarch64": {
@@ -1989,7 +2053,8 @@
               "sha256": "5cf6913f0479d3ebffe6565ca81bc2bec33d01858a11da1a7b8a369b2f693bae",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "pcre2-10.47-1.1.hum1.src.rpm"
+              "upstream": "pcre2-10.47-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__pcre2__x86_64": {
@@ -2002,7 +2067,8 @@
               "sha256": "54c363d97360c795cb7c84fb928f5172620892005a01a9e359ca51c06351aeaf",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "pcre2-10.47-1.1.hum1.src.rpm"
+              "upstream": "pcre2-10.47-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__pcre2-syntax__noarch": {
@@ -2015,7 +2081,8 @@
               "sha256": "d316136d34af6d9a12ddaf4e88a3672fd1523689f77ad03e6c86cc2c2b498fde",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "pcre2-10.47-1.1.hum1.src.rpm"
+              "upstream": "pcre2-10.47-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__sed__aarch64": {
@@ -2028,7 +2095,8 @@
               "sha256": "db368c2aab227837f9171f649a5f2fe01a2e68b245d8063be7c4599a59274c66",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "sed-4.10-1.hum1.src.rpm"
+              "upstream": "sed-4.10-1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__sed__x86_64": {
@@ -2041,7 +2109,8 @@
               "sha256": "639119cc364f3bff39e70ecf0c655d4669e02420ae0433a4d50f079070d0b24d",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "sed-4.10-1.hum1.src.rpm"
+              "upstream": "sed-4.10-1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__setup__noarch": {
@@ -2054,7 +2123,8 @@
               "sha256": "c4662602490d6b988ef43e9beaa322c19023b347b3df9cd2d5a4c0caeffa0add",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "setup-2.15.0-29.2.hum1.src.rpm"
+              "upstream": "setup-2.15.0-29.2.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__systemd-libs__aarch64": {
@@ -2067,7 +2137,8 @@
               "sha256": "7c5588b280688d8c3f0f6f1a7e99b32ccd1431d2d63a83884e29cfcdf026f9d9",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "systemd-260.1-2.1.hum1.src.rpm"
+              "upstream": "systemd-260.1-2.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__systemd-libs__x86_64": {
@@ -2080,7 +2151,8 @@
               "sha256": "879d038ceee5a9319780e8461ac4cadb1616233b0d8b1feb1821709ecc0c0ce9",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "systemd-260.1-2.1.hum1.src.rpm"
+              "upstream": "systemd-260.1-2.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__tzdata__noarch": {
@@ -2093,7 +2165,8 @@
               "sha256": "af704da5d79cb20c1d36a7a170ea008db82001433d4a710cd37fdbb4def0bdb9",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "tzdata-2026a-1.1.hum1.src.rpm"
+              "upstream": "tzdata-2026a-1.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__zlib-ng-compat__aarch64": {
@@ -2106,7 +2179,8 @@
               "sha256": "e9804e684cd7a39bd95cb45825950f1d6a81c9f5a8c51ead56c1da19a25e30b3",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "zlib-ng-2.3.3-5.1.hum1.src.rpm"
+              "upstream": "zlib-ng-2.3.3-5.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird__zlib-ng-compat__x86_64": {
@@ -2119,7 +2193,8 @@
               "sha256": "cdcc31e8a42acac61660e4e0e75076f1264873c4e7cd4f1406cb8ed9c35d598e",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "zlib-ng-2.3.3-5.1.hum1.src.rpm"
+              "upstream": "zlib-ng-2.3.3-5.1.hum1.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "hummingbird": {
@@ -2214,7 +2289,8 @@
               "sha256": "d77d73e4684ee149443740f11aca53e04f6da7e1ef647827f3afa5b1d8cdf6ef",
               "gpg_key": "@@//oci/distroless/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.30.1-1.el10.ngx.src.rpm"
+              "upstream": "nginx-1.30.1-1.el10.ngx.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "nginx_stable_rpm__nginx__x86_64": {
@@ -2227,7 +2303,8 @@
               "sha256": "248fc8d50fa94467102b3b584d7967ef470b0f3f7b1b8a4e51304835e13c0098",
               "gpg_key": "@@//oci/distroless/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.30.1-1.el10.ngx.src.rpm"
+              "upstream": "nginx-1.30.1-1.el10.ngx.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "nginx_stable_rpm": {
@@ -2258,7 +2335,8 @@
               "sha256": "cb3fa01a8794201b2f5cac6f38508c7ffce8ee627323ee8147c855801b353088",
               "gpg_key": "@@//oci/distroless/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.31.0-1.el10.ngx.src.rpm"
+              "upstream": "nginx-1.31.0-1.el10.ngx.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "nginx_mainline_rpm__nginx__x86_64": {
@@ -2271,7 +2349,8 @@
               "sha256": "8937155a39abcbfa6aa310626043ac254fb9df0de03626bc6955093683ab6f3f",
               "gpg_key": "@@//oci/distroless/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.31.0-1.el10.ngx.src.rpm"
+              "upstream": "nginx-1.31.0-1.el10.ngx.src.rpm",
+              "purl_distro": "hummingbird-1"
             }
           },
           "nginx_mainline_rpm": {

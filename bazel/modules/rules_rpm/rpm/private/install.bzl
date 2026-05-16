@@ -29,12 +29,17 @@ def _split_epoch(evr):
         return epoch, rest
     return "0", evr
 
-def _rpm_purl(namespace, name, version, arch, upstream):
+def _rpm_purl(namespace, name, version, arch, upstream, distro):
     # purl-spec for rpm: pkg:rpm/<namespace>/<name>@<ver>-<rel>?<qualifiers>
     # `namespace` is the upstream/distro identity (e.g. "hummingbird",
-    # "nginx.org"). epoch + arch + upstream are encoded as qualifiers so
-    # the purl is purl-spec-conformant and interop-compatible with syft's
-    # rpmdb-cataloged shape (`epoch=N&arch=X&upstream=<src.rpm>`).
+    # "nginx.org"). epoch + arch + upstream + distro are encoded as
+    # qualifiers so the purl is purl-spec-conformant and interop-
+    # compatible with syft's rpmdb-cataloged shape.
+    #
+    # `distro=<id>-<version>` is the *consumer-side* secdb routing key
+    # grype uses to decide which secdb to consult — `hummingbird-1` for
+    # Hummingbird-built rpms (matches the `hummingbird:distro:hummingbird:1`
+    # provider namespace), `rhel-10` for nginx.org's RHEL10 rpms.
     epoch, ver = _split_epoch(version)
     parts = [
         "arch=" + arch,
@@ -42,6 +47,8 @@ def _rpm_purl(namespace, name, version, arch, upstream):
     ]
     if upstream:
         parts.append("upstream=" + upstream)
+    if distro:
+        parts.append("distro=" + distro)
     return "pkg:rpm/{ns}/{name}@{ver}?{q}".format(
         ns = namespace,
         name = name,
@@ -66,6 +73,7 @@ def _rpm_package_repo_impl(rctx):
         version = rctx.attr.version,
         arch = rctx.attr.arch,
         upstream = rctx.attr.upstream,
+        distro = rctx.attr.purl_distro,
     )
 
     # `package_metadata(purl=...)` + `package(default_package_metadata=...)`
@@ -121,6 +129,9 @@ rpm_package_repo = repository_rule(
         ),
         "upstream": attr.string(
             doc = "Source-rpm filename from primary.xml's <rpm:sourcerpm>. Embedded as `?upstream=...` qualifier in the purl for provenance; optional, omitted when unset.",
+        ),
+        "purl_distro": attr.string(
+            doc = "Consumer-side distro routing key (e.g. 'hummingbird-1', 'rhel-10'). Embedded as `?distro=...` qualifier in the purl so grype's SBOM scanner can route per-package to the right secdb provider.",
         ),
     },
 )

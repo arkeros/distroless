@@ -93,6 +93,11 @@ rpm.install(
         "x86_64",
         "aarch64",
     ],
+    # Matches grype's `hummingbird:distro:hummingbird:1` provider — drives
+    # per-package secdb routing on SBOM scans. Without this qualifier, grype
+    # falls back to NVD-CPE matching and silently misses Hummingbird's
+    # backported advisories.
+    distro = "hummingbird-1",
     gpg_key = "//:hummingbird-release.pgp",
     lock_file = "//:hummingbird.lock.json",
     # Closed manifest of *root* packages; pin walks rpm:requires and adds
@@ -145,6 +150,16 @@ rpm.install(
         "x86_64",
         "aarch64",
     ],
+    # Routes via Hummingbird's secdb even though the binary came from
+    # nginx.org. RHEL-10's secdb has CVE entries for nginx but no fix
+    # data (RHEL doesn't ship nginx) — every flag would be a no-fix
+    # false positive. Hummingbird's secdb has accurate version-range
+    # data: all `< 1.30.0-1.hum1` advisories pass cleanly (we ship
+    # 1.30.1+), and the only flag is CVE-2026-42945's release-suffix-
+    # strict `< 1.30.1-1.hum1` constraint on stable, which is VEXed in
+    # //oci/distroless/nginx/BUILD with `vulnerable_code_not_present`
+    # because upstream 1.30.1 carries the fix regardless of release tag.
+    distro = "hummingbird-1",
     gpg_key = "//oci/distroless/nginx:nginx_signing.key",
     lock_file = "//oci/distroless/nginx:nginx-stable.hummingbird.lock.json",
     packages = ["nginx"],
@@ -166,6 +181,7 @@ rpm.install(
         "x86_64",
         "aarch64",
     ],
+    distro = "hummingbird-1",
     gpg_key = "//oci/distroless/nginx:nginx_signing.key",
     lock_file = "//oci/distroless/nginx:nginx-mainline.hummingbird.lock.json",
     packages = ["nginx"],

@@ -37,20 +37,24 @@ def image_sbom(image):
     # row per distinct package; ordering is sorted-by-purl, deterministic.
     #
     # The same tool synthesizes `component.name` as `<purl-namespace>/<purl-name>`
-    # ("debian/nginx" rather than "nginx"), which prevents grype's dpkg matcher
-    # from doing an exact-direct-match against Debian's Security Tracker:
-    # syft reads the prefixed name into `pkg.Name`, the tracker has no
-    # "debian/nginx" entry, and the `upstream=<source>` fallback only kicks in
-    # when source != name (grype's handleDefaultUpstream filters
-    # name-equals-upstream qualifiers — package.go:492). Strip the prefix so
-    # source==name packages (nginx, bash, busybox, sqlite3, ...) get the same
-    # tracker coverage that `grype <image>` already gives consumers via
-    # /var/lib/dpkg/status.d.
+    # ("debian/nginx" rather than "nginx", "hummingbird/glibc" rather than
+    # "glibc"), which prevents grype's dpkg/rpm matcher from doing an
+    # exact-direct-match against the relevant Security Tracker secdb: syft
+    # reads the prefixed name into `pkg.Name`, the tracker has no
+    # "debian/nginx" or "hummingbird/glibc" entry, and the `upstream=<source>`
+    # fallback only kicks in when source != name (grype's handleDefaultUpstream
+    # filters name-equals-upstream qualifiers — package.go:492). Strip the
+    # prefix on rpm+deb components so source==name packages (nginx, bash,
+    # busybox, glibc, ...) get the same tracker coverage that `grype <image>`
+    # already gives consumers via /var/lib/dpkg/status.d or
+    # /usr/lib/sysimage/rpm/rpmdb.sqlite. Go packages keep their
+    # github.com/-prefixed names because that *is* the upstream identity
+    # tracked by NVD CPE and GHSA.
     jq(
         name = base + "_sbom",
         srcs = [":" + base + "_sbom_predupe"],
         out = base + "_sbom.json",
-        filter = '.components |= (map(.name |= sub("^debian/"; "")) | unique_by(.purl))',
+        filter = '.components |= (map(if (.purl // "") | test("^pkg:(rpm|deb)/") then .name |= sub("^[^/]+/"; "") else . end) | unique_by(.purl))',
     )
 
 def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database"):

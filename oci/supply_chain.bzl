@@ -31,25 +31,29 @@ def image_sbom(image):
 
     # supply_chain_tools' cyclonedx tool emits one component per
     # `PackageMetadataInfo`-bearing target it walks, deduping only by metadata
-    # file path. A package shipped through multiple flatten layers (e.g.
-    # libc6 in both the cc base and the nginx layer) ends up as duplicate
-    # components with identical purls. Collapse by purl so consumers see one
-    # row per distinct package; ordering is sorted-by-purl, deterministic.
+    # file path. Two cleanup passes here:
     #
-    # The same tool synthesizes `component.name` as `<purl-namespace>/<purl-name>`
-    # ("debian/nginx" rather than "nginx", "hummingbird/glibc" rather than
-    # "glibc"), which prevents grype's dpkg/rpm matcher from doing an
-    # exact-direct-match against the relevant Security Tracker secdb: syft
-    # reads the prefixed name into `pkg.Name`, the tracker has no
-    # "debian/nginx" or "hummingbird/glibc" entry, and the `upstream=<source>`
-    # fallback only kicks in when source != name (grype's handleDefaultUpstream
-    # filters name-equals-upstream qualifiers — package.go:492). Strip the
-    # prefix on rpm+deb components so source==name packages (nginx, bash,
-    # busybox, glibc, ...) get the same tracker coverage that `grype <image>`
-    # already gives consumers via /var/lib/dpkg/status.d or
-    # /usr/lib/sysimage/rpm/rpmdb.sqlite. Go packages keep their
-    # github.com/-prefixed names because that *is* the upstream identity
-    # tracked by NVD CPE and GHSA.
+    # 1. A package shipped through multiple flatten layers (e.g. libc6 in
+    #    both the cc base and the nginx layer) ends up as duplicate components
+    #    with identical purls. Collapse by purl so consumers see one row per
+    #    distinct package; sorted-by-purl ordering is deterministic.
+    #
+    # 2. The cyclonedx tool synthesizes `component.name` as
+    #    `<purl-namespace>/<purl-name>` ("debian/nginx" rather than "nginx",
+    #    "hummingbird/glibc" rather than "glibc"), which prevents grype's
+    #    dpkg/rpm matcher from doing an exact-direct-match against the
+    #    Security Tracker secdb: syft reads the prefixed name into `pkg.Name`,
+    #    the tracker has no "debian/nginx" or "hummingbird/glibc" entry, and
+    #    the `upstream=<source>` fallback only kicks in when source != name
+    #    (grype's handleDefaultUpstream filters name-equals-upstream
+    #    qualifiers — package.go:492). Strip the prefix on rpm+deb components
+    #    so source==name packages (nginx, bash, busybox, glibc, ...) get the
+    #    same tracker coverage that `grype <image>` already gives consumers
+    #    via /var/lib/dpkg/status.d or /usr/lib/sysimage/rpm/rpmdb.sqlite.
+    #
+    # Note: rules_rpm tool-side Go module deps don't need filtering here —
+    # `gather_metadata` is taught to skip them via
+    # //bazel/patches:supply_chain_tools_rule_filters_rpm.patch.
     jq(
         name = base + "_sbom",
         srcs = [":" + base + "_sbom_predupe"],

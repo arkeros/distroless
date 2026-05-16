@@ -1,0 +1,30 @@
+Teach gather_metadata to skip tool-action deps on rules_rpm's rules.
+
+Without this, the supply_chain_tools aspect walks rpm_package's
+`_extract_tool` attr (and rpmdb_merge's `_tool` attr), follows the
+exec-config go_binary down into its rules_rpm-internal Go module
+deps (modernc.org/sqlite, sassoftware/go-rpmutils, klauspost/compress,
+golang.org/x/crypto, ...), and emits them as image SBOM components.
+Those binaries don't ship in any image — they're build-time tooling
+— so they shouldn't be in the SBOM.
+
+The mechanism is the same pattern the upstream filter uses for
+`go_binary: ["_*"]` etc.: rules_rpm's two custom rule kinds get
+their `_`-prefixed attrs filtered.
+
+Track in the FIXME alongside the supply-chain archive_override —
+drop once an upstream PR is filed for the `user_filtered_rule_kinds.bzl`
+extension point that this file's docstring promises.
+
+diff --git a/gather_metadata/rule_filters.bzl b/gather_metadata/rule_filters.bzl
+--- a/gather_metadata/rule_filters.bzl
++++ b/gather_metadata/rule_filters.bzl
+@@ -29,6 +29,8 @@
+     "java_wrap_cc": ["_cc_toolchain", "swig_top"],
+     "py_binary": ["_*"],
+     "py_extension": ["_cc_toolchain"],
++    "rpm_package": ["_*"],
++    "rpmdb_merge": ["_*"],
+     "sh_binary": ["_bash_binary"],
+     "_constant_gen": ["_generator"],
+ }

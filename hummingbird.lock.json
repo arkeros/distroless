@@ -100,14 +100,6 @@
         "size": 20837
       }
     },
-    "fedora-logos-httpd": {
-      "noarch": {
-        "version": "42.0.1-3.1.hum1",
-        "sha256": "1c3e06e7485ba30bb0fa514a23ad9e1d02743c24b9cd7aa7d888745c175a1bf7",
-        "path": "x86_64/Packages/f/fedora-logos-httpd-42.0.1-3.1.hum1.noarch.rpm",
-        "size": 21613
-      }
-    },
     "filesystem": {
       "aarch64": {
         "version": "3.18-56.1.hum1",
@@ -194,20 +186,6 @@
         "size": 159885
       }
     },
-    "gperftools-libs": {
-      "aarch64": {
-        "version": "2.18.1-1.1.hum1",
-        "sha256": "9d06972501e0e44fea8f16af9ab116282aad6704c721958a5e02013dd5109a43",
-        "path": "aarch64/Packages/g/gperftools-libs-2.18.1-1.1.hum1.aarch64.rpm",
-        "size": 307385
-      },
-      "x86_64": {
-        "version": "2.18.1-1.1.hum1",
-        "sha256": "f6e79ed107594977e0a9c612945859002ee4ea65c8df1e88ed732512d2e5f13f",
-        "path": "x86_64/Packages/g/gperftools-libs-2.18.1-1.1.hum1.x86_64.rpm",
-        "size": 311432
-      }
-    },
     "grep": {
       "aarch64": {
         "version": "3.12-3.1.hum1",
@@ -274,20 +252,6 @@
         "size": 24598
       }
     },
-    "libblkid": {
-      "aarch64": {
-        "version": "2.42-7.1.hum1",
-        "sha256": "231b337d0d599459007699c22d7893cb36fe8fcd4b75e1edd2f60577a2d67980",
-        "path": "aarch64/Packages/l/libblkid-2.42-7.1.hum1.aarch64.rpm",
-        "size": 133608
-      },
-      "x86_64": {
-        "version": "2.42-7.1.hum1",
-        "sha256": "02af99c3a6e14c8f2a2316dacd36a79f6baf4abac7dd552637f12d3e6d0570c4",
-        "path": "x86_64/Packages/l/libblkid-2.42-7.1.hum1.x86_64.rpm",
-        "size": 135635
-      }
-    },
     "libcap": {
       "aarch64": {
         "version": "2.78-1.1.hum1",
@@ -330,20 +294,6 @@
         "size": 42285
       }
     },
-    "libfdisk": {
-      "aarch64": {
-        "version": "2.42-7.1.hum1",
-        "sha256": "b8a3a3438cfceb3f6c614afe2ec3b63c7d14a3e1058fc842b6f6c28d85539916",
-        "path": "aarch64/Packages/l/libfdisk-2.42-7.1.hum1.aarch64.rpm",
-        "size": 163920
-      },
-      "x86_64": {
-        "version": "2.42-7.1.hum1",
-        "sha256": "17c26a8743d54d2268aa4b094edbf5570db2d004360bdc45c13494bafe686791",
-        "path": "x86_64/Packages/l/libfdisk-2.42-7.1.hum1.x86_64.rpm",
-        "size": 171544
-      }
-    },
     "libffi": {
       "x86_64": {
         "version": "3.5.2-2.1.hum1",
@@ -364,34 +314,6 @@
         "sha256": "66270d6e3bd4507264a88cb576d21172906b99dd772d041fa3ed5bb19e9a248c",
         "path": "x86_64/Packages/l/libgcc-15.2.1-7.2.hum1.x86_64.rpm",
         "size": 146111
-      }
-    },
-    "libmount": {
-      "aarch64": {
-        "version": "2.42-7.1.hum1",
-        "sha256": "076ad208a61476fc19cc93da4d7451b7fda0b1d6542a9a922c661a076d1ec8d5",
-        "path": "aarch64/Packages/l/libmount-2.42-7.1.hum1.aarch64.rpm",
-        "size": 172093
-      },
-      "x86_64": {
-        "version": "2.42-7.1.hum1",
-        "sha256": "48fc9e9828a79c648f8ac0a9a59f71248c207a1105aba45b017b90d1452547ec",
-        "path": "x86_64/Packages/l/libmount-2.42-7.1.hum1.x86_64.rpm",
-        "size": 176601
-      }
-    },
-    "libseccomp": {
-      "aarch64": {
-        "version": "2.6.0-3.1.hum1",
-        "sha256": "457e83b9e2b1e78782e971f7e003feefd6cf235b326526c1b5de561dc5987f9e",
-        "path": "aarch64/Packages/l/libseccomp-2.6.0-3.1.hum1.aarch64.rpm",
-        "size": 84589
-      },
-      "x86_64": {
-        "version": "2.6.0-3.1.hum1",
-        "sha256": "ebd96b7e1b8b666875afa59c9f05a8720d9b26c33c3354dd4e29011beeb46364",
-        "path": "x86_64/Packages/l/libseccomp-2.6.0-3.1.hum1.x86_64.rpm",
-        "size": 84020
       }
     },
     "libselinux": {
@@ -444,48 +366,6 @@
         "size": 81835
       }
     },
-    "libunwind": {
-      "aarch64": {
-        "version": "1.8.3-2.1.hum1",
-        "sha256": "2a5ecae532e6e24688312dfeaedfeaacc0180459c7de515acd77c55b6d1625c5",
-        "path": "aarch64/Packages/l/libunwind-1.8.3-2.1.hum1.aarch64.rpm",
-        "size": 92962
-      },
-      "x86_64": {
-        "version": "1.8.3-2.1.hum1",
-        "sha256": "4580f405c768638d950389e80090fe04bc6e9b5cf9770e1fc7d6e4efb2a5a1a3",
-        "path": "x86_64/Packages/l/libunwind-1.8.3-2.1.hum1.x86_64.rpm",
-        "size": 87113
-      }
-    },
-    "libuuid": {
-      "aarch64": {
-        "version": "2.42-7.1.hum1",
-        "sha256": "b0b478b29474c21f8d5812ad7b8094c0dd233552a372a4478518f6009cc75a5f",
-        "path": "aarch64/Packages/l/libuuid-2.42-7.1.hum1.aarch64.rpm",
-        "size": 32127
-      },
-      "x86_64": {
-        "version": "2.42-7.1.hum1",
-        "sha256": "a5445643f10322412a4f87a1d314cb39702295cea02f3a1343c0c4e88cb16779",
-        "path": "x86_64/Packages/l/libuuid-2.42-7.1.hum1.x86_64.rpm",
-        "size": 32517
-      }
-    },
-    "libxcrypt": {
-      "aarch64": {
-        "version": "4.5.2-3.1.hum1",
-        "sha256": "7e4fdd68ea63c2c2f979dd746d610036bd0f51e060b164359ccd41b8e66ec269",
-        "path": "aarch64/Packages/l/libxcrypt-4.5.2-3.1.hum1.aarch64.rpm",
-        "size": 135783
-      },
-      "x86_64": {
-        "version": "4.5.2-3.1.hum1",
-        "sha256": "0dfc7c117c041acf255a3d6e77832cb4dcbdfbfd851dd600d28fe0b19a53856d",
-        "path": "x86_64/Packages/l/libxcrypt-4.5.2-3.1.hum1.x86_64.rpm",
-        "size": 138625
-      }
-    },
     "mailcap": {
       "noarch": {
         "version": "2.1.54-10.1.hum1",
@@ -528,50 +408,6 @@
         "sha256": "5dfeaed687bef3a879a893f7b9e75ceee44188dbcdf03e2c0ce198aa43d9b0b8",
         "path": "x86_64/Packages/n/ncurses-libs-6.6-2.hum1.x86_64.rpm",
         "size": 352843
-      }
-    },
-    "nginx": {
-      "aarch64": {
-        "version": "2:1.30.1-1.hum1",
-        "sha256": "c269da41258db50ad115d68d0d0dea6e61d8e5aa1fbf1d610ca51ba38c9d7ca1",
-        "path": "aarch64/Packages/n/nginx-1.30.1-1.hum1.aarch64.rpm",
-        "size": 39845
-      },
-      "x86_64": {
-        "version": "2:1.30.1-1.hum1",
-        "sha256": "1ecf779e2e1a69c19171a540c1f4c4be7893e211fc69f218298ae10774a621c6",
-        "path": "x86_64/Packages/n/nginx-1.30.1-1.hum1.x86_64.rpm",
-        "size": 39881
-      }
-    },
-    "nginx-core": {
-      "aarch64": {
-        "version": "2:1.30.1-1.hum1",
-        "sha256": "826c74fd6bbaf5b461216ce469962b0a8907d16f11f58d6144557e00cfb12a65",
-        "path": "aarch64/Packages/n/nginx-core-1.30.1-1.hum1.aarch64.rpm",
-        "size": 712289
-      },
-      "x86_64": {
-        "version": "2:1.30.1-1.hum1",
-        "sha256": "0b2dbfb075883156e3145dd2eed7a5fc917ec08583afb5427538998f141d3557",
-        "path": "x86_64/Packages/n/nginx-core-1.30.1-1.hum1.x86_64.rpm",
-        "size": 723086
-      }
-    },
-    "nginx-filesystem": {
-      "noarch": {
-        "version": "2:1.30.1-1.hum1",
-        "sha256": "01d85dad3b816e1c8f335bb98e7edd7b796243a233acca172eba8169693df9c9",
-        "path": "x86_64/Packages/n/nginx-filesystem-1.30.1-1.hum1.noarch.rpm",
-        "size": 14565
-      }
-    },
-    "nginx-mimetypes": {
-      "noarch": {
-        "version": "2.1.54-10.1.hum1",
-        "sha256": "5a6e4ac4962c1d17bd41e600a609905262b387cb2094623a5e8ddf9da52a9d7b",
-        "path": "x86_64/Packages/n/nginx-mimetypes-2.1.54-10.1.hum1.noarch.rpm",
-        "size": 28259
       }
     },
     "openssl-fips-provider-so": {
@@ -676,20 +512,6 @@
         "size": 165432
       }
     },
-    "systemd": {
-      "aarch64": {
-        "version": "260.1-2.1.hum1",
-        "sha256": "3e3e4310338e379eb0a37f8dee5724db269d9c0de4d17407963c6cd57671bf1b",
-        "path": "aarch64/Packages/s/systemd-260.1-2.1.hum1.aarch64.rpm",
-        "size": 4460806
-      },
-      "x86_64": {
-        "version": "260.1-2.1.hum1",
-        "sha256": "ba4442a5bccea223a106dc77f31e9bc65ef8d3749d97826304536c69609c687b",
-        "path": "x86_64/Packages/s/systemd-260.1-2.1.hum1.x86_64.rpm",
-        "size": 4659229
-      }
-    },
     "systemd-libs": {
       "aarch64": {
         "version": "260.1-2.1.hum1",
@@ -702,20 +524,6 @@
         "sha256": "879d038ceee5a9319780e8461ac4cadb1616233b0d8b1feb1821709ecc0c0ce9",
         "path": "x86_64/Packages/s/systemd-libs-260.1-2.1.hum1.x86_64.rpm",
         "size": 868245
-      }
-    },
-    "systemd-shared": {
-      "aarch64": {
-        "version": "260.1-2.1.hum1",
-        "sha256": "8e164074c8ab14405096a28cb86ee84c9d2085bd7e9b2dbc8b79c60f5a899a81",
-        "path": "aarch64/Packages/s/systemd-shared-260.1-2.1.hum1.aarch64.rpm",
-        "size": 1943614
-      },
-      "x86_64": {
-        "version": "260.1-2.1.hum1",
-        "sha256": "56e1b88da8dc4a665bd6ed072c272198e9533466a270186d5f91af98b80b21d3",
-        "path": "x86_64/Packages/s/systemd-shared-260.1-2.1.hum1.x86_64.rpm",
-        "size": 2098010
       }
     },
     "tzdata": {

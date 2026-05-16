@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "repo": {
+    "url": "https://nginx.org/packages/mainline/rhel/10",
+    "revision": "1778689347",
+    "repomd_sha256": "87f5c7e8411a22457c3f5ee769354f4dc5db5f51dc041efb63b05c34caf23d79"
+  },
+  "packages": {
+    "nginx": {
+      "aarch64": {
+        "version": "2:1.31.0-1.el10.ngx",
+        "sha256": "cb3fa01a8794201b2f5cac6f38508c7ffce8ee627323ee8147c855801b353088",
+        "path": "aarch64/RPMS/nginx-1.31.0-1.el10.ngx.aarch64.rpm",
+        "size": 1095756
+      },
+      "x86_64": {
+        "version": "2:1.31.0-1.el10.ngx",
+        "sha256": "8937155a39abcbfa6aa310626043ac254fb9df0de03626bc6955093683ab6f3f",
+        "path": "x86_64/RPMS/nginx-1.31.0-1.el10.ngx.x86_64.rpm",
+        "size": 1112668
+      }
+    }
+  }
+}

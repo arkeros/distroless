@@ -12,6 +12,12 @@ load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMEN
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
+exports_files([
+    "nginx_signing.key",
+    "nginx-stable.hummingbird.lock.json",
+    "nginx-mainline.hummingbird.lock.json",
+])
+
 _HUMMINGBIRD_ARCH_MAP = {
     "amd64": "x86_64",
     "arm64": "aarch64",
@@ -84,14 +90,9 @@ _VEX_BY_DISTRO = {
     "hummingbird": [":vex_hummingbird"],
 }
 
-# Debian nginx ships /usr/sbin/nginx; Hummingbird ships /usr/bin/nginx. Same
-# binary, different conventional install location.
-_NGINX_BINARY_BY_DISTRO = {
-    "debian": "/usr/sbin/nginx",
-    "hummingbird": "/usr/bin/nginx",
-}
-
-_NGINX_DAEMON_OFF_FLAGS = [
+_NGINX_ENTRYPOINT = [
+    # nginx.org ships /usr/sbin/nginx on both deb and rpm.
+    "/usr/sbin/nginx",
     "-e",
     "/dev/stderr",
     "-g",
@@ -112,17 +113,8 @@ tar(
     ],
 )
 
-# RHEL nginx-core ships /etc/nginx/mime.types.default but the canonical
-# /etc/nginx/mime.types is created by the package's %post scriptlet,
-# which distroless images deliberately don't run. Symlink the .default
-# into place so the `include /etc/nginx/mime.types` in nginx.conf resolves.
-tar(
-    name = "nginx_mime_types_symlink_hummingbird",
-    mtree = [
-        "./etc/nginx/mime.types type=link link=mime.types.default",
-    ],
-)
-
+# Debian layers (per channel × arch): nginx.org-shipped rpms via the
+# senku @nginx_stable / @nginx_mainline apt extension.
 [
     flatten(
         name = version_label + "_" + arch + "_debian_layer",
@@ -136,44 +128,44 @@ tar(
     for arch in NGINX_ARCHITECTURES["debian"]
 ]
 
-# Hummingbird nginx is mainline-only — see comment in config.bzl. The
-# rpm wrapper (`nginx`) requires nginx-core (the actual binary at
-# /usr/sbin/nginx) and nginx-filesystem (the /etc/nginx/* dir tree
-# we overlay our own config on top of). pcre2, openssl, zlib are
-# inherited from the cc base, but pcre2 is image-included via bash's
-# layer too — overlay flatten handles duplicates.
+# Hummingbird-derived layers: nginx.org's RHEL10 rpms via @nginx_stable_rpm
+# / @nginx_mainline_rpm. Single self-contained `nginx` rpm — same binary
+# semantics as the Debian flatten on the apt side, just different package
+# format. Inherits glibc/openssl/zlib/pcre2 from the cc base (no senku-side
+# soname overlays needed — nginx.org's rpm doesn't link gperftools).
+_NGINX_RPM_REPO = {
+    "stable": "@nginx_stable_rpm",
+    "mainline": "@nginx_mainline_rpm",
+}
+
 [
     flatten(
-        name = "mainline_" + arch + "_hummingbird_layer",
+        name = version_label + "_" + arch + "_hummingbird_layer",
         compress = COMPRESSION,
         deduplicate = True,
         tars = [
-            "@hummingbird//nginx/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//nginx-core/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//nginx-filesystem/noarch",
-            "@hummingbird//pcre2/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            # nginx-core links libcrypt.so.2 (split out of glibc in RHEL 9+)
-            # and gperftools' libprofiler.so.0 / libtcmalloc.so.4 (Hummingbird
-            # builds nginx with --with-debug + gperftools support).
-            "@hummingbird//libxcrypt/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//gperftools-libs/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//libunwind/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            ":nginx_mime_types_symlink_hummingbird",
+            "{}//nginx/{}".format(
+                _NGINX_RPM_REPO[version_label],
+                _HUMMINGBIRD_ARCH_MAP[arch],
+            ),
         ],
     )
+    for version_label in NGINX_VERSIONS.keys()
     for arch in NGINX_ARCHITECTURES["hummingbird"]
 ]
 
-# rpmdb tars (mainline only on hummingbird — see config.bzl).
+# rpmdb tars per (channel, arch). Merges static + cc + this nginx layer so
+# syft reports the full installed-package set.
 [
     rpmdb_merge(
-        name = "rpmdb_nginx_mainline_" + arch + "_hummingbird",
+        name = "rpmdb_nginx_" + version_label + "_" + arch + "_hummingbird",
         targets = [
             "//oci/distroless/static:static_{}_hummingbird_layer".format(arch),
             "//oci/distroless/cc:cc_{}_hummingbird_layer".format(arch),
-            ":mainline_" + arch + "_hummingbird_layer",
+            ":" + version_label + "_" + arch + "_hummingbird_layer",
         ],
     )
+    for version_label in NGINX_VERSIONS.keys()
     for arch in NGINX_ARCHITECTURES["hummingbird"]
 ]
 
@@ -189,7 +181,7 @@ tar(
         },
         debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,
-        entrypoint = [_NGINX_BINARY_BY_DISTRO[distro]] + _NGINX_DAEMON_OFF_FLAGS,
+        entrypoint = _NGINX_ENTRYPOINT,
         ignore_cves = NGINX_IGNORE_CVES["stable"] + _IGNORE_CVES_BY_DISTRO[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image",
@@ -213,7 +205,7 @@ tar(
         },
         debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,
-        entrypoint = [_NGINX_BINARY_BY_DISTRO[distro]] + _NGINX_DAEMON_OFF_FLAGS,
+        entrypoint = _NGINX_ENTRYPOINT,
         ignore_cves = NGINX_IGNORE_CVES["mainline"] + _IGNORE_CVES_BY_DISTRO[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image",

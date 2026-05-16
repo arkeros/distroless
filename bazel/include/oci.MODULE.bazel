@@ -89,7 +89,10 @@ use_repo(apt, "debian", "nginx_mainline", "nginx_stable", "workstation")
 rpm = use_extension("@rules_rpm//rpm:extensions.bzl", "rpm")
 rpm.install(
     name = "hummingbird",
-    architectures = ["x86_64", "aarch64"],
+    architectures = [
+        "x86_64",
+        "aarch64",
+    ],
     gpg_key = "//:hummingbird-release.pgp",
     lock_file = "//:hummingbird.lock.json",
     # Closed manifest of *root* packages; pin walks rpm:requires and adds
@@ -105,11 +108,6 @@ rpm.install(
         "ca-certificates",
         "coreutils",
         "glibc",
-        # nginx-core in Hummingbird is built with gperftools support and
-        # dynlinks libprofiler.so.0 + libtcmalloc.so.4 (RHEL-specific —
-        # upstream nginx doesn't ship this way). Skipping it makes nginx
-        # fail at load.
-        "gperftools-libs",
         "grep",
         "libacl",
         "libattr",
@@ -118,17 +116,9 @@ rpm.install(
         "libselinux",
         "libsepol",
         "libstdc++",
-        # gperftools-libs links libunwind for stack traces.
-        "libunwind",
-        # nginx-core links libcrypt.so.2 for module loading; not pulled by
-        # cc or bash since glibc doesn't ship libcrypt anymore (split out).
-        "libxcrypt",
         "mailcap",
         "mawk",
         "ncurses-libs",
-        "nginx",
-        "nginx-core",
-        "nginx-filesystem",
         "openssl-libs",
         "pcre2",
         "sed",
@@ -139,7 +129,39 @@ rpm.install(
     # use either subtree — same bytes).
     repo_url = "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
 )
-use_repo(rpm, "hummingbird")
+
+# nginx.org's own RPM repositories, mirroring how we already use their apt
+# repos on the Debian side. Stable and mainline are first-class separate
+# repos (no version-constraint pinning needed); each ships a single
+# self-contained `nginx` rpm — no nginx/nginx-core/nginx-filesystem
+# decomposition and none of Hummingbird's gperftools / libunwind /
+# libxcrypt linkage. Lockfiles live alongside the consuming BUILD in
+# //oci/distroless/nginx/ — same convention as the apt-side
+# nginx-{stable,mainline}.lock.json. rhel/10 binaries match Hummingbird's
+# glibc/openssl baseline at runtime.
+rpm.install(
+    name = "nginx_stable_rpm",
+    architectures = [
+        "x86_64",
+        "aarch64",
+    ],
+    gpg_key = "//oci/distroless/nginx:nginx_signing.key",
+    lock_file = "//oci/distroless/nginx:nginx-stable.hummingbird.lock.json",
+    packages = ["nginx"],
+    repo_url = "https://nginx.org/packages/rhel/10",
+)
+rpm.install(
+    name = "nginx_mainline_rpm",
+    architectures = [
+        "x86_64",
+        "aarch64",
+    ],
+    gpg_key = "//oci/distroless/nginx:nginx_signing.key",
+    lock_file = "//oci/distroless/nginx:nginx-mainline.hummingbird.lock.json",
+    packages = ["nginx"],
+    repo_url = "https://nginx.org/packages/mainline/rhel/10",
+)
+use_repo(rpm, "hummingbird", "nginx_mainline_rpm", "nginx_stable_rpm")
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 

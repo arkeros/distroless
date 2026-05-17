@@ -34,8 +34,8 @@
 			"sha256": "69a3f42631fa748608f9127e106bdc455314dfec248c8f519985ebf0f4b1cbc8",
 			"source": "base-files",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/b/base-files/base-files_14.0_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/b/base-files/base-files_14.0_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/b/base-files/base-files_14.0_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/b/base-files/base-files_14.0_amd64.deb"
 			],
 			"version": "14.0"
 		},
@@ -68,8 +68,8 @@
 			"sha256": "baad854d05bf8be4683341ad7dce35606f2853bb6ae16422d118e970046c2332",
 			"source": "mawk",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/m/mawk/mawk_1.3.4.20260302-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/m/mawk/mawk_1.3.4.20260302-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/m/mawk/mawk_1.3.4.20260302-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/m/mawk/mawk_1.3.4.20260302-1_amd64.deb"
 			],
 			"version": "1.3.4.20260302-1"
 		},
@@ -81,8 +81,8 @@
 			"sha256": "acffdc7b51c540d9e0e632c95c2941ef12402b3c609a1f086d17cad08a10edbc",
 			"source": "glibc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc6_2.42-16_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc6_2.42-16_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc6_2.42-16_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc6_2.42-16_amd64.deb"
 			],
 			"version": "2.42-16"
 		},
@@ -94,8 +94,8 @@
 			"sha256": "42be77e33686bfa092e31fd2da3f0c42443576e4b3033e84a69c6d8dcabca67d",
 			"source": "glibc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc-gconv-modules-extra_2.42-16_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc-gconv-modules-extra_2.42-16_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc-gconv-modules-extra_2.42-16_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc-gconv-modules-extra_2.42-16_amd64.deb"
 			],
 			"version": "2.42-16"
 		},
@@ -107,8 +107,8 @@
 			"sha256": "15587be8c8b54d100b7ade2cf3882d4b4383522526acde635a3c2ca038d716c9",
 			"source": "gcc-16",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/libgcc-s1_16.1.0-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/libgcc-s1_16.1.0-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/libgcc-s1_16.1.0-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/libgcc-s1_16.1.0-1_amd64.deb"
 			],
 			"version": "16.1.0-1"
 		},
@@ -120,8 +120,8 @@
 			"sha256": "58baac33692d03fa5571bcf3024a5c0b893e1b7ede6b1301bed643fc4df4b26d",
 			"source": "gcc-16",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/gcc-16-base_16.1.0-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/gcc-16-base_16.1.0-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/gcc-16-base_16.1.0-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/gcc-16-base_16.1.0-1_amd64.deb"
 			],
 			"version": "16.1.0-1"
 		},
@@ -133,8 +133,8 @@
 			"sha256": "76bafa92947ebd37b0a6f9ec6570412041f56edebc1c66d323731216d318471e",
 			"source": "netbase",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/n/netbase/netbase_6.5_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/n/netbase/netbase_6.5_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/n/netbase/netbase_6.5_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/n/netbase/netbase_6.5_all.deb"
 			],
 			"version": "6.5"
 		},
@@ -152,8 +152,8 @@
 			"sha256": "33bf30639f45caf6472baa7a760e5e16ee4e4f8c96082ca85fd61910c317c82f",
 			"source": "tzdata",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/t/tzdata/tzdata_2026b-1_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/t/tzdata/tzdata_2026b-1_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/t/tzdata/tzdata_2026b-1_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/t/tzdata/tzdata_2026b-1_all.deb"
 			],
 			"version": "2026b-1"
 		},
@@ -165,8 +165,8 @@
 			"sha256": "cdee7273fe92dad870fa6c7e3a8aa5b4001a8ddeffccb0958e1607bf15879803",
 			"source": "debconf",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/d/debconf/debconf_1.5.92_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/d/debconf/debconf_1.5.92_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/d/debconf/debconf_1.5.92_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/d/debconf/debconf_1.5.92_all.deb"
 			],
 			"version": "1.5.92"
 		},
@@ -178,8 +178,8 @@
 			"sha256": "c835983e7cfeac12fc5db143d5de009444e800ddc40eeb439fb556a6b9e99243",
 			"source": "media-types",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/m/media-types/media-types_14.0.0_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/m/media-types/media-types_14.0.0_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/m/media-types/media-types_14.0.0_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/m/media-types/media-types_14.0.0_all.deb"
 			],
 			"version": "14.0.0"
 		},
@@ -191,8 +191,8 @@
 			"sha256": "a11c07257c58830f2d8cd40c50730f061d29d412af5534b9d702f726b1be7d0f",
 			"source": "busybox",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/b/busybox/busybox-static_1.37.0-10.1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/b/busybox/busybox-static_1.37.0-10.1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/b/busybox/busybox-static_1.37.0-10.1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/b/busybox/busybox-static_1.37.0-10.1_amd64.deb"
 			],
 			"version": "1:1.37.0-10.1"
 		},
@@ -235,8 +235,8 @@
 			"sha256": "2d0c71adeab9810e1773b9d69afd173d75fcbbde018910ab50cf8b3a58897c15",
 			"source": "rust-coreutils",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/r/rust-coreutils/rust-coreutils_0.8.0-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/r/rust-coreutils/rust-coreutils_0.8.0-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/r/rust-coreutils/rust-coreutils_0.8.0-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/r/rust-coreutils/rust-coreutils_0.8.0-1_amd64.deb"
 			],
 			"version": "0.8.0-1"
 		},
@@ -274,8 +274,8 @@
 			"sha256": "f2fbf6f89deaea225ad73be261461be91fae16ee27917a1ac2b9144ec998683d",
 			"source": "libselinux",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libs/libselinux/libselinux1_3.10-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libs/libselinux/libselinux1_3.10-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libs/libselinux/libselinux1_3.10-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libs/libselinux/libselinux1_3.10-1_amd64.deb"
 			],
 			"version": "3.10-1"
 		},
@@ -308,8 +308,8 @@
 			"sha256": "a15b5dc06ffff7aab6dd7bf2e65691791162426215eff373b2cc851dc1d7848e",
 			"source": "pcre2",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/p/pcre2/libpcre2-8-0_10.46-1+b2_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/p/pcre2/libpcre2-8-0_10.46-1+b2_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/p/pcre2/libpcre2-8-0_10.46-1+b2_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/p/pcre2/libpcre2-8-0_10.46-1+b2_amd64.deb"
 			],
 			"version": "10.46-1+b2"
 		},
@@ -342,8 +342,8 @@
 			"sha256": "3a32b8e77fbc65d8e77bf96a75916d8736106816b04095d922be0151c12b45e1",
 			"source": "gcc-16",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/libstdc++6_16.1.0-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/libstdc++6_16.1.0-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/libstdc++6_16.1.0-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/libstdc++6_16.1.0-1_amd64.deb"
 			],
 			"version": "16.1.0-1"
 		},
@@ -376,8 +376,8 @@
 			"sha256": "e6b94bab754aa449007bb547116658a69811817ef998b9ec459f54c5bf8ba760",
 			"source": "direnv",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/d/direnv/direnv_2.37.1-1+b2_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/d/direnv/direnv_2.37.1-1+b2_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/d/direnv/direnv_2.37.1-1+b2_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/d/direnv/direnv_2.37.1-1+b2_amd64.deb"
 			],
 			"version": "2.37.1-1+b2"
 		},
@@ -410,8 +410,8 @@
 			"sha256": "e258267108803b19003757c18a79c64e4711bfcac39edbd4f84ef1b57f263aab",
 			"source": "glibc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc-bin_2.42-16_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc-bin_2.42-16_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc-bin_2.42-16_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc-bin_2.42-16_amd64.deb"
 			],
 			"version": "2.42-16"
 		},
@@ -474,8 +474,8 @@
 			"sha256": "0b5970c26e74d254bb2a59100d7b9d0612ea0b60bd78987cd71e0aebae5221d7",
 			"source": "ca-certificates",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/c/ca-certificates/ca-certificates_20260223_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/c/ca-certificates/ca-certificates_20260223_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/c/ca-certificates/ca-certificates_20260223_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/c/ca-certificates/ca-certificates_20260223_all.deb"
 			],
 			"version": "20260223"
 		},
@@ -487,8 +487,8 @@
 			"sha256": "b4636ac4e3c35b6eaf42faef5150e863d4703ec0d7cfdccd4108ccf43389db79",
 			"source": "openssl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/openssl_3.6.2-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/openssl_3.6.2-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/openssl_3.6.2-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/openssl_3.6.2-1_amd64.deb"
 			],
 			"version": "3.6.2-1"
 		},
@@ -500,8 +500,8 @@
 			"sha256": "a34acac9b52d64498ce8d98e23597ebbc9883af5f8c4fcf7802450945fb4c2d0",
 			"source": "openssl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/libssl3t64_3.6.2-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/libssl3t64_3.6.2-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/libssl3t64_3.6.2-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/libssl3t64_3.6.2-1_amd64.deb"
 			],
 			"version": "3.6.2-1"
 		},
@@ -513,8 +513,8 @@
 			"sha256": "9c3bab24f0519936dac11c42bbcb6c9ffbbbb86724a0b2e11aba12c7cfec5e55",
 			"source": "openssl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/openssl-provider-legacy_3.6.2-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/openssl-provider-legacy_3.6.2-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/openssl-provider-legacy_3.6.2-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/openssl-provider-legacy_3.6.2-1_amd64.deb"
 			],
 			"version": "3.6.2-1"
 		},
@@ -547,8 +547,8 @@
 			"sha256": "52c585b07bea72ef36df9ddd5d1937f4739d3caec057d827954baec256292651",
 			"source": "zlib",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_amd64.deb"
 			],
 			"version": "1:1.3.dfsg+really1.3.2-3"
 		},
@@ -560,8 +560,8 @@
 			"sha256": "5ce884018be1a8bd7a3beb0db95c7b18e1d49246afdfd08889bc9faa48375933",
 			"source": "libzstd",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libz/libzstd/libzstd1_1.5.7+dfsg-3+b2_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libz/libzstd/libzstd1_1.5.7+dfsg-3+b2_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libz/libzstd/libzstd1_1.5.7+dfsg-3+b2_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libz/libzstd/libzstd1_1.5.7+dfsg-3+b2_amd64.deb"
 			],
 			"version": "1.5.7+dfsg-3+b2"
 		},
@@ -614,8 +614,8 @@
 			"sha256": "8ea8b78d4035cca2f9b3767d3c9b614d61aac347d7d4064f0dfc46e3542a4b0a",
 			"source": "bash",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/b/bash/bash_5.3-3_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/b/bash/bash_5.3-3_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/b/bash/bash_5.3-3_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/b/bash/bash_5.3-3_amd64.deb"
 			],
 			"version": "5.3-3"
 		},
@@ -627,8 +627,8 @@
 			"sha256": "720e43fda316676076498b4224ad3318049deafe60cc7c601011048de03ee97d",
 			"source": "debianutils",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/d/debianutils/debianutils_5.23.2_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/d/debianutils/debianutils_5.23.2_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/d/debianutils/debianutils_5.23.2_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/d/debianutils/debianutils_5.23.2_amd64.deb"
 			],
 			"version": "5.23.2"
 		},
@@ -661,8 +661,8 @@
 			"sha256": "adc32779d98abd9fc7a0a76569abd114fe74e9fea8fa9da88a246b09295553ff",
 			"source": "ncurses",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/n/ncurses/libtinfo6_6.6+20251231-1+b1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/n/ncurses/libtinfo6_6.6+20251231-1+b1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/n/ncurses/libtinfo6_6.6+20251231-1+b1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/n/ncurses/libtinfo6_6.6+20251231-1+b1_amd64.deb"
 			],
 			"version": "6.6+20251231-1+b1"
 		},
@@ -710,8 +710,8 @@
 			"sha256": "04998e405e5967c4ac599c5e1cce1a31b5441097b478143823ea87a01e879d89",
 			"source": "sed",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/s/sed/sed_4.9-3_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/s/sed/sed_4.9-3_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/s/sed/sed_4.9-3_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/s/sed/sed_4.9-3_amd64.deb"
 			],
 			"version": "4.9-3"
 		},
@@ -723,8 +723,8 @@
 			"sha256": "01dca9e90f0e1051268177f427013ac89ee84f5cb56c09a8445ebaf5c2fe92b0",
 			"source": "acl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/a/acl/libacl1_2.3.2-3_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/a/acl/libacl1_2.3.2-3_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/a/acl/libacl1_2.3.2-3_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/a/acl/libacl1_2.3.2-3_amd64.deb"
 			],
 			"version": "2.3.2-3"
 		},
@@ -762,8 +762,8 @@
 			"sha256": "f118247556ec1e8958c9abf2b9164713201bf74b83787cc23b94b88115dcc7a2",
 			"source": "grep",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/grep/grep_3.12-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/grep/grep_3.12-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/grep/grep_3.12-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/grep/grep_3.12-1_amd64.deb"
 			],
 			"version": "3.12-1"
 		},
@@ -796,8 +796,8 @@
 			"sha256": "04c7528234a6a4a8a2c2470f1470a7a616d90904fe8cdccf4c2c655540cdc61f",
 			"source": "bzip2",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-6+b2_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-6+b2_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-6+b2_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-6+b2_amd64.deb"
 			],
 			"version": "1.0.8-6+b2"
 		},
@@ -830,8 +830,8 @@
 			"sha256": "d263910f67130b11763a0164bac9ee94dafa482cc5ed7301703bbb6520183985",
 			"source": "db5.3",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/d/db5.3/libdb5.3t64_5.3.28+dfsg2-11+b1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/d/db5.3/libdb5.3t64_5.3.28+dfsg2-11+b1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/d/db5.3/libdb5.3t64_5.3.28+dfsg2-11+b1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/d/db5.3/libdb5.3t64_5.3.28+dfsg2-11+b1_amd64.deb"
 			],
 			"version": "5.3.28+dfsg2-11+b1"
 		},
@@ -864,8 +864,8 @@
 			"sha256": "a4ef6b084987f7a0dfd842f692fb6900b84863f9c3a7cae247f22d98de32519c",
 			"source": "expat",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/e/expat/libexpat1_2.8.0-2_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/e/expat/libexpat1_2.8.0-2_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/e/expat/libexpat1_2.8.0-2_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/e/expat/libexpat1_2.8.0-2_amd64.deb"
 			],
 			"version": "2.8.0-2"
 		},
@@ -898,8 +898,8 @@
 			"sha256": "4ce668e1fd6e2251068d48f72bf9f666eb29e55fade9adc933cfb0866d716be5",
 			"source": "xz-utils",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/x/xz-utils/liblzma5_5.8.3-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/x/xz-utils/liblzma5_5.8.3-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/x/xz-utils/liblzma5_5.8.3-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/x/xz-utils/liblzma5_5.8.3-1_amd64.deb"
 			],
 			"version": "5.8.3-1"
 		},
@@ -932,8 +932,8 @@
 			"sha256": "df8932f6c41e78bc33a4f61251c39777ed0681f73c9c91cd8520068a9c07a8b6",
 			"source": "sqlite3",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/s/sqlite3/libsqlite3-0_3.46.1-9+b1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/s/sqlite3/libsqlite3-0_3.46.1-9+b1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/s/sqlite3/libsqlite3-0_3.46.1-9+b1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/s/sqlite3/libsqlite3-0_3.46.1-9+b1_amd64.deb"
 			],
 			"version": "3.46.1-9+b1"
 		},
@@ -966,8 +966,8 @@
 			"sha256": "35001d3e28c59718f99d3f3c2a7ceb130e32446872af8516cb3a6ff30b6889a2",
 			"source": "util-linux",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/u/util-linux/libuuid1_2.42-6_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/u/util-linux/libuuid1_2.42-6_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/u/util-linux/libuuid1_2.42-6_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/u/util-linux/libuuid1_2.42-6_amd64.deb"
 			],
 			"version": "2.42-6"
 		},
@@ -1005,8 +1005,8 @@
 			"sha256": "0fd6c30d36936dc6f6246762e8c13f04fa3e3d38a209e0ebbc05c4a92e816424",
 			"source": "ncurses",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/n/ncurses/libncursesw6_6.6+20251231-1+b1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/n/ncurses/libncursesw6_6.6+20251231-1+b1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/n/ncurses/libncursesw6_6.6+20251231-1+b1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/n/ncurses/libncursesw6_6.6+20251231-1+b1_amd64.deb"
 			],
 			"version": "6.6+20251231-1+b1"
 		},
@@ -1039,8 +1039,8 @@
 			"sha256": "f5ca808baa2f50f5f5cb1aa8b437d1ff6f129798f2f612228721f7ea92e46153",
 			"source": "e2fsprogs",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/e/e2fsprogs/libcom-err2_1.47.4-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/e/e2fsprogs/libcom-err2_1.47.4-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/e/e2fsprogs/libcom-err2_1.47.4-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/e/e2fsprogs/libcom-err2_1.47.4-1_amd64.deb"
 			],
 			"version": "1.47.4-1"
 		},
@@ -1073,8 +1073,8 @@
 			"sha256": "4bcca6a8d97cf4500ae9e4a3a55b08c91a4a9307fbbdebf75ed4d6f779281ac9",
 			"source": "libxcrypt",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libx/libxcrypt/libcrypt1_4.5.1-1+b1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libx/libxcrypt/libcrypt1_4.5.1-1+b1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libx/libxcrypt/libcrypt1_4.5.1-1+b1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libx/libxcrypt/libcrypt1_4.5.1-1+b1_amd64.deb"
 			],
 			"version": "1:4.5.1-1+b1"
 		},
@@ -1152,8 +1152,8 @@
 			"sha256": "d4bf77a8e9d24cb60634ec7ed1a4a37c7e7957a53a6de3d4f03d6c40c6879af8",
 			"source": "krb5",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libgssapi-krb5-2_1.22.1-2.1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libgssapi-krb5-2_1.22.1-2.1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libgssapi-krb5-2_1.22.1-2.1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libgssapi-krb5-2_1.22.1-2.1_amd64.deb"
 			],
 			"version": "1.22.1-2.1"
 		},
@@ -1186,8 +1186,8 @@
 			"sha256": "a7b6b3386339d34396d754047e3953b3df6503da9875aae7266016c4ff5fd98c",
 			"source": "krb5",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libkrb5support0_1.22.1-2.1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libkrb5support0_1.22.1-2.1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libkrb5support0_1.22.1-2.1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libkrb5support0_1.22.1-2.1_amd64.deb"
 			],
 			"version": "1.22.1-2.1"
 		},
@@ -1225,8 +1225,8 @@
 			"sha256": "ebd1943e93f43714413e353ecebf3050d562378f67dcdf954e52caf308467ae7",
 			"source": "krb5",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libk5crypto3_1.22.1-2.1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libk5crypto3_1.22.1-2.1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libk5crypto3_1.22.1-2.1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libk5crypto3_1.22.1-2.1_amd64.deb"
 			],
 			"version": "1.22.1-2.1"
 		},
@@ -1299,8 +1299,8 @@
 			"sha256": "e180bb6a944ca27f323a2d72dd895d822a853ad4a2be87c97a6fa39c8402883a",
 			"source": "krb5",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libkrb5-3_1.22.1-2.1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libkrb5-3_1.22.1-2.1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libkrb5-3_1.22.1-2.1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libkrb5-3_1.22.1-2.1_amd64.deb"
 			],
 			"version": "1.22.1-2.1"
 		},
@@ -1333,8 +1333,8 @@
 			"sha256": "0a71e3b62a39df17508fad4f6150459fd0f0dc4a0189b9eafbda2a74dcea1853",
 			"source": "keyutils",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/keyutils/libkeyutils1_1.6.3-6+b2_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/keyutils/libkeyutils1_1.6.3-6+b2_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/keyutils/libkeyutils1_1.6.3-6+b2_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/keyutils/libkeyutils1_1.6.3-6+b2_amd64.deb"
 			],
 			"version": "1.6.3-6+b2"
 		},
@@ -1427,8 +1427,8 @@
 			"sha256": "901cb577d101f27d2ebb18c439beae38ecd97f353cca9d5d3d54fdd8da094e34",
 			"source": "libnsl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libn/libnsl/libnsl2_1.3.0-3+b4_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libn/libnsl/libnsl2_1.3.0-3+b4_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libn/libnsl/libnsl2_1.3.0-3+b4_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libn/libnsl/libnsl2_1.3.0-3+b4_amd64.deb"
 			],
 			"version": "1.3.0-3+b4"
 		},
@@ -1516,8 +1516,8 @@
 			"sha256": "a6d18d608b5a0fe40de49b0672aae558814c04e9203c8aa14b8293da3ec2ba4a",
 			"source": "libtirpc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libt/libtirpc/libtirpc3t64_1.3.7+ds-1_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libt/libtirpc/libtirpc3t64_1.3.7+ds-1_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libt/libtirpc/libtirpc3t64_1.3.7+ds-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libt/libtirpc/libtirpc3t64_1.3.7+ds-1_amd64.deb"
 			],
 			"version": "1.3.7+ds-1"
 		},
@@ -1529,8 +1529,8 @@
 			"sha256": "5b59ea5cc2fbbaccd9bc4e286a545d0cc8ea14d52b9ca0cd73b3b1fb78b1d385",
 			"source": "libtirpc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libt/libtirpc/libtirpc-common_1.3.7+ds-1_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libt/libtirpc/libtirpc-common_1.3.7+ds-1_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libt/libtirpc/libtirpc-common_1.3.7+ds-1_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libt/libtirpc/libtirpc-common_1.3.7+ds-1_all.deb"
 			],
 			"version": "1.3.7+ds-1"
 		},
@@ -1573,8 +1573,8 @@
 			"sha256": "1b65e285f312f9073dc4f0dafe44143d986bd8914e4a03af3ca59d68f238d02c",
 			"source": "readline",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/r/readline/libreadline8t64_8.3-4_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/r/readline/libreadline8t64_8.3-4_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/r/readline/libreadline8t64_8.3-4_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/r/readline/libreadline8t64_8.3-4_amd64.deb"
 			],
 			"version": "8.3-4"
 		},
@@ -1586,8 +1586,8 @@
 			"sha256": "0fbae1769293deda3cf2a349c472bc50302225812d8900def5c9dfa02404ad6d",
 			"source": "readline",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/r/readline/readline-common_8.3-4_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/r/readline/readline-common_8.3-4_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/r/readline/readline-common_8.3-4_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/r/readline/readline-common_8.3-4_all.deb"
 			],
 			"version": "8.3-4"
 		},
@@ -1620,8 +1620,8 @@
 			"sha256": "1883c3b720014b5fd7bed17f3a27afdc5af079517d762192f687b8dd407e5820",
 			"source": "libffi",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libf/libffi/libffi8_3.5.2-4_amd64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libf/libffi/libffi8_3.5.2-4_amd64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libf/libffi/libffi8_3.5.2-4_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libf/libffi/libffi8_3.5.2-4_amd64.deb"
 			],
 			"version": "3.5.2-4"
 		},
@@ -1659,8 +1659,8 @@
 			"sha256": "7926ff29bee5931762b51eb3dc0432122ceb3525c7c93d3a1806edead5cf40c5",
 			"source": "base-files",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/b/base-files/base-files_14.0_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/b/base-files/base-files_14.0_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/b/base-files/base-files_14.0_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/b/base-files/base-files_14.0_arm64.deb"
 			],
 			"version": "14.0"
 		},
@@ -1693,8 +1693,8 @@
 			"sha256": "1432ed713469aad2fe56bdf0f37723e323fe8bb8bed0cd29602a91b0eb9a91e4",
 			"source": "mawk",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/m/mawk/mawk_1.3.4.20260302-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/m/mawk/mawk_1.3.4.20260302-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/m/mawk/mawk_1.3.4.20260302-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/m/mawk/mawk_1.3.4.20260302-1_arm64.deb"
 			],
 			"version": "1.3.4.20260302-1"
 		},
@@ -1706,8 +1706,8 @@
 			"sha256": "c004bc57c5365f4b14efc876a87499e8a7c861db04aa6b6626c077fea1088b11",
 			"source": "glibc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc6_2.42-16_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc6_2.42-16_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc6_2.42-16_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc6_2.42-16_arm64.deb"
 			],
 			"version": "2.42-16"
 		},
@@ -1719,8 +1719,8 @@
 			"sha256": "1b9bb9c2508e03a5b8c2fca623361e47ec13de03a1d37372fe35abfe88842932",
 			"source": "glibc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc-gconv-modules-extra_2.42-16_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc-gconv-modules-extra_2.42-16_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc-gconv-modules-extra_2.42-16_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc-gconv-modules-extra_2.42-16_arm64.deb"
 			],
 			"version": "2.42-16"
 		},
@@ -1732,8 +1732,8 @@
 			"sha256": "0be8ae2b3b5c41a4a74a47e7a44c4d2ff803020fcb09bb1bf0a0e1ef9babdab3",
 			"source": "gcc-16",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/libgcc-s1_16.1.0-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/libgcc-s1_16.1.0-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/libgcc-s1_16.1.0-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/libgcc-s1_16.1.0-1_arm64.deb"
 			],
 			"version": "16.1.0-1"
 		},
@@ -1745,8 +1745,8 @@
 			"sha256": "a4baf6d3a93c2821f30c442d39149aed57680e292b61001ed708e549f0477109",
 			"source": "gcc-16",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/gcc-16-base_16.1.0-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/gcc-16-base_16.1.0-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/gcc-16-base_16.1.0-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/gcc-16-base_16.1.0-1_arm64.deb"
 			],
 			"version": "16.1.0-1"
 		},
@@ -1758,8 +1758,8 @@
 			"sha256": "76bafa92947ebd37b0a6f9ec6570412041f56edebc1c66d323731216d318471e",
 			"source": "netbase",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/n/netbase/netbase_6.5_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/n/netbase/netbase_6.5_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/n/netbase/netbase_6.5_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/n/netbase/netbase_6.5_all.deb"
 			],
 			"version": "6.5"
 		},
@@ -1777,8 +1777,8 @@
 			"sha256": "33bf30639f45caf6472baa7a760e5e16ee4e4f8c96082ca85fd61910c317c82f",
 			"source": "tzdata",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/t/tzdata/tzdata_2026b-1_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/t/tzdata/tzdata_2026b-1_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/t/tzdata/tzdata_2026b-1_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/t/tzdata/tzdata_2026b-1_all.deb"
 			],
 			"version": "2026b-1"
 		},
@@ -1790,8 +1790,8 @@
 			"sha256": "cdee7273fe92dad870fa6c7e3a8aa5b4001a8ddeffccb0958e1607bf15879803",
 			"source": "debconf",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/d/debconf/debconf_1.5.92_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/d/debconf/debconf_1.5.92_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/d/debconf/debconf_1.5.92_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/d/debconf/debconf_1.5.92_all.deb"
 			],
 			"version": "1.5.92"
 		},
@@ -1803,8 +1803,8 @@
 			"sha256": "c835983e7cfeac12fc5db143d5de009444e800ddc40eeb439fb556a6b9e99243",
 			"source": "media-types",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/m/media-types/media-types_14.0.0_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/m/media-types/media-types_14.0.0_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/m/media-types/media-types_14.0.0_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/m/media-types/media-types_14.0.0_all.deb"
 			],
 			"version": "14.0.0"
 		},
@@ -1816,8 +1816,8 @@
 			"sha256": "0864df82bcca64d8a188b655ce6f7993a3effec0d4e71172473f00c9a053665a",
 			"source": "busybox",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/b/busybox/busybox-static_1.37.0-10.1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/b/busybox/busybox-static_1.37.0-10.1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/b/busybox/busybox-static_1.37.0-10.1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/b/busybox/busybox-static_1.37.0-10.1_arm64.deb"
 			],
 			"version": "1:1.37.0-10.1"
 		},
@@ -1860,8 +1860,8 @@
 			"sha256": "579872d3d6fb99fc8737891c4921dfb5ff6f9d5ce630da8ed74cb1a48f50bf13",
 			"source": "rust-coreutils",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/r/rust-coreutils/rust-coreutils_0.8.0-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/r/rust-coreutils/rust-coreutils_0.8.0-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/r/rust-coreutils/rust-coreutils_0.8.0-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/r/rust-coreutils/rust-coreutils_0.8.0-1_arm64.deb"
 			],
 			"version": "0.8.0-1"
 		},
@@ -1899,8 +1899,8 @@
 			"sha256": "38698a3cff1573083ef64a64bc63a33edc96fca8f8228e07bfbec7a5736e1897",
 			"source": "libselinux",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libs/libselinux/libselinux1_3.10-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libs/libselinux/libselinux1_3.10-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libs/libselinux/libselinux1_3.10-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libs/libselinux/libselinux1_3.10-1_arm64.deb"
 			],
 			"version": "3.10-1"
 		},
@@ -1933,8 +1933,8 @@
 			"sha256": "8960f598a0eaf195bf9e17ac7cf1aca7450e5d2acb3ce5a6e85f898e5a6c218f",
 			"source": "pcre2",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/p/pcre2/libpcre2-8-0_10.46-1+b2_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/p/pcre2/libpcre2-8-0_10.46-1+b2_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/p/pcre2/libpcre2-8-0_10.46-1+b2_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/p/pcre2/libpcre2-8-0_10.46-1+b2_arm64.deb"
 			],
 			"version": "10.46-1+b2"
 		},
@@ -1967,8 +1967,8 @@
 			"sha256": "590c4547099d58ce76f98fe5050e4005123cf250981d9a80d2f7045d69bc3eee",
 			"source": "gcc-16",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/libstdc++6_16.1.0-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/gcc-16/libstdc++6_16.1.0-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/libstdc++6_16.1.0-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/gcc-16/libstdc++6_16.1.0-1_arm64.deb"
 			],
 			"version": "16.1.0-1"
 		},
@@ -2001,8 +2001,8 @@
 			"sha256": "e829cbc1deabc71221f955cce29910ba78944fc6f10cf24e8be7f8742c3e2d67",
 			"source": "direnv",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/d/direnv/direnv_2.37.1-1+b2_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/d/direnv/direnv_2.37.1-1+b2_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/d/direnv/direnv_2.37.1-1+b2_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/d/direnv/direnv_2.37.1-1+b2_arm64.deb"
 			],
 			"version": "2.37.1-1+b2"
 		},
@@ -2035,8 +2035,8 @@
 			"sha256": "e0fc9106ab711c081aeedcf215a5f9e2fb00c357a3c36a7b54338cdec4953ba5",
 			"source": "glibc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc-bin_2.42-16_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/glibc/libc-bin_2.42-16_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc-bin_2.42-16_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/glibc/libc-bin_2.42-16_arm64.deb"
 			],
 			"version": "2.42-16"
 		},
@@ -2099,8 +2099,8 @@
 			"sha256": "0b5970c26e74d254bb2a59100d7b9d0612ea0b60bd78987cd71e0aebae5221d7",
 			"source": "ca-certificates",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/c/ca-certificates/ca-certificates_20260223_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/c/ca-certificates/ca-certificates_20260223_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/c/ca-certificates/ca-certificates_20260223_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/c/ca-certificates/ca-certificates_20260223_all.deb"
 			],
 			"version": "20260223"
 		},
@@ -2112,8 +2112,8 @@
 			"sha256": "83e072673b178ba875066f1520040c0d4693a5fcf3a9e69459eee19c67a6f74d",
 			"source": "openssl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/openssl_3.6.2-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/openssl_3.6.2-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/openssl_3.6.2-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/openssl_3.6.2-1_arm64.deb"
 			],
 			"version": "3.6.2-1"
 		},
@@ -2125,8 +2125,8 @@
 			"sha256": "ac82a431607d362fe03bd74966ddd038e96b2fcc78def8cbec2ad418f53d9f41",
 			"source": "openssl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/libssl3t64_3.6.2-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/libssl3t64_3.6.2-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/libssl3t64_3.6.2-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/libssl3t64_3.6.2-1_arm64.deb"
 			],
 			"version": "3.6.2-1"
 		},
@@ -2138,8 +2138,8 @@
 			"sha256": "cd666b00d811f813d53b541e2665252ebe398efba405f7809e747b9cdf6d5270",
 			"source": "openssl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/openssl-provider-legacy_3.6.2-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/o/openssl/openssl-provider-legacy_3.6.2-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/openssl-provider-legacy_3.6.2-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/o/openssl/openssl-provider-legacy_3.6.2-1_arm64.deb"
 			],
 			"version": "3.6.2-1"
 		},
@@ -2172,8 +2172,8 @@
 			"sha256": "a77a1a137da4f6e440fa638b00a60dc3d7124e9678402ea5335bc02e75bf267e",
 			"source": "zlib",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/z/zlib/zlib1g_1.3.dfsg+really1.3.2-3_arm64.deb"
 			],
 			"version": "1:1.3.dfsg+really1.3.2-3"
 		},
@@ -2185,8 +2185,8 @@
 			"sha256": "480a5f0d14feb7e95130ccf726d8b07bd69fcc01f4806c8c8df6098f75228f90",
 			"source": "libzstd",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libz/libzstd/libzstd1_1.5.7+dfsg-3+b2_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libz/libzstd/libzstd1_1.5.7+dfsg-3+b2_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libz/libzstd/libzstd1_1.5.7+dfsg-3+b2_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libz/libzstd/libzstd1_1.5.7+dfsg-3+b2_arm64.deb"
 			],
 			"version": "1.5.7+dfsg-3+b2"
 		},
@@ -2239,8 +2239,8 @@
 			"sha256": "3d5b85492b06b32cd3e2fd639b2deb1e2f12e7e5402872ec11381ddf2fe03f61",
 			"source": "bash",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/b/bash/bash_5.3-3_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/b/bash/bash_5.3-3_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/b/bash/bash_5.3-3_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/b/bash/bash_5.3-3_arm64.deb"
 			],
 			"version": "5.3-3"
 		},
@@ -2252,8 +2252,8 @@
 			"sha256": "94c6928768b080af44abd452c123cab9875d5c94bd776622fac64b7cb4e30b26",
 			"source": "debianutils",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/d/debianutils/debianutils_5.23.2+b1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/d/debianutils/debianutils_5.23.2+b1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/d/debianutils/debianutils_5.23.2+b1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/d/debianutils/debianutils_5.23.2+b1_arm64.deb"
 			],
 			"version": "5.23.2+b1"
 		},
@@ -2286,8 +2286,8 @@
 			"sha256": "29874f3f80d202917d13254c3b863d05dd0dfa53de634e3770f4bac8b0bd3012",
 			"source": "ncurses",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/n/ncurses/libtinfo6_6.6+20251231-1+b1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/n/ncurses/libtinfo6_6.6+20251231-1+b1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/n/ncurses/libtinfo6_6.6+20251231-1+b1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/n/ncurses/libtinfo6_6.6+20251231-1+b1_arm64.deb"
 			],
 			"version": "6.6+20251231-1+b1"
 		},
@@ -2335,8 +2335,8 @@
 			"sha256": "8637cfc7ccb30c56970af22c0cd911153c9f4ae848daeade050ac16a1e3b9675",
 			"source": "sed",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/s/sed/sed_4.9-3_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/s/sed/sed_4.9-3_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/s/sed/sed_4.9-3_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/s/sed/sed_4.9-3_arm64.deb"
 			],
 			"version": "4.9-3"
 		},
@@ -2348,8 +2348,8 @@
 			"sha256": "c6c11ed90427e154d96de6fbc4af812891ca430ebb8ca1286c6651f46d8b3e79",
 			"source": "acl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/a/acl/libacl1_2.3.2-3_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/a/acl/libacl1_2.3.2-3_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/a/acl/libacl1_2.3.2-3_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/a/acl/libacl1_2.3.2-3_arm64.deb"
 			],
 			"version": "2.3.2-3"
 		},
@@ -2387,8 +2387,8 @@
 			"sha256": "34f9a489d4cb19698521af3ebffc39da74da14ae9ba3feccde64e4868d301999",
 			"source": "grep",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/g/grep/grep_3.12-1+b1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/g/grep/grep_3.12-1+b1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/g/grep/grep_3.12-1+b1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/g/grep/grep_3.12-1+b1_arm64.deb"
 			],
 			"version": "3.12-1+b1"
 		},
@@ -2421,8 +2421,8 @@
 			"sha256": "cca22caf6bcf0a547ee3d866aad175c88aab979065c179aa845b77724911c4bd",
 			"source": "bzip2",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-6+b2_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-6+b2_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-6+b2_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/b/bzip2/libbz2-1.0_1.0.8-6+b2_arm64.deb"
 			],
 			"version": "1.0.8-6+b2"
 		},
@@ -2455,8 +2455,8 @@
 			"sha256": "b1a647dcbbab145d20dceba0253256b05cbda683bc7b4d9ce74ed6d1b5e80643",
 			"source": "db5.3",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/d/db5.3/libdb5.3t64_5.3.28+dfsg2-11+b1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/d/db5.3/libdb5.3t64_5.3.28+dfsg2-11+b1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/d/db5.3/libdb5.3t64_5.3.28+dfsg2-11+b1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/d/db5.3/libdb5.3t64_5.3.28+dfsg2-11+b1_arm64.deb"
 			],
 			"version": "5.3.28+dfsg2-11+b1"
 		},
@@ -2489,8 +2489,8 @@
 			"sha256": "836a2749c8d5f59c479b8c3260270888b1c10ef06f10585582155a6656f48fb7",
 			"source": "expat",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/e/expat/libexpat1_2.8.0-2_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/e/expat/libexpat1_2.8.0-2_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/e/expat/libexpat1_2.8.0-2_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/e/expat/libexpat1_2.8.0-2_arm64.deb"
 			],
 			"version": "2.8.0-2"
 		},
@@ -2523,8 +2523,8 @@
 			"sha256": "3f0cd33c5f54b6cac617f4cc585d8bfce3dec2029b48a875f2c2492da9e4246a",
 			"source": "xz-utils",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/x/xz-utils/liblzma5_5.8.3-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/x/xz-utils/liblzma5_5.8.3-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/x/xz-utils/liblzma5_5.8.3-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/x/xz-utils/liblzma5_5.8.3-1_arm64.deb"
 			],
 			"version": "5.8.3-1"
 		},
@@ -2557,8 +2557,8 @@
 			"sha256": "7151c16a8f7dc4150399938cc170f815e49fc5babf8bfa276bca7b2659eaa3db",
 			"source": "sqlite3",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/s/sqlite3/libsqlite3-0_3.46.1-9+b1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/s/sqlite3/libsqlite3-0_3.46.1-9+b1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/s/sqlite3/libsqlite3-0_3.46.1-9+b1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/s/sqlite3/libsqlite3-0_3.46.1-9+b1_arm64.deb"
 			],
 			"version": "3.46.1-9+b1"
 		},
@@ -2591,8 +2591,8 @@
 			"sha256": "de763f0be7579f38230c76bd7e1bfde2c2e4bcd80738c53e5ea7042ed0052be1",
 			"source": "util-linux",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/u/util-linux/libuuid1_2.42-6_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/u/util-linux/libuuid1_2.42-6_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/u/util-linux/libuuid1_2.42-6_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/u/util-linux/libuuid1_2.42-6_arm64.deb"
 			],
 			"version": "2.42-6"
 		},
@@ -2630,8 +2630,8 @@
 			"sha256": "d3a128a5b9bbed216c6e32db95963e214366e6de6fe771127d44371295146e82",
 			"source": "ncurses",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/n/ncurses/libncursesw6_6.6+20251231-1+b1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/n/ncurses/libncursesw6_6.6+20251231-1+b1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/n/ncurses/libncursesw6_6.6+20251231-1+b1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/n/ncurses/libncursesw6_6.6+20251231-1+b1_arm64.deb"
 			],
 			"version": "6.6+20251231-1+b1"
 		},
@@ -2664,8 +2664,8 @@
 			"sha256": "7ddc133ca0d8307fdb2d9ed9926e7da179306041b6f4bd7c3e69346c502ac1cd",
 			"source": "e2fsprogs",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/e/e2fsprogs/libcom-err2_1.47.4-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/e/e2fsprogs/libcom-err2_1.47.4-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/e/e2fsprogs/libcom-err2_1.47.4-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/e/e2fsprogs/libcom-err2_1.47.4-1_arm64.deb"
 			],
 			"version": "1.47.4-1"
 		},
@@ -2698,8 +2698,8 @@
 			"sha256": "863b25d8262bf4c50377801c6fa72d42fd35b36490c319462c560bd588e6baf3",
 			"source": "libxcrypt",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libx/libxcrypt/libcrypt1_4.5.1-1+b1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libx/libxcrypt/libcrypt1_4.5.1-1+b1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libx/libxcrypt/libcrypt1_4.5.1-1+b1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libx/libxcrypt/libcrypt1_4.5.1-1+b1_arm64.deb"
 			],
 			"version": "1:4.5.1-1+b1"
 		},
@@ -2777,8 +2777,8 @@
 			"sha256": "4cb924fa82ca87d86814c73c3501af4741e58952dc804433c13ee4d7e22ebbd0",
 			"source": "krb5",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libgssapi-krb5-2_1.22.1-2.1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libgssapi-krb5-2_1.22.1-2.1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libgssapi-krb5-2_1.22.1-2.1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libgssapi-krb5-2_1.22.1-2.1_arm64.deb"
 			],
 			"version": "1.22.1-2.1"
 		},
@@ -2811,8 +2811,8 @@
 			"sha256": "0fda5f0f01b437fcf0697737e305eaa855a7137e2c6300567bdf9e9e6895e560",
 			"source": "krb5",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libkrb5support0_1.22.1-2.1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libkrb5support0_1.22.1-2.1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libkrb5support0_1.22.1-2.1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libkrb5support0_1.22.1-2.1_arm64.deb"
 			],
 			"version": "1.22.1-2.1"
 		},
@@ -2850,8 +2850,8 @@
 			"sha256": "04425b044e7717884d6f954535009181d996e543f2e56ce9fbd2192e8bfea395",
 			"source": "krb5",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libk5crypto3_1.22.1-2.1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libk5crypto3_1.22.1-2.1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libk5crypto3_1.22.1-2.1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libk5crypto3_1.22.1-2.1_arm64.deb"
 			],
 			"version": "1.22.1-2.1"
 		},
@@ -2924,8 +2924,8 @@
 			"sha256": "a9b107e674bcf6bfefefd1ef19002da20264a00a04fe47b5193e8c7db3e7abd4",
 			"source": "krb5",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libkrb5-3_1.22.1-2.1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/krb5/libkrb5-3_1.22.1-2.1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libkrb5-3_1.22.1-2.1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/krb5/libkrb5-3_1.22.1-2.1_arm64.deb"
 			],
 			"version": "1.22.1-2.1"
 		},
@@ -2958,8 +2958,8 @@
 			"sha256": "a8abebdab5bc9a9d2c3e1c28b81cf3a473ce62a334f318f0adced1ea29a6250b",
 			"source": "keyutils",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/k/keyutils/libkeyutils1_1.6.3-6+b2_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/k/keyutils/libkeyutils1_1.6.3-6+b2_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/k/keyutils/libkeyutils1_1.6.3-6+b2_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/k/keyutils/libkeyutils1_1.6.3-6+b2_arm64.deb"
 			],
 			"version": "1.6.3-6+b2"
 		},
@@ -3052,8 +3052,8 @@
 			"sha256": "e8f0c04b44a4fa8da1612b0b4b960b9c3764976312795af0e02639f985e53339",
 			"source": "libnsl",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libn/libnsl/libnsl2_1.3.0-3+b4_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libn/libnsl/libnsl2_1.3.0-3+b4_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libn/libnsl/libnsl2_1.3.0-3+b4_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libn/libnsl/libnsl2_1.3.0-3+b4_arm64.deb"
 			],
 			"version": "1.3.0-3+b4"
 		},
@@ -3141,8 +3141,8 @@
 			"sha256": "6c89ff129e1d6be4e2cab26000f578ea87e6fb4ca3d4389d9b199dad931f43a6",
 			"source": "libtirpc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libt/libtirpc/libtirpc3t64_1.3.7+ds-1_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libt/libtirpc/libtirpc3t64_1.3.7+ds-1_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libt/libtirpc/libtirpc3t64_1.3.7+ds-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libt/libtirpc/libtirpc3t64_1.3.7+ds-1_arm64.deb"
 			],
 			"version": "1.3.7+ds-1"
 		},
@@ -3154,8 +3154,8 @@
 			"sha256": "5b59ea5cc2fbbaccd9bc4e286a545d0cc8ea14d52b9ca0cd73b3b1fb78b1d385",
 			"source": "libtirpc",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libt/libtirpc/libtirpc-common_1.3.7+ds-1_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libt/libtirpc/libtirpc-common_1.3.7+ds-1_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libt/libtirpc/libtirpc-common_1.3.7+ds-1_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libt/libtirpc/libtirpc-common_1.3.7+ds-1_all.deb"
 			],
 			"version": "1.3.7+ds-1"
 		},
@@ -3198,8 +3198,8 @@
 			"sha256": "c8f93840910ad4db3778e3b730193e8f50ad947a9f6c978fa941cb6202e934b6",
 			"source": "readline",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/r/readline/libreadline8t64_8.3-4_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/r/readline/libreadline8t64_8.3-4_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/r/readline/libreadline8t64_8.3-4_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/r/readline/libreadline8t64_8.3-4_arm64.deb"
 			],
 			"version": "8.3-4"
 		},
@@ -3211,8 +3211,8 @@
 			"sha256": "0fbae1769293deda3cf2a349c472bc50302225812d8900def5c9dfa02404ad6d",
 			"source": "readline",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/r/readline/readline-common_8.3-4_all.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/r/readline/readline-common_8.3-4_all.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/r/readline/readline-common_8.3-4_all.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/r/readline/readline-common_8.3-4_all.deb"
 			],
 			"version": "8.3-4"
 		},
@@ -3245,8 +3245,8 @@
 			"sha256": "967dc7c3838da2a5243e2a9b3ef5120ba5c9406347f45d65e95fa16f7fa3466b",
 			"source": "libffi",
 			"urls": [
-				"https://snapshot.debian.org/archive/debian/20260516T143426Z/pool/main/libf/libffi/libffi8_3.5.2-4_arm64.deb",
-				"https://snapshot-cloudflare.debian.org/archive/debian/20260516T143426Z/pool/main/libf/libffi/libffi8_3.5.2-4_arm64.deb"
+				"https://snapshot.debian.org/archive/debian/20260517T144112Z/pool/main/libf/libffi/libffi8_3.5.2-4_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260517T144112Z/pool/main/libf/libffi/libffi8_3.5.2-4_arm64.deb"
 			],
 			"version": "3.5.2-4"
 		}

@@ -1,0 +1,6 @@
+schemaVersion: 2.0.0
+commandTests:
+  - name: 'java --version reports 21'
+    command: '/jre/bin/java'
+    args: ['--version']
+    expectedOutput: ['^openjdk 21\.']

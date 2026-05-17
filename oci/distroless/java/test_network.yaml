@@ -1,0 +1,23 @@
+schemaVersion: 2.0.0
+# Network-bound tests. Validates the live TLS stack end-to-end:
+#   - glibc DNS resolution (en.wikipedia.org -> IP)
+#   - TCP egress from the test sandbox
+#   - JRE's SunJSSE TLS 1.3 handshake
+#   - Cert-chain validation against /jre/lib/security/cacerts (the
+#     Adoptium-bundled Mozilla truststore — not Hummingbird's PEM bundle,
+#     which is a separate path Java does not consult)
+#
+# Uses /jre/bin/keytool -printcert -sslserver instead of a custom
+# HttpClient probe: keytool is already in the JRE bin/, so no
+# compilation infrastructure is needed. Tradeoff: this validates TLS
+# + truststore but not the application-level HTTP/2 stack. Adding the
+# latter requires rules_java + a JDK toolchain — defer until a named
+# consumer needs HttpClient guarantees.
+commandTests:
+  - name: 'TLS handshake to en.wikipedia.org via JRE truststore'
+    command: '/jre/bin/keytool'
+    args: ['-printcert', '-sslserver', 'en.wikipedia.org:443']
+    expectedOutput:
+      - 'wikipedia\.org'
+      - "Issuer:.*Let's Encrypt"
+    exitCode: 0

@@ -236,6 +236,60 @@ exports_files(["bin/node"])
     for arch, sha in sha_by_arch.items()
 ]
 
+# Eclipse Temurin JRE tarballs from Adoptium GitHub releases. Consumed by
+# //oci/distroless/java — the headless JRE ships under /jre/, mirroring
+# nodejs's /nodejs/ prefix so the host distro's PATH never resolves to it.
+# The image entrypoint is the absolute path /jre/bin/java.
+#
+# Policy: latest 3 LTS only, no non-LTS. Auto-rolls — when 29 ships in
+# 2027, 17 rolls off and 29 lands here. Adoptium's LTS list is
+# [8, 11, 17, 21, 25]; we explicitly do NOT ship 8/11 (EOL trajectory,
+# tiny incremental users on new infra — same posture as Google Distroless).
+#
+# To refresh:
+#   curl -fsSL https://api.adoptium.net/v3/info/available_releases
+#   curl -fsSL "https://api.adoptium.net/v3/assets/latest/<V>/hotspot?architecture=x64&image_type=jre&os=linux&vendor=eclipse"
+_TEMURIN_JRE_BUILD_FILE_CONTENT = """\
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "all",
+    srcs = glob(["**"], exclude = ["BUILD*", "REPO*", "WORKSPACE*", "MODULE*"], allow_empty = False),
+)
+"""
+
+[
+    http_archive(
+        name = "temurin_jre_{}_{}".format(major, arch),
+        build_file_content = _TEMURIN_JRE_BUILD_FILE_CONTENT,
+        sha256 = sha,
+        strip_prefix = "jdk-{}+{}-jre".format(version, build),
+        url = "https://github.com/adoptium/temurin{}-binaries/releases/download/jdk-{}%2B{}/OpenJDK{}U-jre_{}_linux_hotspot_{}_{}.tar.gz".format(
+            major,
+            version,
+            build,
+            major,
+            "x64" if arch == "amd64" else "aarch64",
+            version,
+            build,
+        ),
+    )
+    for major, version, build, sha_by_arch in [
+        ("17", "17.0.19", "10", {
+            "amd64": "adb5a2364baa51de1ef91bb9911f5a61d24b045fe1d6647cb8050272a3a8ee75",
+            "arm64": "aae834297a87736869745be7c1fca3207ea9167c5824f41c88b0ebb2e3ccb9b1",
+        }),
+        ("21", "21.0.11", "10", {
+            "amd64": "e5038aae3ca9ff670bc696496b0728dbd23d280026bad30291cb919221ecfdcb",
+            "arm64": "fa23d9d9945053e67bcc7638410eabf1e17a7672c7c95a24f70cd08b8407d36e",
+        }),
+        ("25", "25.0.3", "9", {
+            "amd64": "487ad434d8b121ae3902d5ad9cb830cd8e1f75fefad6e2ba80f89d60e3db95d7",
+            "arm64": "d12d5b19ff7f6c4a99fd4f9eecede2c96e64df7d1f41cc84f2e9c9b38408600b",
+        }),
+    ]
+    for arch, sha in sha_by_arch.items()
+]
+
 # Out-of-band binaries baked into //devtools/workstation. Versions are
 # pinned; refresh by re-fetching:
 #

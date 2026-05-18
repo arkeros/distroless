@@ -52,4 +52,4 @@ fileContentTests:
   # intact through the inherit-from-static base.
   - name: 'os-release has ID=hummingbird'
     path: '/usr/lib/os-release'
-    expectedContents: ['ID=.hummingbird.']
+    expectedContents: ['(?m)^ID="hummingbird"$']

@@ -53,7 +53,7 @@ func main() {
 
 // Extract reads the RPM at rpmPath and writes a tar of the cpio payload to
 // contentTarPath and the raw general-header bytes to headerBlobPath.
-func Extract(rpmPath, contentTarPath, headerBlobPath string) error {
+func Extract(rpmPath, contentTarPath, headerBlobPath string) (err error) {
 	rpmBytes, err := os.ReadFile(rpmPath)
 	if err != nil {
 		return fmt.Errorf("read rpm: %w", err)
@@ -78,10 +78,18 @@ func Extract(rpmPath, contentTarPath, headerBlobPath string) error {
 	if err != nil {
 		return fmt.Errorf("create content tar: %w", err)
 	}
-	defer tarFile.Close()
+	defer func() {
+		if closeErr := tarFile.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("close content tar: %w", closeErr)
+		}
+	}()
 
 	tw := tar.NewWriter(tarFile)
-	defer tw.Close()
+	defer func() {
+		if closeErr := tw.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("close tar writer: %w", closeErr)
+		}
+	}()
 
 	for {
 		ent, err := payload.Next()

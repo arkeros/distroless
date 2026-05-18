@@ -33,26 +33,6 @@ its package set. Duplicate headers (same (package, arch)) are deduplicated.
 load(":gather.bzl", "gather_rpm_headers")
 load(":providers.bzl", "TransitiveRpmHeaderInfo")
 
-def _emit_empty(ctx):
-    out = ctx.actions.declare_file(ctx.label.name + ".tar.zst")
-    empty_config = ctx.actions.declare_file(ctx.label.name + ".empty_config.json")
-    ctx.actions.write(empty_config, json.encode({"headers": []}))
-    ctx.actions.run(
-        executable = ctx.executable._tool,
-        arguments = [
-            "--config",
-            empty_config.path,
-            "--out",
-            out.path,
-            "--compress",
-            "zstd",
-        ],
-        inputs = [empty_config],
-        outputs = [out],
-        mnemonic = "RpmdbMergeEmpty",
-    )
-    return [DefaultInfo(files = depset([out]))]
-
 def _rpmdb_merge_impl(ctx):
     seen = {}
     headers = []
@@ -67,7 +47,17 @@ def _rpmdb_merge_impl(ctx):
             headers.append(h)
 
     if not headers:
-        return _emit_empty(ctx)
+        # Fail loud rather than emit an empty rpmdb. Shipping an
+        # `rpmdb.sqlite` with zero rows would propagate into an image
+        # as "scanner reports 0 packages, 0 CVEs" — the AlmaLinux
+        # `ID_LIKE` silent-zero trap ADR 0007 disqualifies competitors
+        # over. If you actually want an empty rpmdb (one-off CLI use),
+        # invoke the rpmdb-merge Go binary directly with an empty
+        # config; the rule contract is "build the rpmdb for THESE
+        # images" and that contract isn't satisfied by zero inputs.
+        fail("rpmdb_merge: no RpmHeaderInfo reachable from targets %s; " % [str(t.label) for t in ctx.attr.targets] +
+             "include at least one flatten/layer whose tars contain rpm_package targets " +
+             "(e.g. //oci/distroless/static:static_<arch>_hummingbird_layer).")
 
     # Stable ordering keyed on (package, arch) so the sqlite output is
     # reproducible across builds regardless of aspect traversal order.

@@ -37,13 +37,17 @@ HUMMINGBIRD_ARCH_MAP = {
 }
 
 def java_layers(major_version):
-    """Composition: static + (busybox if debug) + cc + jre + one rpmdb.
+    """Composition: static + (busybox if debug) + cc + temurin + one rpmdb.
+
+    Release ships the JRE layer at /jre/; debug substitutes the JDK
+    layer at the same /jre/ path so operators get jstack/jcmd/jmap/javac
+    via `kubectl exec` without having to special-case the variant in
+    their command/args overrides. The JDK is a strict superset of the
+    JRE (same `bin/java`, same `lib/server/libjvm.so`) so the entrypoint
+    and SBOM-level CPE component are unchanged across modes.
 
     No base inheritance; everything is explicit. Branches on ctx.mode to
-    add busybox + a busybox-aware rpmdb for the `_debug` variant. Same
-    shape as nodejs_layers — production debug = JRE + busybox, no JDK.
-    Users who need jstack/jcmd should ship a separate JDK-bearing image
-    (TBD if there's demand; defer until a named consumer asks).
+    add busybox + the busybox-aware rpmdb for the `_debug` variant.
     """
 
     def _layers(ctx):
@@ -52,14 +56,17 @@ def java_layers(major_version):
         ]
         if ctx.mode == "_debug":
             layers.append("//oci/distroless/static:busybox_{}_hummingbird_layer".format(ctx.arch))
-        layers += [
-            "//oci/distroless/cc:cc_{}_hummingbird_layer".format(ctx.arch),
-            "//oci/distroless/java:java_{}_{}_hummingbird_layer".format(major_version, ctx.arch),
-        ]
+        layers.append("//oci/distroless/cc:cc_{}_hummingbird_layer".format(ctx.arch))
         if ctx.mode == "_debug":
-            layers.append("//oci/distroless/java:rpmdb_java_debug_{}_{}_hummingbird".format(major_version, ctx.arch))
+            layers += [
+                "//oci/distroless/java:java_jdk_{}_{}_hummingbird_layer".format(major_version, ctx.arch),
+                "//oci/distroless/java:rpmdb_java_debug_{}_{}_hummingbird".format(major_version, ctx.arch),
+            ]
         else:
-            layers.append("//oci/distroless/java:rpmdb_java_{}_{}_hummingbird".format(major_version, ctx.arch))
+            layers += [
+                "//oci/distroless/java:java_jre_{}_{}_hummingbird_layer".format(major_version, ctx.arch),
+                "//oci/distroless/java:rpmdb_java_{}_{}_hummingbird".format(major_version, ctx.arch),
+            ]
         return layers
 
     return _layers

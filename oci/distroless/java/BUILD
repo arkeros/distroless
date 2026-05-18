@@ -56,18 +56,28 @@ vex_document(
     for major, (version, build) in JAVA_VERSIONS.items()
 ]
 
-# Per-(version, arch) JRE tree at /jre/. Mirrors nodejs's /nodejs/ prefix —
-# placed at a non-standard path so the host distro's PATH never resolves
-# to it. The image entrypoint is the absolute path /jre/bin/java.
+# Per-(version, arch) Temurin tree at /jre/. Mirrors nodejs's /nodejs/
+# prefix — placed at a non-standard path so the host distro's PATH never
+# resolves to it. The image entrypoint is /jre/bin/java.
 #
-# We ship the *full* Temurin JRE tree (~150 MB uncompressed) rather than
-# an mtree-allowlist subset. The aggressive nodejs-style "strip everything
-# except bin/node" trick doesn't apply here — bin/java is a 25 KB launcher
-# that dlopens lib/server/libjvm.so plus the entire lib/ tree of native
-# helpers and lib/modules (the jimage). Allowlisting risks lazy-loaded
-# UnsatisfiedLinkErrors that won't surface in structure tests but will
-# hit production. Adoptium's JRE tarball is already trimmed (no jmods,
-# no src.zip, no demo, no include) so the over-ship is bounded.
+# Two tarballs per (major, arch): JRE for release, JDK for debug. The JDK
+# is a strict superset of the JRE — same `bin/java` launcher, same
+# `lib/server/libjvm.so`, plus jstack/jcmd/jmap/javac etc. Debug ships
+# the JDK at the *same* /jre/ path so operators don't have to special-
+# case kubectl exec patterns between variants. SBOM-wise the choice
+# matters: both tarballs ship the same upstream OpenJDK codebase, so
+# both carry the same `:java_metadata_<major>` (one component per image,
+# no double-count).
+#
+# We ship the full Temurin tree (~150 MB uncompressed JRE, ~330 MB JDK)
+# rather than an mtree-allowlist subset. The aggressive nodejs-style
+# "strip everything except bin/node" trick doesn't apply — bin/java is a
+# 25 KB launcher that dlopens libjvm.so plus the entire lib/ tree of
+# native helpers and lib/modules (the jimage). Allowlisting risks lazy-
+# loaded UnsatisfiedLinkErrors that won't surface in structure tests but
+# will hit production. Adoptium's tarballs are already trimmed (JRE has
+# no jmods/src.zip/demo; JDK has no source jars) so the over-ship is
+# bounded.
 #
 # Source the http_archive's filegroup directly: `mtree_spec` calls
 # `to_repository_relative_path` on each File, which for an external repo
@@ -76,8 +86,8 @@ vex_document(
 # prepends the destination prefix and we get `./jre/bin/java`.
 [
     tar(
-        name = "java_{}_{}_hummingbird_binary".format(major, arch),
-        srcs = ["@temurin_jre_{}_{}//:all".format(major, arch)],
+        name = "java_{}_{}_{}_hummingbird_binary".format(image_type, major, arch),
+        srcs = ["@temurin_{}_{}_{}//:all".format(image_type, major, arch)],
         mutate = mutate(
             owner = "0",
             ownername = "root",
@@ -85,48 +95,53 @@ vex_document(
         ),
         package_metadata = [":java_metadata_{}".format(major)],
     )
+    for image_type in ["jre", "jdk"]
     for major in JAVA_MAJOR_VERSIONS
     for arch in JAVA_ARCHITECTURES["hummingbird"]
 ]
 
-# Per-version layer = JRE tree + libatomic. Adoptium ships glibc-only JREs
-# but ARM64 builds historically dlopen libatomic.so.1 for compiler-generated
-# atomic ops (depends on gcc version used to build the JDK). Bundling it
-# uniformly across archs keeps the rpmdb consistent and prevents a future
-# Temurin minor bump from surfacing a runtime linker failure on aarch64.
-# Cost is ~10KB per image. Same reasoning as the nodejs layer's libatomic.
+# Per-version layer = Temurin tree + libatomic. Adoptium's JRE/JDK are
+# glibc-only, but ARM64 builds historically dlopen libatomic.so.1 for
+# compiler-generated atomic ops (depends on the gcc version used to
+# build the JDK). Bundling it uniformly across archs keeps the rpmdb
+# consistent and prevents a future Temurin minor bump from surfacing a
+# runtime linker failure on aarch64. Cost is ~10 KB per image.
 [
     flatten(
-        name = "java_{}_{}_hummingbird_layer".format(major, arch),
+        name = "java_{}_{}_{}_hummingbird_layer".format(image_type, major, arch),
         compress = COMPRESSION,
         deduplicate = True,
         tars = [
-            ":java_{}_{}_hummingbird_binary".format(major, arch),
+            ":java_{}_{}_{}_hummingbird_binary".format(image_type, major, arch),
             "@hummingbird//libatomic/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
         ],
     )
+    for image_type in ["jre", "jdk"]
     for major in JAVA_MAJOR_VERSIONS
     for arch in JAVA_ARCHITECTURES["hummingbird"]
 ]
 
 # rpmdb_merge — single sqlite covering static + cc + libatomic. With no
-# base inheritance, this is the only rpmdb in the release image. The JRE
-# itself is *not* in the rpmdb (it's a tarball, not an rpm) — secdb
-# routing for the JRE goes via the `cpe` on `java_metadata_*` above.
+# base inheritance, this is the only rpmdb in the release image. The
+# Temurin tree itself is *not* in the rpmdb (it's a tarball, not an rpm)
+# — secdb routing for OpenJDK goes via the `cpe` on `java_metadata_*`.
+# Release uses the JRE layer; debug substitutes the JDK layer (which
+# differs only in additional jdk.* modules — same upstream packages).
 [
     rpmdb_merge(
         name = "rpmdb_java_{}_{}_hummingbird".format(major, arch),
         targets = [
             "//oci/distroless/static:static_{}_hummingbird_layer".format(arch),
             "//oci/distroless/cc:cc_{}_hummingbird_layer".format(arch),
-            ":java_{}_{}_hummingbird_layer".format(major, arch),
+            ":java_jre_{}_{}_hummingbird_layer".format(major, arch),
         ],
     )
     for major in JAVA_MAJOR_VERSIONS
     for arch in JAVA_ARCHITECTURES["hummingbird"]
 ]
 
-# Debug rpmdb adds busybox rows for the _debug variant.
+# Debug rpmdb adds busybox rows for the _debug variant and substitutes
+# the JDK layer (jstack/jcmd/jmap/javac live here).
 [
     rpmdb_merge(
         name = "rpmdb_java_debug_{}_{}_hummingbird".format(major, arch),
@@ -134,7 +149,7 @@ vex_document(
             "//oci/distroless/static:static_{}_hummingbird_layer".format(arch),
             "//oci/distroless/static:busybox_{}_hummingbird_layer".format(arch),
             "//oci/distroless/cc:cc_{}_hummingbird_layer".format(arch),
-            ":java_{}_{}_hummingbird_layer".format(major, arch),
+            ":java_jdk_{}_{}_hummingbird_layer".format(major, arch),
         ],
     )
     for major in JAVA_MAJOR_VERSIONS
@@ -146,7 +161,12 @@ vex_document(
         name = "java" + major,
         architectures = JAVA_ARCHITECTURES[distro],
         debug_entrypoint = ["/busybox/sh"],
-        debug_env = DEFAULT_DEBUG_ENV,
+        # Prepend /jre/bin so a kubectl-exec shell finds jstack/jcmd/
+        # jmap/javac on PATH without operators having to type the absolute
+        # path. Merged onto DEFAULT_DEBUG_ENV (which contributes /busybox).
+        debug_env = {
+            "PATH": "/jre/bin:" + DEFAULT_DEBUG_ENV["PATH"],
+        },
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_layers = java_layers(major),
         distro = distro,
@@ -157,7 +177,7 @@ vex_document(
         env = DEFAULT_ENV,
         ignore_cves = [],
         index_annotations = {
-            "org.opencontainers.image.description": "Distroless Java {} (Temurin JRE) image".format(major),
+            "org.opencontainers.image.description": "Distroless Java {} (Temurin) image".format(major),
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/java/BUILD",
         },
         layers = java_layers(major),

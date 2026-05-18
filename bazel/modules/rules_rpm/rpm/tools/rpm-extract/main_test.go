@@ -169,6 +169,55 @@ func TestVerifyRpmSignature_EmptyKeyPathSkips(t *testing.T) {
 	}
 }
 
+// TestMergedUsrLink locks the symlink-target companion to mergedUsr.
+// Without this rewrite, an absolute target like `/lib/foo` would survive
+// past extraction and only resolve at runtime via the base layer's
+// `/lib -> usr/lib` symlink (oci/distroless/common:usrmerge_symlinks_hummingbird).
+// Rewriting here makes the per-package tar internally consistent and
+// removes the cross-layer-ordering dependency.
+//
+// Empirically (as of 2026-05-18) no package in the senku cc+static
+// Hummingbird closure ships an absolute symlink into /lib*, /bin, or
+// /sbin — this is a defensive lock-in against future packages.
+func TestMergedUsrLink(t *testing.T) {
+	cases := map[string]string{
+		// Absolute targets into legacy roots get the /usr prefix.
+		"/lib/foo":           "/usr/lib/foo",
+		"/lib64/libfoo.so.1": "/usr/lib64/libfoo.so.1",
+		"/bin/sh":            "/usr/bin/sh",
+		"/sbin/ldconfig":     "/usr/sbin/ldconfig",
+		// Bare legacy roots — defensive; the per-package tar would
+		// almost never ship a symlink pointing at the root dir itself,
+		// but if it did we should normalise consistently.
+		"/lib":   "/usr/lib",
+		"/lib64": "/usr/lib64",
+		"/bin":   "/usr/bin",
+		"/sbin":  "/usr/sbin",
+		// Absolute targets outside the legacy roots are untouched.
+		"/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem":  "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+		"/etc/crypto-policies/back-ends/openssl_fips.config": "/etc/crypto-policies/back-ends/openssl_fips.config",
+		"/opt/something":     "/opt/something",
+		"/usr/lib64/libc.so": "/usr/lib64/libc.so",
+		// Relative targets are untouched — they're location-relative
+		// and the path-side rewrite preserves resolution.
+		"libfoo.so.1":    "libfoo.so.1",
+		"../bin/sh":      "../bin/sh",
+		"../../lib/foo":  "../../lib/foo",
+		"./bashbug-64":   "./bashbug-64",
+		// Prefix-match guards: longer paths that share a prefix with a
+		// legacy root must NOT be rewritten. /libexec is the canonical
+		// foot-gun for naive `strings.HasPrefix(target, "/lib")` checks.
+		"/libexec/foo":  "/libexec/foo",
+		"/lib_alt/foo":  "/lib_alt/foo",
+		"/binary/thing": "/binary/thing",
+	}
+	for in, want := range cases {
+		if got := mergedUsrLink(in); got != want {
+			t.Errorf("mergedUsrLink(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestShouldStrip(t *testing.T) {
 	cases := map[string]bool{
 		"./usr/lib/.build-id/73":                    true,

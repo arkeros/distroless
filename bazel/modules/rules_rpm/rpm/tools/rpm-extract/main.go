@@ -231,6 +231,18 @@ func shouldStrip(filename string) bool {
 // Symlinks for these prefixes (e.g. `./lib64 -> usr/lib64`) are
 // re-synthesised by the static base — keeping per-package emission of
 // them would collide with the base layer's symlink.
+//
+// Companion: mergedUsrLink rewrites symlink targets (the right-hand
+// side of `->`) so an absolute target like `/lib/foo` doesn't end up
+// referencing the legacy root when the per-package tar is consumed in
+// isolation. Empirically (as of 2026-05-18) no package in the current
+// Hummingbird closure — glibc, glibc-common, libgcc, libstdc++,
+// openssl-libs, bash, ca-certificates, mailcap, tzdata — ships an
+// absolute symlink into /lib*, /bin, or /sbin (their absolute targets
+// land in /etc/pki, /etc/crypto-policies, or are relative). The
+// rewrite is defensive against future packages and keeps the tar
+// internally consistent without relying on the base layer's root
+// symlinks (oci/distroless/common:usrmerge_symlinks_hummingbird).
 func mergedUsr(filename string) (rewritten string, drop bool) {
 	clean := strings.TrimPrefix(filename, "./")
 	for _, prefix := range []string{"lib64", "lib", "bin", "sbin"} {
@@ -243,6 +255,29 @@ func mergedUsr(filename string) (rewritten string, drop bool) {
 		}
 	}
 	return filename, false
+}
+
+// mergedUsrLink rewrites a symlink target so absolute paths into the
+// legacy roots (/lib, /lib64, /bin, /sbin) point under /usr/. Relative
+// targets are returned verbatim — they're already location-relative
+// and the path-side rewrite of the symlink's own location preserves
+// the right resolution. Absolute targets outside the legacy roots
+// (e.g. /etc/pki/..., /opt/...) are also returned verbatim.
+//
+// /lib64 is listed before /lib so a target of `/lib64/foo` matches the
+// longer prefix first; the `prefix == target || prefix+"/" matches`
+// shape would handle this anyway but ordering longest-first makes the
+// intent obvious.
+func mergedUsrLink(target string) string {
+	if !strings.HasPrefix(target, "/") {
+		return target
+	}
+	for _, prefix := range []string{"/lib64", "/lib", "/bin", "/sbin"} {
+		if target == prefix || strings.HasPrefix(target, prefix+"/") {
+			return "/usr" + target
+		}
+	}
+	return target
 }
 
 func isCpioRegular(ent *cpio.Cpio_newc_header) bool {
@@ -270,7 +305,7 @@ func writeCpioEntryAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cp
 		if _, err := io.ReadFull(payload, buf); err != nil {
 			return fmt.Errorf("read symlink target: %w", err)
 		}
-		linkname = string(buf)
+		linkname = mergedUsrLink(string(buf))
 	case cpio.S_ISCHR, cpio.S_ISBLK, cpio.S_ISFIFO, cpio.S_ISSOCK:
 		// Device nodes / fifos / sockets aren't in our allow-list for now.
 		return nil

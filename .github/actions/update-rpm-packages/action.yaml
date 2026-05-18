@@ -1,0 +1,118 @@
+name: Update RPM Packages
+description: Update RPM lockfiles via `bazel run @<repo>//:pin` and open a PR if real binaries changed.
+inputs:
+  repos:
+    description: |
+      Space-separated list of bazel repo names whose lockfiles should be
+      re-pinned. Each must expose a `:pin` runnable (declared by
+      `rpm.install(name = "...")` in MODULE.bazel). Example:
+        "hummingbird nginx_stable_rpm nginx_mainline_rpm"
+    required: true
+  token:
+    description: 'GitHub token for creating PRs and enabling auto-merge'
+    required: true
+outputs:
+  update-needed:
+    description: 'Whether real binary changes were detected'
+    value: ${{ steps.update-packages.outputs.update_needed }}
+  pr-number:
+    description: 'Pull request number if created'
+    value: ${{ steps.create-pr.outputs.pull-request-number }}
+runs:
+  using: composite
+  steps:
+    - name: Re-pin all RPM lockfiles
+      id: update-packages
+      shell: bash
+      run: |
+        print_update_diff() {
+          echo "::group::RPM lockfile update diff"
+          echo "Changed files:"
+          git diff --name-status || true
+          echo
+          echo "Diff stat:"
+          git diff --stat || true
+          echo
+          echo "Per-package sha256 changes (excludes repomd_sha256):"
+          git diff -- '**/*.lock.json' \
+            | grep -E '^[+-].*"sha256"' \
+            | grep -v 'repomd_sha256' || true
+          echo
+          echo "Lockfile package/version/path changes (first 400 lines):"
+          git diff -- '**/*.lock.json' \
+            | grep -E '^[+-].*"(version|sha256|path|upstream)"' \
+            | sed -n '1,400p' || true
+          echo "::endgroup::"
+        }
+
+        for repo in ${{ inputs.repos }}; do
+          echo "::group::Re-pin @${repo}"
+          bazel run "@${repo}//:pin"
+          echo "::endgroup::"
+        done
+
+        if [ -z "$(git diff --name-only)" ]; then
+          echo "No changes detected."
+          echo "update_needed=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Hummingbird's `repomd.xml` revision (and its repomd_sha256) bumps
+        # multiple times per day even when no binaries move — per ADR 0007's
+        # rebuild-cadence note, the public snapshot's revision flipped from
+        # 1778835791 to 1778852516 within ~3 hours during ADR drafting. If
+        # we open a PR every time that revision churns, we drown the queue
+        # in zero-binary-change updates. Gate on per-package sha256: if the
+        # only sha256 changes are the repo-block's `repomd_sha256` (which
+        # tracks the upstream metadata digest, not any binary), discard and
+        # let the lockfile re-sync next run.
+        #
+        # Avoid `grep -q` under `pipefail` — early grep exit can SIGPIPE the
+        # upstream `git diff` and turn a real match into a false negative.
+        if ! git diff -- '**/*.lock.json' \
+             | grep -E '^[+-].*"sha256"' \
+             | grep -v 'repomd_sha256' >/dev/null; then
+          print_update_diff
+          echo "Only repo-metadata revision changed, no binary package changes. Skipping."
+          git checkout -- .
+          echo "update_needed=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        print_update_diff
+        echo "update_needed=true" >> $GITHUB_OUTPUT
+    - name: Create Pull Request
+      if: steps.update-packages.outputs.update_needed == 'true'
+      id: create-pr
+      uses: peter-evans/create-pull-request@v8
+      with:
+        token: ${{ inputs.token }}
+        commit-message: 'chore: update rpm packages'
+        branch: update-rpm-packages
+        delete-branch: true
+        title: 'chore: update rpm packages'
+        body: |
+          This PR re-pins RPM lockfiles for all `rpm.install(...)` repos in
+          //bazel/include/oci.MODULE.bazel.
+
+          Per-repo lockfiles updated:
+          - `@hummingbird` → `hummingbird.lock.json`
+          - `@nginx_stable_rpm` → `oci/distroless/nginx/nginx-stable.hummingbird.lock.json`
+          - `@nginx_mainline_rpm` → `oci/distroless/nginx/nginx-mainline.hummingbird.lock.json`
+
+          Repo-metadata-only revision bumps (where `repomd_sha256` shifts but
+          no per-package `sha256` does) are discarded to avoid PR-queue noise.
+
+          ---
+
+          This PR was automatically created by the Update RPM Packages workflow.
+        labels: |
+          dependencies
+          automated
+        assignees: ${{ github.repository_owner }}
+    - name: Enable auto-merge
+      if: steps.update-packages.outputs.update_needed == 'true' && steps.create-pr.outputs.pull-request-number != ''
+      shell: bash
+      run: gh pr merge --auto --squash "${{ steps.create-pr.outputs.pull-request-number }}"
+      env:
+        GH_TOKEN: ${{ inputs.token }}

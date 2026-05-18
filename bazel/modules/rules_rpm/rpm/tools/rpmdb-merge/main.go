@@ -138,6 +138,10 @@ func buildRpmdb(headers []headerEntry) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Pin to a single connection so URL-pragma application (and the
+	// determinism guarantees that follow) cannot be undone by a second
+	// connection opened without them.
+	db.SetMaxOpenConns(1)
 
 	if _, err := db.Exec(`CREATE TABLE Packages (hnum INTEGER PRIMARY KEY, blob BLOB NOT NULL)`); err != nil {
 		db.Close()

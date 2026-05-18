@@ -115,6 +115,60 @@ func TestMergedUsr(t *testing.T) {
 	}
 }
 
+// TestVerifyRpmSignature_ValidPasses asserts the positive case: a real
+// Hummingbird-signed tzdata rpm verified against the in-repo keyring
+// (which includes Hummingbird's signing key alongside Red Hat's legacy
+// keys) returns no error. Companions the tamper test below: if this one
+// stays green while the tamper test silently passes, verification has
+// regressed to a no-op.
+func TestVerifyRpmSignature_ValidPasses(t *testing.T) {
+	rpmPath := testdataPath(t, "tzdata.rpm")
+	keyPath := testdataPath(t, "hummingbird-release.pgp")
+	if err := verifyRpmSignature(rpmPath, keyPath); err != nil {
+		t.Fatalf("verifyRpmSignature on untouched rpm: %v", err)
+	}
+}
+
+// TestVerifyRpmSignature_TamperedFails flips a single byte deep in the
+// payload region (after the lead+signature+general headers) of a copy of
+// tzdata.rpm. The general-header digest covers the payload bytes, so any
+// mutation past the header break must surface as a verification failure.
+// If this test passes a clean-signature rpm, verification isn't reaching
+// the digest+signature check path.
+func TestVerifyRpmSignature_TamperedFails(t *testing.T) {
+	rpmBytes, err := os.ReadFile(testdataPath(t, "tzdata.rpm"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyPath := testdataPath(t, "hummingbird-release.pgp")
+
+	// Flip a byte 256 bytes from the end — comfortably inside the compressed
+	// payload, well past any header region.
+	if len(rpmBytes) < 512 {
+		t.Fatalf("tzdata.rpm unexpectedly small (%d bytes)", len(rpmBytes))
+	}
+	tampered := append([]byte(nil), rpmBytes...)
+	tampered[len(tampered)-256] ^= 0xFF
+
+	tmp := filepath.Join(t.TempDir(), "tampered.rpm")
+	if err := os.WriteFile(tmp, tampered, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyRpmSignature(tmp, keyPath); err == nil {
+		t.Fatalf("verifyRpmSignature accepted tampered rpm; expected failure")
+	}
+}
+
+// TestVerifyRpmSignature_EmptyKeyPathSkips documents the opt-out shape:
+// passing --gpg-key="" disables verification (so the binary stays usable
+// as a one-off CLI). The rpm_package Bazel rule always passes a key, so
+// the production path is never empty.
+func TestVerifyRpmSignature_EmptyKeyPathSkips(t *testing.T) {
+	if err := verifyRpmSignature(testdataPath(t, "tzdata.rpm"), ""); err != nil {
+		t.Fatalf("empty keyPath should skip verification, got: %v", err)
+	}
+}
+
 func TestShouldStrip(t *testing.T) {
 	cases := map[string]bool{
 		"./usr/lib/.build-id/73":                    true,

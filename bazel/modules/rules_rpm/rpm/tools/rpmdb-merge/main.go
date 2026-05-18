@@ -133,68 +133,70 @@ func buildRpmdb(headers []headerEntry) ([]byte, error) {
 	tmp.Close()
 	defer os.Remove(dbPath)
 
+	if err := populateRpmdb(dbPath, sorted); err != nil {
+		return nil, err
+	}
+	return os.ReadFile(dbPath)
+}
+
+// populateRpmdb writes the Packages table into the sqlite file at dbPath.
+// Split out from buildRpmdb so a single defer chain handles db/tx/stmt
+// cleanup uniformly across every error path. The named return surfaces
+// db.Close()'s flush error on the happy path while leaving any earlier
+// error intact.
+func populateRpmdb(dbPath string, sorted []headerEntry) (err error) {
 	dsn := "file:" + dbPath + "?_pragma=page_size(4096)&_pragma=journal_mode(off)"
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// Pin to a single connection so URL-pragma application (and the
 	// determinism guarantees that follow) cannot be undone by a second
 	// connection opened without them.
 	db.SetMaxOpenConns(1)
+	defer func() {
+		if cerr := db.Close(); err == nil {
+			err = cerr
+		}
+	}()
 
 	if _, err := db.Exec(`CREATE TABLE Packages (hnum INTEGER PRIMARY KEY, blob BLOB NOT NULL)`); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("create Packages: %w", err)
+		return fmt.Errorf("create Packages: %w", err)
 	}
 
 	tx, err := db.Begin()
 	if err != nil {
-		db.Close()
-		return nil, err
+		return err
 	}
+	defer tx.Rollback() // no-op after Commit
+
 	stmt, err := tx.Prepare(`INSERT INTO Packages (blob) VALUES (?)`)
 	if err != nil {
-		tx.Rollback()
-		db.Close()
-		return nil, err
+		return err
 	}
+	defer stmt.Close()
+
 	for _, h := range sorted {
 		blob, err := os.ReadFile(h.HeaderPath)
 		if err != nil {
-			stmt.Close()
-			tx.Rollback()
-			db.Close()
-			return nil, fmt.Errorf("read header %s: %w", h.HeaderPath, err)
+			return fmt.Errorf("read header %s: %w", h.HeaderPath, err)
 		}
 		stored := bytes.TrimPrefix(blob, rpmHeaderMagic)
 		if len(stored) == len(blob) {
-			stmt.Close()
-			tx.Rollback()
-			db.Close()
-			return nil, fmt.Errorf("header %s missing expected 0x8eade801 magic prefix", h.Package)
+			return fmt.Errorf("header %s missing expected 0x8eade801 magic prefix", h.Package)
 		}
 		if _, err := stmt.Exec(stored); err != nil {
-			stmt.Close()
-			tx.Rollback()
-			db.Close()
-			return nil, fmt.Errorf("insert %s: %w", h.Package, err)
+			return fmt.Errorf("insert %s: %w", h.Package, err)
 		}
 	}
-	stmt.Close()
+
 	if err := tx.Commit(); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("commit: %w", err)
+		return fmt.Errorf("commit: %w", err)
 	}
 	if _, err := db.Exec(`VACUUM`); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("vacuum: %w", err)
+		return fmt.Errorf("vacuum: %w", err)
 	}
-	if err := db.Close(); err != nil {
-		return nil, err
-	}
-
-	return os.ReadFile(dbPath)
+	return nil
 }
 
 // writeTar wraps the sqlite bytes in a tar at the rpmdb path expected by

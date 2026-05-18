@@ -7,10 +7,12 @@
 //
 // Outputs:
 //
-//	content.tar  tar with the cpio payload, owners stripped to root:root,
-//	             mtimes pinned to a deterministic epoch (not yet — current
-//	             impl preserves cpio metadata; canonicalization in a later slice).
-//	             No rpmdb writes, no %post/%pre scripts executed.
+//	content.tar  tar with the cpio payload. Upstream cpio mtime/uid/gid
+//	             preserved (same RPM bytes → same values, audit trail
+//	             intact); format pinned to USTAR so archive/tar's
+//	             version-dependent selection logic can't drift bytes
+//	             across Go versions. No rpmdb writes, no %post/%pre
+//	             scripts executed.
 //	header.blob  raw RPM general-header bytes, fed to rpmdb-merge.
 package main
 
@@ -22,6 +24,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/arkeros/senku/bazel/modules/rules_rpm/rpm/tools/internal/keyring"
 	"github.com/sassoftware/go-rpmutils"
@@ -317,6 +320,25 @@ func writeCpioEntryAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cp
 		Size:     int64(ent.Filesize()),
 		Typeflag: typeflag,
 		Linkname: linkname,
+		// Preserve upstream cpio mtime/uid/gid rather than scrubbing
+		// to canonical zero. The RPM bytes are sha256-pinned in the
+		// lockfile, so same RPM → same cpio → same values; reproducibility
+		// is satisfied without losing the packager-set audit trail
+		// (e.g. "which build of libc.so.6 does this image actually carry?").
+		// Differs from rpmdb-merge intentionally: that one synthesizes a
+		// tar around senku-built bytes with no upstream provenance to
+		// preserve, so canonical zeros there are the *only* deterministic
+		// choice. Here they would be a loss.
+		//
+		// Format pinned to USTAR explicitly. Without it, Go's zero
+		// ModTime (year 0001) forces archive/tar to silently downgrade
+		// to PAX/GNU with version-dependent selection — Format=USTAR
+		// makes drift fail loud rather than produce different bytes
+		// across Go versions.
+		ModTime: time.Unix(int64(ent.Mtime()), 0),
+		Uid:     ent.Uid(),
+		Gid:     ent.Gid(),
+		Format:  tar.FormatUSTAR,
 	}
 	if typeflag != tar.TypeReg {
 		hdr.Size = 0

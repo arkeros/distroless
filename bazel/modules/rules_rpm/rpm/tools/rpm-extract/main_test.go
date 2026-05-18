@@ -38,6 +38,43 @@ func TestExtract_TzdataContainsUTC(t *testing.T) {
 	}
 }
 
+// TestExtract_ContentTarIsByteDeterministic anchors the per-rpm Bazel-
+// cache contract: two extractions of the same .rpm must produce
+// byte-identical content tars. Same property rpmdb-merge enforces via
+// TestRun_ReproducibleSameInputs — locks down format selection
+// (tar.FormatUSTAR pinned in writeCpioEntryAsTar) and preserves any
+// upstream cpio mtime/uid/gid drift as a single-source-of-truth check.
+// If this regresses, the Bazel action cache silently produces different
+// outputs for the same input and image layer hashes start moving for
+// no reason.
+func TestExtract_ContentTarIsByteDeterministic(t *testing.T) {
+	rpmPath := testdataPath(t, "tzdata.rpm")
+	tmp := t.TempDir()
+
+	out1 := filepath.Join(tmp, "1.content.tar")
+	hdr1 := filepath.Join(tmp, "1.header.blob")
+	if err := Extract(rpmPath, out1, hdr1); err != nil {
+		t.Fatalf("Extract (1): %v", err)
+	}
+	out2 := filepath.Join(tmp, "2.content.tar")
+	hdr2 := filepath.Join(tmp, "2.header.blob")
+	if err := Extract(rpmPath, out2, hdr2); err != nil {
+		t.Fatalf("Extract (2): %v", err)
+	}
+
+	b1, err := os.ReadFile(out1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b2, err := os.ReadFile(out2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(b1, b2) {
+		t.Fatalf("content.tar not byte-deterministic across two extractions (len(b1)=%d, len(b2)=%d)", len(b1), len(b2))
+	}
+}
+
 func testdataPath(t *testing.T, name string) string {
 	t.Helper()
 	p := filepath.Join("testdata", name)

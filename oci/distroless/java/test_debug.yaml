@@ -1,0 +1,61 @@
+schemaVersion: 2.0.0
+# Debug variant: JDK at /jre/ plus busybox /busybox/sh. Same /jre/ prefix
+# as the release JRE so operators don't have to relearn paths between
+# modes (`kubectl exec ... -- /jre/bin/jstack 1` works against either
+# variant — release simply lacks the binary, debug supplies it).
+metadataTest:
+  entrypoint: ['/busybox/sh']
+  workdir: '/home/nonroot'
+  user: '65532'
+  envVars:
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-certificates.crt
+    # PATH is prepended with /jre/bin so a kubectl-exec shell finds the
+    # JDK diagnostic tools without operators having to type absolute paths.
+    # Tail is DEFAULT_DEBUG_ENV's PATH (DEFAULT_PATH + ":/busybox").
+    - key: PATH
+      value: /jre/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/busybox
+fileExistenceTests:
+  # JDK developer tools — the reason this image variant exists. The JDK
+  # is the same upstream OpenJDK codebase as the JRE plus these extra
+  # `jdk.*` modules, mounted at the same /jre/ path.
+  - name: 'jstack'
+    path: '/jre/bin/jstack'
+    shouldExist: true
+  - name: 'jcmd'
+    path: '/jre/bin/jcmd'
+    shouldExist: true
+  - name: 'jmap'
+    path: '/jre/bin/jmap'
+    shouldExist: true
+  - name: 'javac'
+    path: '/jre/bin/javac'
+    shouldExist: true
+  # Busybox shell — what makes this image debuggable via `kubectl exec`.
+  - name: 'busybox sh'
+    path: '/busybox/sh'
+    shouldExist: true
+  # Inherited cc/static surface. Re-checked here so a regression in any
+  # inherit step fails this image's tests too.
+  - name: 'glibc dynamic linker'
+    path: '/usr/lib64/ld-linux-x86-64.so.2'
+    shouldExist: true
+  - name: 'libstdc++'
+    path: '/usr/lib64/libstdc++.so.6'
+    shouldExist: true
+  - name: 'os-release canonical'
+    path: '/usr/lib/os-release'
+    shouldExist: true
+  - name: 'rpmdb sqlite'
+    path: '/usr/lib/sysimage/rpm/rpmdb.sqlite'
+    shouldExist: true
+fileContentTests:
+  - name: 'os-release has ID=hummingbird'
+    path: '/usr/lib/os-release'
+    expectedContents: ['ID=.hummingbird.']
+commandTests:
+  # jstack with no args exits with usage error (exit 1) — proves the tool
+  # is invokable and libjvm.so loads, not just that the file exists.
+  - name: 'jstack with no args exits 1 (usage)'
+    command: '/jre/bin/jstack'
+    exitCode: 1

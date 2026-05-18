@@ -95,7 +95,10 @@ vex_document(
         ),
         package_metadata = [":java_metadata_{}".format(major)],
     )
-    for image_type in ["jre", "jdk"]
+    for image_type in [
+        "jre",
+        "jdk",
+    ]
     for major in JAVA_MAJOR_VERSIONS
     for arch in JAVA_ARCHITECTURES["hummingbird"]
 ]
@@ -116,7 +119,10 @@ vex_document(
             "@hummingbird//libatomic/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
         ],
     )
-    for image_type in ["jre", "jdk"]
+    for image_type in [
+        "jre",
+        "jdk",
+    ]
     for major in JAVA_MAJOR_VERSIONS
     for arch in JAVA_ARCHITECTURES["hummingbird"]
 ]
@@ -216,6 +222,28 @@ vex_document(
             "test.init-dockerd": "true",
         },
         image = ":java" + major + "_nonroot_amd64_hummingbird.oci_layout",
+        tags = ["requires-docker"],
+    )
+    for major in JAVA_MAJOR_VERSIONS
+]
+
+# Debug-variant structure tests — JDK at /jre/ plus busybox sh. Same
+# version-assertion file works against /jre/bin/java since the JDK
+# launcher reports the same OpenJDK version string as the JRE one.
+[
+    container_structure_test(
+        name = "java" + major + "_debug_hummingbird_test",
+        size = "small",
+        configs = [
+            "test_debug.yaml",
+            "test_java" + major + ".yaml",
+        ],
+        driver = "docker",
+        exec_properties = {
+            "test.workload-isolation-type": "firecracker",
+            "test.init-dockerd": "true",
+        },
+        image = ":java" + major + "_debug_nonroot_amd64_hummingbird.oci_layout",
         tags = ["requires-docker"],
     )
     for major in JAVA_MAJOR_VERSIONS

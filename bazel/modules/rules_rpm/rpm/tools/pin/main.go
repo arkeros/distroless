@@ -5,17 +5,29 @@
 // packages appear in every arch's primary.xml.gz with identical metadata):
 //
 //	<repo-url>/<arch>/repodata/repomd.xml
+//	<repo-url>/<arch>/repodata/repomd.xml.asc      (detached GPG signature)
 //	<repo-url>/<arch>/repodata/<sha>-primary.xml.gz
 //	<repo-url>/<arch>/Packages/<initial>/<nvra>.rpm
 //
-// For each declared arch we fetch repomd, then primary.xml.gz, then walk
-// every <package>. Within (name, arch) the highest version (rpmvercmp)
-// wins. Noarch packages are committed on the first declared-arch pass and
-// skipped on subsequent passes so the canonical "path" prefix is stable.
-// Errors on any declared package without an entry (closed-manifest semantics).
+// Trust chain at lock time:
+//  1. `repomd.xml.asc` is a detached OpenPGP signature over `repomd.xml`,
+//     verified against the consumer-supplied keyring. This is the anchor
+//     — every digest we pin downstream chains back to it.
+//  2. `primary.xml.gz`'s sha256 is taken from the trusted `repomd.xml`.
+//  3. Each rpm's sha256 is taken from the trusted `primary.xml`.
 //
-// GPG verification of repomd.xml.asc is currently stubbed — same posture as
-// rpm-extract's --gpg-key flag, tracked alongside it in ADR 0007's TODO list.
+// Subverting the per-rpm digests in the lockfile therefore requires
+// subverting the signature on `repomd.xml` — matching the threat-model
+// claim in ADR 0007 §"Threat model and fallbacks". At build time the
+// per-rpm signature inside the .rpm header is verified independently by
+// rpm-extract against the same keyring.
+//
+// For each declared arch we fetch repomd, verify .asc, then primary.xml.gz,
+// then walk every <package>. Within (name, arch) the highest version
+// (rpmvercmp) wins. Noarch packages are committed on the first declared-arch
+// pass and skipped on subsequent passes so the canonical "path" prefix is
+// stable. Errors on any declared package without an entry (closed-manifest
+// semantics).
 package main
 
 import (
@@ -34,6 +46,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/arkeros/senku/bazel/modules/rules_rpm/rpm/tools/internal/keyring"
 	"github.com/sassoftware/go-rpmutils"
 )
 
@@ -124,7 +138,6 @@ func main() {
 		lockOut = flag.String("lock-out", "", "workspace-relative path to lockfile output (e.g. //:hummingbird_install.json)")
 	)
 	flag.Parse()
-	_ = *gpgKey // TODO: verify <repomd>.xml.asc against the supplied key
 
 	if *repoURL == "" || *pkgs == "" || *arches == "" || *lockOut == "" {
 		fmt.Fprintln(os.Stderr, "pin: --repo-url, --packages, --architectures, --lock-out are required")
@@ -138,7 +151,25 @@ func main() {
 		os.Exit(2)
 	}
 
-	lock, err := resolve(*repoURL, declaredArches, declaredPkgs)
+	// Load the trust root once. The same keyring verifies repomd.xml.asc
+	// for every arch (repos are arch-multiplexed under one signing chain).
+	// Empty --gpg-key degrades to TLS-only trust and is loud on stderr so
+	// it can't accidentally ride through in a Bazel-rule context — the
+	// `rpm.install(...)` extension requires gpg_key, so production calls
+	// always populate it.
+	var trustRoot openpgp.EntityList
+	if *gpgKey != "" {
+		var err error
+		trustRoot, err = keyring.ReadMultiBlock(*gpgKey)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "pin: load gpg key:", err)
+			os.Exit(1)
+		}
+	} else {
+		fmt.Fprintln(os.Stderr, "pin: warning: --gpg-key is empty; repomd.xml.asc verification skipped (lock-time trust root degrades to TLS only)")
+	}
+
+	lock, err := resolve(*repoURL, declaredArches, declaredPkgs, trustRoot)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "pin:", err)
 		os.Exit(1)
@@ -180,7 +211,7 @@ type candidate struct {
 // resolve) are warned to stderr and skipped — runtime failure is the
 // backstop, but most cc-grade packages declare soname requires that
 // primary.xml fully covers.
-func resolve(repoURL string, declaredArches, declaredPkgs []string) (*lockfile, error) {
+func resolve(repoURL string, declaredArches, declaredPkgs []string, trustRoot openpgp.EntityList) (*lockfile, error) {
 	repoURL = strings.TrimRight(repoURL, "/")
 
 	candidates := map[pkgKey]candidate{}
@@ -192,6 +223,20 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string) (*lockfile, 
 		repomdBytes, err := httpGet(repomdURL)
 		if err != nil {
 			return nil, fmt.Errorf("fetch repomd %s: %w", arch, err)
+		}
+		// Anchor the trust chain before any byte from repomd is used:
+		// every primary.xml sha and per-rpm sha we pin downstream chains
+		// back to this signature. trustRoot is nil only when --gpg-key
+		// was empty (one-off CLI use); the main() banner already warned.
+		if trustRoot != nil {
+			sigURL := repomdURL + ".asc"
+			sigBytes, err := httpGet(sigURL)
+			if err != nil {
+				return nil, fmt.Errorf("fetch repomd.xml.asc %s: %w", arch, err)
+			}
+			if err := verifyDetachedSignature(repomdBytes, sigBytes, trustRoot); err != nil {
+				return nil, fmt.Errorf("verify repomd.xml.asc %s: %w", arch, err)
+			}
 		}
 		sum := sha256.Sum256(repomdBytes)
 		if i == 0 {
@@ -490,6 +535,21 @@ func stripLabelPrefix(label string) string {
 		return pkg + "/" + name
 	}
 	return s
+}
+
+// verifyDetachedSignature checks signedBytes against the armored detached
+// signature in sigBytes using the supplied trust root. Returns nil iff at
+// least one key in the trust root produced a valid signature; any failure
+// — bad signature, no matching key, malformed armor — surfaces as a
+// non-nil error so the caller can refuse to proceed with untrusted bytes.
+func verifyDetachedSignature(signedBytes, sigBytes []byte, trustRoot openpgp.EntityList) error {
+	_, err := openpgp.CheckArmoredDetachedSignature(
+		trustRoot,
+		bytes.NewReader(signedBytes),
+		bytes.NewReader(sigBytes),
+		nil,
+	)
+	return err
 }
 
 func httpGet(url string) ([]byte, error) {

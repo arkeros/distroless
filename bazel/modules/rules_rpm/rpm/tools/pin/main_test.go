@@ -1,7 +1,18 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/xml"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/ProtonMail/go-crypto/openpgp"
 )
 
 func TestFormatEVR(t *testing.T) {
@@ -147,6 +158,233 @@ func TestCloseDepsTransitive(t *testing.T) {
 	if closure[pkgKey{"unrelated", "x86_64"}] {
 		t.Errorf("closure should not contain unrelated package")
 	}
+}
+
+// armoredDetachSign produces an ASCII-armored detached signature, the
+// on-disk shape repomd.xml.asc takes in every YUM/DNF repo.
+func armoredDetachSign(t *testing.T, signer *openpgp.Entity, data []byte) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := openpgp.ArmoredDetachSign(&buf, signer, bytes.NewReader(data), nil); err != nil {
+		t.Fatalf("ArmoredDetachSign: %v", err)
+	}
+	return buf.Bytes()
+}
+
+// TestVerifyDetachedSignature_ValidPasses is the positive case. Pair it
+// with the tampered/wrong-key tests below: if this stays green while
+// either of those passes, verification has regressed to a no-op.
+func TestVerifyDetachedSignature_ValidPasses(t *testing.T) {
+	signer, err := openpgp.NewEntity("Test Signer", "", "signer@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := []byte("<repomd>fake repomd payload</repomd>\n")
+	sig := armoredDetachSign(t, signer, data)
+	if err := verifyDetachedSignature(data, sig, openpgp.EntityList{signer}); err != nil {
+		t.Fatalf("verifyDetachedSignature on untouched data: %v", err)
+	}
+}
+
+// TestVerifyDetachedSignature_TamperedFails proves the verification
+// actually inspects bytes: one flipped byte in the signed payload must
+// fail the check. If this test ever passes a tampered payload, the
+// signature is being parsed but its hash isn't being compared.
+func TestVerifyDetachedSignature_TamperedFails(t *testing.T) {
+	signer, err := openpgp.NewEntity("Test Signer", "", "signer@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := []byte("<repomd>fake repomd payload</repomd>\n")
+	sig := armoredDetachSign(t, signer, data)
+
+	tampered := append([]byte(nil), data...)
+	tampered[5] ^= 0x01
+	if err := verifyDetachedSignature(tampered, sig, openpgp.EntityList{signer}); err == nil {
+		t.Fatal("verifyDetachedSignature accepted tampered payload; expected failure")
+	}
+}
+
+// TestVerifyDetachedSignature_WrongKeyFails proves trust-root selectivity:
+// a signature from a key that isn't in the trust root must fail. This is
+// the property a hostile-CDN attack scenario relies on — even if the
+// attacker substitutes both repomd.xml *and* repomd.xml.asc, the .asc
+// signs under their own key, not the Hummingbird vendor key, and the
+// keyring rejects it.
+func TestVerifyDetachedSignature_WrongKeyFails(t *testing.T) {
+	attacker, err := openpgp.NewEntity("Attacker", "", "attacker@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vendor, err := openpgp.NewEntity("Vendor", "", "vendor@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := []byte("<repomd>spoofed repomd payload</repomd>\n")
+	attackerSig := armoredDetachSign(t, attacker, data)
+
+	if err := verifyDetachedSignature(data, attackerSig, openpgp.EntityList{vendor}); err == nil {
+		t.Fatal("verifyDetachedSignature accepted signature from a key not in trust root; expected failure")
+	}
+}
+
+// TestResolve_VerifiesRepomdAgainstTrustRoot is the integration test for
+// the fix: end-to-end through resolve() against an in-process repo
+// server, asserting that swapping the signing key (= an attacker
+// substituting a self-signed metadata bundle) causes pin to refuse to
+// produce a lockfile. The positive control (same key signs as is in
+// the trust root) succeeds in the companion test below.
+func TestResolve_VerifiesRepomdAgainstTrustRoot(t *testing.T) {
+	vendor, err := openpgp.NewEntity("Vendor", "", "vendor@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attacker, err := openpgp.NewEntity("Attacker", "", "attacker@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv := newFakeRpmRepo(t, []string{"x86_64"}, []fakePackage{
+		{name: "tzdata", arch: "noarch", ver: "2026a", rel: "1.hum1"},
+	}, attacker)
+	defer srv.Close()
+
+	// Vendor is in the trust root; the metadata is signed by attacker.
+	// resolve() must refuse to proceed.
+	_, err = resolve(srv.URL, []string{"x86_64"}, []string{"tzdata"}, openpgp.EntityList{vendor})
+	if err == nil {
+		t.Fatal("resolve accepted attacker-signed repomd against vendor trust root; expected failure")
+	}
+	if !strings.Contains(err.Error(), "verify repomd.xml.asc") {
+		t.Errorf("error did not mention signature verification: %v", err)
+	}
+}
+
+// TestResolve_AcceptsValidSignature is the positive control: the same
+// fake-repo machinery, but the trust root contains the signing key, so
+// resolve() walks through to a complete lockfile. Without this
+// companion, the negative test above could pass on a resolve() that
+// errors for unrelated reasons.
+func TestResolve_AcceptsValidSignature(t *testing.T) {
+	vendor, err := openpgp.NewEntity("Vendor", "", "vendor@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv := newFakeRpmRepo(t, []string{"x86_64"}, []fakePackage{
+		{name: "tzdata", arch: "noarch", ver: "2026a", rel: "1.hum1"},
+	}, vendor)
+	defer srv.Close()
+
+	lock, err := resolve(srv.URL, []string{"x86_64"}, []string{"tzdata"}, openpgp.EntityList{vendor})
+	if err != nil {
+		t.Fatalf("resolve with valid signature: %v", err)
+	}
+	if _, ok := lock.Packages["tzdata"]; !ok {
+		t.Fatalf("lockfile missing tzdata: %+v", lock.Packages)
+	}
+}
+
+// fakePackage is the minimum (name, arch, version) shape needed to
+// synthesize a primary.xml entry. fakeRpmRepo serves the metadata
+// triplet (repomd.xml, repomd.xml.asc, primary.xml.gz) over HTTP,
+// signed by the supplied key.
+type fakePackage struct {
+	name, arch, ver, rel string
+}
+
+func newFakeRpmRepo(t *testing.T, arches []string, pkgs []fakePackage, signer *openpgp.Entity) *httptest.Server {
+	t.Helper()
+
+	mux := http.NewServeMux()
+	for _, arch := range arches {
+		primary := buildPrimaryXML(pkgs, arch)
+		primaryGz := gzipBytes(t, primary)
+		primarySha := sha256Hex(primaryGz)
+		repomd := buildRepomdXML(primarySha)
+		var sigBuf bytes.Buffer
+		if err := openpgp.ArmoredDetachSign(&sigBuf, signer, bytes.NewReader(repomd), nil); err != nil {
+			t.Fatal(err)
+		}
+
+		mux.HandleFunc(fmt.Sprintf("/%s/repodata/repomd.xml", arch), func(w http.ResponseWriter, r *http.Request) {
+			w.Write(repomd)
+		})
+		mux.HandleFunc(fmt.Sprintf("/%s/repodata/repomd.xml.asc", arch), func(w http.ResponseWriter, r *http.Request) {
+			w.Write(sigBuf.Bytes())
+		})
+		mux.HandleFunc(fmt.Sprintf("/%s/repodata/primary.xml.gz", arch), func(w http.ResponseWriter, r *http.Request) {
+			w.Write(primaryGz)
+		})
+	}
+	return httptest.NewServer(mux)
+}
+
+func buildRepomdXML(primarySha string) []byte {
+	type loc struct {
+		Href string `xml:"href,attr"`
+	}
+	type sum struct {
+		Type  string `xml:"type,attr"`
+		Value string `xml:",chardata"`
+	}
+	type data struct {
+		Type     string `xml:"type,attr"`
+		Checksum sum    `xml:"checksum"`
+		Location loc    `xml:"location"`
+	}
+	type rm struct {
+		XMLName  xml.Name `xml:"repomd"`
+		Revision string   `xml:"revision"`
+		Data     []data   `xml:"data"`
+	}
+	out, _ := xml.Marshal(rm{
+		Revision: "1700000000",
+		Data: []data{{
+			Type:     "primary",
+			Checksum: sum{Type: "sha256", Value: primarySha},
+			Location: loc{Href: "repodata/primary.xml.gz"},
+		}},
+	})
+	return out
+}
+
+func buildPrimaryXML(pkgs []fakePackage, arch string) []byte {
+	var b bytes.Buffer
+	fmt.Fprint(&b, `<?xml version="1.0" encoding="UTF-8"?><metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm">`)
+	for _, p := range pkgs {
+		// The pin parser is namespace-loose (it reads child element
+		// names without a namespace prefix), so this minimal shape
+		// without xmlns prefixes still drives every required field.
+		fmt.Fprintf(&b, `<package><name>%s</name><arch>%s</arch>`, p.name, p.arch)
+		fmt.Fprintf(&b, `<version epoch="0" ver="%s" rel="%s"/>`, p.ver, p.rel)
+		fmt.Fprintf(&b, `<checksum type="sha256">%s</checksum>`, strings.Repeat("0", 64))
+		fmt.Fprint(&b, `<size package="1"/>`)
+		// path is `<arch>/<href>`; tests don't fetch this so any href is fine.
+		fmt.Fprintf(&b, `<location href="Packages/%s/%s-%s-%s.%s.rpm"/>`, p.name[:1], p.name, p.ver, p.rel, p.arch)
+		fmt.Fprintf(&b, `<format><sourcerpm>%s-%s-%s.src.rpm</sourcerpm></format>`, p.name, p.ver, p.rel)
+		fmt.Fprint(&b, `</package>`)
+	}
+	fmt.Fprint(&b, `</metadata>`)
+	return b.Bytes()
+}
+
+func gzipBytes(t *testing.T, in []byte) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	if _, err := gz.Write(in); err != nil {
+		t.Fatal(err)
+	}
+	if err := gz.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func sha256Hex(in []byte) string {
+	sum := sha256.Sum256(in)
+	return hex.EncodeToString(sum[:])
 }
 
 func TestCloseDepsSelfReference(t *testing.T) {

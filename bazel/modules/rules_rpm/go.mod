@@ -3,6 +3,7 @@ module github.com/arkeros/senku/bazel/modules/rules_rpm
 go 1.26.3
 
 require (
+	github.com/ProtonMail/go-crypto v1.0.0
 	github.com/klauspost/compress v1.17.8
 	github.com/sassoftware/go-rpmutils v0.4.0
 	modernc.org/sqlite v1.50.1
@@ -10,7 +11,6 @@ require (
 
 require (
 	github.com/DataDog/zstd v1.5.5 // indirect
-	github.com/ProtonMail/go-crypto v1.0.0 // indirect
 	github.com/cloudflare/circl v1.3.8 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect

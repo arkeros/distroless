@@ -6,6 +6,8 @@ go_library(
     importpath = "github.com/arkeros/senku/bazel/modules/rules_rpm/rpm/tools/pin",
     visibility = ["//visibility:private"],
     deps = [
+        "//rpm/tools/internal/keyring",
+        "@com_github_protonmail_go_crypto//openpgp",
         "@com_github_sassoftware_go_rpmutils//:go-rpmutils",
     ],
 )
@@ -20,4 +22,5 @@ go_test(
     name = "pin_test",
     srcs = ["main_test.go"],
     embed = [":pin_lib"],
+    deps = ["@com_github_protonmail_go_crypto//openpgp"],
 )

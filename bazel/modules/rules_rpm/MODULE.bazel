@@ -41,7 +41,7 @@ go_deps.from_file(go_mod = "//:go.mod")
 use_repo(
     go_deps,
     "com_github_klauspost_compress",       # zstd writer used by rpmdb-merge
-    "com_github_protonmail_go_crypto",     # openpgp keyring parser used by rpm-extract
+    "com_github_protonmail_go_crypto",     # openpgp: pin verifies repomd.xml.asc; rpm-extract verifies in-rpm signature; shared keyring loader in tools/internal/keyring
     "com_github_sassoftware_go_rpmutils",  # RPM header + cpio parser used by rpm-extract
     "org_modernc_sqlite",                  # pure-Go sqlite for rpmdb-merge
 )

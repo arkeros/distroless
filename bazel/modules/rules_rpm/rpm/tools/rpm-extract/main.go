@@ -29,13 +29,13 @@ import (
 
 func main() {
 	var (
-		rpm        = flag.String("rpm", "", "path to .rpm file")
-		gpgKey     = flag.String("gpg-key", "", "path to ascii-armored gpg public key")
-		contentOut = flag.String("content-out", "", "output content tar")
-		headerOut  = flag.String("header-out", "", "output rpm header blob")
-		_          = flag.String("package", "", "expected package name (sanity check)")
-		_          = flag.String("version", "", "expected version (sanity check)")
-		_          = flag.String("arch", "", "expected arch (sanity check)")
+		rpm         = flag.String("rpm", "", "path to .rpm file")
+		gpgKey      = flag.String("gpg-key", "", "path to ascii-armored gpg public key")
+		contentOut  = flag.String("content-out", "", "output content tar")
+		headerOut   = flag.String("header-out", "", "output rpm header blob")
+		wantPackage = flag.String("package", "", "expected package name (sanity check)")
+		wantVersion = flag.String("version", "", "expected version-release (sanity check)")
+		wantArch    = flag.String("arch", "", "expected arch (sanity check)")
 	)
 	flag.Parse()
 
@@ -45,10 +45,67 @@ func main() {
 	}
 	_ = *gpgKey // TODO: GPG verification against the supplied key
 
+	if err := validateRpmMetadata(*rpm, *wantPackage, *wantVersion, *wantArch); err != nil {
+		fmt.Fprintln(os.Stderr, "rpm-extract:", err)
+		os.Exit(1)
+	}
+
 	if err := Extract(*rpm, *contentOut, *headerOut); err != nil {
 		fmt.Fprintln(os.Stderr, "rpm-extract:", err)
 		os.Exit(1)
 	}
+}
+
+// validateRpmMetadata enforces the --package/--version/--arch sanity checks
+// against the actual RPM header so a lockfile entry whose name/version/arch
+// drifts away from the on-disk .rpm bytes (e.g. URL rewrite, cache poisoning
+// past the sha256 boundary) is caught at extract time. Empty expected values
+// are skipped — the rpm_package Bazel rule always passes all three, but the
+// binary stays usable as a one-off CLI without them.
+//
+// `--version` carries the lockfile-stored shape `[<epoch>:]<version>-<release>`
+// (epoch omitted when zero). Same split convention as `_split_epoch` in
+// install.bzl — keep them in lockstep if the encoding ever changes.
+func validateRpmMetadata(rpmPath, wantPkg, wantVer, wantArch string) error {
+	if wantPkg == "" && wantVer == "" && wantArch == "" {
+		return nil
+	}
+	f, err := os.Open(rpmPath)
+	if err != nil {
+		return fmt.Errorf("open rpm for metadata check: %w", err)
+	}
+	defer f.Close()
+	rpmFile, err := rpmutils.ReadRpm(f)
+	if err != nil {
+		return fmt.Errorf("parse rpm for metadata check: %w", err)
+	}
+	nevra, err := rpmFile.Header.GetNEVRA()
+	if err != nil {
+		return fmt.Errorf("read NEVRA: %w", err)
+	}
+	if wantPkg != "" && nevra.Name != wantPkg {
+		return fmt.Errorf("package mismatch: rpm header says %q, --package=%q", nevra.Name, wantPkg)
+	}
+	if wantArch != "" && nevra.Arch != wantArch {
+		return fmt.Errorf("arch mismatch: rpm header says %q, --arch=%q", nevra.Arch, wantArch)
+	}
+	if wantVer != "" {
+		got := rpmEVR(nevra)
+		if got != wantVer {
+			return fmt.Errorf("version mismatch: rpm header says %q, --version=%q", got, wantVer)
+		}
+	}
+	return nil
+}
+
+// rpmEVR renders an RPM NEVRA's epoch-version-release in the lockfile shape:
+// "<epoch>:<version>-<release>" when epoch is non-zero, "<version>-<release>"
+// otherwise. Must agree with install.bzl's `_split_epoch` partition rule.
+func rpmEVR(n *rpmutils.NEVRA) string {
+	if n.Epoch != "" && n.Epoch != "0" {
+		return n.Epoch + ":" + n.Version + "-" + n.Release
+	}
+	return n.Version + "-" + n.Release
 }
 
 // Extract reads the RPM at rpmPath and writes a tar of the cpio payload to

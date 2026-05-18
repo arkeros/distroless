@@ -32,6 +32,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sassoftware/go-rpmutils"
 )
@@ -494,7 +495,11 @@ func stripLabelPrefix(label string) string {
 func httpGet(url string) ([]byte, error) {
 	// Hummingbird's CDN 403s HEAD requests and 302s GETs to S3; net/http follows
 	// redirects by default. See ADR 0007 §Implementation note (CDN behavior).
-	resp, err := http.Get(url)
+	// Total timeout covers connect+TLS+body for repomd.xml (~kB) and
+	// primary.xml.gz (multi-MB on ~17K-package repos); 30s gives headroom
+	// for slow CI links while still catching stalled connections.
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, err
 	}

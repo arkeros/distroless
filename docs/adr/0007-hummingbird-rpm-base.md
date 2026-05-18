@@ -59,7 +59,7 @@ Grype does **not** use `ID_LIKE` as a fallback router (confirmed empirically). T
 
 The os-release makes derivation explicit:
 
-```
+```ini
 ID="hummingbird"
 ID_LIKE="rhel fedora"
 NAME="distroless.io"
@@ -83,7 +83,7 @@ The `ID` field is functionally a scanner-routing key. `NAME` and `PRETTY_NAME` c
 
 ### Module extension shape
 
-```
+```starlark
 hummingbird = use_extension("//bazel/modules/rules_rpm:extensions.bzl", "hummingbird")
 hummingbird.install(
     name = "hummingbird",
@@ -126,7 +126,7 @@ Hummingbird images use sqlite-based rpmdb at `/usr/lib/sysimage/rpm/rpmdb.sqlite
 
 In the BUILD seam:
 
-```
+```starlark
 flatten(
     name = "hummingbird_static_amd64_layer",
     tars = [

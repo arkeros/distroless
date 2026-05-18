@@ -52,7 +52,7 @@ fileExistenceTests:
 fileContentTests:
   - name: 'os-release has ID=hummingbird'
     path: '/usr/lib/os-release'
-    expectedContents: ['ID=.hummingbird.']
+    expectedContents: ['(?m)^ID="hummingbird"$']
 commandTests:
   # jstack with no args exits with usage error (exit 1) — proves the tool
   # is invokable and libjvm.so loads, not just that the file exists.

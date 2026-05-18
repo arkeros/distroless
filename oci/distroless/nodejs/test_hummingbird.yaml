@@ -46,7 +46,7 @@ fileExistenceTests:
 fileContentTests:
   - name: 'os-release has ID=hummingbird'
     path: '/usr/lib/os-release'
-    expectedContents: ['ID=.hummingbird.']
+    expectedContents: ['(?m)^ID="hummingbird"$']
 commandTests:
   - name: 'node executes'
     command: '/nodejs/bin/node'

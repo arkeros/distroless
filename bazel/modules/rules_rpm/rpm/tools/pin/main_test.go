@@ -7,10 +7,12 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 )
@@ -157,6 +159,116 @@ func TestCloseDepsTransitive(t *testing.T) {
 	}
 	if closure[pkgKey{"unrelated", "x86_64"}] {
 		t.Errorf("closure should not contain unrelated package")
+	}
+}
+
+// withFastBackoff shrinks the retry backoff so retry tests don't pay
+// real wall-clock sleeps. Restored on test teardown so a parallel test
+// can't observe the override.
+func withFastBackoff(t *testing.T) {
+	t.Helper()
+	prev := httpGetBaseBackoff
+	httpGetBaseBackoff = 1 * time.Millisecond
+	t.Cleanup(func() { httpGetBaseBackoff = prev })
+}
+
+// TestHttpGet_Retries5xxThenSucceeds is the headline retry property:
+// two consecutive 5xx responses followed by a 200 must produce a
+// successful fetch, not propagate the first 5xx. A regression here
+// would mean the daily lockfile-update cron starts failing on any
+// transient CDN hiccup.
+func TestHttpGet_Retries5xxThenSucceeds(t *testing.T) {
+	withFastBackoff(t)
+	var attempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts < 3 {
+			http.Error(w, "boom", http.StatusInternalServerError)
+			return
+		}
+		w.Write([]byte("ok"))
+	}))
+	defer srv.Close()
+
+	body, err := httpGet(srv.URL)
+	if err != nil {
+		t.Fatalf("httpGet: %v", err)
+	}
+	if string(body) != "ok" {
+		t.Errorf("body = %q, want %q", body, "ok")
+	}
+	if attempts != 3 {
+		t.Errorf("attempts = %d, want 3", attempts)
+	}
+}
+
+// TestHttpGet_GivesUpAfterMaxAttempts asserts the upper bound: a
+// permanently-broken endpoint fails after httpGetMaxAttempts and no
+// more — the retry loop must not turn a daily cron into an infinite
+// retry storm if Hummingbird actually does go offline.
+func TestHttpGet_GivesUpAfterMaxAttempts(t *testing.T) {
+	withFastBackoff(t)
+	var attempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		http.Error(w, "always-broken", http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+
+	if _, err := httpGet(srv.URL); err == nil {
+		t.Fatal("httpGet: expected error after exhausting retries, got nil")
+	}
+	if attempts != httpGetMaxAttempts {
+		t.Errorf("attempts = %d, want %d", attempts, httpGetMaxAttempts)
+	}
+}
+
+// TestHttpGet_4xxIsTerminal asserts the non-retry property: a 404 is
+// deterministic — retrying just burns time and obscures the real
+// error. A regression here would mean a typo in the repo URL takes
+// 3× as long to surface in CI.
+func TestHttpGet_4xxIsTerminal(t *testing.T) {
+	withFastBackoff(t)
+	var attempts int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		http.Error(w, "nope", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	if _, err := httpGet(srv.URL); err == nil {
+		t.Fatal("httpGet: expected error on 404, got nil")
+	}
+	if attempts != 1 {
+		t.Errorf("attempts = %d, want 1 (4xx is terminal)", attempts)
+	}
+}
+
+// TestHttpGet_TransportErrorRetries asserts the transport-failure
+// retry path (companion to the 5xx case above). Pointing at a closed
+// port produces an immediate connect error; the retry loop must treat
+// that as transient too, since on a real CI box DNS/conn-refused can
+// be momentary.
+func TestHttpGet_TransportErrorRetries(t *testing.T) {
+	withFastBackoff(t)
+	// Bind+close to harvest a guaranteed-closed port number.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := ln.Addr().String()
+	ln.Close()
+
+	start := time.Now()
+	if _, err := httpGet("http://" + addr); err == nil {
+		t.Fatal("httpGet: expected error against closed port, got nil")
+	}
+	// 1ms + 2ms backoff between the three attempts; with millisecond
+	// base backoff the total wall-clock should be dominated by the
+	// connect timeouts themselves, but we assert the test took *some*
+	// time so a regression to "no retry" would show as ~0ms.
+	if elapsed := time.Since(start); elapsed < 3*time.Millisecond {
+		t.Errorf("httpGet returned in %v — expected at least one retry backoff to elapse", elapsed)
 	}
 }
 

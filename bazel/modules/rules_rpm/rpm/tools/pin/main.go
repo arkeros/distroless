@@ -552,22 +552,73 @@ func verifyDetachedSignature(signedBytes, sigBytes []byte, trustRoot openpgp.Ent
 	return err
 }
 
+// httpGetMaxAttempts and httpGetBaseBackoff bound the retry loop in
+// httpGet. The daily lockfile-refresh cron hits Hummingbird's CDN
+// once per arch per repo; a single transient flake (occasional 5xx,
+// connection reset, body-read EOF) should not break the run and let
+// the lockfile silently stale until the next cron tick 24h later.
+// Three attempts with 1s, 2s backoff is the right floor: long enough
+// to ride out CDN hiccups, short enough that a genuinely-down repo
+// fails in ~7s wall-clock instead of dragging out a half-broken job.
+//
+// httpGetBaseBackoff is a var (not const) so tests can shrink it; the
+// retry semantics themselves are exercised in main_test.go without
+// paying real sleeps.
+const httpGetMaxAttempts = 3
+
+var httpGetBaseBackoff = 1 * time.Second
+
+// httpGet fetches url with up to httpGetMaxAttempts attempts. Retries
+// on transport failures (DNS, connect, TLS, read mid-body) and HTTP
+// 5xx; 4xx responses are terminal because a 404 won't become a 200
+// on retry. Wraps the final error with the URL so the caller's error
+// chain stays diagnosable.
 func httpGet(url string) ([]byte, error) {
-	// Hummingbird's CDN 403s HEAD requests and 302s GETs to S3; net/http follows
-	// redirects by default. See ADR 0007 §Implementation note (CDN behavior).
-	// Total timeout covers connect+TLS+body for repomd.xml (~kB) and
-	// primary.xml.gz (multi-MB on ~17K-package repos); 30s gives headroom
-	// for slow CI links while still catching stalled connections.
+	var lastErr error
+	for attempt := 1; attempt <= httpGetMaxAttempts; attempt++ {
+		body, err, retryable := httpGetOnce(url)
+		if err == nil {
+			return body, nil
+		}
+		lastErr = err
+		if !retryable || attempt == httpGetMaxAttempts {
+			break
+		}
+		// 1s before attempt 2, 2s before attempt 3. (Exponential, but
+		// capped at the loop bound — no need for a max-backoff knob.)
+		backoff := httpGetBaseBackoff << (attempt - 1)
+		fmt.Fprintf(os.Stderr, "pin: %s failed (attempt %d/%d), retrying in %v: %v\n",
+			url, attempt, httpGetMaxAttempts, backoff, err)
+		time.Sleep(backoff)
+	}
+	return nil, fmt.Errorf("%s: %w", url, lastErr)
+}
+
+// httpGetOnce is a single attempt. retryable distinguishes transient
+// failures (caller should back off and try again) from terminal ones
+// (caller should stop). Hummingbird's CDN 403s HEAD and 302s GETs to
+// S3-backed URLs; net/http follows redirects by default. 30s total
+// timeout covers connect+TLS+body for repomd.xml (~kB) and
+// primary.xml.gz (multi-MB on ~17K-package repos) with headroom for
+// slow CI links while still catching stalled connections.
+func httpGetOnce(url string) (body []byte, err error, retryable bool) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, err
+		return nil, err, true
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d for %s", resp.StatusCode, url)
+	if resp.StatusCode >= 500 && resp.StatusCode < 600 {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode), true
 	}
-	return io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode), false
+	}
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err, true
+	}
+	return body, nil, false
 }
 
 func writeLockfile(path string, lock *lockfile) error {

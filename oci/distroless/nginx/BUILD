@@ -9,6 +9,7 @@ load("//oci:created_timestamp.bzl", "hummingbird_created_timestamp")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
+load("//oci/distroless:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
@@ -18,11 +19,6 @@ exports_files([
     "nginx-stable.hummingbird.lock.json",
     "nginx-mainline.hummingbird.lock.json",
 ])
-
-_HUMMINGBIRD_ARCH_MAP = {
-    "amd64": "x86_64",
-    "arm64": "aarch64",
-}
 
 NGINX_IGNORE_CVES = {
     "stable": [],
@@ -200,7 +196,7 @@ _NGINX_RPM_REPO = {
         tars = [
             "{}//nginx/{}".format(
                 _NGINX_RPM_REPO[version_label],
-                _HUMMINGBIRD_ARCH_MAP[arch],
+                HUMMINGBIRD_ARCH_MAP[arch],
             ),
         ],
     )

@@ -18,15 +18,6 @@ NODEJS_VERSIONS = {
 
 NODEJS_MAJOR_VERSIONS = list(NODEJS_VERSIONS.keys())
 
-# Map senku arch (amd64/arm64) -> rpm arch (x86_64/aarch64). Same shape as
-# the bash/nginx BUILDs. Used only for rpmdb_merge composition; the
-# nodejs.org tarball naming (linux-x64 vs linux-arm64) is handled inside
-# the module extension.
-HUMMINGBIRD_ARCH_MAP = {
-    "amd64": "x86_64",
-    "arm64": "aarch64",
-}
-
 def nodejs_layers(major_version):
     """Composition: static + (busybox if debug) + cc + nodejs + one rpmdb.
 

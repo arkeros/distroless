@@ -27,15 +27,6 @@ JAVA_VERSIONS = {
 
 JAVA_MAJOR_VERSIONS = list(JAVA_VERSIONS.keys())
 
-# Map senku arch (amd64/arm64) -> rpm arch (x86_64/aarch64). Same shape as
-# the nodejs/BUILD. Used only for rpmdb_merge composition; Temurin tarball
-# naming (linux x64 vs linux aarch64) is handled inside the http_archive
-# URL template in oci.MODULE.bazel.
-HUMMINGBIRD_ARCH_MAP = {
-    "amd64": "x86_64",
-    "arm64": "aarch64",
-}
-
 def java_layers(major_version):
     """Composition: static + (busybox if debug) + cc + temurin + one rpmdb.
 

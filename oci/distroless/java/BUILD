@@ -7,8 +7,9 @@ load("@tar.bzl", "mutate", "tar")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
+load("//oci/distroless:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
-load(":config.bzl", "HUMMINGBIRD_ARCH_MAP", "JAVA_ARCHITECTURES", "JAVA_DISTROS", "JAVA_MAJOR_VERSIONS", "JAVA_VERSIONS", "java_layers")
+load(":config.bzl", "JAVA_ARCHITECTURES", "JAVA_DISTROS", "JAVA_MAJOR_VERSIONS", "JAVA_VERSIONS", "java_layers")
 
 package(default_visibility = ["//visibility:public"])
 

@@ -5,17 +5,10 @@ load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
+load("//oci/distroless:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NCURSES_FIXED_VEX_STATEMENTS")
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "bash_layers")
-
-# Hummingbird arch dirs map differently than senku's debian-style names:
-# senku amd64 -> rpm x86_64, senku arm64 -> rpm aarch64. Same convention as
-# busybox in static/BUILD.
-_HUMMINGBIRD_ARCH_MAP = {
-    "amd64": "x86_64",
-    "arm64": "aarch64",
-}
 
 package(default_visibility = ["//visibility:public"])
 
@@ -152,11 +145,11 @@ _VEX = {
         compress = COMPRESSION,
         deduplicate = True,
         tars = [
-            "@hummingbird//bash/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//coreutils/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//sed/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//grep/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//mawk/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//bash/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//coreutils/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//sed/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//grep/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//mawk/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
             # Soname deps of the binaries above. All transitively in the
             # lockfile (pin walks rpm:requires) but flatten only ships
             # what's listed here, same posture as @debian's image composition:
@@ -166,13 +159,13 @@ _VEX = {
             #              -> libattr.so.1   (libattr)
             #   coreutils  -> libselinux + libcap.so.2 (libcap) + libacl.so.1
             #                (libacl) -> libattr
-            "@hummingbird//libacl/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//libattr/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//libcap/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//libselinux/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//libsepol/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//ncurses-libs/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
-            "@hummingbird//pcre2/{}".format(_HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//libacl/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//libattr/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//libcap/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//libselinux/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//libsepol/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//ncurses-libs/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//pcre2/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
             "//oci/distroless/common:awk",
         ],
     )

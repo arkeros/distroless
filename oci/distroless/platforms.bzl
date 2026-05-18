@@ -29,3 +29,12 @@ ARCHITECTURE_PLATFORMS = {
 
 ALL_ARCHITECTURES = ["amd64", "arm64"]
 ALL_DISTROS = ["debian", "hummingbird"]
+
+# Senku arch (debian-style amd64/arm64) -> rpm arch (x86_64/aarch64), the
+# subdir convention used by the @hummingbird module extension. Image BUILDs
+# that compose rpm-shaped layers reach into `@hummingbird//<pkg>/<rpm_arch>`
+# via this map. See ADR 0007 for why hummingbird keeps rpm-native arch names.
+HUMMINGBIRD_ARCH_MAP = {
+    "amd64": "x86_64",
+    "arm64": "aarch64",
+}

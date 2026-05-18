@@ -250,15 +250,26 @@ vex_document(
 ]
 
 # arm64 cross-arch structure tests. container_structure_test forwards its
-# `platform` attr to docker via `--platform linux/arm64`, which requires
-# qemu-binfmt on the runner (Docker Desktop registers it automatically;
-# Linux runners need `tonistiigi/binfmt` or an apt qemu-user-static). On
-# BuildBuddy firecracker the binfmt handler is typically pre-registered
-# but the env varies — if a future runner image surfaces `exec format
-# error`, these targets need to be either gated behind a tag or have
-# qemu installed in the test-isolation image. Size bumped to `medium`
-# since qemu emulation of a foreign-arch JRE startup is noticeably slower
-# than the amd64 equivalent.
+# `platform` attr to docker via `--platform linux/arm64`. binfmt registration
+# (Docker Desktop auto, BuildBuddy via tonistiigi/binfmt or qemu-user-static)
+# is necessary but not sufficient for these to pass: HotSpot's startup uses
+# CPU feature probes and a handful of syscalls (e.g. perf_event_open paths
+# under ergonomics) that qemu-user emulates partially or not at all. On
+# BuildBuddy linux/amd64 + qemu, `java --version` exits 1 with empty stdout
+# — the JVM launches and silently bails inside, not a binfmt issue. The
+# arm64 file-existence assertions in test_hummingbird_arm64.yaml would
+# pass; only the commandTests blow up. Splitting the config to keep file
+# checks alive under qemu while skipping commandTests is possible but
+# adds a per-arch yaml split for marginal value.
+#
+# Pragmatic: tag `requires-native-arm64` so default CI skips. Run locally
+# on Apple Silicon / arm64 Linux hosts with
+# `--test_tag_filters=requires-native-arm64`, or wire a BuildBuddy arm64
+# executor pool via exec_properties and drop the tag. Same posture every
+# Bazel-Java repo I've seen lands on after one round of qemu pain.
+#
+# Size stays `medium` for when they do run — native arm64 startup is
+# fast, but the multiplier costs nothing when the tests are skipped.
 [
     container_structure_test(
         name = "java" + major + "_arm64_hummingbird_test",
@@ -274,7 +285,10 @@ vex_document(
         },
         image = ":java" + major + "_nonroot_arm64_hummingbird.oci_layout",
         platform = "linux/arm64",
-        tags = ["requires-docker"],
+        tags = [
+            "requires-docker",
+            "requires-native-arm64",
+        ],
     )
     for major in JAVA_MAJOR_VERSIONS
 ]

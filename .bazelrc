@@ -65,6 +65,14 @@ build:rbe --test_env=TESTCONTAINERS_RYUK_DISABLED=true
 # Use Docker bridge gateway for container connectivity in DinD environments
 test:ci --test_env=TESTCONTAINERS_HOST_OVERRIDE=172.17.0.1
 
+# Skip tests that need real arm64 silicon. qemu-user can register linux/arm64
+# binaries (binfmt) but its CPU-feature/syscall emulation is incomplete; in
+# particular HotSpot silently bails during startup probes, so the
+# java*_arm64_hummingbird_test commandTests fail with empty stdout under
+# BuildBuddy's amd64 + qemu runners. Drop this filter once an arm64 executor
+# pool is wired up via exec_properties.
+test:ci --test_tag_filters=-requires-native-arm64
+
 # CI includes BuildBuddy RBE
 common:ci --config=buildbuddy
 common:ci --build_metadata=ROLE=CI

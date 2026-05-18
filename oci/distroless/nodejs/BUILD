@@ -153,7 +153,7 @@ vex_document(
     mirror_push(
         name = "nodejs" + major + mode,
         image = ":nodejs" + major + mode + "_nonroot_hummingbird",
-        repository = "nodejs",
+        repository = "node",
         sbom = ":nodejs" + major + mode + "_nonroot_hummingbird_sbom",
         tag_list = [
             major + ("-debug" if mode else ""),

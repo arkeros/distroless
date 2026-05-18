@@ -21,10 +21,10 @@ jobs:
             common --config=ci
             common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
       - name: Install knife
-        uses: arkeros/senku/.github/actions/setup-knife@main
+        uses: ./.github/actions/setup-knife
         with:
           target: //bazel/cmd/knife
       - name: Update Grype database
-        uses: arkeros/senku/.github/actions/update-grype-db@main
+        uses: ./.github/actions/update-grype-db
         with:
           token: ${{ secrets.RENOVATE_TOKEN }}

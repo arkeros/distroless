@@ -23,7 +23,7 @@ jobs:
             common --config=ci
             common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
       - name: Update RPM packages
-        uses: arkeros/senku/.github/actions/update-rpm-packages@main
+        uses: ./.github/actions/update-rpm-packages
         with:
           repos: >-
             hummingbird

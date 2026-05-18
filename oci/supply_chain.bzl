@@ -13,17 +13,27 @@ load("@jq.bzl//jq:jq.bzl", "jq")
 load("@supply_chain_tools//sbom:cyclonedx.bzl", "cyclonedx")
 load("@supply_chain_tools//sbom:sbom.bzl", "sbom")
 
-# Components are routable by grype iff their purl prefix triggers a
-# distro-secdb provider lookup (rpm/deb/apk) OR they carry an explicit
-# `cpe` field for NVD-CPE matching. Anything else (notably `pkg:generic/`
-# for upstream-binary deps like nodejs.org's prebuilt node tarball) is a
-# silent-zero hazard — empirically verified: Node 18.0.0 produces 49 grype
-# matches with `cpe:` set, 0 without. See ADR 0007's disqualification of
-# SUSE/`bci-micro:16.0` and AlmaLinux `ID_LIKE` for the same anti-pattern.
+# Components are routable by grype iff their purl prefix matches one of
+# grype's ecosystem matchers (rpm/deb/apk for distro secdb; golang/npm/
+# pypi/maven/gem/cargo/nuget/hex/bitnami/alpm for language/OS ecosystems
+# via GHSA + provider DBs) OR they carry an explicit `cpe` field for the
+# `stock` NVD-CPE matcher.
+#
+# Anything else — notably `pkg:generic/...` (upstream-binary deps like
+# nodejs.org's prebuilt node tarball) and `pkg:github/...` (GitHub release
+# downloads) — has no grype matcher and is a silent-zero hazard.
+# Empirically verified: Node 18.0.0 produces 49+ grype matches with `cpe:`
+# set, 0 without (pkg:generic/ no-match); `pkg:golang/golang.org/x/net@v0.15.0`
+# produces 5 GHSA matches without cpe (golang matcher routes via GHSA).
+# See ADR 0007's disqualification of SUSE/`bci-micro:16.0` and AlmaLinux
+# `ID_LIKE` for the same fraud-by-silence anti-pattern.
+#
+# The matcher list is from grype/matcher/matchers.go's NewDefaultMatchers;
+# keep in lock-step if grype gains/drops matchers (cf. //bazel/modules/grype).
 _SILENT_ZERO_FILTER = """
 .components | map(
   select(
-    ((.purl // "") | test("^pkg:(rpm|deb|apk)/") | not) and
+    ((.purl // "") | test("^pkg:(rpm|deb|apk|alpm|bitnami|cargo|gem|golang|hex|maven|npm|nuget|pypi)/") | not) and
     ((.cpe // "") == "")
   )
 ) | map({purl, name})

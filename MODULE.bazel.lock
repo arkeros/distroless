@@ -1134,7 +1134,7 @@
     },
     "@@rules_rpm+//rpm:extensions.bzl%rpm": {
       "general": {
-        "bzlTransitiveDigest": "5/7jzFTs35EHVm93WQalpGSRb9rWFTmx4AfbvroSxW0=",
+        "bzlTransitiveDigest": "00uRGQymcbqTmrI/N3QHRQHdA0CjzJ2v7r53rzgykzQ=",
         "usagesDigest": "AZXrQQ8YlbbTXfBWo5HeGIIeUeLasm0qdu/qXwyoAuM=",
         "recordedInputs": [
           "FILE:@@//hummingbird.lock.json 16044143650809035357dc479871b872a19f0d724ef1b46a88009a7619384f78",

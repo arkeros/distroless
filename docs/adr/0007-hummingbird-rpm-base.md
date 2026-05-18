@@ -234,6 +234,21 @@ The first senku image to ship a Go binary in its layer (the registry proxy, `//o
 
 **Lesson.** Structural gates need both positive (this should pass) and negative (this should fail) test inputs across every shape they're meant to handle. Commit `461b5cfa` landed only the negative case (`pkg:generic/` without CPE → fails) and inferred the positive allowlist from what shipped at the time, which silently constrained the gate to today's surface. Future structural-gate ADRs land both directions of the binary explicitly — and ideally drive the allowlist from the underlying tool's source of truth rather than a hand-curated enumeration.
 
+## Amendment (2026-05-18): lock-time `repomd.xml.asc` verification is now implemented
+
+The original "Threat model and fallbacks" table claimed lock-time GPG verification of repo metadata as a defended property: *"Repo metadata is also GPG-signed (per `repomd.xml.asc`); both layers must be subverted simultaneously."* Code review caught that the pin tool had been shipped with that step as a `// TODO` no-op (`pin/main.go` discarded the `--gpg-key` arg via `_ = *gpgKey`). The threat-model row was therefore aspirational — at lock time, trust reduced to TLS to the upstream CDN, and any MITM able to substitute `primary.xml.gz` could replace every per-rpm sha256 in the lockfile with digests of their own choosing. The downstream sha256 chain would then "validate" malicious bytes against attacker-controlled expectations; only the per-rpm in-RPM signature in `rpm-extract` caught it, and that's the wrong layer for a metadata-substitution attack.
+
+Closed by implementing verification:
+
+- `pin/main.go` now fetches `<repo>/<arch>/repodata/repomd.xml.asc` alongside `repomd.xml` and calls `openpgp.CheckArmoredDetachedSignature` against the consumer-supplied keyring before reading any byte of the repomd. Failure (bad signature, no matching key, malformed armor) aborts the whole pin run before any per-rpm digest lands in the lockfile.
+- Keyring decoding is factored out to `rpm/tools/internal/keyring`, shared with `rpm-extract`. Same multi-block parser, same skip-broken-block tolerance for vendor keyrings (e.g. Hummingbird's three-key rotation bundle).
+- Tests cover the three properties that matter: valid signature passes, tampered payload fails, signature from a key outside the trust root fails. Plus an end-to-end test that drives `resolve()` against an in-process fake repo and confirms an attacker-signed metadata bundle is refused.
+- `pin.sh.tpl` resolves `--gpg-key` to an absolute path before `cd`-ing into `BUILD_WORKSPACE_DIRECTORY`, matching the existing `TOOL` handling. The previous unresolved short-path was harmless while verification was a no-op; it would have broken the moment the key was actually read.
+
+The trust chain at lock time now matches the threat-model claim: `repomd.xml.asc` is the anchor, every primary.xml sha and per-rpm sha chains back to it, subverting any lockfile digest requires subverting that signature.
+
+**Caveat.** Empty `--gpg-key` still degrades to TLS-only trust (one-off CLI use), with a loud warning on stderr. The `rpm.install(...)` extension marks `gpg_key` mandatory, so production Bazel runs always populate it.
+
 ## See also
 
 - [[docs/research/deb-vs-apk-vs-oci-components.md]] — broader format/channel analysis; Option B (OCI-component overlay) was the prior recommendation; this ADR supersedes it for glibc-bearing images specifically while preserving its conclusions for non-glibc cases

@@ -86,9 +86,7 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 # No senku-side `cacerts` extractor needed: Hummingbird's ca-certificates
 # rpm already ships /etc/ssl/certs/ca-certificates.crt as a Debian-compat
 # symlink alongside its native /etc/pki/ca-trust layout, so the existing
-# SSL_CERT_FILE env in the matrix call resolves correctly. rpmdb_merge is
-# intentionally omitted while the sqlite write in the Go binary is still
-# `// TODO` — bring it back when that lands.
+# SSL_CERT_FILE env in the matrix call resolves correctly.
 [
     flatten(
         name = "static_" + arch + "_hummingbird_layer",

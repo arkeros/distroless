@@ -5,6 +5,9 @@ on:
     # 30 min offset from the Debian cron so the two workflows don't collide
     # on the BuildBuddy executor pool.
     - cron: "30 16 * * *"
+concurrency:
+  group: update-rpm-packages
+  cancel-in-progress: false
 jobs:
   update:
     name: Update RPM packages

@@ -54,6 +54,7 @@ def distroless_matrix(
         env = None,
         annotations = None,
         index_annotations = None,
+        created = None,
         debug_layers = None,
         debug_entrypoint = None,
         debug_env = None,
@@ -94,6 +95,10 @@ def distroless_matrix(
             kwargs["vex"] for debug images only — for justifications that
             apply only to packages added by debug layers. Mirrors
             debug_ignore_cves in shape.
+        created: optional label of a one-file RFC 3339 timestamp,
+            forwarded to `oci_image(created = ...)`. Shared across
+            release and debug variants — same upstream-snapshot anchor
+            applies. See //oci:created_timestamp.bzl.
         **kwargs: passed through to oci_image (e.g. ignore_cves, fail_on_severity).
     """
 
@@ -130,6 +135,7 @@ def distroless_matrix(
                 entrypoint = entrypoint,
                 env = release_env,
                 annotations = release_annotations,
+                created = created,
                 **kwargs
             )
 
@@ -153,6 +159,7 @@ def distroless_matrix(
                 entrypoint = effective_debug_entrypoint,
                 env = effective_debug_env,
                 annotations = effective_debug_annotations,
+                created = created,
                 **debug_kwargs
             )
 

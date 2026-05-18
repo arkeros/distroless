@@ -1,5 +1,9 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
+# Exposed so //oci/distroless/common:created_debian can pin its snapshot
+# anchor against the canonical apt lockfile.
+exports_files(["debian.lock.json"])
+
 bzl_library(
     name = "matrix",
     srcs = ["matrix.bzl"],

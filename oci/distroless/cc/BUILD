@@ -139,6 +139,7 @@ _VEX = {
     distroless_matrix(
         name = "cc",
         architectures = CC_ARCHITECTURES[distro],
+        created = "//oci/distroless/common:created_" + distro,
         debug_entrypoint = ["/busybox/sh"],
         debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],

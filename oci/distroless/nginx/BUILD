@@ -5,6 +5,7 @@ load("@jq.bzl//jq:jq.bzl", "jq_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("@tar.bzl", "tar")
+load("//oci:created_timestamp.bzl", "hummingbird_created_timestamp")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
@@ -29,6 +30,21 @@ NGINX_IGNORE_CVES = {
 }
 
 package(default_visibility = ["//visibility:public"])
+
+# Per-channel `created` timestamps for the Hummingbird side from each
+# rpm repo's `repomd.xml` revision. nginx-on-debian deliberately ships
+# without `created`: nginx.org's apt repo doesn't snapshot, so there's
+# no honest upstream-anchor timestamp. See #237.
+[
+    hummingbird_created_timestamp(
+        name = "created_" + channel + "_hummingbird",
+        lock = ":nginx-" + channel + ".hummingbird.lock.json",
+    )
+    for channel in [
+        "stable",
+        "mainline",
+    ]
+]
 
 # CVE-2013-0337 — nginx default config historically created
 # access.log/error.log with world-readable permissions, exposing log
@@ -226,6 +242,7 @@ _NGINX_RPM_REPO = {
     distroless_matrix(
         name = "nginx_stable",
         architectures = NGINX_ARCHITECTURES[distro],
+        created = ":created_stable_hummingbird" if distro == "hummingbird" else None,
         debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_index_annotations = {
@@ -252,6 +269,7 @@ _NGINX_RPM_REPO = {
     distroless_matrix(
         name = "nginx_mainline",
         architectures = NGINX_ARCHITECTURES[distro],
+        created = ":created_mainline_hummingbird" if distro == "hummingbird" else None,
         debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_index_annotations = {

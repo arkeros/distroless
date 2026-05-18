@@ -1,6 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_distroless//distroless:defs.bzl", "cacerts", "group", "home", "locale", "os_release", "passwd")
 load("@tar.bzl", "tar")
+load("//oci:created_timestamp.bzl", "debian_created_timestamp", "hummingbird_created_timestamp")
 load("//oci/distroless:platforms.bzl", "ALL_ARCHITECTURES", "ALL_DISTROS", "VERSIONS")
 load(":variables.bzl", "COMPRESSION", "MTIME", "NOBODY", "NONROOT", "OS_RELEASE_BY_DISTRO", "ROOT", "quote")
 
@@ -284,6 +285,20 @@ home(
             "mode": 700,
         },
     ],
+)
+
+# RFC 3339 `created` timestamps shared across image families that consume
+# the same upstream-snapshot anchor. Each evaluates to a one-file label
+# consumable by `oci_image(created = ...)`. See //oci:created_timestamp.bzl
+# and ADR 0007 §"Build horizon" amendment for rationale.
+hummingbird_created_timestamp(
+    name = "created_hummingbird",
+    lock = "//:hummingbird.lock.json",
+)
+
+debian_created_timestamp(
+    name = "created_debian",
+    lock = "//oci/distroless:debian.lock.json",
 )
 
 bzl_library(

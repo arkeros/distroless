@@ -98,6 +98,7 @@ _VEX = {
     distroless_matrix(
         name = "bash",
         architectures = BASH_ARCHITECTURES[distro],
+        created = "//oci/distroless/common:created_" + distro,
         debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
         debug_index_annotations = {

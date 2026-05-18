@@ -100,6 +100,13 @@ bzl_library(
 )
 
 bzl_library(
+    name = "created_timestamp",
+    srcs = ["created_timestamp.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["@jq.bzl//jq:jq"],
+)
+
+bzl_library(
     name = "config",
     srcs = ["config.bzl"],
     visibility = ["//visibility:public"],

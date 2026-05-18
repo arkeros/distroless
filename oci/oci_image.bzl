@@ -9,6 +9,7 @@ def oci_image(
         fail_on_severity = "high",
         ignore_cves = None,
         vex = None,
+        created = None,
         **kwargs):
     """Build an OCI container image with SBOM + CVE scanning.
 
@@ -25,10 +26,20 @@ def oci_image(
             CVE IDs are extracted at action time and added to the
             suppression set; a sibling `_stale_vex` test fires when a
             statement no longer corresponds to a scan match.
+        created: Optional label of a one-file target whose contents are an
+            RFC 3339 timestamp; emitted into `image.config.created`.
+            Use //oci/distroless/common:created_{debian,hummingbird}
+            (derived from the upstream-snapshot anchor in each distro's
+            lockfile — see //oci:created_timestamp.bzl and ADR 0007
+            §"Build horizon" amendment). Absent → image config has no
+            `created` field, which leaves senku images policy-invisible
+            to build-horizon admission controllers; epoch 0 would make
+            them always-stale (the trap distroless PR #1203 fixed).
         **kwargs: Passed to image_manifest (base, layers, entrypoint, env, etc.).
     """
     image_manifest(
         name = name,
+        created = created,
         **kwargs
     )
 

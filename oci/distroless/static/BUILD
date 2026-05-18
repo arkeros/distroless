@@ -143,6 +143,9 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     distroless_matrix(
         name = "static",
         architectures = STATIC_ARCHITECTURES[distro],
+        # RFC 3339 `created` from the per-distro upstream-snapshot anchor;
+        # see //oci:created_timestamp.bzl + ADR 0007 §"Build horizon".
+        created = "//oci/distroless/common:created_" + distro,
         debug_entrypoint = ["/busybox/sh"],
         debug_env = {"PATH": _DEFAULT_PATH + ":/busybox"},
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],

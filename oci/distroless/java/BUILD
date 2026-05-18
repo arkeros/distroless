@@ -166,6 +166,11 @@ vex_document(
     distroless_matrix(
         name = "java" + major,
         architectures = JAVA_ARCHITECTURES[distro],
+        # JAVA_DISTROS is currently hummingbird-only; the Temurin tarball
+        # version is pinned independently in MODULE.bazel and surfaces
+        # via the CPE on java_metadata_<major>. Image-level `created`
+        # tracks the Hummingbird base snapshot.
+        created = "//oci/distroless/common:created_" + distro,
         debug_entrypoint = ["/busybox/sh"],
         # Prepend /jre/bin so a kubectl-exec shell finds jstack/jcmd/
         # jmap/javac on PATH without operators having to type the absolute

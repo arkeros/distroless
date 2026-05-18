@@ -127,6 +127,11 @@ vex_document(
     distroless_matrix(
         name = "nodejs" + major,
         architectures = NODEJS_ARCHITECTURES[distro],
+        # NODEJS_DISTROS is currently hummingbird-only; the Node tarball
+        # version is pinned independently in MODULE.bazel and surfaces
+        # via the CPE on java_metadata_<major>. Image-level `created`
+        # tracks the Hummingbird base snapshot.
+        created = "//oci/distroless/common:created_" + distro,
         debug_entrypoint = ["/busybox/sh"],
         debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],

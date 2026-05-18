@@ -249,6 +249,27 @@ The trust chain at lock time now matches the threat-model claim: `repomd.xml.asc
 
 **Caveat.** Empty `--gpg-key` still degrades to TLS-only trust (one-off CLI use), with a loud warning on stderr. The `rpm.install(...)` extension marks `gpg_key` mandatory, so production Bazel runs always populate it.
 
+## Amendment (2026-05-19): build horizon — image-config `created` timestamps
+
+Chainguard names two concepts senku had been reinventing: **build horizon** ("the maximum amount of time a build artifact… is permitted to remain in use before it must be rebuilt" — https://edu.chainguard.dev/software-security/build-horizon/) and the **principle of ephemerality** ("Everything that can be ephemeral, should be ephemerality" — https://www.chainguard.dev/unchained/the-principle-of-ephemerality). Both are the rebuild-cadence-as-moat argument from §"Operational considerations", with admission-controller enforcement as the new mechanism. The build-horizon article specifically calls out a trap: tools that set image-config `created` to the Unix epoch *"will always appear to exceed any reasonable build horizon"*, recommending `SOURCE_DATE_EPOCH` so timestamps derive from the source commit rather than wall-clock.
+
+Empirical audit pre-amendment: senku images had **no `created` field at all** — neither epoch-0 (always-stale trap) nor wall-clock (non-reproducible) nor source-derived. Third state: **policy-invisible**. An admission controller using sigstore/policy-controller's `fetchConfigFile` to gate on `created` would get `null` and apply its config default (fail-open or fail-closed). The rebuild-cadence claim was unverifiable from the image alone — consumers had no in-image signal to distinguish a fresh build from a six-month-old cached pull.
+
+Closed by deriving `created` from each distro's upstream-snapshot anchor:
+
+- **Hummingbird**: `.repo.revision` from the rules_rpm lockfile (Unix epoch). Matches Hummingbird's own multi-update-per-day cadence (§Snapshot strategy).
+- **Debian**: the `snapshot.debian.org` archive timestamp embedded in every package URL (`/archive/debian/<YYYYMMDDTHHMMSSZ>/`). senku already pinned via snapshot.debian.org for build determinism; the `created` derivation just surfaces that anchor at the image-config layer too.
+
+Both implemented as one-line `jq` macros in `//oci:created_timestamp.bzl`, threaded through `oci_image(created = ...)` → `image_manifest(created = ...)`. Stable across same-lockfile rebuilds (Bazel caches cleanly), meaningful as a build-horizon signal (tracks dependency freshness, which is what horizon admission actually checks), and symmetric across distros for the image families that have a real anchor.
+
+**Stronger than commit time.** Google distroless PR #1203 (2023) used `SOURCE_DATE_EPOCH=<commit_date>` — a senku-side signal. The lockfile-revision approach is stricter: a senku-codebase change that doesn't touch the lockfile shouldn't bump "freshness" (the underlying packages are the same age). In practice the daily auto-pin cron keeps lockfile revisions in lockstep with rebuild events, so both signals usually align; when they diverge, lockfile-revision is the more honest answer.
+
+**Asymmetry — nginx-on-debian is deliberately omitted.** nginx.org's apt repo doesn't operate a snapshot service (URLs are `https://nginx.org/packages/debian/pool/...` with no archive timestamp), so there's no honest upstream-anchor for nginx-on-debian variants. Shipping a misleading `created` (e.g. the base Debian snapshot, or git mtime of the per-channel lockfile) was rejected: missing-field is honest, misleading-field is a contract violation. Admission controllers can policy "field absent"; they can't policy "field lies." See #237 for the deferred design call.
+
+**Lesson.** Two principles a PR review surfaced after the initial implementation:
+1. *Falsifiable claims only*: the `created` field carries an implicit contract — "this image's deps are at most this stale". Don't populate the field on images where the contract can't be substantiated. Missing data > misleading data.
+2. *Wait for a consumer*: no admission controller currently gates on senku images' `created`. The implementation is preparation for hypothetical enforcement, justified by the cost-of-doing-later being roughly the cost-of-doing-now for the cases with a real anchor. Cases without a real anchor (nginx-on-debian) are explicitly deferred until a customer materializes — building speculative machinery for them is the over-engineering trap §"Lesson" from the silent-zero amendment warned against.
+
 ## See also
 
 - [[docs/research/deb-vs-apk-vs-oci-components.md]] — broader format/channel analysis; Option B (OCI-component overlay) was the prior recommendation; this ADR supersedes it for glibc-bearing images specifically while preserving its conclusions for non-glibc cases

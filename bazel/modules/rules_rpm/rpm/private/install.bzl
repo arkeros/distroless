@@ -16,7 +16,24 @@ shells out to the pin Go binary against the live repo.
 # name only; the hub-side alias under `@<hub>//<pkg>/<arch>` keeps the
 # original `+` (Bazel package directories accept it). Both ends of the
 # aliasing must agree, hence the public helper.
+#
+# This encoding is not strictly bijective: a hypothetical RPM named
+# `lib.plus.x` would collide with `lib+x`. A correctly bijective scheme
+# inside `[A-Za-z0-9._-]` (escape-the-escape, e.g. `_` -> `__`, `+` -> `_p`)
+# would change every existing spoke-repo name, breaking Bazel cache
+# identity and the `@@<hub>__<pkg>__<arch>` label strings consumers
+# match on. No real RPM in any public repo we consume uses `.plus.` as
+# a substring, so we guard against the theoretical collision here
+# instead — a fail loud at lock time beats a silent label clash, and
+# any future hit on the guard is the signal to graduate to the full
+# bijective encoding.
 def safe_repo_name(s):
+    if ".plus." in s:
+        fail(
+            ("rules_rpm: package name %r contains '.plus.', which would " +
+             "collide with the spoke-repo encoding of a '+' in another name. " +
+             "Extend safe_repo_name to a bijective scheme before adding this package.") % s,
+        )
     return s.replace("+", ".plus.")
 
 def _split_epoch(evr):

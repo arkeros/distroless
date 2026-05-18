@@ -249,6 +249,36 @@ vex_document(
     for major in JAVA_MAJOR_VERSIONS
 ]
 
+# arm64 cross-arch structure tests. container_structure_test forwards its
+# `platform` attr to docker via `--platform linux/arm64`, which requires
+# qemu-binfmt on the runner (Docker Desktop registers it automatically;
+# Linux runners need `tonistiigi/binfmt` or an apt qemu-user-static). On
+# BuildBuddy firecracker the binfmt handler is typically pre-registered
+# but the env varies — if a future runner image surfaces `exec format
+# error`, these targets need to be either gated behind a tag or have
+# qemu installed in the test-isolation image. Size bumped to `medium`
+# since qemu emulation of a foreign-arch JRE startup is noticeably slower
+# than the amd64 equivalent.
+[
+    container_structure_test(
+        name = "java" + major + "_arm64_hummingbird_test",
+        size = "medium",
+        configs = [
+            "test_hummingbird_arm64.yaml",
+            "test_java" + major + ".yaml",
+        ],
+        driver = "docker",
+        exec_properties = {
+            "test.workload-isolation-type": "firecracker",
+            "test.init-dockerd": "true",
+        },
+        image = ":java" + major + "_nonroot_arm64_hummingbird.oci_layout",
+        platform = "linux/arm64",
+        tags = ["requires-docker"],
+    )
+    for major in JAVA_MAJOR_VERSIONS
+]
+
 # Network-bound smoke test, split from the fast tests so offline `bazel
 # test` invocations skip it (`--test_tag_filters=-requires-network`).
 # Validates the live TLS stack end-to-end via keytool against Wikipedia.

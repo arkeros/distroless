@@ -1,0 +1,62 @@
+schemaVersion: 2.0.0
+# arm64 mirror of test_hummingbird.yaml. The only deltas are arch-specific
+# paths: glibc's dynamic linker lives at /usr/lib/ld-linux-aarch64.so.1 on
+# arm64 (not /usr/lib64/ld-linux-x86-64.so.2). Everything else — entrypoint,
+# user, env, /jre/ layout, os-release — is arch-agnostic.
+metadataTest:
+  entrypoint: ['/jre/bin/java', '-jar']
+  workdir: '/home/nonroot'
+  user: '65532'
+  envVars:
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-certificates.crt
+fileExistenceTests:
+  - name: 'java launcher'
+    path: '/jre/bin/java'
+    shouldExist: true
+  - name: 'libjvm.so'
+    path: '/jre/lib/server/libjvm.so'
+    shouldExist: true
+  - name: 'jimage modules'
+    path: '/jre/lib/modules'
+    shouldExist: true
+  - name: 'bundled cacerts'
+    path: '/jre/lib/security/cacerts'
+    shouldExist: true
+  # JRE-only build — no JDK developer tools.
+  - name: 'no javac'
+    path: '/jre/bin/javac'
+    shouldExist: false
+  - name: 'no jlink'
+    path: '/jre/bin/jlink'
+    shouldExist: false
+  - name: 'no jstack'
+    path: '/jre/bin/jstack'
+    shouldExist: false
+  # Inherited cc/static surface. arm64 puts the dynamic linker under
+  # /usr/lib/ (Debian/glibc multiarch convention), not the /usr/lib64/
+  # path used on amd64.
+  - name: 'glibc dynamic linker'
+    path: '/usr/lib/ld-linux-aarch64.so.1'
+    shouldExist: true
+  - name: 'libstdc++'
+    path: '/usr/lib64/libstdc++.so.6'
+    shouldExist: true
+  - name: 'os-release canonical'
+    path: '/usr/lib/os-release'
+    shouldExist: true
+  - name: 'rpmdb sqlite'
+    path: '/usr/lib/sysimage/rpm/rpmdb.sqlite'
+    shouldExist: true
+  - name: 'no shell'
+    path: '/bin/sh'
+    shouldExist: false
+fileContentTests:
+  - name: 'os-release has ID=hummingbird'
+    path: '/usr/lib/os-release'
+    expectedContents: ['ID=.hummingbird.']
+commandTests:
+  - name: 'java --version exits 0'
+    command: '/jre/bin/java'
+    args: ['--version']
+    exitCode: 0

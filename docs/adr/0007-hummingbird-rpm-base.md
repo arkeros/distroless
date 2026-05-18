@@ -214,6 +214,26 @@ The matrix factory in [[oci/distroless/matrix.bzl]] doesn't know which package m
 
     - **JDK in the `_debug` variant at /jre/ (same path as release JRE).** `kubectl exec ... -- /jre/bin/jstack 1` works against either variant: the release simply lacks the binary, debug supplies it. Operators don't have to special-case the variant in their debug-runbook command/args overrides. The JDK is a strict superset of the JRE (same `bin/java`, same `lib/server/libjvm.so`, plus `jdk.*` modules) so the entrypoint and SBOM component are unchanged — this is the same trick Google Distroless uses for its `java*-debug` variants and is the reason that pattern survives operationally.
 
+## Amendment (2026-05-18): silent-zero gate is matcher-routed, not secdb-routed
+
+The `_cve_test_silent_zero` gate referenced in the Java section above was originally scoped to `pkg:(rpm|deb|apk)/` purls — the distro-secdb providers — on the framing that those were "secdb-routable" and everything else needed an explicit CPE. That framing was overgeneralized from the empirical evidence behind it. The test case in commit `461b5cfa` was `pkg:generic/` (the nodejs.org tarball Node 18.0.0 case): for that purl shape, "secdb-routable vs explicit CPE" *is* the routing binary, because grype really does have no matcher for `pkg:generic/`. The mistake was inferring the positive allowlist by enumeration of what the senku surface happened to ship at the time (rpm/deb/apk only) rather than from grype's matcher list.
+
+Grype's `NewDefaultMatchers` wires 14 ecosystem matchers. Beyond rpm/deb/apk it routes `pkg:golang/`, `pkg:npm/`, `pkg:pypi/`, `pkg:maven/`, `pkg:gem/`, `pkg:cargo/`, `pkg:nuget/`, `pkg:hex/`, `pkg:bitnami/`, `pkg:alpm/` against GHSA and per-ecosystem advisory feeds — each without needing a CPE. Empirically verified at amendment time:
+
+| Component | Matches without `cpe` set |
+|---|---|
+| `pkg:golang/golang.org/x/net@v0.15.0` | 5 GHSA |
+| `pkg:golang/github.com/docker/docker@v20.10.0` | 16 GHSA |
+| `pkg:npm/lodash@4.17.20` | 5 |
+| `pkg:maven/org.apache.logging.log4j@2.14.1` | 7 |
+| `pkg:pypi/django@3.2.0` | 30 |
+
+The first senku image to ship a Go binary in its layer (the registry proxy, `//oci/cmd/registry`) tripped the narrow gate on its 7 transitive Go-module components — the gate fired correctly on its own filter, but the filter itself was incomplete. Fixed in commit `2095c66b`: `_SILENT_ZERO_FILTER` in `oci/supply_chain.bzl` widened to grype's full matcher list, sourced from `grype/matcher/matchers.go`'s `NewDefaultMatchers` and to be kept in lock-step on grype upgrades.
+
+**Restated invariant.** A component passes the silent-zero gate iff (a) its purl prefix matches one of grype's ecosystem matchers OR (b) it carries an explicit CPE for the `stock` matcher. The narrow rpm/deb/apk framing in the Java-section reference above was an over-fit to the original `pkg:generic/` evidence — accurate for that shape, misleading as a general rule. The Java decision (CPE on Temurin) stands unchanged: Java packages distributed outside any grype-matcher ecosystem still need a CPE, exactly as the Java section describes.
+
+**Lesson.** Structural gates need both positive (this should pass) and negative (this should fail) test inputs across every shape they're meant to handle. Commit `461b5cfa` landed only the negative case (`pkg:generic/` without CPE → fails) and inferred the positive allowlist from what shipped at the time, which silently constrained the gate to today's surface. Future structural-gate ADRs land both directions of the binary explicitly — and ideally drive the allowlist from the underlying tool's source of truth rather than a hand-curated enumeration.
+
 ## See also
 
 - [[docs/research/deb-vs-apk-vs-oci-components.md]] — broader format/channel analysis; Option B (OCI-component overlay) was the prior recommendation; this ADR supersedes it for glibc-bearing images specifically while preserving its conclusions for non-glibc cases

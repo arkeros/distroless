@@ -23,7 +23,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/arkeros/senku/bazel/modules/rules_rpm/rpm/tools/internal/keyring"
 	"github.com/sassoftware/go-rpmutils"
 	"github.com/sassoftware/go-rpmutils/cpio"
 )
@@ -64,9 +64,9 @@ func main() {
 // verifyRpmSignature checks the in-rpm PGP signature against the supplied
 // ASCII-armored keyring. The keyring file may contain multiple armor blocks
 // (Hummingbird's hummingbird-release.pgp ships three keys for key-rotation
-// continuity) — each is decoded independently and accumulated into one
-// EntityList passed to rpmutils.Verify, which walks the signature headers
-// and fails if none match.
+// continuity); the shared keyring package decodes each block independently
+// and accumulates into one EntityList passed to rpmutils.Verify, which
+// walks the signature headers and fails if none match.
 //
 // Empty --gpg-key skips verification so the binary stays usable as a one-off
 // CLI; rpm_package always passes the flag.
@@ -74,7 +74,7 @@ func verifyRpmSignature(rpmPath, keyPath string) error {
 	if keyPath == "" {
 		return nil
 	}
-	keyring, err := readMultiBlockKeyring(keyPath)
+	keys, err := keyring.ReadMultiBlock(keyPath)
 	if err != nil {
 		return fmt.Errorf("load gpg key: %w", err)
 	}
@@ -83,63 +83,10 @@ func verifyRpmSignature(rpmPath, keyPath string) error {
 		return fmt.Errorf("open rpm for signature check: %w", err)
 	}
 	defer rf.Close()
-	if _, _, err := rpmutils.Verify(rf, keyring); err != nil {
+	if _, _, err := rpmutils.Verify(rf, keys); err != nil {
 		return fmt.Errorf("gpg signature verification failed: %w", err)
 	}
 	return nil
-}
-
-// readMultiBlockKeyring parses an ASCII-armored OpenPGP file that may
-// concatenate multiple `-----BEGIN PGP PUBLIC KEY BLOCK-----` sections.
-// `openpgp.ReadArmoredKeyRing` only consumes the first block, so callers
-// shipping rotated/legacy keys alongside the current one would silently
-// lose all but the first.
-//
-// Blocks that fail to parse are skipped rather than erroring out: vendor
-// keyrings (e.g. Hummingbird's hummingbird-release.pgp) bundle keys from
-// multiple eras and ProtonMail's parser rejects some legacy packet shapes
-// (`first packet was not a public/private key` on 2009-era RH key 2).
-// Verification then fails cleanly downstream if none of the parseable keys
-// matches the RPM's signature. An all-blocks-failed file returns the error
-// from the first block to surface a real parsing regression.
-func readMultiBlockKeyring(path string) (openpgp.EntityList, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-	const beginMarker = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
-	const endMarker = "-----END PGP PUBLIC KEY BLOCK-----"
-	var all openpgp.EntityList
-	var firstErr error
-	rest := data
-	for {
-		bIdx := bytes.Index(rest, []byte(beginMarker))
-		if bIdx < 0 {
-			break
-		}
-		rest = rest[bIdx:]
-		eIdx := bytes.Index(rest, []byte(endMarker))
-		if eIdx < 0 {
-			return nil, fmt.Errorf("unterminated armor block in %q", path)
-		}
-		chunk := rest[:eIdx+len(endMarker)]
-		rest = rest[eIdx+len(endMarker):]
-		entities, err := openpgp.ReadArmoredKeyRing(bytes.NewReader(chunk))
-		if err != nil {
-			if firstErr == nil {
-				firstErr = err
-			}
-			continue
-		}
-		all = append(all, entities...)
-	}
-	if len(all) == 0 {
-		if firstErr != nil {
-			return nil, fmt.Errorf("no usable PGP public keys in %q: %w", path, firstErr)
-		}
-		return nil, fmt.Errorf("no PGP public key blocks found in %q", path)
-	}
-	return all, nil
 }
 
 // validateRpmMetadata enforces the --package/--version/--arch sanity checks

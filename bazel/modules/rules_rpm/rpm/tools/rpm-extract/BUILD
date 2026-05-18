@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/arkeros/senku/bazel/modules/rules_rpm/rpm/tools/rpm-extract",
     visibility = ["//visibility:private"],
     deps = [
-        "@com_github_protonmail_go_crypto//openpgp",
+        "//rpm/tools/internal/keyring",
         "@com_github_sassoftware_go_rpmutils//:go-rpmutils",
         "@com_github_sassoftware_go_rpmutils//cpio",
     ],

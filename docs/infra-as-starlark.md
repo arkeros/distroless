@@ -210,9 +210,10 @@ comments, per-root retries). Same source of truth, two surfaces.
 `oci/cmd/registry/BUILD` after migration:
 
 ```python
-load("@terraform.bzl", "tf_root", "var")
+load("@terraform.bzl", "var")
 load("@terraform.bzl//:gcp.bzl", "service_account")
 load("//devtools/bifrost/modules:cloudrun.bzl", "service_cloudrun")
+load("//devtools/build/tools/tf:render.bzl", "IMAGE_URI", "tf_root_with_image")
 
 REGIONS = ["us-central1", "europe-west3", "asia-northeast1"]
 
@@ -228,7 +229,10 @@ services = [
         name = "registry_%s" % r.replace("-", "_"),
         project = var("project_id"),
         region = r,
-        image = var("image"),
+        # Sentinel substituted with `<registry>/<repo>@sha256:<digest>` at
+        # Bazel build time — see `tf_root_with_image.image_push` below. No
+        # `var.image` round-trip via `*.auto.tfvars.json`.
+        image = IMAGE_URI,
         service_account_email = sa.email,         # <-- the cross-resource ref
         args = [
             "--upstream=ghcr.io",
@@ -240,9 +244,10 @@ services = [
     for r in REGIONS
 ]
 
-tf_root(
+tf_root_with_image(
     name = "terraform",
-    backend_prefix = "oci/cmd/registry/terraform",
+    backend_bucket = "senku-prod-terraform-state",
+    image_push = ":image_push_gar",   # auto-prepended to pre_apply
     docs = [sa] + services + [
         # outputs consumed by //infra/cloud/gcp/lb
         {"output": {"lb_backends": {"value": {
@@ -253,15 +258,12 @@ tf_root(
             },
         }}}},
     ],
-    pre_apply = [
-        ":image_push_gar",   # already exists in BUILD
-        ":image_tfvars",     # already exists in BUILD
-    ],
 )
 ```
 
-`bazel run //oci/cmd/registry:terraform.apply` replaces `deploy.sh`. The push
-+ tfvars + apply chain is encoded in `pre_apply`, no separate shell script.
+`bazel run //oci/cmd/registry:terraform.apply` replaces `deploy.sh`. The image
+push + apply chain is encoded by `tf_root_with_image` (it auto-prepends
+`image_push` to `pre_apply`); no separate shell script, no tfvars round-trip.
 
 ## Migration plan
 

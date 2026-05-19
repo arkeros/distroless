@@ -1,6 +1,11 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":hcl_test.bzl", "hcl_test_suite")
 
 package(default_visibility = ["//visibility:public"])
+
+# Direct unit tests for the HCL parser. Catches parser regressions
+# without needing a full module-extension build cycle.
+hcl_test_suite(name = "hcl_test")
 
 bzl_library(
     name = "defs",
@@ -45,6 +50,15 @@ bzl_library(
 bzl_library(
     name = "hcl",
     srcs = ["hcl.bzl"],
+)
+
+bzl_library(
+    name = "hcl_test_lib",
+    srcs = ["hcl_test.bzl"],
+    deps = [
+        ":hcl",
+        "@bazel_skylib//lib:unittest",
+    ],
 )
 
 bzl_library(

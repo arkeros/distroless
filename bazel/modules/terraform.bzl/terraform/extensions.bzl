@@ -140,14 +140,28 @@ def _provider_archive_repo_impl(rctx):
     appears in the lockfile's `zh:` set; expose it as a `:files`
     filegroup.
 
-    No `sha256 =` arg on `rctx.download`: we don't know the per-platform
-    sha256 directly from the lockfile (terraform's `.terraform.lock.hcl`
-    lists all `zh:` hashes flat, not mapped by platform). Instead, we
-    download, take the resulting sha256 from `rctx.download`'s return
-    value, and assert it's one of the lockfile's `zh:` hashes. This is
-    the same trust posture: the lockfile is authoritative, and a
-    tampered upstream zip would produce a sha256 outside the trusted
-    set.
+    Trust model — and its relaxation:
+
+      The lockfile is the only trusted source of hashes. A tampered
+      upstream zip would produce a sha256 outside the `zh:` set and
+      `fail()` here.
+
+      What this check does NOT catch: if `_provider_url` for platform X
+      somehow returned the *wrong but still upstream-blessed* artifact
+      — say the `_manifest.json` or a different platform's zip whose
+      sha256 also happens to be in the `zh:` set — we'd accept the
+      download here, and bazel would fail later (unzip error, terraform
+      init mismatch). In other words, this verifies "the downloaded
+      bytes were not tampered with mid-flight," not "the URL pointed at
+      the file we expected." We trust `_provider_url` to be correct.
+
+      Why we don't tighten: terraform's `.terraform.lock.hcl` lists all
+      `zh:` hashes flat — manifest, sig, per-platform zips, cross-
+      platform zips — without per-artifact labels. Mapping a `zh:` to
+      "this is the linux_arm64 zip's hash" requires fetching
+      `SHA256SUMS` separately, which is exactly the custom tooling we
+      just deleted. The relaxed check is the cost of staying on the
+      terraform-native lockfile format.
     """
     _, ptype = rctx.attr.source.split("/")
     zip_name = "terraform-provider-{ptype}_{version}_{platform}.zip".format(
@@ -300,7 +314,10 @@ def _terraform_extension_impl(mctx):
 
     for install in install_tags:
         content = mctx.read(install.lock_file)
-        parsed = parse_terraform_lockfile(content) if content.strip() else {}
+        parsed = parse_terraform_lockfile(
+            content,
+            source = str(install.lock_file),
+        ) if content.strip() else {}
 
         specs = []
         for source, block in parsed.items():

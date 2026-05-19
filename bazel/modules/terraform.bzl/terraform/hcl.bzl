@@ -35,17 +35,29 @@ Limitations (we don't parse them because terraform doesn't write them):
 - HCL2 heredocs / templated strings.
 """
 
-def parse_terraform_lockfile(content):
-    """Parse `.terraform.lock.hcl` text. Returns a dict keyed by source
-    address (registry prefix stripped).
+def parse_terraform_lockfile(content, source = "<lockfile>"):
+    """Parse `.terraform.lock.hcl` text.
+
+    Args:
+        content: The full file text.
+        source: Human-readable origin (typically a Bazel label like
+            `@@//bazel/include:.terraform.lock.hcl`) — included in
+            `fail()` messages so a malformed lockfile points at the
+            actual file + line, not just the bad token. Defaults to
+            `<lockfile>` for direct callers that don't have a label.
+
+    Returns:
+        Dict keyed by source address (registry prefix stripped) →
+        `{version, constraints?, hashes}`.
     """
     out = {}
     state = "TOP"
     current_addr = None
     current_block = None
     current_array_field = None
+    block_start_line = 0
 
-    for raw in content.split("\n"):
+    for line_no, raw in enumerate(content.split("\n"), start = 1):
         line = raw.strip()
         if line == "" or line.startswith("#"):
             continue
@@ -59,12 +71,17 @@ def parse_terraform_lockfile(content):
                 first_q = line.find('"')
                 second_q = line.find('"', first_q + 1)
                 if first_q == -1 or second_q == -1:
-                    fail("malformed provider header (missing quoted address): " + raw)
+                    fail("{src}:{line}: malformed provider header (missing quoted address): {raw}".format(
+                        src = source,
+                        line = line_no,
+                        raw = raw,
+                    ))
                 addr = line[first_q + 1:second_q]
                 if addr.startswith("registry.terraform.io/"):
                     addr = addr[len("registry.terraform.io/"):]
                 current_addr = addr
                 current_block = {}
+                block_start_line = line_no
                 state = "BLOCK"
 
             # Any other top-level line is ignored (no other constructs
@@ -106,5 +123,10 @@ def parse_terraform_lockfile(content):
                 current_block[current_array_field].append(val)
 
     if state != "TOP":
-        fail("unterminated block while parsing lockfile (state={})".format(state))
+        fail("{src}:{line}: unterminated {what} (state={state} at EOF)".format(
+            src = source,
+            line = block_start_line,
+            what = "array" if state == "ARRAY" else "provider block",
+            state = state,
+        ))
     return out

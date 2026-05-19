@@ -18,10 +18,12 @@ way `go_library(deps = ["@com_github_..."])` references gazelle-managed
 module repos.
 """
 
-# Platform identifiers used everywhere in this stack. Mirrors the keys
-# in the extension and matches the suffix HashiCorp's release tarballs
-# use (`<name>_<version>_<os>_<arch>.zip`).
-PLATFORMS = ["darwin_amd64", "darwin_arm64", "linux_amd64", "linux_arm64"]
+load(":platforms.bzl", _PLATFORMS = "PLATFORMS")
+
+# Re-export so existing consumers that load `PLATFORMS` from this file
+# (e.g. `lockfile.bzl`) keep working. Canonical definition lives in
+# `platforms.bzl` — one source of truth.
+PLATFORMS = _PLATFORMS
 
 TerraformProviderInfo = provider(
     doc = "One declared terraform provider plus its per-platform binaries and lockfile hashes.",

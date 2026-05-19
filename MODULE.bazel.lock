@@ -2306,7 +2306,7 @@
     },
     "@@terraform.bzl+//terraform:extensions.bzl%terraform": {
       "general": {
-        "bzlTransitiveDigest": "7lkZXQzwm2oDbfZyCo7SnArp2+VHot3WKchOYAB/IMw=",
+        "bzlTransitiveDigest": "xwYTHLrjmD2/LOqzBLe3+eS8a6BfgI5zP+QOWKfA5/8=",
         "usagesDigest": "C2nCg0Dy+kbnNit9dU1NyoBwUz+ZviTHMdRYX5V0IG4=",
         "recordedInputs": [
           "FILE:@@//.terraform.lock.hcl c92615a765dd0abdcd4fe3b9532f404e5d3672f703ad7d98254582ed7898cdb6"

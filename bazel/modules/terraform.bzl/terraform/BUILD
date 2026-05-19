@@ -36,6 +36,12 @@ bzl_library(
 bzl_library(
     name = "provider",
     srcs = ["provider.bzl"],
+    deps = [":platforms"],
+)
+
+bzl_library(
+    name = "platforms",
+    srcs = ["platforms.bzl"],
 )
 
 bzl_library(
@@ -43,6 +49,7 @@ bzl_library(
     srcs = ["extensions.bzl"],
     deps = [
         ":hcl",
+        ":platforms",
         ":versions",
     ],
 )

@@ -28,18 +28,12 @@ workflow is just "merge Renovate PRs".
 """
 
 load(":hcl.bzl", "parse_terraform_lockfile")
+load(
+    ":platforms.bzl",
+    _PLATFORM_CONSTRAINTS = "PLATFORM_CONSTRAINTS",
+    _PROVIDER_PLATFORMS = "PLATFORMS",
+)
 load(":versions.bzl", "DEFAULT_VERSION", "TERRAFORM_VERSIONS", "get_terraform_url")
-
-# Provider platforms we materialize archive repos for. Mirrored in
-# `//terraform:provider.bzl::PLATFORMS`.
-_PROVIDER_PLATFORMS = ["darwin_amd64", "darwin_arm64", "linux_amd64", "linux_arm64"]
-
-_PLATFORM_CONSTRAINTS = {
-    "darwin_amd64": ["@platforms//os:macos", "@platforms//cpu:x86_64"],
-    "darwin_arm64": ["@platforms//os:macos", "@platforms//cpu:arm64"],
-    "linux_amd64": ["@platforms//os:linux", "@platforms//cpu:x86_64"],
-    "linux_arm64": ["@platforms//os:linux", "@platforms//cpu:arm64"],
-}
 
 def _detect_platform(rctx):
     os = rctx.os.name.lower()

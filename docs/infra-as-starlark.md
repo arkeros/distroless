@@ -89,7 +89,7 @@ Each constructor returns a `struct` with two layers: the JSON body keyed under
 `.tf`, and one field per attribute that downstream resources can reference.
 
 ```python
-# devtools/build/tools/tf/defs.bzl
+# bazel/modules/terraform.bzl/terraform/defs.bzl
 
 def _resource(rtype, name, body, attrs = ()):
     return struct(
@@ -150,7 +150,7 @@ def tf_root(name, docs, backend_prefix, pre_apply = [], visibility = None):
     for verb in ("plan", "apply", "destroy"):
         native.sh_binary(
             name = "%s.%s" % (name, verb),
-            srcs = ["//devtools/build/tools/tf:run.sh"],
+            srcs = ["@terraform.bzl//terraform:run.sh"],
             args = [verb, "$(rootpath %s)" % generated[0]],
             data = generated + pre_apply + ["@terraform//:terraform"],
             env = {
@@ -170,8 +170,10 @@ substitutes the `@@MIRROR_PATH@@` placeholder in `.terraformrc` to a
 sibling runtime file, then `terraform init` + the requested verb.
 `init` resolves providers from the sibling `_providers/` filesystem
 mirror (no network); state stays in GCS — Bazel never tries to own
-it. See [`devtools/build/tools/tf/README.md`](../devtools/build/tools/tf/README.md)
-for the full per-root layout and provider workflow.
+it. The full Starlark layer (rules + toolchain + resource constructors
++ provider lockfile flow) lives as a standalone Bazel module at
+[`bazel/modules/terraform.bzl/`](../bazel/modules/terraform.bzl/),
+consumed via `bazel_dep(name = "terraform.bzl")`.
 
 ## Cross-root orchestration (Aspect CLI, not Bazel)
 
@@ -208,8 +210,9 @@ comments, per-root retries). Same source of truth, two surfaces.
 `oci/cmd/registry/BUILD` after migration:
 
 ```python
-load("//devtools/build/tools/tf:defs.bzl",
-     "service_account", "service_cloudrun", "tf_root", "var")
+load("@terraform.bzl", "tf_root", "var")
+load("@terraform.bzl//:gcp.bzl", "service_account")
+load("//devtools/bifrost/modules:cloudrun.bzl", "service_cloudrun")
 
 REGIONS = ["us-central1", "europe-west3", "asia-northeast1"]
 

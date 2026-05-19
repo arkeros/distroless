@@ -178,7 +178,7 @@ services = [
             for image in CATALOG
         ],
         # Sentinel substituted with the digest URI at Bazel build time
-        # (see `tf_root.image_push` below). No `var.image` round-trip.
+        # (see `tf_root_with_image.image_push` below). No `var.image` round-trip.
         image = IMAGE_URI,
         ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER",
         probes = {

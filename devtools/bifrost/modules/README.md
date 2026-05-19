@@ -1,9 +1,8 @@
 # bifrost modules
 
 Opinionated Starlark macros that compose the typed resource constructors
-in `//devtools/build/tools/tf/resources:{gcp,k8s}.bzl` into bifrost-shaped
-deploys. Drop the returned struct into `tf_root(docs=...)`; nothing else
-to wire.
+in `@terraform.bzl//:{gcp,k8s}.bzl` into bifrost-shaped deploys. Drop the
+returned struct into `tf_root(docs=...)`; nothing else to wire.
 
 | File | Macros | Use case |
 |---|---|---|

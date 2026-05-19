@@ -61,11 +61,11 @@
       ],
       "postUpgradeTasks": {
         "commands": [
-          "bazel mod deps --lockfile_mode=update",
-          "bazel mod tidy"
+          "cd ./{{{packageFileDir}}} && bazel mod deps --lockfile_mode=update && bazel mod tidy"
         ],
         "fileFilters": [
-          "MODULE.bazel.lock"
+          "MODULE.bazel.lock",
+          "bazel/modules/*/MODULE.bazel.lock"
         ],
         "executionMode": "update"
       }
@@ -101,12 +101,13 @@
       ],
       "postUpgradeTasks": {
         "commands": [
-          "bazel mod deps --lockfile_mode=update",
-          "bazel mod tidy"
+          "cd ./{{{packageFileDir}}} && bazel mod deps --lockfile_mode=update && bazel mod tidy"
         ],
         "fileFilters": [
           "bazel/include/go.MODULE.bazel",
-          "MODULE.bazel.lock"
+          "MODULE.bazel.lock",
+          "bazel/modules/*/MODULE.bazel",
+          "bazel/modules/*/MODULE.bazel.lock"
         ],
         "executionMode": "update"
       },

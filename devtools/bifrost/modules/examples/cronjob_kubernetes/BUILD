@@ -1,6 +1,6 @@
+load("@terraform.bzl//:gcp.bzl", "google_provider")
+load("@terraform.bzl", "tf_root")
 load("//devtools/bifrost/modules:kubernetes.bzl", "cronjob_kubernetes")
-load("//devtools/build/tools/tf:defs.bzl", "tf_root")
-load("//devtools/build/tools/tf/resources:gcp.bzl", "google_provider")
 
 # Smoke target — never planned, never applied, just analyzed.
 PROJECT = "senku-prod"
@@ -11,6 +11,7 @@ NAMESPACE = "default"
 
 tf_root(
     name = "terraform",
+    backend_bucket = "senku-prod-terraform-state",
     docs = [
         google_provider(
             project = PROJECT,

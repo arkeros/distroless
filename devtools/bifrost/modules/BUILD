@@ -5,8 +5,8 @@ bzl_library(
     srcs = ["cloudrun.bzl"],
     visibility = ["//visibility:public"],
     deps = [
-        "//devtools/build/tools/tf:defs",
-        "//devtools/build/tools/tf/resources:gcp",
+        "@terraform.bzl//:gcp",
+        "@terraform.bzl//:terraform",
     ],
 )
 
@@ -15,8 +15,8 @@ bzl_library(
     srcs = ["kubernetes.bzl"],
     visibility = ["//visibility:public"],
     deps = [
-        "//devtools/build/tools/tf:defs",
-        "//devtools/build/tools/tf/resources:gcp",
-        "//devtools/build/tools/tf/resources:k8s",
+        "@terraform.bzl//:gcp",
+        "@terraform.bzl//:k8s",
+        "@terraform.bzl//:terraform",
     ],
 )

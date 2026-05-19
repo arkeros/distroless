@@ -1,17 +1,17 @@
-load("//devtools/bifrost/modules:kubernetes.bzl", "service_kubernetes")
-load("//devtools/build/tools/tf:defs.bzl", "tf_root")
 load(
-    "//devtools/build/tools/tf/resources:gcp.bzl",
+    "@terraform.bzl//:gcp.bzl",
     "google_provider",
     "secret_manager_secret",
     "secret_manager_secret_iam_member",
     "sql_database_instance",
 )
 load(
-    "//devtools/build/tools/tf/resources:k8s.bzl",
+    "@terraform.bzl//:k8s.bzl",
     "kubernetes_job_v1",
     "kubernetes_provider",
 )
+load("@terraform.bzl", "tf_root")
+load("//devtools/bifrost/modules:kubernetes.bzl", "service_kubernetes")
 
 # Composition smoke target — never planned, never applied, just analyzed.
 # Demonstrates the three integration idioms that don't fit in a basic
@@ -125,6 +125,7 @@ api = service_kubernetes(
 
 tf_root(
     name = "terraform",
+    backend_bucket = "senku-prod-terraform-state",
     docs = [
         google_provider(
             project = PROJECT,

@@ -1,17 +1,26 @@
 """Build-time substitution of image-push digests into a tf_root's main.tf.json.
 
-The macro `render_main_with_image` extracts the `<registry>/<repo>@sha256:<digest>`
-URI from an `image_push` target's deploy manifest and substitutes it into a
-template (typically the `main.tf.json` template tf_root produces). Replaces
-the older flow of shipping a `var.image` Terraform variable with an
+`render_main_with_image` extracts the `<registry>/<repo>@sha256:<digest>` URI
+from an `image_push` target's deploy manifest and substitutes it into a
+template (the `main.tf.json` template tf_root produces). Replaces the older
+flow of shipping a `var.image` Terraform variable with an
 `image.auto.tfvars.json` — keeps the digest plumbing inside Bazel.
 
-Callers stick `IMAGE_URI` (the sentinel below) wherever they want the URI to
-land in the generated JSON.
+`tf_root_with_image` wraps the module's plain `tf_root` with two extras:
+
+  1. `main_postprocess` is bound to `render_main_with_image` so the IMAGE_URI
+     sentinel in `docs` becomes a digest-pinned reference by the time
+     `main.tf.json` lands in bazel-bin.
+  2. `image_push` is auto-prepended to `pre_apply` so `aspect apply` pushes
+     the image before `terraform apply` reads from the registry.
+
+The module's `tf_root` itself stays generic — only senku needs this glue
+because only senku consumes rules_img's `DeployInfo`.
 """
 
 load("@jq.bzl//jq:jq.bzl", "jq")
 load("@rules_img//img/private/providers:deploy_info.bzl", "DeployInfo")
+load("@terraform.bzl", _tf_root = "tf_root")
 
 # Sentinel inserted in the JSON wherever the digest URI should land. Distinct
 # enough to never collide with real content; not Terraform-interpretable, so a
@@ -73,4 +82,42 @@ sed "s|{placeholder}|$$URI|g" $(execpath {template}) > $@
             template = template,
             placeholder = IMAGE_URI,
         ),
+    )
+
+def tf_root_with_image(name, image_push, pre_apply = None, **kwargs):
+    """`tf_root` + IMAGE_URI substitution + auto-push pre_apply hook.
+
+    Wraps the module's plain `tf_root` for the (senku-specific) case
+    where `docs` contains `IMAGE_URI` sentinels that should resolve to
+    a digest-pinned `<registry>/<repo>@sha256:...` reference at Bazel
+    build time, and where the image must be pushed to the registry
+    before `terraform apply` reads it back.
+
+    Args:
+        name: Same as `tf_root`.
+        image_push: Label of an `image_push` target. Its `DeployInfo.deploy_manifest`
+            drives both the URI substitution and the pre-apply push.
+        pre_apply: Optional list of additional executables run before
+            `terraform apply`. `image_push` is auto-prepended so the
+            image lands in the registry before terraform reads it; if
+            you pass `image_push` here yourself, no double-push.
+        **kwargs: Forwarded to `tf_root` (docs, providers, backend_bucket, ...).
+    """
+    pre = list(pre_apply or [])
+    if image_push not in pre:
+        pre = [image_push] + pre
+
+    def _postprocess(name, template, out):
+        render_main_with_image(
+            name = name,
+            template = template,
+            image_push = image_push,
+            out = out,
+        )
+
+    _tf_root(
+        name = name,
+        pre_apply = pre,
+        main_postprocess = _postprocess,
+        **kwargs
     )

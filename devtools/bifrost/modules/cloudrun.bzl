@@ -13,9 +13,9 @@ references via `value_source.secret_key_ref`) the same way; that's the only
 shared helper.
 """
 
-load("//devtools/build/tools/tf:defs.bzl", "merge_tf")
+load("@terraform.bzl", "merge_tf")
 load(
-    "//devtools/build/tools/tf/resources:gcp.bzl",
+    "@terraform.bzl//:gcp.bzl",
     "google_cloud_run_v2_job",
     "google_cloud_run_v2_job_iam_member",
     "google_cloud_run_v2_service",

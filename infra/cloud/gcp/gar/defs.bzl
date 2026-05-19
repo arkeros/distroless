@@ -10,7 +10,7 @@ from here so they always agree with what this root deploys.
 """
 
 load(
-    "//devtools/build/tools/tf/resources:gcp.bzl",
+    "@terraform.bzl//:gcp.bzl",
     "artifact_registry_repository",
     "project_service",
 )

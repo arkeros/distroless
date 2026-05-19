@@ -3,16 +3,13 @@ load("@rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_img//img:image.bzl", "image_from_binary")
 load("@rules_img//img:load.bzl", "image_load")
 load("@rules_img//img:push.bzl", "image_push")
+load("@terraform.bzl//:gcp.bzl", "google_provider", "service_account")
+load("@terraform.bzl", "output")
 load(
     "//devtools/bifrost/modules:cloudrun.bzl",
     "service_cloudrun",
 )
-load("//devtools/build/tools/tf:defs.bzl", "IMAGE_URI", "output", "tf_root")
-load(
-    "//devtools/build/tools/tf/resources:gcp.bzl",
-    "google_provider",
-    "service_account",
-)
+load("//devtools/build/tools/tf:render.bzl", "IMAGE_URI", "tf_root_with_image")
 load(
     "//infra/cloud/gcp/gar:defs.bzl",
     "GAR_REGISTRY",
@@ -218,8 +215,9 @@ SERVICE_URIS = "${ {" + ", ".join([
     for region in REGIONS
 ]) + "} }"
 
-tf_root(
+tf_root_with_image(
     name = "terraform",
+    backend_bucket = "senku-prod-terraform-state",
     docs = [
         google_provider(project = PROJECT),
         sa,

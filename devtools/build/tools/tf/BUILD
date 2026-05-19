@@ -15,7 +15,7 @@ bzl_library(
     name = "render",
     srcs = ["render.bzl"],
     visibility = ["//visibility:public"],
-    deps = [],
+    deps = ["@terraform.bzl//:terraform"],
 )
 
 bzl_library(

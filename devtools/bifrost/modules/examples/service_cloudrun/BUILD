@@ -1,10 +1,6 @@
+load("@terraform.bzl//:gcp.bzl", "google_provider", "service_account")
+load("@terraform.bzl", "tf_root")
 load("//devtools/bifrost/modules:cloudrun.bzl", "service_cloudrun")
-load("//devtools/build/tools/tf:defs.bzl", "tf_root")
-load(
-    "//devtools/build/tools/tf/resources:gcp.bzl",
-    "google_provider",
-    "service_account",
-)
 
 # Smoke target — never planned, never applied, just analyzed. A regression
 # in `service_cloudrun` (or the constructors it composes) fails Bazel
@@ -23,6 +19,7 @@ sa = service_account(
 
 tf_root(
     name = "terraform",
+    backend_bucket = "senku-prod-terraform-state",
     docs = [
         google_provider(
             project = PROJECT,

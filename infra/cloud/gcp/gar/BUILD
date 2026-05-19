@@ -1,6 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//devtools/build/tools/tf:defs.bzl", "output", "tf_root")
-load("//devtools/build/tools/tf/resources:gcp.bzl", "google_provider")
+load("@terraform.bzl//:gcp.bzl", "google_provider")
+load("@terraform.bzl", "output", "tf_root")
 load(
     ":defs.bzl",
     "ARTIFACT_REGISTRY_API",
@@ -12,6 +12,7 @@ load(
 
 tf_root(
     name = "terraform",
+    backend_bucket = "senku-prod-terraform-state",
     docs = [
         google_provider(project = GAR_PROJECT),
         ARTIFACT_REGISTRY_API,
@@ -30,5 +31,5 @@ bzl_library(
     name = "defs",
     srcs = ["defs.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["//devtools/build/tools/tf/resources:gcp"],
+    deps = ["@terraform.bzl//:gcp"],
 )

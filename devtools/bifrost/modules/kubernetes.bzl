@@ -14,15 +14,15 @@ content-hashed `kubernetes_secret_v1` for ephemeral Secret Manager
 material, and a single set of hardened pod/container security contexts.
 """
 
-load("//devtools/build/tools/tf:defs.bzl", "merge_tf")
+load("@terraform.bzl", "merge_tf")
 load(
-    "//devtools/build/tools/tf/resources:gcp.bzl",
+    "@terraform.bzl//:gcp.bzl",
     "ephemeral_google_secret_manager_secret_version",
     "service_account",
     "service_account_iam_member",
 )
 load(
-    "//devtools/build/tools/tf/resources:k8s.bzl",
+    "@terraform.bzl//:k8s.bzl",
     "kubernetes_manifest",
     "kubernetes_secret_v1",
 )

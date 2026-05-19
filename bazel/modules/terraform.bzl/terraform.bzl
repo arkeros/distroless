@@ -1,4 +1,10 @@
-"""Re-export for `load("@terraform.bzl", ...)` syntax sugar."""
+"""Re-export shim for `load("@terraform.bzl", ...)` syntax sugar.
+
+Core Starlark surface: `tf_root` + the resource/output/var helpers it
+composes with, plus the toolchain and lint rules. Resource constructors
+for specific terraform providers live in sibling shims to keep imports
+namespaced — see `@terraform.bzl//:gcp.bzl` and `@terraform.bzl//:k8s.bzl`.
+"""
 
 load(
     "//terraform:defs.bzl",

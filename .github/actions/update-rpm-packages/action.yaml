@@ -45,9 +45,20 @@ runs:
           echo "::endgroup::"
         }
 
+        # Pin rewrites <repo>.lock.json, which is a recorded input of the
+        # rpm module extension. Under CI's `--lockfile_mode=error` (set by
+        # `common:ci` in bazel/defaults.bazelrc) the *next* `bazel run`
+        # then refuses to proceed: the extension's recorded-inputs hash
+        # for the lockfile no longer matches. `--lockfile_mode=update`
+        # is the right per-invocation override here — pin's whole job is
+        # to legitimately update that lockfile, so the surrounding strict
+        # lockfile check is contradictory for this specific command. Any
+        # `MODULE.bazel.lock` churn it produces is reverted alongside the
+        # `*.lock.json` diff in the metadata-only-skip gate below; real
+        # binary-change updates carry it into the PR.
         for repo in ${{ inputs.repos }}; do
           echo "::group::Re-pin @${repo}"
-          bazel run "@${repo}//:pin"
+          bazel run --lockfile_mode=update "@${repo}//:pin"
           echo "::endgroup::"
         done
 

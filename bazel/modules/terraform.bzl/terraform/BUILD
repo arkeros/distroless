@@ -55,6 +55,7 @@ bzl_library(
 exports_files([
     "defs.bzl",
     "lint_wrapper.sh.tpl",
+    "pin.sh.tpl",
     "run.sh",
     "runner.sh.tpl",
 ])

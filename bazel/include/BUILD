@@ -1,8 +1,4 @@
 exports_files(
-    [
-        ".terraform.lock.hcl",
-        "terraform.MODULE.bazel",
-        "versions.tf",
-    ],
+    ["terraform.MODULE.bazel"],
     visibility = ["//visibility:public"],
 )

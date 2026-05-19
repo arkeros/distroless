@@ -19,7 +19,7 @@ terraform = use_extension("@terraform.bzl//terraform:extensions.bzl", "terraform
 terraform.toolchain(version = "1.14.8")
 terraform.install(
     name = "terraform_providers",
-    lock_file = "//bazel/include:.terraform.lock.hcl",
+    lock_file = "//:.terraform.lock.hcl",
 )
 use_repo(terraform, "terraform_providers", "terraform_toolchains")
 

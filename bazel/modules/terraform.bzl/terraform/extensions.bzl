@@ -212,9 +212,22 @@ def _short_name(source):
 # ---------- hub repo (one per install) --------------------------------------
 
 _HUB_BUILD_TEMPLATE = """\
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@terraform.bzl//terraform:provider.bzl", "tf_provider_target")
 
 {targets}
+
+# `bazel run @<install>//:pin` shells the registered terraform toolchain
+# at `versions.tf` + `.terraform.lock.hcl` and refreshes the lockfile for
+# every supported platform. Same effect as `terraform providers lock
+# -platform=...` run by hand, but no local terraform required.
+sh_binary(
+    name = "pin",
+    srcs = ["pin.sh"],
+    data = ["@terraform_toolchains//:terraform_bin"],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+    visibility = ["//visibility:public"],
+)
 """
 
 def _hub_repo_impl(rctx):
@@ -240,6 +253,15 @@ tf_provider_target(
             archives = repr(spec["archives"]),
         ))
 
+    rctx.template(
+        "pin.sh",
+        rctx.attr._pin_template,
+        substitutions = {
+            "{LOCK_DIR_REL}": rctx.attr.lock_dir,
+        },
+        executable = True,
+    )
+
     rctx.file("BUILD.bazel", _HUB_BUILD_TEMPLATE.format(
         targets = "\n".join(targets),
     ))
@@ -251,6 +273,14 @@ _hub_repo = repository_rule(
         # hashes/archives. JSON is the wire format because rctx attrs
         # are flat — can't hold dict-of-dict.
         "specs": attr.string_list(mandatory = True),
+        "lock_dir": attr.string(
+            mandatory = True,
+            doc = "Workspace-relative directory containing the lockfile (e.g. `\"\"` for repo root, `bazel/include` for nested). Baked into `pin.sh` as the `-chdir=$BUILD_WORKSPACE_DIRECTORY/<lock_dir>` argument to terraform.",
+        ),
+        "_pin_template": attr.label(
+            default = "@terraform.bzl//terraform:pin.sh.tpl",
+            allow_single_file = True,
+        ),
     },
 )
 
@@ -284,22 +314,33 @@ def _terraform_extension_impl(mctx):
 
             hashes = block.get("hashes", [])
 
-            # `zh:<hex>` entries are the per-platform sha256s of the zip.
-            # Strip the prefix for the archive repo's verification check.
+            # `zh:<hex>` entries are sha256s of every artifact in the
+            # SHA256SUMS file: each platform zip, plus the manifest, sig,
+            # cross-platform zips, etc. Strip the prefix for the archive
+            # repo's verification check — our specific download must be
+            # in this set.
             zh_sha256s = [
                 h[len("zh:"):]
                 for h in hashes
                 if h.startswith("zh:")
             ]
-            if len(zh_sha256s) < len(_PROVIDER_PLATFORMS):
+
+            # `h1:<base64>` entries are per-platform dirhashes — one per
+            # platform `terraform providers lock -platform=…` was invoked
+            # for. This is the actual platform-coverage check: fewer h1
+            # entries than supported platforms means someone ran
+            # `providers lock` without all `-platform=` flags.
+            h1_hashes = [h for h in hashes if h.startswith("h1:")]
+            if len(h1_hashes) < len(_PROVIDER_PLATFORMS):
                 fail(("terraform.install({install}): provider {source} in " +
-                      "{lock} has {got} `zh:` hashes but {want} platforms are " +
-                      "supported. Re-run `terraform providers lock` with " +
-                      "all four `-platform=` flags.").format(
+                      "{lock} has {got} `h1:` hashes but {want} platforms " +
+                      "are supported. Re-run `bazel run @{install}//:pin` " +
+                      "(or `terraform providers lock` with all four " +
+                      "`-platform=` flags).").format(
                     install = install.name,
                     source = source,
                     lock = install.lock_file,
-                    got = len(zh_sha256s),
+                    got = len(h1_hashes),
                     want = len(_PROVIDER_PLATFORMS),
                 ))
 
@@ -324,9 +365,13 @@ def _terraform_extension_impl(mctx):
                 "archives": archives,
             }))
 
+        # `lock_dir` = workspace-relative dir of the lockfile. Empty when
+        # the lockfile lives at repo root; the senku side is the common
+        # case (`//:.terraform.lock.hcl` → package == "" → lock_dir == "").
         _hub_repo(
             name = install.name,
             specs = specs,
+            lock_dir = install.lock_file.package,
         )
 
 terraform = module_extension(

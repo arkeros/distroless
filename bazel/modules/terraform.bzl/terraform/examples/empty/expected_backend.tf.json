@@ -1,0 +1,11 @@
+{
+  "terraform": {
+    "backend": {
+      "gcs": {
+        "bucket": "example-bucket",
+        "prefix": "terraform/examples/empty"
+      }
+    },
+    "required_version": ">= 1.14.0"
+  }
+}

@@ -1,0 +1,6 @@
+bazel-*
+
+# Stray binary produced by `go build ./...` outside Bazel — the pin
+# tool dir is named the same as its binary, so an out-of-tree go build
+# drops the binary in-tree.
+/terraform/private/pin/pin

@@ -1,0 +1,38 @@
+"""Bazel rules for generating + executing Terraform roots from Starlark.
+
+Shape:
+
+  * `tf_root(name, docs, backend_bucket, ...)` emits `main.tf.json` +
+    `backend.tf.json` (+ optionally `providers.tf.json` /
+    `.terraform.lock.hcl` / `_providers/...` mirror) and per-verb
+    runnables (`<name>.plan`, `<name>.apply`, `<name>.destroy`).
+  * `terraform.toolchain(version=...)` pins the terraform CLI.
+  * `terraform.install(name, providers, lock_file)` declares a hub
+    repo holding per-provider `tf_provider_target`s plus a `:pin`
+    runnable that regenerates the JSON lockfile.
+
+Consumers `bazel_dep` this module, register the toolchain, declare
+providers via `terraform.install(...)`, and call `tf_root(...)` from
+their BUILD files.
+"""
+
+module(
+    name = "terraform.bzl",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "rules_shell", version = "0.8.0")
+bazel_dep(name = "rules_go", version = "0.60.0")
+bazel_dep(name = "gazelle", version = "0.51.0")
+
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
+go_sdk.from_file(go_mod = "//:go.mod")
+
+go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
+go_deps.from_file(go_mod = "//:go.mod")
+use_repo(
+    go_deps,
+    "org_golang_x_mod",
+)

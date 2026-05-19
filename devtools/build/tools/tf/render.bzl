@@ -107,6 +107,14 @@ def tf_root_with_image(name, image_push, pre_apply = None, **kwargs):
     if image_push not in pre:
         pre = [image_push] + pre
 
+    # Nested `def` so the closure captures `image_push` from the
+    # enclosing scope. `tf_root`'s `main_postprocess` contract is
+    # `(name, template, out) -> None` — three args — but
+    # `render_main_with_image` needs a fourth (`image_push`), so we
+    # have to pre-bind it. Starlark has no `functools.partial` and no
+    # lambdas, so a nested `def` is the only way to produce a callback
+    # with the right arity. Each `tf_root_with_image` call creates a
+    # fresh closure with its own `image_push`.
     def _postprocess(name, template, out):
         render_main_with_image(
             name = name,

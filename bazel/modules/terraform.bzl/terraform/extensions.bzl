@@ -35,6 +35,19 @@ load(
 )
 load(":versions.bzl", "DEFAULT_VERSION", "TERRAFORM_VERSIONS", "get_terraform_url")
 
+# Apparent name of the toolchain repo this extension produces. The hub
+# repo's `:pin` script resolves `<this>/terraform_bin` via rlocation,
+# which works because the hub repo and the toolchain repo are both
+# created by THIS extension and therefore share a repo_mapping that
+# resolves `terraform_toolchains` to its canonical name.
+#
+# Keep in mind if you ever add a per-install toolchain knob (e.g.
+# `terraform.install(name=, toolchain=)` to pick different terraform
+# versions per install): the script gets `{TOOLCHAIN_RLOC}` substituted
+# at hub-repo-rule time, so the change lives here — replace the
+# substitution value with whatever the install resolves to.
+_TERRAFORM_TOOLCHAIN_REPO = "terraform_toolchains"
+
 def _detect_platform(rctx):
     os = rctx.os.name.lower()
     arch = rctx.os.arch
@@ -266,6 +279,7 @@ tf_provider_target(
         rctx.attr._pin_template,
         substitutions = {
             "{LOCK_DIR_REL}": rctx.attr.lock_dir,
+            "{TOOLCHAIN_RLOC}": rctx.attr.toolchain_rloc,
         },
         executable = True,
     )
@@ -284,6 +298,10 @@ _hub_repo = repository_rule(
         "lock_dir": attr.string(
             mandatory = True,
             doc = "Workspace-relative directory containing the lockfile (e.g. `\"\"` for repo root, `bazel/include` for nested). Baked into `pin.sh` as the `-chdir=$BUILD_WORKSPACE_DIRECTORY/<lock_dir>` argument to terraform.",
+        ),
+        "toolchain_rloc": attr.string(
+            mandatory = True,
+            doc = "rlocation key for the terraform binary, e.g. `terraform_toolchains/terraform_bin`. Baked into `pin.sh`. Decouples the script from any single toolchain repo — a future per-install toolchain knob just changes this value.",
         ),
         "_pin_template": attr.label(
             default = "@terraform.bzl//terraform:pin.sh.tpl",
@@ -304,7 +322,7 @@ def _terraform_extension_impl(mctx):
         for install in mod.tags.install:
             install_tags.append(install)
 
-    _terraform_repo(name = "terraform_toolchains", version = version)
+    _terraform_repo(name = _TERRAFORM_TOOLCHAIN_REPO, version = version)
 
     for install in install_tags:
         content = mctx.read(install.lock_file)
@@ -383,6 +401,7 @@ def _terraform_extension_impl(mctx):
             name = install.name,
             specs = specs,
             lock_dir = install.lock_file.package,
+            toolchain_rloc = _TERRAFORM_TOOLCHAIN_REPO + "/terraform_bin",
         )
 
 terraform = module_extension(

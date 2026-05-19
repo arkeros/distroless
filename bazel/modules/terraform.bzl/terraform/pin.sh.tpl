@@ -4,8 +4,12 @@
 # toolchain so consumers don't need terraform installed locally.
 #
 # Substitutions filled in by `_hub_repo_impl` (see `extensions.bzl`):
-#   {LOCK_DIR_REL}  — workspace-relative path of the dir holding
-#                     `versions.tf` + `.terraform.lock.hcl`.
+#   {LOCK_DIR_REL}   — workspace-relative path of the dir holding
+#                      `versions.tf` + `.terraform.lock.hcl`.
+#   {TOOLCHAIN_RLOC} — rlocation key for the terraform binary
+#                      (e.g. `terraform_toolchains/terraform_bin`). Threaded
+#                      from the extension so this script doesn't need to know
+#                      the toolchain repo's apparent name.
 set -euo pipefail
 
 # --- begin runfiles.bash initialization v3 ---
@@ -23,12 +27,15 @@ if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
   exit 1
 fi
 
-# rlocation resolves the apparent name `terraform_toolchains` via the hub
-# repo's repo_mapping (both hub and toolchains repos come from the same
-# module extension, so the mapping is in scope).
-TERRAFORM_BIN="$(rlocation 'terraform_toolchains/terraform_bin')"
+# rlocation resolves `{TOOLCHAIN_RLOC}` via the hub repo's repo_mapping.
+# This works as long as the toolchain repo is visible to the hub at
+# repo-creation time. Today that's automatic because both repos are
+# created by the same module extension; if you ever add a per-install
+# toolchain knob, the substitution value here changes but the script
+# does not.
+TERRAFORM_BIN="$(rlocation '{TOOLCHAIN_RLOC}')"
 if [[ -z "$TERRAFORM_BIN" || ! -x "$TERRAFORM_BIN" ]]; then
-  echo "pin: cannot resolve terraform_toolchains/terraform_bin via rlocation" >&2
+  echo "pin: cannot resolve {TOOLCHAIN_RLOC} via rlocation" >&2
   exit 1
 fi
 

@@ -12,6 +12,7 @@ go_library(
     importpath = "github.com/arkeros/senku/bazel/modules/terraform.bzl/terraform/private/pin",
     visibility = ["//visibility:public"],
     deps = [
+        "@com_github_hashicorp_go_version//:go-version",
         "@org_golang_x_mod//sumdb/dirhash",
     ],
 )
@@ -20,4 +21,5 @@ go_test(
     name = "pin_test",
     srcs = ["main_test.go"],
     embed = [":pin_lib"],
+    deps = ["@com_github_hashicorp_go_version//:go-version"],
 )

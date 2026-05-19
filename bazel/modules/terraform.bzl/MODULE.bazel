@@ -34,5 +34,6 @@ go_deps = use_extension("@gazelle//:extensions.bzl", "go_deps")
 go_deps.from_file(go_mod = "//:go.mod")
 use_repo(
     go_deps,
+    "com_github_hashicorp_go_version",
     "org_golang_x_mod",
 )

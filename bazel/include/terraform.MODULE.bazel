@@ -20,8 +20,8 @@ terraform.install(
     name = "terraform_providers",
     lock_file = "//bazel/include:terraform.providers.lock.json",
     providers = {
-        "hashicorp/google": "7.29.0",
-        "hashicorp/kubernetes": "2.38.0",
+        "hashicorp/google": "~> 7.0",
+        "hashicorp/kubernetes": "~> 2.38",
     },
 )
 use_repo(terraform, "terraform_providers", "terraform_toolchains")

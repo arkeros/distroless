@@ -37,10 +37,10 @@ importers:
         version: 1.7.23
       postcss:
         specifier: ^8.5.10
-        version: 8.5.14
+        version: 8.5.15
       postcss-jit-props:
         specifier: ^1.0.16
-        version: 1.0.16(postcss@8.5.14)
+        version: 1.0.16(postcss@8.5.15)
       react:
         specifier: ^19.2.5
         version: 19.2.6
@@ -777,8 +777,8 @@ packages:
   postcss-value-parser@4.2.0:
     resolution: {integrity: sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==}
 
-  postcss@8.5.14:
-    resolution: {integrity: sha512-SoSL4+OSEtR99LHFZQiJLkT59C5B1amGO1NzTwj7TT1qCUgUO6hxOvzkOYxD+vMrXBM3XJIKzokoERdqQq/Zmg==}
+  postcss@8.5.15:
+    resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
     engines: {node: ^10 || ^12 || >=14}
 
   promise@7.3.1:
@@ -1565,14 +1565,14 @@ snapshots:
 
   pify@4.0.1: {}
 
-  postcss-jit-props@1.0.16(postcss@8.5.14):
+  postcss-jit-props@1.0.16(postcss@8.5.15):
     dependencies:
-      postcss: 8.5.14
+      postcss: 8.5.15
       tiny-glob: 0.2.9
 
   postcss-value-parser@4.2.0: {}
 
-  postcss@8.5.14:
+  postcss@8.5.15:
     dependencies:
       nanoid: 3.3.12
       picocolors: 1.1.1

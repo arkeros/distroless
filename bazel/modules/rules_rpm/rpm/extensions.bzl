@@ -43,6 +43,11 @@ _install = tag_class(
         "distro": attr.string(
             doc = "Consumer-side distro routing key emitted as `?distro=<value>` on every package's purl. Drives grype's per-package secdb routing — `hummingbird-1` to route to the hummingbird secdb provider, `rhel-10` for nginx.org-built RHEL10 rpms, etc. Optional; omitted from the purl when unset (which forces grype back to NVD-CPE / no-secdb matching).",
         ),
+        "repomd_signature": attr.string(
+            default = "required",
+            values = ["required", "optional"],
+            doc = "Lock-time policy for `repomd.xml.asc`. `required` (default) fails `bazel run @<name>//:pin` if the upstream returns HTTP 404 on the detached signature — the right posture for any repo that actually publishes signatures (e.g. nginx.org). `optional` warns and writes the lockfile anyway with TLS-only trust at lock time — opt-in for upstreams that don't publish a detached repomd signature (e.g. Hummingbird's RHPG, which signs each RPM individually but ships no `.asc` over repomd). A *tampered or wrong-key* signature still fails under either policy; the opt-out permits absence, not forgery.",
+        ),
     },
 )
 
@@ -83,6 +88,7 @@ def _rpm_extension_impl(mctx):
                 gpg_key = install.gpg_key,
                 lock_file = install.lock_file,
                 package_list = install.packages,  # roots passed through to :pin for re-resolution
+                repomd_signature = install.repomd_signature,
             )
 
 rpm = module_extension(

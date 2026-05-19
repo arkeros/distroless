@@ -209,6 +209,7 @@ rpm_pin(
     packages = {packages},
     architectures = {architectures},
     lock_file = {lock_file},
+    repomd_signature = {repomd_signature},
 )
 """.format(
         repo_url = repr(rctx.attr.repo_url),
@@ -216,6 +217,7 @@ rpm_pin(
         packages = repr(rctx.attr.package_list),
         architectures = repr(rctx.attr.architectures),
         lock_file = repr(str(rctx.attr.lock_file)),
+        repomd_signature = repr(rctx.attr.repomd_signature),
     ))
 
 rpm_install_repo = repository_rule(
@@ -227,5 +229,9 @@ rpm_install_repo = repository_rule(
         "repo_url": attr.string(mandatory = True),
         "gpg_key": attr.label(mandatory = True, allow_single_file = True),
         "lock_file": attr.label(mandatory = True, allow_single_file = True),
+        "repomd_signature": attr.string(
+            default = "required",
+            values = ["required", "optional"],
+        ),
     },
 )

@@ -19,4 +19,5 @@ exec "$TOOL_ABS" \
     --packages "{PACKAGES}" \
     --architectures "{ARCHITECTURES}" \
     --lock-out "{LOCK_FILE}" \
+    --repomd-signature "{REPOMD_SIGNATURE}" \
     "$@"

@@ -22,6 +22,21 @@
 // per-rpm signature inside the .rpm header is verified independently by
 // rpm-extract against the same keyring.
 //
+// Some upstreams (notably Hummingbird's RHPG snapshot) publish repomd.xml
+// without a detached .asc sibling — only per-RPM signatures and per-package
+// sigstore attestations under `metadata/attestations/`. Operators opt those
+// upstreams in via `--repomd-signature=optional` (set per-repo through the
+// `repomd_signature` attribute on `rpm.install(...)`): a missing .asc is
+// treated as TLS-only trust at lock time with a loud stderr warning, and
+// the lockfile is still produced. The remaining defenses for that repo
+// are HTTPS pinning, per-RPM GPG verification in rpm-extract at build
+// time, and the committed lockfile's sha256 chain — which a regressive
+// future MITM would have to subvert via a PR. A *bad* signature (tampered
+// or signed by a key outside the trust root) still hard-fails under
+// `optional`: an actual signature failure is an attack signal, not a
+// publisher gap. The default is `required` so repos that do publish .asc
+// (e.g. nginx.org) keep the full chain.
+//
 // For each declared arch we fetch repomd, verify .asc, then primary.xml.gz,
 // then walk every <package>. Within (name, arch) the highest version
 // (rpmvercmp) wins. Noarch packages are committed on the first declared-arch
@@ -37,6 +52,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -131,16 +147,22 @@ type lockfile struct {
 
 func main() {
 	var (
-		repoURL = flag.String("repo-url", "", "base URL of the rpm repo (containing per-arch subdirs)")
-		gpgKey  = flag.String("gpg-key", "", "ascii-armored public key for repomd.xml.asc verification")
-		pkgs    = flag.String("packages", "", "comma-separated closed package manifest")
-		arches  = flag.String("architectures", "", "comma-separated declared arches (e.g. x86_64,aarch64)")
-		lockOut = flag.String("lock-out", "", "workspace-relative path to lockfile output (e.g. //:hummingbird_install.json)")
+		repoURL    = flag.String("repo-url", "", "base URL of the rpm repo (containing per-arch subdirs)")
+		gpgKey     = flag.String("gpg-key", "", "ascii-armored public key for repomd.xml.asc verification")
+		pkgs       = flag.String("packages", "", "comma-separated closed package manifest")
+		arches     = flag.String("architectures", "", "comma-separated declared arches (e.g. x86_64,aarch64)")
+		lockOut    = flag.String("lock-out", "", "workspace-relative path to lockfile output (e.g. //:hummingbird_install.json)")
+		sigPolicy  = flag.String("repomd-signature", string(repomdSigRequired), "policy when fetching repomd.xml.asc: 'required' (default — 404 or bad sig aborts) or 'optional' (404 degrades to TLS-only at lock time with a loud warning; bad sig still aborts)")
 	)
 	flag.Parse()
 
 	if *repoURL == "" || *pkgs == "" || *arches == "" || *lockOut == "" {
 		fmt.Fprintln(os.Stderr, "pin: --repo-url, --packages, --architectures, --lock-out are required")
+		os.Exit(2)
+	}
+	policy, err := parseRepomdSigPolicy(*sigPolicy)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "pin:", err)
 		os.Exit(2)
 	}
 
@@ -169,7 +191,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "pin: warning: --gpg-key is empty; repomd.xml.asc verification skipped (lock-time trust root degrades to TLS only)")
 	}
 
-	lock, err := resolve(*repoURL, declaredArches, declaredPkgs, trustRoot)
+	lock, err := resolve(*repoURL, declaredArches, declaredPkgs, trustRoot, policy)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "pin:", err)
 		os.Exit(1)
@@ -177,6 +199,31 @@ func main() {
 	if err := writeLockfile(stripLabelPrefix(*lockOut), lock); err != nil {
 		fmt.Fprintln(os.Stderr, "pin: write lockfile:", err)
 		os.Exit(1)
+	}
+}
+
+// repomdSigPolicy controls how resolve() reacts to a missing repomd.xml.asc.
+// `required` is the default and the right choice for any repo that
+// actually publishes detached signatures (e.g. nginx.org). `optional`
+// is the explicit opt-out for upstreams that don't (e.g. Hummingbird's
+// RHPG snapshot): a 404 on .asc degrades to TLS-only trust at lock time
+// with a loud stderr warning, and the lockfile is still written. A
+// signature that's *present but invalid* (tampered payload or wrong
+// signer) still aborts under `optional` — that's an attack signal, not
+// a publisher gap.
+type repomdSigPolicy string
+
+const (
+	repomdSigRequired repomdSigPolicy = "required"
+	repomdSigOptional repomdSigPolicy = "optional"
+)
+
+func parseRepomdSigPolicy(s string) (repomdSigPolicy, error) {
+	switch repomdSigPolicy(s) {
+	case repomdSigRequired, repomdSigOptional:
+		return repomdSigPolicy(s), nil
+	default:
+		return "", fmt.Errorf("--repomd-signature: unknown value %q (want 'required' or 'optional')", s)
 	}
 }
 
@@ -211,7 +258,7 @@ type candidate struct {
 // resolve) are warned to stderr and skipped — runtime failure is the
 // backstop, but most cc-grade packages declare soname requires that
 // primary.xml fully covers.
-func resolve(repoURL string, declaredArches, declaredPkgs []string, trustRoot openpgp.EntityList) (*lockfile, error) {
+func resolve(repoURL string, declaredArches, declaredPkgs []string, trustRoot openpgp.EntityList, policy repomdSigPolicy) (*lockfile, error) {
 	repoURL = strings.TrimRight(repoURL, "/")
 
 	candidates := map[pkgKey]candidate{}
@@ -232,9 +279,22 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string, trustRoot op
 			sigURL := repomdURL + ".asc"
 			sigBytes, err := httpGet(sigURL)
 			if err != nil {
-				return nil, fmt.Errorf("fetch repomd.xml.asc %s: %w", arch, err)
-			}
-			if err := verifyDetachedSignature(repomdBytes, sigBytes, trustRoot); err != nil {
+				var statusErr *httpStatusError
+				if policy == repomdSigOptional && errors.As(err, &statusErr) && statusErr.status == http.StatusNotFound {
+					// `optional` opt-in: upstream doesn't publish a detached
+					// signature for this arch. Operator-chosen state — log a
+					// one-line note (so the policy choice is visible in run
+					// logs) and proceed. Per-RPM signatures still verify at
+					// build time via rpm-extract.
+					fmt.Fprintf(os.Stderr, "pin: %s: repomd.xml.asc not published (repomd_signature=optional)\n", arch)
+				} else {
+					return nil, fmt.Errorf("fetch repomd.xml.asc %s: %w", arch, err)
+				}
+			} else if err := verifyDetachedSignature(repomdBytes, sigBytes, trustRoot); err != nil {
+				// A *present* signature that fails to verify is a hard
+				// error under either policy. `optional` permits absence,
+				// not a forged or tampered signature — that's an attack
+				// signal we never want to silently accept.
 				return nil, fmt.Errorf("verify repomd.xml.asc %s: %w", arch, err)
 			}
 		}
@@ -594,6 +654,14 @@ func httpGet(url string) ([]byte, error) {
 	return nil, fmt.Errorf("%s: %w", url, lastErr)
 }
 
+// httpStatusError carries the HTTP status code through the error chain so
+// callers can branch on a specific 4xx with errors.As — used by resolve()
+// to distinguish "upstream genuinely doesn't publish this file" (HTTP 404
+// on every arch's .asc) from "transport flake" or other 4xx classes.
+type httpStatusError struct{ status int }
+
+func (e *httpStatusError) Error() string { return fmt.Sprintf("HTTP %d", e.status) }
+
 // httpGetOnce is a single attempt. retryable distinguishes transient
 // failures (caller should back off and try again) from terminal ones
 // (caller should stop). Hummingbird's CDN 403s HEAD and 302s GETs to
@@ -609,10 +677,10 @@ func httpGetOnce(url string) (body []byte, err error, retryable bool) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 500 && resp.StatusCode < 600 {
-		return nil, fmt.Errorf("HTTP %d", resp.StatusCode), true
+		return nil, &httpStatusError{status: resp.StatusCode}, true
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d", resp.StatusCode), false
+		return nil, &httpStatusError{status: resp.StatusCode}, false
 	}
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {

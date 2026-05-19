@@ -363,12 +363,112 @@ func TestResolve_VerifiesRepomdAgainstTrustRoot(t *testing.T) {
 
 	// Vendor is in the trust root; the metadata is signed by attacker.
 	// resolve() must refuse to proceed.
-	_, err = resolve(srv.URL, []string{"x86_64"}, []string{"tzdata"}, openpgp.EntityList{vendor})
+	_, err = resolve(srv.URL, []string{"x86_64"}, []string{"tzdata"}, openpgp.EntityList{vendor}, repomdSigRequired)
 	if err == nil {
 		t.Fatal("resolve accepted attacker-signed repomd against vendor trust root; expected failure")
 	}
 	if !strings.Contains(err.Error(), "verify repomd.xml.asc") {
 		t.Errorf("error did not mention signature verification: %v", err)
+	}
+}
+
+// TestResolve_OptionalPolicyToleratesMissingAsc covers the empirical
+// Hummingbird shape: the upstream publishes repomd.xml but no .asc
+// sibling. Under `optional` the lockfile is still produced — lock-time
+// trust degrades to TLS, build-time per-RPM GPG verification remains
+// the binary-integrity anchor.
+func TestResolve_OptionalPolicyToleratesMissingAsc(t *testing.T) {
+	vendor, err := openpgp.NewEntity("Vendor", "", "vendor@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	arches := []string{"x86_64", "aarch64"}
+	srv := newFakeRpmRepoMissingAsc(t, arches, []fakePackage{
+		{name: "tzdata", arch: "noarch", ver: "2026a", rel: "1.hum1"},
+	}, vendor, arches)
+	defer srv.Close()
+
+	lock, err := resolve(srv.URL, arches, []string{"tzdata"}, openpgp.EntityList{vendor}, repomdSigOptional)
+	if err != nil {
+		t.Fatalf("resolve under optional policy with missing .asc: %v", err)
+	}
+	if _, ok := lock.Packages["tzdata"]; !ok {
+		t.Fatalf("lockfile missing tzdata: %+v", lock.Packages)
+	}
+}
+
+// TestResolve_RequiredPolicyRejectsMissingAsc is the dual: under the
+// default `required` policy a 404 .asc is a hard error — the operator
+// hasn't opted into TLS-only trust for this repo, so a missing signature
+// can't silently degrade.
+func TestResolve_RequiredPolicyRejectsMissingAsc(t *testing.T) {
+	vendor, err := openpgp.NewEntity("Vendor", "", "vendor@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	arches := []string{"x86_64"}
+	srv := newFakeRpmRepoMissingAsc(t, arches, []fakePackage{
+		{name: "tzdata", arch: "noarch", ver: "2026a", rel: "1.hum1"},
+	}, vendor, arches)
+	defer srv.Close()
+
+	_, err = resolve(srv.URL, arches, []string{"tzdata"}, openpgp.EntityList{vendor}, repomdSigRequired)
+	if err == nil {
+		t.Fatal("resolve under required policy accepted missing .asc; expected hard error")
+	}
+	if !strings.Contains(err.Error(), "fetch repomd.xml.asc") {
+		t.Errorf("error did not mention .asc fetch: %v", err)
+	}
+}
+
+// TestResolve_OptionalPolicyStillRejectsTamperedSignature is the
+// security floor under `optional`: the policy permits a *missing*
+// signature, not a tampered one. A signature that's present but
+// signed by a key outside the trust root is an attack signal and must
+// hard-fail even in opt-in TLS-only mode.
+func TestResolve_OptionalPolicyStillRejectsTamperedSignature(t *testing.T) {
+	vendor, err := openpgp.NewEntity("Vendor", "", "vendor@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attacker, err := openpgp.NewEntity("Attacker", "", "attacker@example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srv := newFakeRpmRepo(t, []string{"x86_64"}, []fakePackage{
+		{name: "tzdata", arch: "noarch", ver: "2026a", rel: "1.hum1"},
+	}, attacker)
+	defer srv.Close()
+
+	_, err = resolve(srv.URL, []string{"x86_64"}, []string{"tzdata"}, openpgp.EntityList{vendor}, repomdSigOptional)
+	if err == nil {
+		t.Fatal("resolve accepted attacker-signed repomd under optional policy; expected hard error")
+	}
+	if !strings.Contains(err.Error(), "verify repomd.xml.asc") {
+		t.Errorf("error did not mention signature verification: %v", err)
+	}
+}
+
+// TestParseRepomdSigPolicy guards the CLI parse: an unknown value is a
+// hard exit at flag-parse time, not silently coerced to the default
+// (which would let a typo in the bazel template ride through as
+// "required" instead of catching the operator's intent).
+func TestParseRepomdSigPolicy(t *testing.T) {
+	cases := map[string]bool{
+		"required": false,
+		"optional": false,
+		"":         true,
+		"REQUIRED": true,
+		"strict":   true,
+	}
+	for in, wantErr := range cases {
+		_, err := parseRepomdSigPolicy(in)
+		if (err != nil) != wantErr {
+			t.Errorf("parseRepomdSigPolicy(%q): err=%v, wantErr=%v", in, err, wantErr)
+		}
 	}
 }
 
@@ -388,7 +488,7 @@ func TestResolve_AcceptsValidSignature(t *testing.T) {
 	}, vendor)
 	defer srv.Close()
 
-	lock, err := resolve(srv.URL, []string{"x86_64"}, []string{"tzdata"}, openpgp.EntityList{vendor})
+	lock, err := resolve(srv.URL, []string{"x86_64"}, []string{"tzdata"}, openpgp.EntityList{vendor}, repomdSigRequired)
 	if err != nil {
 		t.Fatalf("resolve with valid signature: %v", err)
 	}
@@ -407,6 +507,20 @@ type fakePackage struct {
 
 func newFakeRpmRepo(t *testing.T, arches []string, pkgs []fakePackage, signer *openpgp.Entity) *httptest.Server {
 	t.Helper()
+	return newFakeRpmRepoMissingAsc(t, arches, pkgs, signer, nil)
+}
+
+// newFakeRpmRepoMissingAsc is the same as newFakeRpmRepo but lets the test
+// list arches whose `repomd.xml.asc` should 404 — the empirical shape of
+// Hummingbird's RHPG snapshot, which publishes per-RPM signatures but no
+// detached signature over repomd.
+func newFakeRpmRepoMissingAsc(t *testing.T, arches []string, pkgs []fakePackage, signer *openpgp.Entity, ascMissingArches []string) *httptest.Server {
+	t.Helper()
+
+	missing := map[string]bool{}
+	for _, a := range ascMissingArches {
+		missing[a] = true
+	}
 
 	mux := http.NewServeMux()
 	for _, arch := range arches {
@@ -422,7 +536,12 @@ func newFakeRpmRepo(t *testing.T, arches []string, pkgs []fakePackage, signer *o
 		mux.HandleFunc(fmt.Sprintf("/%s/repodata/repomd.xml", arch), func(w http.ResponseWriter, r *http.Request) {
 			w.Write(repomd)
 		})
+		ascArch := arch
 		mux.HandleFunc(fmt.Sprintf("/%s/repodata/repomd.xml.asc", arch), func(w http.ResponseWriter, r *http.Request) {
+			if missing[ascArch] {
+				http.NotFound(w, r)
+				return
+			}
 			w.Write(sigBuf.Bytes())
 		})
 		mux.HandleFunc(fmt.Sprintf("/%s/repodata/primary.xml.gz", arch), func(w http.ResponseWriter, r *http.Request) {

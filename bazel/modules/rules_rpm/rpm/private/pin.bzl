@@ -22,6 +22,7 @@ def _rpm_pin_impl(ctx):
             "{LOCK_FILE}": ctx.attr.lock_file,
             "{PACKAGES}": ",".join(ctx.attr.packages),
             "{ARCHITECTURES}": ",".join(ctx.attr.architectures),
+            "{REPOMD_SIGNATURE}": ctx.attr.repomd_signature,
         },
     )
     return [DefaultInfo(
@@ -38,6 +39,11 @@ rpm_pin = rule(
         "packages": attr.string_list(mandatory = True),
         "architectures": attr.string_list(mandatory = True),
         "lock_file": attr.string(mandatory = True),
+        "repomd_signature": attr.string(
+            default = "required",
+            values = ["required", "optional"],
+            doc = "Lock-time policy for repomd.xml.asc. `required` (default) fails the pin run when the upstream returns HTTP 404 on the detached signature. `optional` warns and continues with TLS-only trust at lock time for that arch — opt-in for upstreams that don't publish a detached repomd signature (e.g. Hummingbird's RHPG snapshot). A *tampered* signature still fails under either policy.",
+        ),
         "_tool": attr.label(
             default = "@rules_rpm//rpm/tools/pin",
             executable = True,

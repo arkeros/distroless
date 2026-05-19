@@ -1132,8 +1132,8 @@
     },
     "@@rules_rpm+//rpm:extensions.bzl%rpm": {
       "general": {
-        "bzlTransitiveDigest": "00uRGQymcbqTmrI/N3QHRQHdA0CjzJ2v7r53rzgykzQ=",
-        "usagesDigest": "AZXrQQ8YlbbTXfBWo5HeGIIeUeLasm0qdu/qXwyoAuM=",
+        "bzlTransitiveDigest": "mlfnpI6GvLQ3uMmZfG7MWce/glf6Qm6p814SsHdPAeI=",
+        "usagesDigest": "Z8jkWld2AZyR7w4MQe3uygL0hDUN4DjAyFwHUwjDs08=",
         "recordedInputs": [
           "FILE:@@//hummingbird.lock.json 16044143650809035357dc479871b872a19f0d724ef1b46a88009a7619384f78",
           "FILE:@@//oci/distroless/nginx/nginx-stable.hummingbird.lock.json a0fd217e52e370bbc92301f5ae0ededb9cc98f010c1c0cc682cf1a921637998b",
@@ -2299,7 +2299,8 @@
                 "pcre2",
                 "sed",
                 "tzdata"
-              ]
+              ],
+              "repomd_signature": "optional"
             }
           },
           "nginx_stable_rpm__nginx__aarch64": {
@@ -2345,7 +2346,8 @@
               "lock_file": "@@//oci/distroless/nginx:nginx-stable.hummingbird.lock.json",
               "package_list": [
                 "nginx"
-              ]
+              ],
+              "repomd_signature": "required"
             }
           },
           "nginx_mainline_rpm__nginx__aarch64": {
@@ -2391,7 +2393,8 @@
               "lock_file": "@@//oci/distroless/nginx:nginx-mainline.hummingbird.lock.json",
               "package_list": [
                 "nginx"
-              ]
+              ],
+              "repomd_signature": "required"
             }
           }
         }

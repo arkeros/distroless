@@ -134,6 +134,14 @@ rpm.install(
     # lockfile entry's `path` prefixes the right subtree (noarch entries
     # use either subtree — same bytes).
     repo_url = "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
+    # Hummingbird's RHPG snapshot publishes per-RPM GPG signatures and
+    # sigstore attestations under `metadata/attestations/`, but no
+    # detached signature over `repomd.xml` (verified empirically —
+    # repodata listing contains only `repomd.xml`, `*-primary.xml.gz`,
+    # `*-filelists.xml.gz`, `*-other.xml.gz`). Lock-time trust degrades
+    # to TLS; build-time per-RPM verification in rpm-extract remains the
+    # binary-integrity anchor. See ADR 0007's 2026-05-19 amendment.
+    repomd_signature = "optional",
 )
 
 # nginx.org's own RPM repositories, mirroring how we already use their apt

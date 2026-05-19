@@ -33,6 +33,11 @@ bazel_dep(name = "gazelle", version = "0.51.0")
 # //oci/distroless/common:package.BUILD.tmpl).
 bazel_dep(name = "package_metadata", version = "0.0.10")
 
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)
+go_sdk.from_file(
+    go_mod = "//:go.mod",
+)
+
 # Vendored Go deps for the internal tools. Only rpm-extract is implemented
 # today; the use_repo list grows as rpmdb-merge (sqlite) and pin wire in
 # their dependencies.

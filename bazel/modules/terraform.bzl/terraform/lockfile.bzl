@@ -5,14 +5,15 @@
 the calling package:
 
 - `.terraform.lock.hcl` — multi-platform lockfile that pins every
-  declared provider with its `h1:` hashes.
+  declared provider with its `h1:` + `zh:` hashes (full set, sorted,
+  copied verbatim from the master lockfile).
 - `providers.tf.json`   — `terraform { required_providers { … } }`
   block, kept in its own file so `tf_root`'s `main.tf.json` writer
   doesn't need to know about provider deps.
-- `_providers/registry.terraform.io/<src>/<ver>/{index.json,
-  <ver>.json, terraform-provider-…zip}` for every declared
-  provider — symlinks + index JSONs in the layout `terraform
-  providers mirror` produces.
+- `_providers/registry.terraform.io/<src>/{index.json,
+  <ver>.json, terraform-provider-…zip}` for every declared provider —
+  symlinks + index JSONs in the layout `terraform providers mirror`
+  produces.
 
 `.terraformrc` is **NOT** emitted here. `filesystem_mirror.path`
 requires an absolute path that's only knowable at run time (the
@@ -26,8 +27,7 @@ absolute-path-baked-in `.terraformrc` would require.
 load(":provider.bzl", "PLATFORMS", "TerraformProviderInfo")
 
 def _short_name(source):
-    """`hashicorp/google` → `google`. Used as both the
-    `required_providers` key and the lockfile-section identifier."""
+    """`hashicorp/google` → `google`."""
     return source.split("/")[-1]
 
 _LOCKFILE_HEADER = """# This file is maintained automatically by "terraform init".
@@ -37,27 +37,32 @@ _LOCKFILE_HEADER = """# This file is maintained automatically by "terraform init
 
 def _render_lockfile(infos):
     """Render the document terraform itself would write after a fresh
-    init against our filesystem mirror. Matching its output byte-for-byte
-    keeps `terraform init` from rewriting the bazel output, which would
-    cause cache churn on every plan."""
+    init against our filesystem mirror.
+
+    The `hashes = [...]` list is the full set from the master lockfile,
+    sorted alphabetically (terraform's own canonical ordering). We don't
+    split `h1:` vs `zh:` here — terraform's verifier accepts any matching
+    entry, and matching its own sort order keeps `terraform init` from
+    rewriting the file (which would cause bazel cache churn).
+    """
     blocks = []
     for info in infos:
-        for platform in PLATFORMS:
-            if platform not in info.hashes:
-                fail("provider {} missing hash for {}".format(info.source, platform))
-        # Terraform sorts the hashes alphabetically (by full `h1:…`
-        # string) on write; mimic that.
-        sorted_hashes = sorted([info.hashes[p] for p in PLATFORMS])
+        sorted_hashes = sorted(info.hashes)
         hash_lines = "\n".join(['    "%s",' % h for h in sorted_hashes])
-        blocks.append(
-            'provider "registry.terraform.io/{source}" {{\n'.format(source = info.source) +
-            '  version     = "{version}"\n'.format(version = info.version) +
-            '  constraints = "{version}"\n'.format(version = info.version) +
-            "  hashes = [\n" +
-            hash_lines + "\n" +
-            "  ]\n" +
-            "}\n",
-        )
+        block_lines = [
+            'provider "registry.terraform.io/{source}" {{'.format(source = info.source),
+            '  version     = "{version}"'.format(version = info.version),
+        ]
+        if info.constraints:
+            block_lines.append('  constraints = "{constraints}"'.format(constraints = info.constraints))
+        block_lines += [
+            "  hashes = [",
+            hash_lines,
+            "  ]",
+            "}",
+            "",
+        ]
+        blocks.append("\n".join(block_lines))
     return _LOCKFILE_HEADER + "\n".join(blocks)
 
 def _render_required_providers(infos):
@@ -96,11 +101,15 @@ def _tf_root_provider_artifacts_impl(ctx):
 
     # 3. Mirror tree (packed). Same layout `terraform providers mirror`
     # produces — every file (zips + index JSONs) sits flat under
-    # `<host>/<ns>/<type>/`, no per-version subdirectory:
+    # `<host>/<ns>/<type>/`, no per-version subdirectory.
     #
-    #   <host>/<ns>/<type>/index.json        — known versions
-    #   <host>/<ns>/<type>/<version>.json    — archive map per platform
-    #   <host>/<ns>/<type>/terraform-provider-<type>_<version>_<os>_<arch>.zip
+    # The per-platform `hashes` entry in the version index includes the
+    # FULL hash list from the master lockfile (h1: and zh:, sorted) so
+    # terraform's verifier finds a match regardless of which hash it
+    # recomputes locally. Slightly redundant (each platform's index
+    # holds hashes that only apply to other platforms) but correct, and
+    # matches what `terraform providers mirror` itself writes when run
+    # against a multi-platform lockfile.
     for info in infos:
         namespace, ptype = info.source.split("/")
         prefix = "{gen_dir}/_providers/registry.terraform.io/{ns}/{ptype}".format(
@@ -109,9 +118,8 @@ def _tf_root_provider_artifacts_impl(ctx):
             ptype = ptype,
         )
 
-        # Per-platform archive symlinks + per-archive entries for the
-        # version index. The url is relative to the version index file
-        # itself — i.e. just the zip basename.
+        sorted_hashes = sorted(info.hashes)
+
         archives_index = {}
         for platform in PLATFORMS:
             if platform not in info.archives:
@@ -125,7 +133,7 @@ def _tf_root_provider_artifacts_impl(ctx):
             outputs.append(out)
             archives_index[platform] = {
                 "url": zip_file.basename,
-                "hashes": [info.hashes[platform]],
+                "hashes": sorted_hashes,
             }
 
         index_json = ctx.actions.declare_file(prefix + "/index.json")

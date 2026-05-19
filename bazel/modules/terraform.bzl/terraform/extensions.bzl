@@ -6,27 +6,32 @@ Shape mirrors rules_jvm_external / rules_rpm:
     `terraform_<v>_<os>_<arch>.zip` from `releases.hashicorp.com`, declares
     `tf_toolchain`, registers it via `@terraform_toolchains//:terraform_toolchain`.
 
-  * `terraform.install(name=, providers=, lock_file=)` — one hub repo per
-    invocation. `providers` maps `<source>` to a terraform-style version
-    *constraint* (e.g. `~> 7.0`); the resolved version + per-platform
-    hashes live in the JSON `lock_file`. For each provider × platform,
-    the extension instantiates a sha256-pinned archive repo and aggregates
-    them in the hub as `tf_provider_target`s consumed by
-    `tf_root(providers = […])`. The hub also exposes `:pin` — a runnable
-    that re-resolves each constraint against HashiCorp's release index
-    and regenerates the lockfile.
+  * `terraform.install(name=, lock_file=)` — one hub repo per invocation.
+    `lock_file` points at a `.terraform.lock.hcl` (the file `terraform
+    providers lock` writes). Every provider in that lockfile gets a
+    `tf_provider_target` in the hub, with per-platform archive repos
+    downloading the bytes that match the lockfile's `zh:` hashes.
 
-Two `install(...)` calls produce two hub repos; consumers can keep
-provider sets segregated (e.g. core vs. test-only) without colliding.
+The lockfile is the single source of truth — both for which providers
+exist and for their resolved versions + hashes. Updates flow through
+the standard terraform workflow:
+
+  cd <dir with versions.tf + .terraform.lock.hcl>
+  terraform providers lock -platform=darwin_amd64 \\
+                            -platform=darwin_arm64 \\
+                            -platform=linux_amd64 \\
+                            -platform=linux_arm64
+
+Renovate's `terraform-lockfile` manager runs that command natively when
+a bump appears in a `versions.tf` it discovers, so the day-to-day
+workflow is just "merge Renovate PRs".
 """
 
+load(":hcl.bzl", "parse_terraform_lockfile")
 load(":versions.bzl", "DEFAULT_VERSION", "TERRAFORM_VERSIONS", "get_terraform_url")
 
-# Provider platforms we build hub-repo entries for. Mirrored in
-# `//terraform:provider.bzl::PLATFORMS` (kept side-by-side rather than
-# `load`-imported because a module extension cannot load the same .bzl
-# as a regular rule does without dragging in transitive load-time
-# concerns).
+# Provider platforms we materialize archive repos for. Mirrored in
+# `//terraform:provider.bzl::PLATFORMS`.
 _PROVIDER_PLATFORMS = ["darwin_amd64", "darwin_arm64", "linux_amd64", "linux_arm64"]
 
 _PLATFORM_CONSTRAINTS = {
@@ -118,10 +123,10 @@ _terraform_repo = repository_rule(
 def _provider_url(source, version, platform):
     """HashiCorp release URL for a provider archive.
 
-    Source layout is `<namespace>/<type>` (e.g. `hashicorp/google`);
-    the URL only embeds the type, not the namespace. The release host
-    serves zips for all of HashiCorp's official providers under this
-    path; third-party namespaces would need a different scheme.
+    Source layout is `<namespace>/<type>` (e.g. `hashicorp/google`); the
+    URL only embeds the type, not the namespace. The release host serves
+    zips for all of HashiCorp's official providers under this path;
+    third-party namespaces would need a different scheme.
     """
     _, ptype = source.split("/")
     return "https://releases.hashicorp.com/terraform-provider-{ptype}/{version}/terraform-provider-{ptype}_{version}_{platform}.zip".format(
@@ -131,16 +136,18 @@ def _provider_url(source, version, platform):
     )
 
 def _provider_archive_repo_impl(rctx):
-    """Download one provider zip for one platform; expose it verbatim as a
-    `:files` filegroup. The hub repo symlinks it into the per-root mirror
-    tree as a packed `.zip` (terraform's filesystem mirror accepts both
-    packed and unpacked layouts; we use packed because the lockfile h1
-    verification is computed against the zip by `dirhash.HashZip` and
-    matches what terraform's own packed-mirror code path expects
-    byte-for-byte. The unpacked layout requires terraform to re-derive h1
-    from the extracted file, which has proven brittle in practice — the
-    same provider+version produces different h1 strings between
-    `dirhash.HashZip` and a re-extraction).
+    """Download one provider zip for one platform; verify its sha256
+    appears in the lockfile's `zh:` set; expose it as a `:files`
+    filegroup.
+
+    No `sha256 =` arg on `rctx.download`: we don't know the per-platform
+    sha256 directly from the lockfile (terraform's `.terraform.lock.hcl`
+    lists all `zh:` hashes flat, not mapped by platform). Instead, we
+    download, take the resulting sha256 from `rctx.download`'s return
+    value, and assert it's one of the lockfile's `zh:` hashes. This is
+    the same trust posture: the lockfile is authoritative, and a
+    tampered upstream zip would produce a sha256 outside the trusted
+    set.
     """
     _, ptype = rctx.attr.source.split("/")
     zip_name = "terraform-provider-{ptype}_{version}_{platform}.zip".format(
@@ -148,11 +155,19 @@ def _provider_archive_repo_impl(rctx):
         version = rctx.attr.version,
         platform = rctx.attr.platform,
     )
-    rctx.download(
+    result = rctx.download(
         url = _provider_url(rctx.attr.source, rctx.attr.version, rctx.attr.platform),
         output = zip_name,
-        sha256 = rctx.attr.sha256,
     )
+    if result.sha256 not in rctx.attr.valid_zh_sha256s:
+        fail(("downloaded {zip} has sha256 {got} which does not appear in " +
+              "the lockfile's `zh:` set for {source} {version}. Lockfile " +
+              "is stale or upstream zip changed without a re-pin.").format(
+            zip = zip_name,
+            got = result.sha256,
+            source = rctx.attr.source,
+            version = rctx.attr.version,
+        ))
     rctx.file("BUILD.bazel", """\
 filegroup(
     name = "files",
@@ -167,7 +182,10 @@ _provider_archive_repo = repository_rule(
         "source": attr.string(mandatory = True),
         "version": attr.string(mandatory = True),
         "platform": attr.string(mandatory = True),
-        "sha256": attr.string(mandatory = True),
+        "valid_zh_sha256s": attr.string_list(
+            mandatory = True,
+            doc = "Hex-encoded sha256 values from the lockfile's `zh:` entries (prefix stripped). The downloaded zip's sha256 must be in this set.",
+        ),
     },
 )
 
@@ -177,9 +195,8 @@ def _archive_repo_name(install_name, source, version, platform):
     The (install, source, version, platform) tuple is embedded in the
     name on purpose — it's part of the cache-invalidation contract, not
     just a uniqueness key. Bumping a version intentionally produces a
-    *new* repo name, which makes Bazel's repo cache treat the new
-    archive as a wholly fresh entity and re-run `download` against the
-    new sha256.
+    *new* repo name so bazel's repo cache treats the new archive as a
+    wholly fresh entity.
     """
     return "{install}__provider_{src}_{ver}_{plat}".format(
         install = install_name,
@@ -196,22 +213,8 @@ def _short_name(source):
 
 _HUB_BUILD_TEMPLATE = """\
 load("@terraform.bzl//terraform:provider.bzl", "tf_provider_target")
-load("@rules_go//go:def.bzl", "go_binary")
 
 {targets}
-
-# `bazel run @{install}//:pin` regenerates the lockfile against the
-# currently-declared provider set. The lockfile path + provider list
-# are baked into `args` at extension-evaluation time, so the consumer
-# never sees a per-install flag.
-go_binary(
-    name = "pin",
-    embed = ["@terraform.bzl//terraform/private/pin:pin_lib"],
-    args = [
-        {args}
-    ],
-    visibility = ["//visibility:public"],
-)
 """
 
 def _hub_repo_impl(rctx):
@@ -223,6 +226,7 @@ tf_provider_target(
     name = {name},
     source = {source},
     version = {version},
+    constraints = {constraints},
     hashes = {hashes},
     archives = {archives},
     visibility = ["//visibility:public"],
@@ -231,72 +235,26 @@ tf_provider_target(
             name = repr(spec["name"]),
             source = repr(spec["source"]),
             version = repr(spec["version"]),
+            constraints = repr(spec["constraints"]),
             hashes = repr(spec["hashes"]),
             archives = repr(spec["archives"]),
         ))
 
-    # `args` for the pin go_binary. Workspace-relative path + each
-    # declared `<source>@<version>` — fully resolved at extension time,
-    # so the pin tool takes flat flags and doesn't need to understand
-    # bzlmod.
-    args = ['"-lock={}"'.format(rctx.attr.lock_path)]
-    for spec in rctx.attr.provider_keys:
-        args.append('"-provider={}"'.format(spec))
-
     rctx.file("BUILD.bazel", _HUB_BUILD_TEMPLATE.format(
-        install = rctx.attr.install_name,
         targets = "\n".join(targets),
-        args = ",\n        ".join(args),
     ))
 
 _hub_repo = repository_rule(
     implementation = _hub_repo_impl,
     attrs = {
-        "install_name": attr.string(mandatory = True),
-        # JSON-encoded specs (one per provider) with name/source/version/
-        # hashes/archives. JSON used as the wire format because rctx attrs
+        # JSON-encoded specs (one per provider): name/source/version/
+        # hashes/archives. JSON is the wire format because rctx attrs
         # are flat — can't hold dict-of-dict.
         "specs": attr.string_list(mandatory = True),
-        "lock_path": attr.string(
-            mandatory = True,
-            doc = "Workspace-relative path of the JSON lockfile, e.g. `bazel/include/terraform.providers.lock.json`. The pin tool resolves it under `$BUILD_WORKSPACE_DIRECTORY`.",
-        ),
-        "provider_keys": attr.string_list(
-            mandatory = True,
-            doc = "`<source>@<version>` strings — the declared provider set; one `-provider=` flag per entry.",
-        ),
     },
 )
 
 # ---------- top-level extension --------------------------------------------
-
-def _parse_lock_json(mctx, lock_file_label):
-    """Read the JSON lockfile via `mctx.read` and return the providers map.
-
-    Lockfile shape:
-        {
-          "providers": {
-            "hashicorp/google": {
-              "constraint": "~> 7.0",
-              "version": "7.32.0",
-              "platforms": {
-                "darwin_amd64": {"sha256": "...", "h1": "h1:..."},
-                ...
-              }
-            },
-            ...
-          }
-        }
-
-    Missing file or empty `providers` → empty map (bootstrap: pin tool
-    hasn't run yet). Per-provider absence is handled at the call site
-    with a per-provider warning + skip.
-    """
-    body = mctx.read(lock_file_label)
-    if not body.strip():
-        return {}
-    parsed = json.decode(body)
-    return parsed.get("providers", {})
 
 def _terraform_extension_impl(mctx):
     version = DEFAULT_VERSION
@@ -311,91 +269,64 @@ def _terraform_extension_impl(mctx):
     _terraform_repo(name = "terraform_toolchains", version = version)
 
     for install in install_tags:
-        locked = _parse_lock_json(mctx, install.lock_file)
-        specs = []
+        content = mctx.read(install.lock_file)
+        parsed = parse_terraform_lockfile(content) if content.strip() else {}
 
-        for source, constraint in install.providers.items():
-            entry = locked.get(source)
-            if entry == None:
-                # buildifier: disable=print
-                print(("WARNING: terraform.install({}): provider {} not " +
-                       "pinned in {}. Run `bazel run @{}//:pin`.").format(
+        specs = []
+        for source, block in parsed.items():
+            ver = block.get("version")
+            if not ver:
+                fail("terraform.install({}): provider {} in {} has no version".format(
                     install.name,
                     source,
                     install.lock_file,
-                    install.name,
                 ))
-                continue
 
-            # Drift detection: the lockfile is regenerated by the pin tool
-            # against the *constraint* declared in MODULE.bazel. If the user
-            # changed the constraint here but didn't re-pin, the lockfile's
-            # recorded constraint doesn't match — surface that loudly so
-            # the resolved version doesn't silently lag behind intent.
-            #
-            # Compare with internal spaces stripped — the pin tool stores
-            # the args-normalized form (`~>7.0`) while MODULE.bazel often
-            # uses the terraform-style form (`~> 7.0`). Both are the same
-            # constraint to go-version's parser.
-            locked_constraint = entry.get("constraint", "")
-            if locked_constraint.replace(" ", "") != constraint.replace(" ", ""):
-                fail(("terraform.install({install}): provider {source} has " +
-                      "constraint {declared} in MODULE.bazel but {locked} " +
-                      "in {lock}. Run `bazel run @{install}//:pin` to " +
-                      "refresh.").format(
+            hashes = block.get("hashes", [])
+
+            # `zh:<hex>` entries are the per-platform sha256s of the zip.
+            # Strip the prefix for the archive repo's verification check.
+            zh_sha256s = [
+                h[len("zh:"):]
+                for h in hashes
+                if h.startswith("zh:")
+            ]
+            if len(zh_sha256s) < len(_PROVIDER_PLATFORMS):
+                fail(("terraform.install({install}): provider {source} in " +
+                      "{lock} has {got} `zh:` hashes but {want} platforms are " +
+                      "supported. Re-run `terraform providers lock` with " +
+                      "all four `-platform=` flags.").format(
                     install = install.name,
                     source = source,
-                    declared = constraint,
-                    locked = locked_constraint,
                     lock = install.lock_file,
+                    got = len(zh_sha256s),
+                    want = len(_PROVIDER_PLATFORMS),
                 ))
 
-            resolved_version = entry["version"]
-            per_platform = entry.get("platforms", {})
-
-            hashes_h1 = {}
             archives = {}
             for platform in _PROVIDER_PLATFORMS:
-                if platform not in per_platform:
-                    fail("provider {} has no pin for platform {}".format(source, platform))
-                p = per_platform[platform]
-                archive_name = _archive_repo_name(install.name, source, resolved_version, platform)
+                archive_name = _archive_repo_name(install.name, source, ver, platform)
                 _provider_archive_repo(
                     name = archive_name,
                     source = source,
-                    version = resolved_version,
+                    version = ver,
                     platform = platform,
-                    sha256 = p["sha256"],
+                    valid_zh_sha256s = zh_sha256s,
                 )
                 archives[platform] = "@{}//:files".format(archive_name)
-                hashes_h1[platform] = p["h1"]
 
             specs.append(json.encode({
                 "name": _short_name(source),
                 "source": source,
-                "version": resolved_version,
-                "hashes": hashes_h1,
+                "version": ver,
+                "constraints": block.get("constraints", ""),
+                "hashes": hashes,
                 "archives": archives,
             }))
 
-        lock_path = install.lock_file.package + "/" + install.lock_file.name
-        if not install.lock_file.package:
-            lock_path = install.lock_file.name
         _hub_repo(
             name = install.name,
-            install_name = install.name,
             specs = specs,
-            lock_path = lock_path,
-            # Strip internal spaces from each constraint before baking
-            # into `args` for the pin go_binary — Bazel's `bazel run`
-            # launcher inlines args into a shell command without proper
-            # quoting, so an arg containing `~> 7.0` (with the space) is
-            # split into two argv tokens. `~>7.0` is the same constraint
-            # to go-version's parser.
-            provider_keys = [
-                "{}@{}".format(s, c.replace(" ", ""))
-                for s, c in install.providers.items()
-            ],
         )
 
 terraform = module_extension(
@@ -411,14 +342,10 @@ terraform = module_extension(
                 mandatory = True,
                 doc = "Hub repo name. Consumers `use_repo(terraform, \"<name>\")` to expose it.",
             ),
-            "providers": attr.string_dict(
-                mandatory = True,
-                doc = "`{source: constraint}` — e.g. `{\"hashicorp/google\": \"~> 7.0\"}`. Constraints use terraform's own syntax (`~> X.Y`, `>= X`, `*`, etc.) and are resolved to a concrete version by `bazel run @<name>//:pin`, which writes the resolved version + hashes into `lock_file`.",
-            ),
             "lock_file": attr.label(
                 mandatory = True,
-                allow_single_file = [".json"],
-                doc = "Path to the committed JSON lockfile. Regenerated by `bazel run @<name>//:pin`.",
+                allow_single_file = [".terraform.lock.hcl"],
+                doc = "A terraform-native `.terraform.lock.hcl`. Generated by `terraform providers lock` against a sibling `versions.tf`; bumps are handled by Renovate's `terraform-lockfile` manager.",
             ),
         }),
     },

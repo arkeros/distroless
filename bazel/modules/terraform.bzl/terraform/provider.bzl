@@ -6,19 +6,21 @@ everything `tf_root` needs to build a hermetic per-root working
 directory:
 
 - `source` + `version`     for the `required_providers` block.
-- `hashes`                  for the `.terraform.lock.hcl` file.
+- `hashes`                  flat list of all `h1:` and `zh:` strings as
+                            they appear in `.terraform.lock.hcl`. Goes
+                            verbatim into the per-tf_root lockfile.
 - `archives`                for the filesystem-mirror tree under
                             `_providers/registry.terraform.io/...`.
 
-Callers don't instantiate this rule directly — they `load` and
-reference the targets via labels like `@terraform_providers//:google`,
-exactly the way `go_library(deps = ["@com_github_..."])` references
-gazelle-managed module repos.
+Callers don't instantiate this rule directly — they `load` and reference
+the targets via labels like `@terraform_providers//:google`, exactly the
+way `go_library(deps = ["@com_github_..."])` references gazelle-managed
+module repos.
 """
 
 # Platform identifiers used everywhere in this stack. Mirrors the keys
-# in the JSON lockfile and the suffix used by HashiCorp's release
-# tarballs (`<name>_<version>_<os>_<arch>.zip`).
+# in the extension and matches the suffix HashiCorp's release tarballs
+# use (`<name>_<version>_<os>_<arch>.zip`).
 PLATFORMS = ["darwin_amd64", "darwin_arm64", "linux_amd64", "linux_arm64"]
 
 TerraformProviderInfo = provider(
@@ -26,7 +28,8 @@ TerraformProviderInfo = provider(
     fields = {
         "source": "Provider source address (e.g. `hashicorp/google`).",
         "version": "Pinned exact version (e.g. `7.29.0`).",
-        "hashes": "Dict {platform: 'h1:...'} consumed by the .terraform.lock.hcl renderer.",
+        "constraints": "The original constraint string from the master lockfile (e.g. `~> 7.0`). Rendered into the per-tf_root lockfile's `constraints =` line so it matches what terraform itself would write.",
+        "hashes": "Flat list of hash strings from `.terraform.lock.hcl` (`h1:...`, `zh:...`). Rendered verbatim into the per-tf_root lockfile.",
         "archives": "Dict {platform: depset of File} pointing at the unpacked provider binary for each platform.",
     },
 )
@@ -45,6 +48,7 @@ def _tf_provider_target_impl(ctx):
     return [TerraformProviderInfo(
         source = ctx.attr.source,
         version = ctx.attr.version,
+        constraints = ctx.attr.constraints,
         hashes = ctx.attr.hashes,
         archives = archives,
     )]
@@ -60,9 +64,12 @@ tf_provider_target = rule(
             mandatory = True,
             doc = "Exact version, e.g. `7.29.0`.",
         ),
-        "hashes": attr.string_dict(
+        "constraints": attr.string(
+            doc = "Original constraint string from the master lockfile, e.g. `~> 7.0`. Defaults to the empty string, which renders an empty `constraints = \"\"` line — same as terraform's own behavior when no constraints are declared.",
+        ),
+        "hashes": attr.string_list(
             mandatory = True,
-            doc = "platform -> `h1:<base64-of-sha256>`. One entry per supported platform; the lockfile renderer fails loudly if any are missing.",
+            doc = "Flat list of hash strings as they appear in `.terraform.lock.hcl`. Pass through verbatim.",
         ),
         "archives": attr.string_keyed_label_dict(
             mandatory = True,

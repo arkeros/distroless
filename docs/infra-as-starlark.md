@@ -556,6 +556,12 @@ one language.
 
 ## File layout (proposed)
 
+> Historical note: this is the layout as originally proposed. Post-migration,
+> the rules + toolchain + resource constructors live in the standalone
+> `bazel/modules/terraform.bzl/` module; the senku-side `render.bzl`
+> (IMAGE_URI + `tf_root_with_image`) is the only piece still under
+> `devtools/build/tools/tf/`.
+
 ```
 devtools/build/tools/tf/
 ├── defs.bzl              — tf_root, resource, var, remote_state

@@ -313,14 +313,25 @@ _hub_repo = repository_rule(
 # ---------- top-level extension --------------------------------------------
 
 def _terraform_extension_impl(mctx):
-    version = DEFAULT_VERSION
     install_tags = []
+
+    # `terraform.toolchain(version=...)` is workspace-wide: one terraform CLI
+    # registered for the whole build, so the root module owns the pin. A naive
+    # "last wins" loop over `mctx.modules` lets a transitive dep silently
+    # override the root (mctx.modules is BFS-ordered, root first), which is
+    # backwards. Prefer the root module's tag; fall back to any module's tag
+    # only when the root declared none.
+    root_version = None
+    any_version = None
     for mod in mctx.modules:
         for toolchain in mod.tags.toolchain:
             if toolchain.version:
-                version = toolchain.version
+                any_version = toolchain.version
+                if mod.is_root:
+                    root_version = toolchain.version
         for install in mod.tags.install:
             install_tags.append(install)
+    version = root_version or any_version or DEFAULT_VERSION
 
     _terraform_repo(name = _TERRAFORM_TOOLCHAIN_REPO, version = version)
 

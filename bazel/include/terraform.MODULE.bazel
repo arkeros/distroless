@@ -4,7 +4,6 @@
 # tf_root / tf_provider_target / toolchain Starlark layer. Wired via
 # local_path_override since it isn't published to BCR.
 bazel_dep(name = "terraform.bzl", version = "0.0.0")
-
 local_path_override(
     module_name = "terraform.bzl",
     path = "bazel/modules/terraform.bzl",

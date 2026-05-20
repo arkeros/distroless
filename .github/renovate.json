@@ -116,6 +116,23 @@
       ]
     },
     {
+      "matchManagers": [
+        "terraform",
+        "terraform-lockfile"
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "bazel mod deps --lockfile_mode=update",
+          "bazel mod tidy"
+        ],
+        "fileFilters": [
+          ".terraform.lock.hcl",
+          "MODULE.bazel.lock"
+        ],
+        "executionMode": "update"
+      }
+    },
+    {
       "matchDepNames": ["rules_img", "rules_img_tool"],
       "groupName": "rules_img",
       "groupSlug": "rules_img"

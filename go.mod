@@ -12,7 +12,6 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/zclconf/go-cty v1.18.1
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
-	golang.org/x/mod v0.36.0
 	golang.org/x/text v0.37.0
 	k8s.io/api v0.36.1
 	k8s.io/apimachinery v0.36.1
@@ -67,7 +66,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Masterminds/vcs v1.13.3 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/Microsoft/hcsshim v0.14.0-rc.1 // indirect
+	github.com/Microsoft/hcsshim v0.14.1 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/ProtonMail/go-crypto v1.4.1 // indirect
 	github.com/STARRY-S/zip v0.2.3 // indirect
@@ -176,7 +175,7 @@ require (
 	github.com/containerd/cgroups/v3 v3.1.2 // indirect
 	github.com/containerd/console v1.0.5 // indirect
 	github.com/containerd/containerd/api v1.10.0 // indirect
-	github.com/containerd/containerd/v2 v2.2.2 // indirect
+	github.com/containerd/containerd/v2 v2.2.4 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
@@ -516,6 +515,7 @@ require (
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/crypto v0.51.0 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
+	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect

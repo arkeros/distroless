@@ -83,6 +83,7 @@ use_repo(
     "com_github_google_go_containerregistry",
     "com_github_google_go_containerregistry_cmd_krane",
     "com_github_google_go_github_v86",
+    "com_github_google_go_github_v88",
     "com_github_hashicorp_hcl_v2",
     "com_github_mikefarah_yq_v4",
     "com_github_sigstore_cosign_v3",

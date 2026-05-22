@@ -51,8 +51,8 @@ importers:
         specifier: ^7.14.1
         version: 7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       relay-runtime:
-        specifier: ^20.1.1
-        version: 20.1.1
+        specifier: ^21.0.0
+        version: 21.0.0
       set-cookie-parser:
         specifier: ^2.7.2
         version: 2.7.2
@@ -814,8 +814,8 @@ packages:
     resolution: {integrity: sha512-ni8U67uybKAE1Aeh+tHw7Dmoeuvgm+UmEohJH8bAcoCnMkFX5Nj/6kGR/KyxcOSxdcXIkApAzurbXX+lUda6Wg==}
     hasBin: true
 
-  relay-runtime@20.1.1:
-    resolution: {integrity: sha512-N98ZkkyuIHdXmHaPuljihM1QbFYXATF0gxA0CESFphszsQzXs9A/zZloVfzdOI/xg3B3CfM/5nozvIoeTDIcfw==}
+  relay-runtime@21.0.0:
+    resolution: {integrity: sha512-CEKncRm8BOPT3IlymyfTVzQ8jNDgw0KrCAwel0QMG1R+ESpeMVTrWJzTGCjrzzT5MT2AEWZdCkClZ0JtXSKmUw==}
 
   reselect@5.2.0:
     resolution: {integrity: sha512-AgZ3UOZm3YndfrJ4OYjgrT7bmCm/1iqkjvEfH/oYjzh6PD2qw4QuT3jjnXIrpdt4MTpMXclMT3lXbmRY+XRakw==}
@@ -1606,7 +1606,7 @@ snapshots:
 
   relay-compiler@21.0.0: {}
 
-  relay-runtime@20.1.1:
+  relay-runtime@21.0.0:
     dependencies:
       '@babel/runtime': 7.29.2
       fbjs: 3.0.5

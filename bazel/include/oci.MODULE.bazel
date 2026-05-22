@@ -1,7 +1,7 @@
 bazel_dep(name = "rules_img", version = "0.3.11")
 bazel_dep(name = "rules_img_tool", version = "0.3.11")
 bazel_dep(name = "rules_distroless", version = "0.6.2")
-bazel_dep(name = "tar.bzl", version = "0.10.4")
+bazel_dep(name = "tar.bzl", version = "0.10.5")
 bazel_dep(name = "grype.bzl", version = "0.1.0")
 bazel_dep(name = "cosign.bzl", version = "0.0.0")
 bazel_dep(name = "container_structure_test", version = "1.22.1")

@@ -62,6 +62,22 @@ runs:
           echo "::endgroup::"
         done
 
+        # Each `bazel run @repo//:pin` rewrites `<repo>.lock.json` *after*
+        # analysis, so the recorded-inputs hash for that lockfile in
+        # `MODULE.bazel.lock` is only refreshed by the *next* Bazel
+        # invocation (which sees the mismatch and, under
+        # `--lockfile_mode=update`, rewrites the recorded hash). That means
+        # the final repo in the loop never gets a follow-up invocation —
+        # its lockfile is rewritten but `MODULE.bazel.lock` still carries
+        # the pre-pin hash, and downstream CI fails with
+        # `MODULE.bazel.lock is no longer up-to-date`. Force one more
+        # resolution pass to flush the last repo's hash. `bazel mod deps`
+        # is the canonical no-op resolver and matches the remediation
+        # Bazel itself prints in the error message.
+        echo "::group::Sync MODULE.bazel.lock"
+        bazel mod deps --lockfile_mode=update
+        echo "::endgroup::"
+
         if [ -z "$(git diff --name-only)" ]; then
           echo "No changes detected."
           echo "update_needed=false" >> $GITHUB_OUTPUT

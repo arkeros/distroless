@@ -97,7 +97,6 @@ use_repo(
     "io_k8s_sigs_kustomize_kustomize_v5",
     "io_k8s_sigs_yaml",
     "land_oras_oras",
-    "org_golang_x_mod",
     "org_golang_x_text",
     "sh_helm_helm_v4",
 )

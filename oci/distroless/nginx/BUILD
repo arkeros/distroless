@@ -80,29 +80,11 @@ vex_document(
     timestamp = "2026-05-13T00:00:00Z",
 )
 
-# Stable nginx on hummingbird: nginx 1.30.1-1.el10.ngx is upstream
-# nginx 1.30.1 (the version NVD identifies as the fix for
-# CVE-2026-42945). Hummingbird's secdb advisory is release-suffix-
-# strict (`< 1.30.1-1.hum1`), so rpmvercmp considers `el10.ngx < hum1`
-# and grype flags our package — even though the rewrite-module fix is
-# in upstream 1.30.1 shared by both release tags. Drops when either
-# grype stops release-suffix-strict matching across rpm vendors or
-# Hummingbird relaxes their advisory to `< 1.30.1` (upstream-correct
-# shape). `_cve_test_stale_vex` enforces.
-NGINX_HUMMINGBIRD_STABLE_VEX_STATEMENTS = [
-    vex_statement(
-        expires = "2026-08-14",
-        impact_statement = "nginx 1.30.1-1.el10.ngx is upstream nginx 1.30.1, the version NVD identifies as the fix. Hummingbird's release-suffix-strict `< 1.30.1-1.hum1` constraint flags the rpm because `el10.ngx < hum1` in rpmvercmp, but the rewrite-module vulnerable code path is patched in the shared upstream source.",
-        justification = "vulnerable_code_not_present",
-        products = ["pkg:oci/nginx"],
-        status = "not_affected",
-        vulnerability = "CVE-2026-42945",
-    ),
-]
-
-# Mainline nginx on hummingbird (1.31.0+) is rpmvercmp-above all
-# current Hummingbird nginx advisories — no false positives surface,
-# nothing to VEX. Empty document keeps the matrix wiring uniform.
+# Both Hummingbird channels (stable 1.30.2+, mainline 1.31.0+) are
+# rpmvercmp-above all current Hummingbird nginx advisories — no false
+# positives surface, nothing to VEX. Empty documents keep the matrix
+# wiring uniform and leave a per-channel slot for future false-positive
+# VEX entries without a structural change.
 vex_document(
     name = "vex_hummingbird_mainline",
     author = "rafael@arquero.cat",
@@ -115,8 +97,8 @@ vex_document(
     name = "vex_hummingbird_stable",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-stable",
-    statements = NGINX_HUMMINGBIRD_STABLE_VEX_STATEMENTS,
-    timestamp = "2026-05-16T00:00:00Z",
+    statements = [],
+    timestamp = "2026-05-22T00:00:00Z",
 )
 
 _IGNORE_CVES_BY_DISTRO = {
@@ -124,11 +106,10 @@ _IGNORE_CVES_BY_DISTRO = {
     "hummingbird": [],
 }
 
-# Per (channel, distro). Hummingbird stable carries the CVE-2026-42945
-# release-suffix-strict false-positive VEX; mainline doesn't surface
-# that CVE because 1.31.0 is rpmvercmp-above the constraint. Debian
-# uses the same VEX doc for both channels — the CVE-2013-0337
-# log-permissions VEX applies regardless.
+# Per (channel, distro). Both Hummingbird channels currently carry no
+# VEX statements — secdb advisories are all rpmvercmp-below shipped
+# versions. Debian uses the same VEX doc for both channels (the
+# CVE-2013-0337 log-permissions VEX applies regardless).
 _VEX_BY_CHANNEL_AND_DISTRO = {
     "stable": {
         "debian": [":vex"],

@@ -1,3 +1,4 @@
 node_modules
 .venv
 bazel/modules/
+bazel/registry/

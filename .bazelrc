@@ -20,6 +20,23 @@ common --modify_execution_info=GrypeScan=+no-remote-exec
 
 build --workspace_status_command=bazel/workspace_status.sh
 
+# Local Bazel registry for vendored upstream packages with security patches
+# (busybox, libpq, …). BCR-shaped: source.json + overlay/ + patches/.
+# Local first so it shadows BCR for module names we maintain in-tree; BCR
+# listed explicitly because once any --registry is set, the implicit BCR
+# default is dropped.
+common --registry=file://%workspace%/bazel/registry
+common --registry=https://bcr.bazel.build
+
+# Build all Go binaries as PIE (position-independent executables). Required
+# because the hermetic LLVM cc toolchain defaults to PIE-mode `ld.lld`,
+# which rejects rules_go's default non-PIC relocations
+# (`R_X86_64_64 cannot be used against symbol …; recompile with -fPIC`).
+# `linkmode=pie` makes rules_go emit PIE-compatible objects up front; also
+# keeps the ASLR hardening on the main binary that we'd lose with the
+# alternative `--linkopt=-no-pie` workaround.
+common --@rules_go//go/config:linkmode=pie
+
 # Enforce ADR 0006 at analysis time: any `image_push` to the public mirror
 # surface (`ghcr.io/arkeros/senku/*`) without the `mirror_push_managed` tag
 # fails the build. Wired here (not as a `--config=`) so the policy is
@@ -52,11 +69,12 @@ common:buildbuddy --experimental_profile_include_primary_output
 common:rbe --config=buildbuddy
 common:rbe --remote_executor=grpcs://remote.buildbuddy.io
 common:rbe --jobs=50
-build:rbe --crosstool_top=@buildbuddy_toolchain//:toolchain
-build:rbe --extra_toolchains=@buildbuddy_toolchain//:cc_toolchain
-build:rbe --host_platform=@buildbuddy_toolchain//:platform
-build:rbe --platforms=@buildbuddy_toolchain//:platform
-build:rbe --extra_execution_platforms=@buildbuddy_toolchain//:platform
+# Schedule actions on the BuildBuddy worker pool via our local @rbe_platform
+# (see //bazel/toolchains:rbe.bzl). Cc toolchain selection happens through
+# the registered @llvm toolchains, not via crosstool_top.
+build:rbe --host_platform=@rbe_platform//:rbe_platform
+build:rbe --platforms=@rbe_platform//:rbe_platform
+build:rbe --extra_execution_platforms=@rbe_platform//:rbe_platform
 build:rbe --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 # With RBE, tar outputs should be cached so remote workers can stage them
 build:rbe --modify_execution_info=Tar=-no-remote-cache

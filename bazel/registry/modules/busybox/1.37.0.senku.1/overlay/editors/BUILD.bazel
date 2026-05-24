@@ -1,0 +1,23 @@
+load("//bazel:kbuild.bzl", "kbuild_lib")
+
+package(default_visibility = ["//visibility:public"])
+
+# Make every file reachable as a label (e.g. so //bazel:codegen.bzl's
+# host cc_binaries can pick up applets/applet_tables.c, scripts inputs,
+# etc.). Also feeds the root //:srcs filegroup via :_srcs below — globs
+# at root don't cross package boundaries, so subpackages must re-export.
+exports_files(glob(["**"]))
+
+filegroup(name = "_srcs", srcs = glob(["**"]))
+
+kbuild_lib(
+    name = "editors",
+    srcs = [
+        "awk.c",
+        "cmp.c",
+        "diff.c",
+        "ed.c",
+        "sed.c",
+        "vi.c",
+    ],
+)

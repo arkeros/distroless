@@ -1,0 +1,13 @@
+# Patched busybox 1.37.0: upstream tarball + community-sourced CVE patches
+# (busybox-ML, openwall, downstream distros) applied via this registry's
+# overlay. `.senku.N` mirrors BCR's `.bcr.N` convention — identifies who
+# owns the patch set and provides a monotonic revision; bump N each time
+# a patch is added, revised, or removed.
+module(
+    name = "busybox",
+    version = "1.37.0.senku.1",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "rules_cc", version = "0.0.9")
+bazel_dep(name = "platforms", version = "0.0.10")

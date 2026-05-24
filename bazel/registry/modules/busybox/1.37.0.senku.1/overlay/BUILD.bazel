@@ -1,0 +1,117 @@
+load("//bazel:codegen.bzl", "GENERATED_HEADERS", "busybox_codegen")
+load("//bazel:config.bzl", "busybox_config")
+load("//bazel:kconfig_base.bzl", "BASE_DISABLE", "BASE_ENABLE", "BASE_SET")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["**"]))
+
+# Subpackages mirror busybox's per-subdir kbuild structure: each `kbuild_lib`
+# now lives in its own `<subdir>/BUILD.bazel`. Listed here once so the root
+# :srcs aggregator and the cc_binary deps stay in sync; if a new kbuild
+# subpackage is added, append it here too.
+_KBUILD_SUBDIRS = [
+    "applets",
+    "archival",
+    "archival/libarchive",
+    "console-tools",
+    "coreutils",
+    "coreutils/libcoreutils",
+    "debianutils",
+    "e2fsprogs",
+    "editors",
+    "findutils",
+    "libbb",
+    "libpwdgrp",
+    "loginutils",
+    "miscutils",
+    "networking",
+    "procps",
+    "shell",
+    "sysklogd",
+    "util-linux",
+    "util-linux/volume_id",
+]
+
+# Full patched source tree, used by codegen genrules that materialize a
+# writable busybox checkout (kbuild's scripts assume a tree). Globs don't
+# cross package boundaries, so subpackage contents come in via each
+# subpackage's :_srcs filegroup.
+filegroup(
+    name = "srcs",
+    srcs = glob(["**"]) + ["//" + d + ":_srcs" for d in _KBUILD_SUBDIRS],
+)
+
+# Header-only library exposing the patched source's central headers
+# (`include/`) plus textually-included siblings of the *root* package.
+# Per-subpackage sibling textual inclusion (e.g. `coreutils/od.c` including
+# `od_bloaty.c`) is handled inside each subpackage by `kbuild_lib`'s
+# auto-glob — those siblings are package-local and don't need to be exposed
+# globally here.
+cc_library(
+    name = "headers",
+    # `allow_empty` because the root busybox dir has no .h or .c of its own
+    # (everything is either in `include/` or in a kbuild subpackage).
+    hdrs = glob(["*.h", "include/**/*.h"], allow_empty = True),
+    textual_hdrs = glob(["*.c"], allow_empty = True),
+    includes = [".", "include"],
+)
+
+# Project-specific deltas applied on top of BASE_* from kconfig_base.bzl.
+_OVERRIDES = {
+    # The base assumes a glibc that ships libcrypt; the LLVM bazel toolchain's
+    # glibc build doesn't. Switch to busybox's bundled SHA crypt — algorithmic
+    # equivalent of libxcrypt's sha256/sha512 hashes (Ulrich Drepper's
+    # reference impl), so no security delta.
+    "USE_BB_CRYPT": "y",
+    "USE_BB_CRYPT_SHA": "y",
+    # The base hard-codes a packaging install tree path. We don't `make
+    # install`, so it's cosmetic, but zero it for hygiene.
+    "PREFIX": '""',
+}
+
+# Intent-level busybox config. Spec-shaped: BASE_ENABLE / BASE_DISABLE /
+# BASE_SET come from //bazel:kconfig_base.bzl; _OVERRIDES above layers our
+# project-specific deltas on top. No vendored kconfig dump.
+busybox_config(
+    name = "busyboxconfig",
+    enable = BASE_ENABLE,
+    disable = [sym for sym in BASE_DISABLE if sym not in _OVERRIDES],
+    set = BASE_SET | _OVERRIDES,
+)
+
+# Every header that used to live under //busybox/generated/ — now emitted
+# as genrules driven by :busyboxconfig + the full source tree. See
+# //bazel:codegen.bzl.
+busybox_codegen()
+
+cc_library(
+    name = "generated_headers",
+    hdrs = GENERATED_HEADERS,
+    # `.` so `-include include/autoconf.h` (added by kbuild_lib copts)
+    # resolves; `include` so source files can `#include "autoconf.h"` plain.
+    includes = [".", "include"],
+)
+
+# Header aggregator: every kbuild_lib pulls this in via deps so the right -I
+# paths and all .h files (both source-tree and kbuild-derived) are in scope.
+cc_library(
+    name = "kbuild_headers",
+    deps = [
+        "//:headers",
+        ":generated_headers",
+    ],
+)
+
+cc_binary(
+    name = "busybox",
+    deps = ["//" + d for d in _KBUILD_SUBDIRS],
+    linkopts = [
+        "-Wl,--gc-sections",
+        "-lm",
+        "-lresolv",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)

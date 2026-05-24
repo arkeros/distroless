@@ -9,7 +9,23 @@ bazel_dep(name = "bazel_lib", version = "3.3.1")
 bazel_dep(name = "jq.bzl", version = "0.6.1")
 bazel_dep(name = "gazelle", version = "0.51.0")
 bazel_dep(name = "rules_shell", version = "0.8.0")
-bazel_dep(name = "toolchains_buildbuddy", version = "0.0.4")
+
+# Hermetic LLVM cc toolchain — sole cc toolchain for senku. Works on macOS
+# host (cross-compiles to linux ELFs) and on linux RBE workers (extracted
+# into the worker container; cached after first action). Replaces the
+# previous toolchains_buildbuddy split, modeled on openai/codex's setup.
+bazel_dep(name = "llvm", version = "0.8.1")
+register_toolchains("@llvm//toolchain:all")
+
+# Patched busybox built via //bazel/registry. Consumed lazily — no compile
+# happens unless something depends on @busybox//... — but the dep is not
+# dev-only because the cc toolchain that builds it (llvm) isn't either.
+bazel_dep(name = "busybox", version = "1.37.0.senku.1")
+
+# Local repo rule emitting `@rbe_platform//:rbe_platform` for `--config=rbe`.
+# Pins the BuildBuddy worker image by SHA; see //bazel/toolchains:rbe.bzl.
+rbe_platform_repository = use_repo_rule("//bazel/toolchains:rbe.bzl", "rbe_platform_repository")
+rbe_platform_repository(name = "rbe_platform")
 
 # Not dev_dependency: //:BUILD loads from this plugin to wire up gazelle, and
 # that load needs to succeed when @senku is consumed as a non-root bzlmod dep.
@@ -84,12 +100,7 @@ single_version_override(
 jq_toolchains = use_extension("@jq.bzl//jq:extensions.bzl", "toolchains")
 use_repo(jq_toolchains, "jq_toolchains")
 
-buildbuddy = use_extension("@toolchains_buildbuddy//:extensions.bzl", "buildbuddy")
-buildbuddy.platform(buildbuddy_container_image = "UBUNTU22_04_IMAGE")
-use_repo(buildbuddy, "buildbuddy_toolchain")
-
 register_toolchains(
-    "@toolchains_buildbuddy//toolchains/cc:ubuntu_gcc_x86_64",
     # Register the source-built bifrost toolchain first so in-repo edits to
     # //devtools/bifrost/cli apply to checked-in renders without needing a
     # release. External consumers register the prebuilt variant via the

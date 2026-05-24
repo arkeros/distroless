@@ -1,0 +1,54 @@
+load("//bazel:kbuild.bzl", "kbuild_lib")
+
+package(default_visibility = ["//visibility:public"])
+
+# Make every file reachable as a label (e.g. so //bazel:codegen.bzl's
+# host cc_binaries can pick up applets/applet_tables.c, scripts inputs,
+# etc.). Also feeds the root //:srcs filegroup via :_srcs below — globs
+# at root don't cross package boundaries, so subpackages must re-export.
+exports_files(glob(["**"]))
+
+filegroup(name = "_srcs", srcs = glob(["**"]))
+
+# `bz/` and `unxz/` are not separate kbuild packages; their .c files exist
+# only to be `#include`d textually by sibling .c (decompress_unxz.c includes
+# unxz/xz_dec_*.c; archival/bzip2.c includes libarchive/bz/*.c across the
+# package boundary). Glob them explicitly so consumers see what's exposed.
+_TEXTUAL = glob(
+    ["bz/*.c", "bz/*.h", "unxz/*.c", "unxz/*.h", "lzo1x_c.c"],
+)
+
+kbuild_lib(
+    name = "libarchive",
+    srcs = [
+        "common.c",
+        "data_align.c",
+        "data_extract_all.c",
+        "data_extract_to_stdout.c",
+        "data_skip.c",
+        "decompress_bunzip2.c",
+        "decompress_gunzip.c",
+        "decompress_uncompress.c",
+        "decompress_unlzma.c",
+        "decompress_unxz.c",
+        "filter_accept_all.c",
+        "filter_accept_list.c",
+        "filter_accept_reject_list.c",
+        "find_list_entry.c",
+        "get_header_cpio.c",
+        "get_header_tar.c",
+        "header_list.c",
+        "header_skip.c",
+        "header_verbose_list.c",
+        "init_handle.c",
+        "lzo1x_1.c",
+        "lzo1x_1o.c",
+        "lzo1x_d.c",
+        "open_transformer.c",
+        "seek_by_jump.c",
+        "seek_by_read.c",
+        "unsafe_prefix.c",
+        "unsafe_symlink_target.c",
+    ],
+    textual_hdrs = _TEXTUAL,
+)

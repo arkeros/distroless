@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""Re-pin SRI hashes for senku's local Bazel registry under bazel/registry/.
+
+For each module/version, downloads the upstream archive (cached under
+$TMPDIR/repin-registry-cache) and rewrites source.json with fresh SRI for the
+archive plus every file under overlay/ and patches/. Hand-maintained fields
+(url, strip_prefix, patch_strip) are preserved.
+
+Usage:
+    tools/repin-registry                       # repin everything
+    tools/repin-registry busybox               # all versions of busybox
+    tools/repin-registry busybox 1.37.0        # one version
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import json
+import os
+import sys
+import tempfile
+import urllib.request
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+REGISTRY = REPO_ROOT / "bazel" / "registry"
+CACHE = Path(os.environ.get("TMPDIR", "/tmp")) / "repin-registry-cache"
+
+
+def sri(data: bytes) -> str:
+    return "sha256-" + base64.b64encode(hashlib.sha256(data).digest()).decode()
+
+
+def fetch(url: str) -> bytes:
+    CACHE.mkdir(parents=True, exist_ok=True)
+    # Cache key derived from the URL itself so URL changes invalidate the cache.
+    cached = CACHE / hashlib.sha256(url.encode()).hexdigest()
+    if cached.exists():
+        return cached.read_bytes()
+    print(f"  ↓ {url}", flush=True)
+    with urllib.request.urlopen(url) as resp:
+        data = resp.read()
+    tmp = cached.with_suffix(".tmp")
+    tmp.write_bytes(data)
+    tmp.rename(cached)
+    return data
+
+
+def hash_tree(root: Path) -> dict[str, str]:
+    if not root.is_dir():
+        return {}
+    out = {}
+    for f in sorted(root.rglob("*")):
+        if f.is_file():
+            out[str(f.relative_to(root))] = sri(f.read_bytes())
+    return out
+
+
+def repin(version_dir: Path) -> None:
+    source_path = version_dir / "source.json"
+    src = json.loads(source_path.read_text())
+
+    src["integrity"] = sri(fetch(src["url"]))
+
+    overlay = hash_tree(version_dir / "overlay")
+    if overlay:
+        src["overlay"] = overlay
+    else:
+        src.pop("overlay", None)
+
+    # Patches are keyed by filename only (no subdir nesting expected).
+    patches = hash_tree(version_dir / "patches")
+    if patches:
+        src["patches"] = patches
+    else:
+        src.pop("patches", None)
+
+    # Stable key order matching BCR convention.
+    order = ["integrity", "patch_strip", "patches", "overlay", "strip_prefix", "url"]
+    ordered = {k: src[k] for k in order if k in src}
+    ordered.update({k: v for k, v in src.items() if k not in ordered})
+
+    source_path.write_text(json.dumps(ordered, indent=4) + "\n")
+    print(f"  ✓ {source_path.relative_to(REPO_ROOT)}")
+
+
+def discover(module: str | None, version: str | None) -> list[Path]:
+    modules_root = REGISTRY / "modules"
+    if module is None:
+        targets = sorted(modules_root.glob("*/*"))
+    elif version is None:
+        targets = sorted((modules_root / module).glob("*"))
+    else:
+        targets = [modules_root / module / version]
+    return [t for t in targets if (t / "source.json").exists()]
+
+
+def main() -> int:
+    args = sys.argv[1:]
+    module = args[0] if args else None
+    version = args[1] if len(args) > 1 else None
+    targets = discover(module, version)
+    if not targets:
+        print("no source.json files found", file=sys.stderr)
+        return 1
+    for t in targets:
+        print(f"→ {t.relative_to(REPO_ROOT)}")
+        repin(t)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

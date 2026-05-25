@@ -15,6 +15,7 @@ bazel_dep(name = "rules_shell", version = "0.8.0")
 # into the worker container; cached after first action). Replaces the
 # previous toolchains_buildbuddy split, modeled on openai/codex's setup.
 bazel_dep(name = "llvm", version = "0.8.1")
+
 register_toolchains("@llvm//toolchain:all")
 
 # Patched busybox built via //bazel/registry. Consumed lazily — no compile
@@ -25,6 +26,7 @@ bazel_dep(name = "busybox", version = "1.37.0.senku.1")
 # Local repo rule emitting `@rbe_platform//:rbe_platform` for `--config=rbe`.
 # Pins the BuildBuddy worker image by SHA; see //bazel/toolchains:rbe.bzl.
 rbe_platform_repository = use_repo_rule("//bazel/toolchains:rbe.bzl", "rbe_platform_repository")
+
 rbe_platform_repository(name = "rbe_platform")
 
 # Not dev_dependency: //:BUILD loads from this plugin to wire up gazelle, and

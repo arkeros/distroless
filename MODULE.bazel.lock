@@ -155,8 +155,8 @@
     "https://bcr.bazel.build/modules/jsoncpp/1.9.6.bcr.2/source.json": "13199fa0a267ca46814e9e6ab313a71890c8f1822e57376fdc23a2d2cd384051",
     "https://bcr.bazel.build/modules/jsoncpp/1.9.6/MODULE.bazel": "2f8d20d3b7d54143213c4dfc3d98225c42de7d666011528dc8fe91591e2e17b0",
     "https://bcr.bazel.build/modules/libpfm/4.11.0/MODULE.bazel": "45061ff025b301940f1e30d2c16bea596c25b176c8b6b3087e92615adbd52902",
-    "https://bcr.bazel.build/modules/llvm/0.8.1/MODULE.bazel": "775ff54de29bae0f5f3f5d6235b620fbbb019f7baa77e1fdf9559a73d92f25fc",
-    "https://bcr.bazel.build/modules/llvm/0.8.1/source.json": "76f217ade23a9c1220472c88f6c7c7ab4c91143a35757eec6b195df726cabd24",
+    "https://bcr.bazel.build/modules/llvm/0.8.3/MODULE.bazel": "dbc1bc13171f8f9980a75524883abef1c491613e8d8d805cd4ffa3767ba9708e",
+    "https://bcr.bazel.build/modules/llvm/0.8.3/source.json": "4b11874c26a9de53c03a25a517ebc36dee6b458c920fe9ed65e3ca279ff19775",
     "https://bcr.bazel.build/modules/nlohmann_json/3.6.1/MODULE.bazel": "6f7b417dcc794d9add9e556673ad25cb3ba835224290f4f848f8e2db1e1fca74",
     "https://bcr.bazel.build/modules/package_metadata/0.0.10/MODULE.bazel": "cb66e0ce830e01bc00cd9edc984963704f2759ca893a649996e2b1c5c1ea7271",
     "https://bcr.bazel.build/modules/package_metadata/0.0.10/source.json": "8fc6bece244828a69b3cc608f381118d67fa3cc2aa1a2851dfe8d99a8076d7d0",
@@ -796,6 +796,69 @@
             "attributes": {
               "kubernetes_version": "1.34.3",
               "extra_resource_types": []
+            }
+          }
+        }
+      }
+    },
+    "@@llvm+//3rd_party/gcc/extension:gcc.bzl%gcc": {
+      "general": {
+        "bzlTransitiveDigest": "gykRc3tHzRAj9AQDFto1xub/o6YDfygSDtGdX1YZV6c=",
+        "usagesDigest": "9IP/e++b81Ga1zICxzXu+yqfe5i4DX5F/SsrgV5a568=",
+        "recordedInputs": [
+          "REPO_MAPPING:llvm+,bazel_lib bazel_lib+",
+          "REPO_MAPPING:llvm+,bazel_tools bazel_tools"
+        ],
+        "generatedRepoSpecs": {
+          "gcc": {
+            "repoRuleId": "@@llvm+//:http_bsdtar_archive.bzl%http_bsdtar_archive",
+            "attributes": {
+              "build_file": "@@llvm+//3rd_party/gcc:gcc.BUILD.bazel",
+              "includes": [
+                "gcc/BASE-VER",
+                "gcc/DATESTAMP",
+                "gcc/ginclude/unwind-arm-common.h",
+                "config/acx.m4",
+                "config/cet.m4",
+                "config/futex.m4",
+                "config/gc++filt.m4",
+                "config/gthr.m4",
+                "config/hwcaps.m4",
+                "config/iconv.m4",
+                "config/lthostflags.m4",
+                "config/multi.m4",
+                "config/no-executables.m4",
+                "config/tls.m4",
+                "config/toolexeclibdir.m4",
+                "config/unwind_ipinfo.m4",
+                "include/ansidecl.h",
+                "include/demangle.h",
+                "include/dyn-string.h",
+                "include/getopt.h",
+                "include/libiberty.h",
+                "libgcc/gthr-posix.h",
+                "libgcc/gthr-single.h",
+                "libgcc/gthr.h",
+                "libgcc/config/arm/unwind-arm.h",
+                "libgcc/unwind-generic.h",
+                "libgcc/unwind-pe.h",
+                "libiberty/cp-demangle.c",
+                "libiberty/cp-demangle.h",
+                "libstdc++-v3/acinclude.m4",
+                "libstdc++-v3/config/**",
+                "libstdc++-v3/configure.ac",
+                "libstdc++-v3/configure.host",
+                "libstdc++-v3/crossconfig.m4",
+                "libstdc++-v3/linkage.m4",
+                "libstdc++-v3/include/**",
+                "libstdc++-v3/libsupc++/**",
+                "libstdc++-v3/src/**"
+              ],
+              "sha256": "dc033fdfd79caf199113446af6d082004534437b6ebd276f9732815d86cbe723",
+              "strip_prefix": "gcc-2bfd402f8569511901ec8fe7628f57471e6d240a",
+              "urls": [
+                "https://github.com/gcc-mirror/gcc/archive/2bfd402f8569511901ec8fe7628f57471e6d240a.tar.gz"
+              ]
             }
           }
         }

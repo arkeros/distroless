@@ -80,25 +80,39 @@ vex_document(
     timestamp = "2026-05-13T00:00:00Z",
 )
 
-# Both Hummingbird channels (stable 1.30.2+, mainline 1.31.0+) are
-# rpmvercmp-above all current Hummingbird nginx advisories — no false
-# positives surface, nothing to VEX. Empty documents keep the matrix
-# wiring uniform and leave a per-channel slot for future false-positive
-# VEX entries without a structural change.
+# CVE-2026-9256 — heap buffer overflow in ngx_http_rewrite_module on
+# regex patterns with overlapping captures. Disclosed 2026-05-22 and
+# fixed by upstream in nginx 1.30.2 (stable) and 1.31.1 (mainline) —
+# the exact versions our hummingbird lockfiles already pin. NVD's
+# vulnerable-range data hasn't been published yet, and grype routes
+# nginx.org rpms via NVD-CPE (see `purl_namespace = "nginx.org"` in
+# //bazel/include:oci.MODULE.bazel) so the match surfaces with
+# `fix: null`. `_cve_test_stale_vex` will fire and prune this once
+# grype's DB syncs the fixed-versions range.
+_NGINX_HUMMINGBIRD_FIXED_VEX = [
+    vex_statement(
+        expires = "2026-07-26",
+        impact_statement = "Fixed in nginx 1.30.2 (stable) and 1.31.1 (mainline); the el10.ngx rpms shipped here are at those exact versions. NVD/Grype DB hasn't synced the fixed-versions range yet.",
+        products = ["pkg:rpm/nginx.org/nginx"],
+        status = "fixed",
+        vulnerability = "CVE-2026-9256",
+    ),
+]
+
 vex_document(
     name = "vex_hummingbird_mainline",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-mainline",
-    statements = [],
-    timestamp = "2026-05-16T00:00:00Z",
+    statements = _NGINX_HUMMINGBIRD_FIXED_VEX,
+    timestamp = "2026-05-27T00:00:00Z",
 )
 
 vex_document(
     name = "vex_hummingbird_stable",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-stable",
-    statements = [],
-    timestamp = "2026-05-22T00:00:00Z",
+    statements = _NGINX_HUMMINGBIRD_FIXED_VEX,
+    timestamp = "2026-05-27T00:00:00Z",
 )
 
 _IGNORE_CVES_BY_DISTRO = {

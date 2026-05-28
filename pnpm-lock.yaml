@@ -98,7 +98,7 @@ importers:
         version: 0.32.0
       relay-compiler:
         specifier: ^21.0.0
-        version: 21.0.0
+        version: 21.0.1
       typescript:
         specifier: 6.0.2
         version: 6.0.2
@@ -878,8 +878,8 @@ packages:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
     engines: {node: '>=8.10.0'}
 
-  relay-compiler@21.0.0:
-    resolution: {integrity: sha512-ni8U67uybKAE1Aeh+tHw7Dmoeuvgm+UmEohJH8bAcoCnMkFX5Nj/6kGR/KyxcOSxdcXIkApAzurbXX+lUda6Wg==}
+  relay-compiler@21.0.1:
+    resolution: {integrity: sha512-Wqlg3MtHyBlAYByVo24Wy9H3n2bAw991gPmzdo3XfNv+TzhI8zuGogtiae+7NORI7zhghgZaHC7Sp8S8ZPRYEA==}
     hasBin: true
 
   relay-runtime@21.0.0:
@@ -1772,7 +1772,7 @@ snapshots:
       picomatch: 2.3.2
     optional: true
 
-  relay-compiler@21.0.0: {}
+  relay-compiler@21.0.1: {}
 
   relay-runtime@21.0.0:
     dependencies:

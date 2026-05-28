@@ -365,6 +365,8 @@ github.com/bazelbuild/bazel-watcher v0.29.0 h1:BYHBwN+syjYDzSEdQlgJYiRTe7icOeyIZ
 github.com/bazelbuild/bazel-watcher v0.29.0/go.mod h1:iue+AnDyN3JHJVu9R4lqdifqVc5NCdOYb/uCVrMlRDY=
 github.com/bazelbuild/buildtools v0.0.0-20260319080235-05d2ebe49b0f h1:khsR2MoXO+WButt3L5nnkAOGO17BAr0G/pGHZczF5/E=
 github.com/bazelbuild/buildtools v0.0.0-20260319080235-05d2ebe49b0f/go.mod h1:PLNUetjLa77TCCziPsz0EI8a6CUxgC+1jgmWv0H25tg=
+github.com/bazelbuild/buildtools v0.0.0-20260527145659-eb0c58a06830 h1:ig1+bY5aBPc94kDu+dRnQgGLS6RLpRajYhIrEUJjyRs=
+github.com/bazelbuild/buildtools v0.0.0-20260527145659-eb0c58a06830/go.mod h1:PLNUetjLa77TCCziPsz0EI8a6CUxgC+1jgmWv0H25tg=
 github.com/becheran/wildmatch-go v1.0.0 h1:mE3dGGkTmpKtT4Z+88t8RStG40yN9T+kFEGj2PZFSzA=
 github.com/becheran/wildmatch-go v1.0.0/go.mod h1:gbMvj0NtVdJ15Mg/mH9uxk2R1QCistMyU7d9KFzroX4=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=

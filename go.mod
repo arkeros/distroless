@@ -5,7 +5,7 @@ go 1.26.3
 require (
 	cloud.google.com/go/secretmanager v1.20.0
 	github.com/anchore/grype v0.112.0
-	github.com/bazelbuild/buildtools v0.0.0-20260319080235-05d2ebe49b0f
+	github.com/bazelbuild/buildtools v0.0.0-20260527145659-eb0c58a06830
 	github.com/google/go-containerregistry v0.21.6
 	github.com/google/go-github/v86 v86.0.0
 	github.com/google/go-github/v88 v88.0.0

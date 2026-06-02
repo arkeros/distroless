@@ -16,7 +16,7 @@ require (
 	golang.org/x/text v0.37.0
 	k8s.io/api v0.36.1
 	k8s.io/apimachinery v0.36.1
-	knative.dev/serving v0.49.0
+	knative.dev/serving v0.49.1
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -549,8 +549,8 @@ require (
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
 	k8s.io/kubectl v0.36.0 // indirect
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2 // indirect
-	knative.dev/networking v0.0.0-20260422140718-e9578ef11562 // indirect
-	knative.dev/pkg v0.0.0-20260422015212-ec452872dcc1 // indirect
+	knative.dev/networking v0.0.0-20260529061306-c8de379770b9 // indirect
+	knative.dev/pkg v0.0.0-20260531000007-52dbd5ece63f // indirect
 	modernc.org/libc v1.70.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect

@@ -135,7 +135,7 @@ vex_document(
         created = "//oci/distroless/common:created_" + distro,
         debug_entrypoint = ["/busybox/sh"],
         debug_env = DEFAULT_DEBUG_ENV,
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_layers = nodejs_layers(major),
         distro = distro,
         entrypoint = ["/nodejs/bin/node"],

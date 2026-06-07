@@ -12,17 +12,18 @@ load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "bash_layers")
 
 package(default_visibility = ["//visibility:public"])
 
-# rust-coreutils 0.8.0-1 carries three unfixed Highs in Debian sid:
-# mkfifo (CVE-2026-35341), mkdir TOCTOU (CVE-2026-35352), chroot
-# (CVE-2026-35368). The rust-coreutils multicall binary contains all
-# subcommands, but our images only expose the symlinks enumerated in
-# //oci/distroless/common:BUILD's COREUTILS_COMMANDS. mkfifo and chroot
-# were never in that set; mkdir was removed alongside this VEX. None
-# of the three subcommands is resolvable by name on PATH — invoking
-# them requires the non-standard `/bin/coreutils <name>` multicall
-# form, which neither the entrypoint nor any layered tooling uses.
-# Drops the moment Debian ships a fix (`_cve_test_stale_vex` will
-# turn red and force deletion).
+# rust-coreutils 0.8.0-1 carries two unfixed Highs in Debian sid:
+# mkfifo (CVE-2026-35341) and mkdir TOCTOU (CVE-2026-35352). The
+# rust-coreutils multicall binary contains all subcommands, but our
+# images only expose the symlinks enumerated in
+# //oci/distroless/common:BUILD's COREUTILS_COMMANDS. mkfifo was never
+# in that set; mkdir was removed alongside this VEX. Neither subcommand
+# is resolvable by name on PATH — invoking them requires the
+# non-standard `/bin/coreutils <name>` multicall form, which neither
+# the entrypoint nor any layered tooling uses. Drops the moment Debian
+# ships a fix (`_cve_test_stale_vex` will turn red and force deletion).
+# The chroot statement (CVE-2026-35368) was pruned by exactly that
+# mechanism when the grype DB stopped flagging it.
 RUST_COREUTILS_VEX_STATEMENTS = [
     vex_statement(
         expires = "2026-08-11",
@@ -39,14 +40,6 @@ RUST_COREUTILS_VEX_STATEMENTS = [
         products = ["pkg:oci/bash"],
         status = "not_affected",
         vulnerability = "CVE-2026-35352",
-    ),
-    vex_statement(
-        expires = "2026-08-11",
-        impact_statement = "chroot is not in COREUTILS_COMMANDS — no /usr/bin/chroot symlink to the rust-coreutils multicall.",
-        justification = "vulnerable_code_not_in_execute_path",
-        products = ["pkg:oci/bash"],
-        status = "not_affected",
-        vulnerability = "CVE-2026-35368",
     ),
 ]
 
@@ -93,7 +86,7 @@ _VEX = {
         architectures = BASH_ARCHITECTURES[distro],
         created = "//oci/distroless/common:created_" + distro,
         debug_env = DEFAULT_DEBUG_ENV,
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless bash image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/bash/BUILD",

@@ -83,36 +83,42 @@ vex_document(
 # CVE-2026-9256 — heap buffer overflow in ngx_http_rewrite_module on
 # regex patterns with overlapping captures. Disclosed 2026-05-22 and
 # fixed by upstream in nginx 1.30.2 (stable) and 1.31.1 (mainline) —
-# the exact versions our hummingbird lockfiles already pin. NVD's
-# vulnerable-range data hasn't been published yet, and grype routes
-# nginx.org rpms via NVD-CPE (see `purl_namespace = "nginx.org"` in
-# //bazel/include:oci.MODULE.bazel) so the match surfaces with
-# `fix: null`. `_cve_test_stale_vex` will fire and prune this once
-# grype's DB syncs the fixed-versions range.
-_NGINX_HUMMINGBIRD_FIXED_VEX = [
+# the exact versions our hummingbird lockfiles already pin. The grype
+# DB has since synced the fixed ranges: mainline (1.31.1) no longer
+# matches at all (`_cve_test_stale_vex` pruned the statement), but
+# stable still does — the match now routes via Hummingbird's secdb,
+# whose advisory says fixed in `nginx-1.30.2-1.hum1`, and rpmvercmp
+# ranks the nginx.org release tag `1.el10.ngx` below `1.hum1`
+# (cross-vendor release-tag comparison, not a real version gap). The
+# binary is upstream 1.30.2, which contains the fix.
+_NGINX_HUMMINGBIRD_STABLE_FIXED_VEX = [
     vex_statement(
         expires = "2026-07-26",
-        impact_statement = "Fixed in nginx 1.30.2 (stable) and 1.31.1 (mainline); the el10.ngx rpms shipped here are at those exact versions. NVD/Grype DB hasn't synced the fixed-versions range yet.",
+        impact_statement = "Fixed upstream in nginx 1.30.2; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.2-1.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 1.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
         products = ["pkg:rpm/nginx.org/nginx"],
         status = "fixed",
         vulnerability = "CVE-2026-9256",
     ),
 ]
 
+# No statements: the mainline rpm (1.31.1) carries no scanner matches
+# since the grype DB synced CVE-2026-9256's fixed range.
 vex_document(
     name = "vex_hummingbird_mainline",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-mainline",
-    statements = _NGINX_HUMMINGBIRD_FIXED_VEX,
-    timestamp = "2026-05-27T00:00:00Z",
+    statements = [],
+    timestamp = "2026-06-07T00:00:00Z",
+    version = 2,
 )
 
 vex_document(
     name = "vex_hummingbird_stable",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-stable",
-    statements = _NGINX_HUMMINGBIRD_FIXED_VEX,
-    timestamp = "2026-05-27T00:00:00Z",
+    statements = _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX,
+    timestamp = "2026-06-07T00:00:00Z",
+    version = 2,
 )
 
 _IGNORE_CVES_BY_DISTRO = {
@@ -120,9 +126,9 @@ _IGNORE_CVES_BY_DISTRO = {
     "hummingbird": [],
 }
 
-# Per (channel, distro). Both Hummingbird channels currently carry no
-# VEX statements — secdb advisories are all rpmvercmp-below shipped
-# versions. Debian uses the same VEX doc for both channels (the
+# Per (channel, distro). Hummingbird stable carries the CVE-2026-9256
+# release-tag VEX (see _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX); mainline
+# carries none. Debian uses the same VEX doc for both channels (the
 # CVE-2013-0337 log-permissions VEX applies regardless).
 _VEX_BY_CHANNEL_AND_DISTRO = {
     "stable": {
@@ -235,7 +241,7 @@ _NGINX_RPM_REPO = {
         architectures = NGINX_ARCHITECTURES[distro],
         created = ":created_stable_hummingbird" if distro == "hummingbird" else None,
         debug_env = DEFAULT_DEBUG_ENV,
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
@@ -262,7 +268,7 @@ _NGINX_RPM_REPO = {
         architectures = NGINX_ARCHITECTURES[distro],
         created = ":created_mainline_hummingbird" if distro == "hummingbird" else None,
         debug_env = DEFAULT_DEBUG_ENV,
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",

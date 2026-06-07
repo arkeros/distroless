@@ -85,10 +85,11 @@ DEBIAN_WONTFIX_CVES = [
 # Busybox: only present in `*_debug_*` variants via `static_debug_layers`.
 # Apply via `distroless_matrix(debug_ignore_cves = ...)`.
 BUSYBOX_WONTFIX_CVES = [
-    # busybox-static 1:1.37.0-10.1 — High, no fix in sid yet. Busybox is
-    # the canonical debug-image toolbox (same choice as Google distroless
-    # `:debug` and Chainguard `:latest-dev`); accept the CVE tax until
-    # Debian ships a patched build. `_cve_test_stale_ignores` will fail
+    # Debian busybox-static 1:1.37.0-10.1 and Hummingbird busybox
+    # 1:1.37.0-7.2.hum1 — High, no fix shipped by either distro yet.
+    # Busybox is the canonical debug-image toolbox (same choice as Google
+    # distroless `:debug` and Chainguard `:latest-dev`); accept the CVE
+    # tax until a patched build ships. `_cve_test_stale_ignores` will fail
     # when this stops matching, forcing the entry to be removed.
     "CVE-2026-29004",
 ]

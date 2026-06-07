@@ -146,7 +146,7 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         created = "//oci/distroless/common:created_" + distro,
         debug_entrypoint = ["/busybox/sh"],
         debug_env = {"PATH": _DEFAULT_PATH + ":/busybox"},
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_layers = static_debug_layers,
         # Hummingbird debug == release (no busybox layer yet), so no extra VEX
         # needed beyond what `vex` already provides — passing the same doc

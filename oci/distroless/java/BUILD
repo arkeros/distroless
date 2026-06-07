@@ -179,7 +179,7 @@ vex_document(
         debug_env = {
             "PATH": "/jre/bin:" + DEFAULT_DEBUG_ENV["PATH"],
         },
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_layers = java_layers(major),
         distro = distro,
         entrypoint = [

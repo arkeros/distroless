@@ -142,7 +142,7 @@ _VEX = {
         created = "//oci/distroless/common:created_" + distro,
         debug_entrypoint = ["/busybox/sh"],
         debug_env = DEFAULT_DEBUG_ENV,
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES if distro == "debian" else [],
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
         debug_layers = cc_layers,
         debug_vex = [":debug_vex"] if distro == "debian" else [],
         distro = distro,

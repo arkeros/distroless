@@ -14,7 +14,7 @@ bazel_dep(name = "rules_shell", version = "0.8.0")
 # host (cross-compiles to linux ELFs) and on linux RBE workers (extracted
 # into the worker container; cached after first action). Replaces the
 # previous toolchains_buildbuddy split, modeled on openai/codex's setup.
-bazel_dep(name = "llvm", version = "0.8.3")
+bazel_dep(name = "llvm", version = "0.8.5")
 
 register_toolchains("@llvm//toolchain:all")
 

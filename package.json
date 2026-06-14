@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.4.0",
-    "@base-ui/utils": "^0.2.7",
+    "@base-ui/utils": "^0.3.0",
     "@pothos/core": "^4.12.0",
     "@pothos/plugin-relay": "^4.7.0",
     "cookie": "^1.1.1",

@@ -1,4 +1,4 @@
-bazel_dep(name = "protobuf", version = "35.0")
+bazel_dep(name = "protobuf", version = "35.1")
 
 single_version_override(
     module_name = "googleapis",

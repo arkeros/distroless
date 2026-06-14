@@ -8,7 +8,6 @@ require (
 	github.com/bazelbuild/buildtools v0.0.0-20260527145659-eb0c58a06830
 	github.com/google/go-containerregistry v0.21.6
 	github.com/google/go-github/v86 v86.0.0
-	github.com/google/go-github/v88 v88.0.0
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/spf13/cobra v1.10.2
 	github.com/zclconf/go-cty v1.18.1
@@ -222,7 +221,7 @@ require (
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/felixge/fgprof v0.9.5 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fluxcd/cli-utils v1.2.0 // indirect
+	github.com/fluxcd/cli-utils v1.2.1 // indirect
 	github.com/fsnotify/fsevents v0.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
@@ -467,7 +466,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/tchap/go-patricia/v2 v2.3.3 // indirect
 	github.com/tetratelabs/wabin v0.0.0-20230304001439-f6f874872834 // indirect
-	github.com/tetratelabs/wazero v1.11.0 // indirect
+	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/thales-e-security/pool v0.0.2 // indirect
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/theupdateframework/go-tuf v0.7.0 // indirect
@@ -514,14 +513,14 @@ require (
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
-	golang.org/x/crypto v0.51.0 // indirect
+	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.45.0 // indirect
-	golang.org/x/term v0.43.0 // indirect
+	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/term v0.44.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.45.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
@@ -539,15 +538,15 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/gorm v1.31.1 // indirect
-	helm.sh/helm/v4 v4.2.0 // indirect
-	k8s.io/apiextensions-apiserver v0.36.0 // indirect
-	k8s.io/apiserver v0.36.0 // indirect
-	k8s.io/cli-runtime v0.36.0 // indirect
-	k8s.io/client-go v0.36.0 // indirect
-	k8s.io/component-base v0.36.0 // indirect
+	helm.sh/helm/v4 v4.2.1 // indirect
+	k8s.io/apiextensions-apiserver v0.36.1 // indirect
+	k8s.io/apiserver v0.36.1 // indirect
+	k8s.io/cli-runtime v0.36.1 // indirect
+	k8s.io/client-go v0.36.1 // indirect
+	k8s.io/component-base v0.36.1 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
-	k8s.io/kubectl v0.36.0 // indirect
+	k8s.io/kubectl v0.36.1 // indirect
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2 // indirect
 	knative.dev/networking v0.0.0-20260529061306-c8de379770b9 // indirect
 	knative.dev/pkg v0.0.0-20260531000007-52dbd5ece63f // indirect
@@ -556,8 +555,8 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.46.2 // indirect
 	oras.land/oras v1.3.2 // indirect
-	oras.land/oras-go/v2 v2.6.0 // indirect
-	sigs.k8s.io/controller-runtime v0.24.0 // indirect
+	oras.land/oras-go/v2 v2.6.1 // indirect
+	sigs.k8s.io/controller-runtime v0.24.1 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.21.1 // indirect
 	sigs.k8s.io/kustomize/cmd/config v0.21.1 // indirect

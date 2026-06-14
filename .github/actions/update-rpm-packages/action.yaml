@@ -34,12 +34,12 @@ runs:
           git diff --stat || true
           echo
           echo "Per-package sha256 changes (excludes repomd_sha256):"
-          git diff -- '**/*.lock.json' \
+          git diff -- '*.lock.json' \
             | grep -E '^[+-].*"sha256"' \
             | grep -v 'repomd_sha256' || true
           echo
           echo "Lockfile package/version/path changes (first 400 lines):"
-          git diff -- '**/*.lock.json' \
+          git diff -- '*.lock.json' \
             | grep -E '^[+-].*"(version|sha256|path|upstream)"' \
             | sed -n '1,400p' || true
           echo "::endgroup::"
@@ -96,7 +96,13 @@ runs:
         #
         # Avoid `grep -q` under `pipefail` — early grep exit can SIGPIPE the
         # upstream `git diff` and turn a real match into a false negative.
-        if ! git diff -- '**/*.lock.json' \
+        #
+        # Pathspec is `*.lock.json`, NOT `**/*.lock.json`: git's `**/`
+        # requires a directory prefix, so it silently skips the root-level
+        # `hummingbird.lock.json` and the gate would misread every real
+        # hummingbird binary update as metadata-only churn. `*` already
+        # crosses `/`, so this matches both the root and nested lockfiles.
+        if ! git diff -- '*.lock.json' \
              | grep -E '^[+-].*"sha256"' \
              | grep -v 'repomd_sha256' >/dev/null; then
           print_update_diff

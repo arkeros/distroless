@@ -93,3 +93,24 @@ BUSYBOX_WONTFIX_CVES = [
     # when this stops matching, forcing the entry to be removed.
     "CVE-2026-29004",
 ]
+
+# OpenSSL (libssl3t64 / openssl / openssl-provider-legacy 3.6.2-1) — a batch
+# of High/Critical CVEs all unfixed in sid as of the snapshot date (grype
+# reports no fixed version). Unlike the glibc entries above these live in a
+# separate list because openssl is absent from the static and java images,
+# which share DEBIAN_WONTFIX_CVES; mixing them in there would make those
+# images' `_cve_test_stale_ignores` fail. Apply only to images that link
+# libssl (cc, bash, nginx, workstation). `_cve_test_stale_ignores` fires when
+# any entry stops matching, forcing it to be removed once Debian ships a fix.
+OPENSSL_WONTFIX_CVES = [
+    "CVE-2026-7383",
+    "CVE-2026-9076",
+    "CVE-2026-34180",
+    "CVE-2026-34181",
+    "CVE-2026-34182",
+    "CVE-2026-34183",
+    "CVE-2026-42764",
+    "CVE-2026-42765",
+    "CVE-2026-45445",
+    "CVE-2026-45447",
+]

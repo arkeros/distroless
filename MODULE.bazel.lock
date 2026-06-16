@@ -318,8 +318,8 @@
     "https://bcr.bazel.build/modules/rules_python/1.4.1/MODULE.bazel": "8991ad45bdc25018301d6b7e1d3626afc3c8af8aaf4bc04f23d0b99c938b73a6",
     "https://bcr.bazel.build/modules/rules_python/1.6.0/MODULE.bazel": "7e04ad8f8d5bea40451cf80b1bd8262552aa73f841415d20db96b7241bd027d8",
     "https://bcr.bazel.build/modules/rules_python/1.7.0/MODULE.bazel": "d01f995ecd137abf30238ad9ce97f8fc3ac57289c8b24bd0bf53324d937a14f8",
-    "https://bcr.bazel.build/modules/rules_python/2.0.2/MODULE.bazel": "9d26ecb43f248c2663fb29f3c9b833aa86c31e736096e58c7077f80038f8d32f",
-    "https://bcr.bazel.build/modules/rules_python/2.0.2/source.json": "36a74dedc1498bfbf72855568a24e6aa30c70b5ac7e114bc244c62b3a58b47fc",
+    "https://bcr.bazel.build/modules/rules_python/2.0.3/MODULE.bazel": "19679690907c56be16fe992643e618400be778605d373a386dbe5474313b8e60",
+    "https://bcr.bazel.build/modules/rules_python/2.0.3/source.json": "bca9b3ddd8fc8c8cab08be3cfaa011fefc3d5b48d7695624e7f536e64def57e0",
     "https://bcr.bazel.build/modules/rules_python_gazelle_plugin/2.0.3/MODULE.bazel": "c3ede3cd4440c8e1395ccf2dfe9d27aaed5b4f52b5981ca6b86a2b6be00aed5d",
     "https://bcr.bazel.build/modules/rules_python_gazelle_plugin/2.0.3/source.json": "8a5b6ac8ab8ea646ecdd54ea32f6f0de34060d17df680cc8fa49be0feee8035a",
     "https://bcr.bazel.build/modules/rules_robolectric/4.14.1.2/MODULE.bazel": "d44fec647d0aeb67b9f3b980cf68ba634976f3ae7ccd6c07d790b59b87a4f251",
@@ -1020,7 +1020,7 @@
     "@@rules_python+//python/uv:uv.bzl%uv": {
       "general": {
         "bzlTransitiveDigest": "FweP0zel1F17xmT6aBZ3Itw1ogP5QPaaka1Bzndy0Wk=",
-        "usagesDigest": "R0pij/Kri0Z/7GcM2UBot6XmOqgduje0j8y9wNMWjLA=",
+        "usagesDigest": "XGwR3eTI95rhVlQBWeWHCf6MeLufEzhWrWRWAtF6Zv4=",
         "recordedInputs": [
           "REPO_MAPPING:rules_python+,bazel_tools bazel_tools",
           "REPO_MAPPING:rules_python+,platforms platforms"
@@ -6304,49 +6304,7 @@
           }
         }
       },
-      "fact_version": "v1",
-      "index_urls": {
-        "https://pypi.org/simple/": {
-          "absl_py": "/simple/absl-py/",
-          "backports_tarfile": "/simple/backports-tarfile/",
-          "blake3": "/simple/blake3/",
-          "certifi": "/simple/certifi/",
-          "cffi": "/simple/cffi/",
-          "charset_normalizer": "/simple/charset-normalizer/",
-          "cryptography": "/simple/cryptography/",
-          "docutils": "/simple/docutils/",
-          "duckdb": "/simple/duckdb/",
-          "idna": "/simple/idna/",
-          "importlib_metadata": "/simple/importlib-metadata/",
-          "iniconfig": "/simple/iniconfig/",
-          "jaraco_classes": "/simple/jaraco-classes/",
-          "jaraco_context": "/simple/jaraco-context/",
-          "jaraco_functools": "/simple/jaraco-functools/",
-          "jeepney": "/simple/jeepney/",
-          "keyring": "/simple/keyring/",
-          "markdown_it_py": "/simple/markdown-it-py/",
-          "mdurl": "/simple/mdurl/",
-          "more_itertools": "/simple/more-itertools/",
-          "nh3": "/simple/nh3/",
-          "packaging": "/simple/packaging/",
-          "pkginfo": "/simple/pkginfo/",
-          "pluggy": "/simple/pluggy/",
-          "pycparser": "/simple/pycparser/",
-          "pygments": "/simple/pygments/",
-          "pytest": "/simple/pytest/",
-          "pywin32_ctypes": "/simple/pywin32-ctypes/",
-          "readme_renderer": "/simple/readme-renderer/",
-          "requests": "/simple/requests/",
-          "requests_toolbelt": "/simple/requests-toolbelt/",
-          "rfc3986": "/simple/rfc3986/",
-          "rich": "/simple/rich/",
-          "ruamel_yaml": "/simple/ruamel-yaml/",
-          "secretstorage": "/simple/secretstorage/",
-          "twine": "/simple/twine/",
-          "urllib3": "/simple/urllib3/",
-          "zipp": "/simple/zipp/"
-        }
-      }
+      "fact_version": "v1"
     }
   }
 }

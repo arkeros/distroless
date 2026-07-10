@@ -1,0 +1,51 @@
+Pass the compiler-rt builtins archive to the macOS linker as
+`-L<dir> -lclang_rt.builtins.static` instead of a bare archive path.
+
+rules_go bakes the cc toolchain's link flags into the Go stdlib's cgo
+metadata at stdlib-build time. The baked flags carry bazel-out paths
+with the *stdlib configuration's* transition hash (`-ST-xxxx`), which
+generally differs from the configuration of the final GoLink action, so
+the bare archive path dangles and clang hard-fails with `no such file
+or directory: bazel-out/…-ST-xxxx/…/libclang_rt.builtins.static.a`.
+In `-L`/`-l` form a stale `-L` directory is simply ignored and the
+`-l` resolves against the current configuration's `-L` from the same
+args stanza — mirroring how this module already links libunwind via
+`libunwind_library_search_directory`.
+
+diff --git a/runtimes/compiler-rt/BUILD.bazel b/runtimes/compiler-rt/BUILD.bazel
+--- a/runtimes/compiler-rt/BUILD.bazel
++++ b/runtimes/compiler-rt/BUILD.bazel
+@@ -1,3 +1,13 @@
++load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
++
++copy_to_directory(
++    name = "clang_rt_library_search_directory",
++    srcs = [":clang_rt.builtins.static"],
++    include_external_repositories = ["**"],
++    root_paths = ["**"],
++    visibility = ["//visibility:public"],
++)
++
+ alias(
+     name = "clang_rt.fuzzer.static",
+     actual = "@llvm-project//compiler-rt:clang_rt.fuzzer.static",
+diff --git a/toolchain/args/macos/BUILD.bazel b/toolchain/args/macos/BUILD.bazel
+--- a/toolchain/args/macos/BUILD.bazel
++++ b/toolchain/args/macos/BUILD.bazel
+@@ -74,12 +74,13 @@
+     # -l: is not supported by lld64
+     args = [
+         "-lSystem",
+-        "{libclang_rt.builtins.a}",
++        "-L{clang_rt_library_search_path}",
++        "-lclang_rt.builtins.static",
+     ],
+     data = [
+-        "//runtimes/compiler-rt:clang_rt.builtins.static",
++        "//runtimes/compiler-rt:clang_rt_library_search_directory",
+     ],
+     format = {
+-        "libclang_rt.builtins.a": "//runtimes/compiler-rt:clang_rt.builtins.static",
++        "clang_rt_library_search_path": "//runtimes/compiler-rt:clang_rt_library_search_directory",
+     },
+ )

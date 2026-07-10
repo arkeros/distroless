@@ -2,24 +2,24 @@
   "schema_version": 1,
   "repo": {
     "url": "https://nginx.org/packages/rhel/10",
-    "revision": "1779457141",
-    "repomd_sha256": "76506a55081d428a2d2fe03384ba0107f121997a5ca916ff2ab873db88c1f82a"
+    "revision": "1782238408",
+    "repomd_sha256": "f085c86d1c185fd70c11ff357c45e486f5f5a6734f3f654bf0a7e95616973ec7"
   },
   "packages": {
     "nginx": {
       "aarch64": {
-        "version": "2:1.30.2-1.el10.ngx",
-        "sha256": "fb3e7b8fc92474ed9523bea1a295daeb7762d88208329a646c354dfba53007a1",
-        "path": "aarch64/RPMS/nginx-1.30.2-1.el10.ngx.aarch64.rpm",
-        "size": 1089654,
-        "upstream": "nginx-1.30.2-1.el10.ngx.src.rpm"
+        "version": "2:1.30.3-1.el10.ngx",
+        "sha256": "a924939f6e8ed4949393c256cc7eb6e8c1fc13dab083a29c12d0fd6c900af595",
+        "path": "aarch64/RPMS/nginx-1.30.3-1.el10.ngx.aarch64.rpm",
+        "size": 1089691,
+        "upstream": "nginx-1.30.3-1.el10.ngx.src.rpm"
       },
       "x86_64": {
-        "version": "2:1.30.2-1.el10.ngx",
-        "sha256": "8a9d526d0e81a79ce4cc00066660bc64ae693e3a33cf0f888ce175991c112820",
-        "path": "x86_64/RPMS/nginx-1.30.2-1.el10.ngx.x86_64.rpm",
-        "size": 1103279,
-        "upstream": "nginx-1.30.2-1.el10.ngx.src.rpm"
+        "version": "2:1.30.3-1.el10.ngx",
+        "sha256": "27237efd38d6ed927572a9c77a3bd5f9e32b29f53c49f2d2391481335970c8a1",
+        "path": "x86_64/RPMS/nginx-1.30.3-1.el10.ngx.x86_64.rpm",
+        "size": 1103557,
+        "upstream": "nginx-1.30.3-1.el10.ngx.src.rpm"
       }
     }
   }

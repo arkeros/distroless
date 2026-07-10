@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1781715837",
-    "repomd_sha256": "cb49d7eca8a72b82e7476359561e03ee5aca217451f9f86869ee58431cfe9440"
+    "revision": "1783448445",
+    "repomd_sha256": "db242da5c9b50589aeabdc9a005811566fb3e0183e19780e5533f1c6de968490"
   },
   "packages": {
     "audit-libs": {
@@ -24,34 +24,34 @@
     },
     "bash": {
       "aarch64": {
-        "version": "5.3.9-3.1.hum1",
-        "sha256": "e3a9072b36eeb832f403b8f90305e7ef4709d3b904347fd5b9e9bb6afa8d42ca",
-        "path": "aarch64/Packages/b/bash-5.3.9-3.1.hum1.aarch64.rpm",
-        "size": 1944324,
-        "upstream": "bash-5.3.9-3.1.hum1.src.rpm"
+        "version": "5.3.15-1.hum1",
+        "sha256": "16e55f7dc34dff8bedbe91306347e1b12d88e1a18ade94d6913280c790b1cc20",
+        "path": "aarch64/Packages/b/bash-5.3.15-1.hum1.aarch64.rpm",
+        "size": 1943795,
+        "upstream": "bash-5.3.15-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "5.3.9-3.1.hum1",
-        "sha256": "f4e27d04f05cd196e92d8a9f047927d4849ff32fd3b7f366b283e49e9edc5ac1",
-        "path": "x86_64/Packages/b/bash-5.3.9-3.1.hum1.x86_64.rpm",
-        "size": 1975479,
-        "upstream": "bash-5.3.9-3.1.hum1.src.rpm"
+        "version": "5.3.15-1.hum1",
+        "sha256": "62240951820e27244b21fbb0bfd036a555d2202900245ef60ea0b1e345308fba",
+        "path": "x86_64/Packages/b/bash-5.3.15-1.hum1.x86_64.rpm",
+        "size": 1975611,
+        "upstream": "bash-5.3.15-1.hum1.src.rpm"
       }
     },
     "busybox": {
       "aarch64": {
-        "version": "1:1.37.0-7.2.hum1",
-        "sha256": "143c4826f1c919cdc6010f24e527a78a3ad9d069c0fe4a4ab1ee80102d4d2f70",
-        "path": "aarch64/Packages/b/busybox-1.37.0-7.2.hum1.aarch64.rpm",
-        "size": 821487,
-        "upstream": "busybox-1.37.0-7.2.hum1.src.rpm"
+        "version": "1:1.37.0-7.3.hum1",
+        "sha256": "e6514cc3f178377656586ecc92072e19f7e4eb712619f308c955ea3bdcd7f6e7",
+        "path": "aarch64/Packages/b/busybox-1.37.0-7.3.hum1.aarch64.rpm",
+        "size": 821482,
+        "upstream": "busybox-1.37.0-7.3.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "1:1.37.0-7.2.hum1",
-        "sha256": "f219a2ef3276b1c4bcc2a4227781925836693d9c1c2ba144e1f3e17092b3020c",
-        "path": "x86_64/Packages/b/busybox-1.37.0-7.2.hum1.x86_64.rpm",
-        "size": 810268,
-        "upstream": "busybox-1.37.0-7.2.hum1.src.rpm"
+        "version": "1:1.37.0-7.3.hum1",
+        "sha256": "1a7c70e0764da20b5eb125b9449de0bcf7bbc8cb11d07d6d9e8417946e531c7a",
+        "path": "x86_64/Packages/b/busybox-1.37.0-7.3.hum1.x86_64.rpm",
+        "size": 810226,
+        "upstream": "busybox-1.37.0-7.3.hum1.src.rpm"
       }
     },
     "ca-certificates": {
@@ -229,45 +229,45 @@
     },
     "hummingbird-gpg-keys": {
       "noarch": {
-        "version": "20251124-1.13.hum1",
-        "sha256": "5b70172fe980d459aad334730038fc898d457d6e26293244bbb585c41e118be8",
-        "path": "x86_64/Packages/h/hummingbird-gpg-keys-20251124-1.13.hum1.noarch.rpm",
-        "size": 29094,
-        "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm"
+        "version": "20251124-1.14.hum1",
+        "sha256": "762296a722b91c64f4d9a1676790afe69900ef983f597bd18111ce8287cc1632",
+        "path": "x86_64/Packages/h/hummingbird-gpg-keys-20251124-1.14.hum1.noarch.rpm",
+        "size": 29130,
+        "upstream": "hummingbird-release-20251124-1.14.hum1.src.rpm"
       }
     },
     "hummingbird-release": {
       "noarch": {
-        "version": "20251124-1.13.hum1",
-        "sha256": "391f810e070df0fd05d6f96e97e9d4205f62b4b984bab704acbe545c8364d09d",
-        "path": "x86_64/Packages/h/hummingbird-release-20251124-1.13.hum1.noarch.rpm",
-        "size": 24616,
-        "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm"
+        "version": "20251124-1.14.hum1",
+        "sha256": "a3df218ec52d79d372c88cc3dd06a4eb139dde1c43e3344d4ef29f3c09b5c110",
+        "path": "x86_64/Packages/h/hummingbird-release-20251124-1.14.hum1.noarch.rpm",
+        "size": 24680,
+        "upstream": "hummingbird-release-20251124-1.14.hum1.src.rpm"
       }
     },
     "hummingbird-repos": {
       "noarch": {
-        "version": "20251124-1.13.hum1",
-        "sha256": "3757ee130c11990507410184f1cf6dd3b864cde16b3d0ed49b3c1352289d5bb6",
-        "path": "x86_64/Packages/h/hummingbird-repos-20251124-1.13.hum1.noarch.rpm",
-        "size": 13753,
-        "upstream": "hummingbird-release-20251124-1.13.hum1.src.rpm"
+        "version": "20251124-1.14.hum1",
+        "sha256": "b6a477bbb37dd2e07a85f82e0c3119a43ea850966101bd29ae605fdf03d82967",
+        "path": "x86_64/Packages/h/hummingbird-repos-20251124-1.14.hum1.noarch.rpm",
+        "size": 13763,
+        "upstream": "hummingbird-release-20251124-1.14.hum1.src.rpm"
       }
     },
     "libacl": {
       "aarch64": {
-        "version": "2.3.2-7.hum1",
-        "sha256": "6d0e44a9548af06c51ca5fdbe64406f18924559e076a6fcd7b126766ff3225c9",
-        "path": "aarch64/Packages/l/libacl-2.3.2-7.hum1.aarch64.rpm",
-        "size": 30547,
-        "upstream": "acl-2.3.2-7.hum1.src.rpm"
+        "version": "2.4.0-0.1.hum1",
+        "sha256": "5580f299b9d6b5ec62c293d058d8de706c2695a4232ac55e62d89555e6a50cc8",
+        "path": "aarch64/Packages/l/libacl-2.4.0-0.1.hum1.aarch64.rpm",
+        "size": 33369,
+        "upstream": "acl-2.4.0-0.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.3.2-7.hum1",
-        "sha256": "d7f46ca4ffef482a85b687d11f0b3b6b51e2fc94c2a8ae260beafed075c89500",
-        "path": "x86_64/Packages/l/libacl-2.3.2-7.hum1.x86_64.rpm",
-        "size": 30669,
-        "upstream": "acl-2.3.2-7.hum1.src.rpm"
+        "version": "2.4.0-0.1.hum1",
+        "sha256": "27a1b4f46fd8f784786b5ceb13342ce3cb509daf3da135b6fb20143b0a144d74",
+        "path": "x86_64/Packages/l/libacl-2.4.0-0.1.hum1.x86_64.rpm",
+        "size": 33089,
+        "upstream": "acl-2.4.0-0.1.hum1.src.rpm"
       }
     },
     "libatomic": {
@@ -288,18 +288,18 @@
     },
     "libattr": {
       "aarch64": {
-        "version": "2.5.2-9.hum1",
-        "sha256": "eb794958ddcdab42ff96fbb1f19954ccddfcbd33a9ffe4dd2ff953333dd7f7d9",
-        "path": "aarch64/Packages/l/libattr-2.5.2-9.hum1.aarch64.rpm",
-        "size": 24230,
-        "upstream": "attr-2.5.2-9.hum1.src.rpm"
+        "version": "2.6.0-9.1.hum1",
+        "sha256": "56c33544020f0edd97ea632bae120665385d6ff5fc6f3182b7ad9eba2ecc6355",
+        "path": "aarch64/Packages/l/libattr-2.6.0-9.1.hum1.aarch64.rpm",
+        "size": 24091,
+        "upstream": "attr-2.6.0-9.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.5.2-9.hum1",
-        "sha256": "c5594af2eb770d26e369711fec8c90b1f1fb88243b1cf9e48e2b7b69f6aae693",
-        "path": "x86_64/Packages/l/libattr-2.5.2-9.hum1.x86_64.rpm",
-        "size": 24395,
-        "upstream": "attr-2.5.2-9.hum1.src.rpm"
+        "version": "2.6.0-9.1.hum1",
+        "sha256": "6e3c2be2eaca96854af4c96ea846d0af9bd7e45fc0d736ddfa79943783d22238",
+        "path": "x86_64/Packages/l/libattr-2.6.0-9.1.hum1.x86_64.rpm",
+        "size": 24660,
+        "upstream": "attr-2.6.0-9.1.hum1.src.rpm"
       }
     },
     "libcap": {
@@ -377,34 +377,34 @@
     },
     "libselinux": {
       "aarch64": {
-        "version": "3.10-2.hum1",
-        "sha256": "964581c6da7114a88a629116eb9abaeb7820d4110b3a5d3ba291a266a5c86f63",
-        "path": "aarch64/Packages/l/libselinux-3.10-2.hum1.aarch64.rpm",
-        "size": 103786,
-        "upstream": "libselinux-3.10-2.hum1.src.rpm"
+        "version": "3.11-1.hum1",
+        "sha256": "eb50b248f2969497a216f1f43370753af42ded1aa340cdb01187663889b9ffe8",
+        "path": "aarch64/Packages/l/libselinux-3.11-1.hum1.aarch64.rpm",
+        "size": 105542,
+        "upstream": "libselinux-3.11-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.10-2.hum1",
-        "sha256": "800e7ad2fe126f7980ab673fe7a878775e7d9d105e2208b601d19afb3956eba7",
-        "path": "x86_64/Packages/l/libselinux-3.10-2.hum1.x86_64.rpm",
-        "size": 103716,
-        "upstream": "libselinux-3.10-2.hum1.src.rpm"
+        "version": "3.11-1.hum1",
+        "sha256": "56c37831dff0f8f1bf2c66d81c7eac9d38e1b170ddaf48f90da6b5067b61fe80",
+        "path": "x86_64/Packages/l/libselinux-3.11-1.hum1.x86_64.rpm",
+        "size": 106523,
+        "upstream": "libselinux-3.11-1.hum1.src.rpm"
       }
     },
     "libsepol": {
       "aarch64": {
-        "version": "3.10-1.1.hum1",
-        "sha256": "e7062e0755389350afa2c50fc37eb6da877915b9c573344078bfddada727f7c1",
-        "path": "aarch64/Packages/l/libsepol-3.10-1.1.hum1.aarch64.rpm",
-        "size": 337433,
-        "upstream": "libsepol-3.10-1.1.hum1.src.rpm"
+        "version": "3.11-1.hum1",
+        "sha256": "dfabb1d2571ab68e63244215be2d81653bb7f668bf7f403af3e11fb30cd3edc3",
+        "path": "aarch64/Packages/l/libsepol-3.11-1.hum1.aarch64.rpm",
+        "size": 338729,
+        "upstream": "libsepol-3.11-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.10-1.1.hum1",
-        "sha256": "0e42913213de2ac9818997218f23d3c954effe44b88cefe5e843d2c39846c4b2",
-        "path": "x86_64/Packages/l/libsepol-3.10-1.1.hum1.x86_64.rpm",
-        "size": 360799,
-        "upstream": "libsepol-3.10-1.1.hum1.src.rpm"
+        "version": "3.11-1.hum1",
+        "sha256": "dfb78b0f9d8afb06328cae89945895993639f240763fe751e6b8d180c860a68a",
+        "path": "x86_64/Packages/l/libsepol-3.11-1.hum1.x86_64.rpm",
+        "size": 360358,
+        "upstream": "libsepol-3.11-1.hum1.src.rpm"
       }
     },
     "libstdc++": {
@@ -484,18 +484,18 @@
     },
     "openssl-fips-provider-so": {
       "aarch64": {
-        "version": "3.0.7-1.1.hum1",
-        "sha256": "b4d8dbfa599ae15eea3317eee80d8313b3ce59801d8e2c4b0d21ed8ffc7efeff",
-        "path": "aarch64/Packages/o/openssl-fips-provider-so-3.0.7-1.1.hum1.aarch64.rpm",
-        "size": 526843,
-        "upstream": "openssl-fips-provider-3.0.7-1.1.hum1.src.rpm"
+        "version": "3.0.7-1.2.hum1",
+        "sha256": "1765aec277149728d2ebd0af774340567c205a1f5c53215f795f65f225abe4f5",
+        "path": "aarch64/Packages/o/openssl-fips-provider-so-3.0.7-1.2.hum1.aarch64.rpm",
+        "size": 527585,
+        "upstream": "openssl-fips-provider-3.0.7-1.2.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.0.7-1.1.hum1",
-        "sha256": "3c6a788d5cca4d2caa2f020ea18afd1f51d6ab7be4d73e5f1c84e5ec80149c4f",
-        "path": "x86_64/Packages/o/openssl-fips-provider-so-3.0.7-1.1.hum1.x86_64.rpm",
-        "size": 592586,
-        "upstream": "openssl-fips-provider-3.0.7-1.1.hum1.src.rpm"
+        "version": "3.0.7-1.2.hum1",
+        "sha256": "97bb1a2a6a38f5ac47617a0d67e01a1bb23ee8d6ff29fbdf453d6185415d08df",
+        "path": "x86_64/Packages/o/openssl-fips-provider-so-3.0.7-1.2.hum1.x86_64.rpm",
+        "size": 593134,
+        "upstream": "openssl-fips-provider-3.0.7-1.2.hum1.src.rpm"
       }
     },
     "openssl-libs": {
@@ -534,18 +534,18 @@
     },
     "pam-libs": {
       "aarch64": {
-        "version": "1.7.2-2.hum1",
-        "sha256": "72428129a8d0043066593aadbce85651a8e8907ebc93c6ebe40ce3b012667c09",
-        "path": "aarch64/Packages/p/pam-libs-1.7.2-2.hum1.aarch64.rpm",
-        "size": 64496,
-        "upstream": "pam-1.7.2-2.hum1.src.rpm"
+        "version": "1.7.2-3.hum1",
+        "sha256": "0d635285e65a8d5448ed389a2399dd4c3d6fdbda8c8a0e50b5ad5abc20353d85",
+        "path": "aarch64/Packages/p/pam-libs-1.7.2-3.hum1.aarch64.rpm",
+        "size": 65141,
+        "upstream": "pam-1.7.2-3.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "1.7.2-2.hum1",
-        "sha256": "be624b318cc25f45ed0e4d48bf7eaedef682e1422de97706d2a4f3697d99e3bc",
-        "path": "x86_64/Packages/p/pam-libs-1.7.2-2.hum1.x86_64.rpm",
-        "size": 65252,
-        "upstream": "pam-1.7.2-2.hum1.src.rpm"
+        "version": "1.7.2-3.hum1",
+        "sha256": "7fe240f48566941341ef5949d7ad7657771d01592ddd9cdbd11b38e3375be1bb",
+        "path": "x86_64/Packages/p/pam-libs-1.7.2-3.hum1.x86_64.rpm",
+        "size": 65311,
+        "upstream": "pam-1.7.2-3.hum1.src.rpm"
       }
     },
     "pcre2": {
@@ -591,27 +591,27 @@
     },
     "setup": {
       "noarch": {
-        "version": "2.15.0-29.2.hum1",
-        "sha256": "c4662602490d6b988ef43e9beaa322c19023b347b3df9cd2d5a4c0caeffa0add",
-        "path": "x86_64/Packages/s/setup-2.15.0-29.2.hum1.noarch.rpm",
-        "size": 165432,
-        "upstream": "setup-2.15.0-29.2.hum1.src.rpm"
+        "version": "2.15.1-1.hum1",
+        "sha256": "7900e1434cfcc5d7f0b77d874d10a8849d969b2fab2cdd2abf3fc6063eae5d73",
+        "path": "x86_64/Packages/s/setup-2.15.1-1.hum1.noarch.rpm",
+        "size": 165589,
+        "upstream": "setup-2.15.1-1.hum1.src.rpm"
       }
     },
     "systemd-libs": {
       "aarch64": {
-        "version": "260.1-2.1.hum1",
-        "sha256": "7c5588b280688d8c3f0f6f1a7e99b32ccd1431d2d63a83884e29cfcdf026f9d9",
-        "path": "aarch64/Packages/s/systemd-libs-260.1-2.1.hum1.aarch64.rpm",
-        "size": 828808,
-        "upstream": "systemd-260.1-2.1.hum1.src.rpm"
+        "version": "261-2.hum1",
+        "sha256": "3f6c75aa4b059ae1c2a628004f9b50e1edfe74629272e694c7f40c5c031553da",
+        "path": "aarch64/Packages/s/systemd-libs-261-2.hum1.aarch64.rpm",
+        "size": 886249,
+        "upstream": "systemd-261-2.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "260.1-2.1.hum1",
-        "sha256": "879d038ceee5a9319780e8461ac4cadb1616233b0d8b1feb1821709ecc0c0ce9",
-        "path": "x86_64/Packages/s/systemd-libs-260.1-2.1.hum1.x86_64.rpm",
-        "size": 868245,
-        "upstream": "systemd-260.1-2.1.hum1.src.rpm"
+        "version": "261-2.hum1",
+        "sha256": "2f95bff4ab2e7be1076f4a04a2ea541518be11046b3985d94682cee82c0a8e8e",
+        "path": "x86_64/Packages/s/systemd-libs-261-2.hum1.x86_64.rpm",
+        "size": 926758,
+        "upstream": "systemd-261-2.hum1.src.rpm"
       }
     },
     "tzdata": {

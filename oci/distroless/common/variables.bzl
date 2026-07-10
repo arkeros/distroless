@@ -76,41 +76,24 @@ DEFAULT_DEBUG_ENV = {
 # current snapshot. Companion `_cve_test_stale_ignores` test fails when any
 # entry vanishes from the scan, forcing us to delete it.
 DEBIAN_WONTFIX_CVES = [
-    # glibc (libc6) — all currently unfixed in sid 2.42-15
+    # glibc (libc6) — currently unfixed in sid 2.42-16. CVE-2026-5450 and
+    # CVE-2026-5928 were fixed by the same snapshot that fixed the openssl
+    # batch (the former OPENSSL_WONTFIX_CVES list, now fully shipped).
     "CVE-2026-5435",
-    "CVE-2026-5450",
-    "CVE-2026-5928",
 ]
 
 # Busybox: only present in `*_debug_*` variants via `static_debug_layers`.
-# Apply via `distroless_matrix(debug_ignore_cves = ...)`.
-BUSYBOX_WONTFIX_CVES = [
-    # Debian busybox-static 1:1.37.0-10.1 and Hummingbird busybox
-    # 1:1.37.0-7.2.hum1 — High, no fix shipped by either distro yet.
-    # Busybox is the canonical debug-image toolbox (same choice as Google
-    # distroless `:debug` and Chainguard `:latest-dev`); accept the CVE
-    # tax until a patched build ships. `_cve_test_stale_ignores` will fail
-    # when this stops matching, forcing the entry to be removed.
-    "CVE-2026-29004",
-]
-
-# OpenSSL (libssl3t64 / openssl / openssl-provider-legacy 3.6.2-1) — a batch
-# of High/Critical CVEs all unfixed in sid as of the snapshot date (grype
-# reports no fixed version). Unlike the glibc entries above these live in a
-# separate list because openssl is absent from the static and java images,
-# which share DEBIAN_WONTFIX_CVES; mixing them in there would make those
-# images' `_cve_test_stale_ignores` fail. Apply only to images that link
-# libssl (cc, bash, nginx, workstation). `_cve_test_stale_ignores` fires when
-# any entry stops matching, forcing it to be removed once Debian ships a fix.
-OPENSSL_WONTFIX_CVES = [
-    "CVE-2026-7383",
-    "CVE-2026-9076",
-    "CVE-2026-34180",
-    "CVE-2026-34181",
-    "CVE-2026-34182",
-    "CVE-2026-34183",
-    "CVE-2026-42764",
-    "CVE-2026-42765",
-    "CVE-2026-45445",
-    "CVE-2026-45447",
-]
+# Apply via `distroless_matrix(debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro])`.
+# Keyed by distro because the distros patch independently: Hummingbird
+# shipped busybox 1:1.37.0-7.3.hum1 with the fix, Debian hasn't yet.
+BUSYBOX_WONTFIX_CVES = {
+    "debian": [
+        # Debian busybox-static 1:1.37.0-10.1 — High, no fix shipped yet.
+        # Busybox is the canonical debug-image toolbox (same choice as Google
+        # distroless `:debug` and Chainguard `:latest-dev`); accept the CVE
+        # tax until a patched build ships. `_cve_test_stale_ignores` will fail
+        # when this stops matching, forcing the entry to be removed.
+        "CVE-2026-29004",
+    ],
+    "hummingbird": [],
+}

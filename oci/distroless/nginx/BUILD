@@ -11,7 +11,7 @@ load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
 exports_files([
@@ -80,36 +80,36 @@ vex_document(
     timestamp = "2026-05-13T00:00:00Z",
 )
 
-# CVE-2026-9256 — heap buffer overflow in ngx_http_rewrite_module on
-# regex patterns with overlapping captures. Disclosed 2026-05-22 and
-# fixed by upstream in nginx 1.30.2 (stable) and 1.31.1 (mainline) —
-# the exact versions our hummingbird lockfiles already pin. The grype
-# DB has since synced the fixed ranges: mainline (1.31.1) no longer
-# matches at all (`_cve_test_stale_vex` pruned the statement), but
-# stable still does — the match now routes via Hummingbird's secdb,
-# whose advisory says fixed in `nginx-1.30.2-1.hum1`, and rpmvercmp
-# ranks the nginx.org release tag `1.el10.ngx` below `1.hum1`
-# (cross-vendor release-tag comparison, not a real version gap). The
-# binary is upstream 1.30.2, which contains the fix.
+# CVE-2026-42055 — heap buffer overflow in ngx_http_proxy_v2_module /
+# ngx_http_grpc_module on oversized HTTP/2 headers. Fixed by upstream
+# in nginx 1.30.3 (stable) and 1.31.2 (mainline) — the exact versions
+# our lockfiles pin (https://nginx.org/en/security_advisories.html).
+# Mainline (1.31.2) doesn't match at all, but stable does — the match
+# routes via Hummingbird's secdb, whose advisory says fixed in
+# `nginx-1.30.3-2.hum1`, and rpmvercmp ranks the nginx.org release
+# tag `1.el10.ngx` below `2.hum1` (cross-vendor release-tag
+# comparison, not a real version gap). The binary is upstream 1.30.3,
+# which contains the fix. Same artifact class as the retired
+# CVE-2026-9256 statement, which `_cve_test_stale_vex` pruned once
+# the DB synced that fixed range.
 _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX = [
     vex_statement(
-        expires = "2026-07-26",
-        impact_statement = "Fixed upstream in nginx 1.30.2; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.2-1.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 1.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
+        expires = "2026-08-21",
+        impact_statement = "Fixed upstream in nginx 1.30.3; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.3-2.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 2.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
         products = ["pkg:rpm/nginx.org/nginx"],
         status = "fixed",
-        vulnerability = "CVE-2026-9256",
+        vulnerability = "CVE-2026-42055",
     ),
 ]
 
-# No statements: the mainline rpm (1.31.1) carries no scanner matches
-# since the grype DB synced CVE-2026-9256's fixed range.
+# No statements: the mainline rpm (1.31.2) carries no scanner matches.
 vex_document(
     name = "vex_hummingbird_mainline",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-mainline",
     statements = [],
-    timestamp = "2026-06-07T00:00:00Z",
-    version = 2,
+    timestamp = "2026-07-10T00:00:00Z",
+    version = 3,
 )
 
 vex_document(
@@ -117,12 +117,12 @@ vex_document(
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-stable",
     statements = _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX,
-    timestamp = "2026-06-07T00:00:00Z",
-    version = 2,
+    timestamp = "2026-07-10T00:00:00Z",
+    version = 3,
 )
 
 _IGNORE_CVES_BY_DISTRO = {
-    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES,
+    "debian": DEBIAN_WONTFIX_CVES,
     "hummingbird": [],
 }
 
@@ -241,7 +241,7 @@ _NGINX_RPM_REPO = {
         architectures = NGINX_ARCHITECTURES[distro],
         created = ":created_stable_hummingbird" if distro == "hummingbird" else None,
         debug_env = DEFAULT_DEBUG_ENV,
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
@@ -268,7 +268,7 @@ _NGINX_RPM_REPO = {
         architectures = NGINX_ARCHITECTURES[distro],
         created = ":created_mainline_hummingbird" if distro == "hummingbird" else None,
         debug_env = DEFAULT_DEBUG_ENV,
-        debug_ignore_cves = BUSYBOX_WONTFIX_CVES,
+        debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image (debug)",
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",

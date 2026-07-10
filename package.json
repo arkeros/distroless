@@ -43,6 +43,6 @@
     "mime": "^4.1.0",
     "ramda": "^0.32.0",
     "relay-compiler": "^21.0.0",
-    "typescript": "6.0.2"
+    "typescript": "6.0.3"
   }
 }

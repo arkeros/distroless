@@ -16,10 +16,10 @@ importers:
         version: 0.3.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@pothos/core':
         specifier: ^4.12.0
-        version: 4.13.0(graphql@16.14.2)
+        version: 4.13.1(graphql@16.14.2)
       '@pothos/plugin-relay':
         specifier: ^4.7.0
-        version: 4.7.0(@pothos/core@4.13.0(graphql@16.14.2))(graphql@16.14.2)
+        version: 4.7.1(@pothos/core@4.13.1(graphql@16.14.2))(graphql@16.14.2)
       cookie:
         specifier: ^1.1.1
         version: 1.1.1
@@ -509,16 +509,16 @@ packages:
   '@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents.3':
     resolution: {integrity: sha512-s88O1aVtXftvp5bCPB7WnmXc5IwOZZ7YPuwNPt+GtOOXpPvad1LfbmjYv+qII7zP6RU2QGnqve27dnLycEnyEQ==}
 
-  '@pothos/core@4.13.0':
-    resolution: {integrity: sha512-bIaVdLTkwPkkmIn0Ji13vsc9Zy0mEi++a9iMFIRVa88l0G7JuFJrJX5qGPo1GGu4drvRW4SAr2aDm2V5KcYj4A==}
+  '@pothos/core@4.13.1':
+    resolution: {integrity: sha512-2hkLxmvrT7VnbiWAfYhfF09PjaHeflZ5HrBHYzU6Tn/P9tDviuZS7IS5xO4k/KnK5GkRo3YxDzXyn+HnkEkVNw==}
     peerDependencies:
       graphql: ^16.10.0 || ^17.0.0
 
-  '@pothos/plugin-relay@4.7.0':
-    resolution: {integrity: sha512-IQ7f7WLu7uXxiZBcJgUTdspjIVzX3bgvd8XjnzxGJUbn/uE5HlVyCFmvhJffHIIS2OKSHhOOJRMwIwVwauwnSg==}
+  '@pothos/plugin-relay@4.7.1':
+    resolution: {integrity: sha512-aj0xgdcvktx0k6iOvtkfJvb6FYdoWnlQkDMumr1WQm7uTXsJOASYQndytfnS0/0wsctCF/UTTK6Y53+F0UIeMw==}
     peerDependencies:
       '@pothos/core': '*'
-      graphql: ^16.10.0
+      graphql: ^16.10.0 || ^17.0.0
 
   '@stylexjs/babel-plugin@0.19.0':
     resolution: {integrity: sha512-2SnVZIl047TtqKW0nRTn7Irz0kmoot1bxdGDE/HwfwfF7dJYHqwkIFg92s87v3hj7zxJobrHWwDx1p3qvQXW4g==}
@@ -1311,13 +1311,13 @@ snapshots:
   '@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents.3':
     optional: true
 
-  '@pothos/core@4.13.0(graphql@16.14.2)':
+  '@pothos/core@4.13.1(graphql@16.14.2)':
     dependencies:
       graphql: 16.14.2
 
-  '@pothos/plugin-relay@4.7.0(@pothos/core@4.13.0(graphql@16.14.2))(graphql@16.14.2)':
+  '@pothos/plugin-relay@4.7.1(@pothos/core@4.13.1(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
-      '@pothos/core': 4.13.0(graphql@16.14.2)
+      '@pothos/core': 4.13.1(graphql@16.14.2)
       graphql: 16.14.2
 
   '@stylexjs/babel-plugin@0.19.0':

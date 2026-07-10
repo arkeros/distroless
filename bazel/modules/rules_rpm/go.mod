@@ -6,7 +6,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.4.1
 	github.com/klauspost/compress v1.18.6
 	github.com/sassoftware/go-rpmutils v0.4.0
-	modernc.org/sqlite v1.52.0
+	modernc.org/sqlite v1.53.0
 )
 
 require (
@@ -20,8 +20,8 @@ require (
 	github.com/ulikunitz/xz v0.5.14 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	modernc.org/libc v1.72.3 // indirect
+	golang.org/x/sys v0.44.0 // indirect
+	modernc.org/libc v1.73.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )

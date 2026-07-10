@@ -1,6 +1,6 @@
 bazel_dep(name = "rules_nodejs", version = "6.7.5")
 bazel_dep(name = "aspect_rules_js", version = "3.2.2")
-bazel_dep(name = "aspect_rules_ts", version = "3.8.11")
+bazel_dep(name = "aspect_rules_ts", version = "3.9.0")
 bazel_dep(name = "aspect_rules_esbuild", version = "0.26.0")
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")

@@ -37,6 +37,14 @@ common --registry=https://bcr.bazel.build
 # alternative `--linkopt=-no-pie` workaround.
 common --@rules_go//go/config:linkmode=pie
 
+# We build no Android code, but rules_android's @androidsdk repo rule reads
+# ANDROID_HOME and hard-fails when it points at a directory without SDK APIs
+# (e.g. Renovate's containerbase image sets it to an empty ~/.android-sdk,
+# which broke every `bazel run` postUpgradeTask). Pin it empty so the repo
+# rule always takes its "empty repository that allows non-Android code to
+# build" path, regardless of host environment.
+common --repo_env=ANDROID_HOME=
+
 # Enforce ADR 0006 at analysis time: any `image_push` to the public mirror
 # surface (`ghcr.io/arkeros/senku/*`) without the `mirror_push_managed` tag
 # fails the build. Wired here (not as a `--config=`) so the policy is

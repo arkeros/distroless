@@ -921,7 +921,7 @@
         "bzlTransitiveDigest": "mlfnpI6GvLQ3uMmZfG7MWce/glf6Qm6p814SsHdPAeI=",
         "usagesDigest": "Z8jkWld2AZyR7w4MQe3uygL0hDUN4DjAyFwHUwjDs08=",
         "recordedInputs": [
-          "FILE:@@//hummingbird.lock.json 6b9f6a4f83939a16130741b86775c4abfd4b899dbad8f50db893c61285c410fa",
+          "FILE:@@//hummingbird.lock.json aad344e6d88cdf81320f9f740dbcd104927759e314fe3af53a04f46010a859a0",
           "FILE:@@//oci/distroless/nginx/nginx-stable.hummingbird.lock.json 1ece053ebf922f1a88eeea451614c7071e9ff992fb95073035b6c53b72d8a285",
           "FILE:@@//oci/distroless/nginx/nginx-mainline.hummingbird.lock.json 85b91bba504c509e371e2787e3cb0140a46fec56fe5c3c2743bbd095e7db1d83"
         ],
@@ -1085,12 +1085,12 @@
             "attributes": {
               "package": "crypto-policies",
               "arch": "noarch",
-              "version": "20260708-1.git6ce654c.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/crypto-policies-20260708-1.git6ce654c.hum1.noarch.rpm",
-              "sha256": "59219dcd875fe571ae9e6b0c3516235b0d49bc0c337b4f209ef962a6dc0ef372",
+              "version": "20260710-1.gitb952499.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/crypto-policies-20260710-1.gitb952499.hum1.noarch.rpm",
+              "sha256": "0aca6d29173a1da467a5ed45c52d2619009553f06e949bba4c1cd7d4e3de76fa",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "crypto-policies-20260708-1.git6ce654c.hum1.src.rpm",
+              "upstream": "crypto-policies-20260710-1.gitb952499.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1099,12 +1099,12 @@
             "attributes": {
               "package": "crypto-policies-config-default",
               "arch": "noarch",
-              "version": "20260708-1.git6ce654c.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/crypto-policies-config-default-20260708-1.git6ce654c.hum1.noarch.rpm",
-              "sha256": "a06f88c4540d5c76907228dc65a8d68c49024cf0f2560ec8df2b17dd0af46f3b",
+              "version": "20260710-1.gitb952499.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/crypto-policies-config-default-20260710-1.gitb952499.hum1.noarch.rpm",
+              "sha256": "24311455108da461ca52bf56caf91c35b6186a0e6f39f9d7f94c4798169f7c4a",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "crypto-policies-20260708-1.git6ce654c.hum1.src.rpm",
+              "upstream": "crypto-policies-20260710-1.gitb952499.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },

@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1783706281",
-    "repomd_sha256": "dd552defe55071cdfe10d56ad926f1654d014ab2518c44fe0bc7621f8f4803ec"
+    "revision": "1783877510",
+    "repomd_sha256": "b61dd37995330e85af3c8e997214a536da12034e6c0e12b91e957e1de2df5787"
   },
   "packages": {
     "audit-libs": {
@@ -97,20 +97,20 @@
     },
     "crypto-policies": {
       "noarch": {
-        "version": "20260708-1.git6ce654c.hum1",
-        "sha256": "59219dcd875fe571ae9e6b0c3516235b0d49bc0c337b4f209ef962a6dc0ef372",
-        "path": "x86_64/Packages/c/crypto-policies-20260708-1.git6ce654c.hum1.noarch.rpm",
-        "size": 118948,
-        "upstream": "crypto-policies-20260708-1.git6ce654c.hum1.src.rpm"
+        "version": "20260710-1.gitb952499.hum1",
+        "sha256": "0aca6d29173a1da467a5ed45c52d2619009553f06e949bba4c1cd7d4e3de76fa",
+        "path": "x86_64/Packages/c/crypto-policies-20260710-1.gitb952499.hum1.noarch.rpm",
+        "size": 118966,
+        "upstream": "crypto-policies-20260710-1.gitb952499.hum1.src.rpm"
       }
     },
     "crypto-policies-config-default": {
       "noarch": {
-        "version": "20260708-1.git6ce654c.hum1",
-        "sha256": "a06f88c4540d5c76907228dc65a8d68c49024cf0f2560ec8df2b17dd0af46f3b",
-        "path": "x86_64/Packages/c/crypto-policies-config-default-20260708-1.git6ce654c.hum1.noarch.rpm",
-        "size": 19113,
-        "upstream": "crypto-policies-20260708-1.git6ce654c.hum1.src.rpm"
+        "version": "20260710-1.gitb952499.hum1",
+        "sha256": "24311455108da461ca52bf56caf91c35b6186a0e6f39f9d7f94c4798169f7c4a",
+        "path": "x86_64/Packages/c/crypto-policies-config-default-20260710-1.gitb952499.hum1.noarch.rpm",
+        "size": 19273,
+        "upstream": "crypto-policies-20260710-1.gitb952499.hum1.src.rpm"
       }
     },
     "filesystem": {

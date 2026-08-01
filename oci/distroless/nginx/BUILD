@@ -10,7 +10,7 @@ load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
-load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
+load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NGINX_FIXED_VEX_STATEMENTS")
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
@@ -68,37 +68,42 @@ vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
-    statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_VEX_STATEMENTS,
-    timestamp = "2026-05-13T00:00:00Z",
+    statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS + NGINX_VEX_STATEMENTS,
+    timestamp = "2026-08-01T00:00:00Z",
 )
 
 vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#debug",
-    statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_VEX_STATEMENTS,
-    timestamp = "2026-05-13T00:00:00Z",
+    statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS + NGINX_VEX_STATEMENTS,
+    timestamp = "2026-08-01T00:00:00Z",
 )
 
-# CVE-2026-42055 — heap buffer overflow in ngx_http_proxy_v2_module /
-# ngx_http_grpc_module on oversized HTTP/2 headers. Fixed by upstream
-# in nginx 1.30.3 (stable) and 1.31.2 (mainline) — the exact versions
-# our lockfiles pin (https://nginx.org/en/security_advisories.html).
-# Mainline (1.31.2) doesn't match at all, but stable does — the match
-# routes via Hummingbird's secdb, whose advisory says fixed in
-# `nginx-1.30.3-2.hum1`, and rpmvercmp ranks the nginx.org release
-# tag `1.el10.ngx` below `2.hum1` (cross-vendor release-tag
-# comparison, not a real version gap). The binary is upstream 1.30.3,
-# which contains the fix. Same artifact class as the retired
-# CVE-2026-9256 statement, which `_cve_test_stale_vex` pruned once
-# the DB synced that fixed range.
+# CVE-2026-60005 — uninitialized-memory disclosure in
+# ngx_http_slice_module. Fixed upstream in nginx 1.30.4 (stable) and
+# 1.31.3 (mainline) per https://nginx.org/en/security_advisories.html —
+# the exact versions our lockfiles pin. Mainline doesn't match at all;
+# stable does, because the match routes via Hummingbird's secdb, whose
+# advisory names Hummingbird's own `nginx-1.30.4-2.hum1` rebuild as the
+# fixed version and rpmvercmp ranks the nginx.org release tag
+# `1.el10.ngx` below `2.hum1`. Cross-vendor release-tag comparison, not
+# a real version gap: the binary is upstream 1.30.4, which carries the
+# fix. Switching to Hummingbird's own nginx rpm would silence this, but
+# at the cost of its nginx/nginx-core/nginx-filesystem decomposition and
+# gperftools/libunwind/libxcrypt linkage — the reason
+# //bazel/include/oci.MODULE.bazel sources nginx from nginx.org instead.
+#
+# Third statement of this exact class, after CVE-2026-9256 and
+# CVE-2026-42055, both of which `_cve_test_stale_vex` pruned once the
+# rpm pin moved past the advisory range.
 _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX = [
     vex_statement(
-        expires = "2026-08-21",
-        impact_statement = "Fixed upstream in nginx 1.30.3; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.3-2.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 2.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
+        expires = "2026-09-15",
+        impact_statement = "Fixed upstream in nginx 1.30.4; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.4-2.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 2.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
         products = ["pkg:rpm/nginx.org/nginx"],
         status = "fixed",
-        vulnerability = "CVE-2026-42055",
+        vulnerability = "CVE-2026-60005",
     ),
 ]
 
@@ -117,8 +122,8 @@ vex_document(
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-stable",
     statements = _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX,
-    timestamp = "2026-07-10T00:00:00Z",
-    version = 3,
+    timestamp = "2026-08-01T00:00:00Z",
+    version = 4,
 )
 
 _IGNORE_CVES_BY_DISTRO = {
@@ -126,10 +131,11 @@ _IGNORE_CVES_BY_DISTRO = {
     "hummingbird": [],
 }
 
-# Per (channel, distro). Hummingbird stable carries the CVE-2026-9256
+# Per (channel, distro). Hummingbird stable carries the current
 # release-tag VEX (see _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX); mainline
-# carries none. Debian uses the same VEX doc for both channels (the
-# CVE-2013-0337 log-permissions VEX applies regardless).
+# carries none. Debian uses the same VEX doc for both channels — both
+# the CVE-2013-0337 log-permissions statement and the nginx.org-vs-
+# Debian-tracker statements apply regardless of channel.
 _VEX_BY_CHANNEL_AND_DISTRO = {
     "stable": {
         "debian": [":vex"],

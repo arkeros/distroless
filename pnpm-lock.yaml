@@ -72,6 +72,9 @@ importers:
       '@babel/preset-typescript':
         specifier: ^7.28.5
         version: 7.29.7(@babel/core@7.29.7)
+      '@resvg/resvg-wasm':
+        specifier: ^2.6.2
+        version: 2.6.2
       '@stylexjs/babel-plugin':
         specifier: ^0.19.0
         version: 0.19.0
@@ -505,6 +508,10 @@ packages:
     peerDependencies:
       '@pothos/core': '*'
       graphql: ^16.10.0 || ^17.0.0
+
+  '@resvg/resvg-wasm@2.6.2':
+    resolution: {integrity: sha512-FqALmHI8D4o6lk/LRWDnhw95z5eO+eAa6ORjVg09YRR7BkcM6oPHU9uyC0gtQG5vpFLvgpeU4+zEAz2H8APHNw==}
+    engines: {node: '>= 10'}
 
   '@stylexjs/babel-plugin@0.19.0':
     resolution: {integrity: sha512-2SnVZIl047TtqKW0nRTn7Irz0kmoot1bxdGDE/HwfwfF7dJYHqwkIFg92s87v3hj7zxJobrHWwDx1p3qvQXW4g==}
@@ -1292,6 +1299,8 @@ snapshots:
     dependencies:
       '@pothos/core': 4.13.1(graphql@17.0.2)
       graphql: 17.0.2
+
+  '@resvg/resvg-wasm@2.6.2': {}
 
   '@stylexjs/babel-plugin@0.19.0':
     dependencies:

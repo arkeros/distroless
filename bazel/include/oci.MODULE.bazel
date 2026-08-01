@@ -72,15 +72,7 @@ apt.install(
     mergedusr = True,
     package_template = "//oci/distroless/common:package.BUILD.tmpl",
 )
-apt.install(
-    name = "workstation",
-    distro = "debian-unstable",
-    lock = "//devtools/workstation:debian.lock.json",
-    manifest = "//devtools/workstation:debian.yaml",
-    mergedusr = True,
-    package_template = "//oci/distroless/common:package.BUILD.tmpl",
-)
-use_repo(apt, "debian", "nginx_mainline", "nginx_stable", "workstation")
+use_repo(apt, "debian", "nginx_mainline", "nginx_stable")
 
 # Hummingbird RPM repository — sourced from a public Hummingbird snapshot
 # (see ADR 0007). The lockfile pins `revision` + per-rpm SHA256; refresh
@@ -372,45 +364,6 @@ filegroup(
     for major, (version, build, sha_by_arch) in sha_by_major.items()
     for arch, sha in sha_by_arch.items()
 ]
-
-# Out-of-band binaries baked into //devtools/workstation. Versions are
-# pinned; refresh by re-fetching:
-#
-#   curl -fsSL https://api.github.com/repos/bazelbuild/bazelisk/releases/latest | jq -r .tag_name
-#   curl -fsSL https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/stable
-#
-# then updating the URLs and per-arch sha256s here.
-http_file(
-    name = "bazelisk_amd64",
-    downloaded_file_path = "bazelisk",
-    executable = True,
-    sha256 = "5a408715e932c0250d28bd84555f12edbf70117de42f9181691c736eacc4a992",
-    url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-amd64",
-)
-
-http_file(
-    name = "bazelisk_arm64",
-    downloaded_file_path = "bazelisk",
-    executable = True,
-    sha256 = "e20e8b0f4f240091b7a55bf17b9398bd4f40ee70ae0208dff95dd4c445fb4010",
-    url = "https://github.com/bazelbuild/bazelisk/releases/download/v1.29.0/bazelisk-linux-arm64",
-)
-
-http_file(
-    name = "claude_amd64",
-    downloaded_file_path = "claude",
-    executable = True,
-    sha256 = "f54e69cbc89b2da61a415700af7ff52a147e862517d4f1b0eecf768448cf7f83",
-    url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.197/linux-x64/claude",
-)
-
-http_file(
-    name = "claude_arm64",
-    downloaded_file_path = "claude",
-    executable = True,
-    sha256 = "fb48473c467c27615ac799a754f4ef0b68c363e4596cefbb59c3815d51a0cc8a",
-    url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.197/linux-arm64/claude",
-)
 
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(

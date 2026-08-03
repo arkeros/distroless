@@ -40,7 +40,7 @@ rbe_platform_repository(name = "rbe_platform")
 
 # Not dev_dependency: //:BUILD loads from this plugin to wire up gazelle, and
 # that load needs to succeed when @senku is consumed as a non-root bzlmod dep.
-bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.0")
+bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.2")
 
 bazel_dep(name = "lazy_bazel_env.bzl", version = "0.0.0", dev_dependency = True)
 bazel_dep(name = "yq.bzl", version = "0.3.6", dev_dependency = True)

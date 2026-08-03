@@ -906,7 +906,7 @@
         "bzlTransitiveDigest": "mlfnpI6GvLQ3uMmZfG7MWce/glf6Qm6p814SsHdPAeI=",
         "usagesDigest": "Z8jkWld2AZyR7w4MQe3uygL0hDUN4DjAyFwHUwjDs08=",
         "recordedInputs": [
-          "FILE:@@//hummingbird.lock.json 14d3b1535c1faeef915d5c21feb40cee4cca2e2def406e6e903d0e8084364da2",
+          "FILE:@@//hummingbird.lock.json 6372f86ea6a19f9228692c1f40124867afa07110c5d652cecc654b6fe24f2da0",
           "FILE:@@//oci/distroless/nginx/nginx-stable.hummingbird.lock.json 60a2affc847db0707f26440e367abf510a290f5e9d00c172cb585d666e2e58bc",
           "FILE:@@//oci/distroless/nginx/nginx-mainline.hummingbird.lock.json 804ae41ea9d34ba1a189a638afcfd7bb142728d3751e37db478d1d75ad20d070"
         ],
@@ -1014,12 +1014,12 @@
             "attributes": {
               "package": "coreutils",
               "arch": "aarch64",
-              "version": "9.11-5.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/c/coreutils-9.11-5.1.hum1.aarch64.rpm",
-              "sha256": "74db15f67597eaa8d902c2d683cbe0112fec7f30dbcf3876eef6fc5194564179",
+              "version": "9.11-6.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/c/coreutils-9.11-6.hum1.aarch64.rpm",
+              "sha256": "d5db6ccd7af1740489914e066e57afd95e1067884fd995ab777505190bf73470",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "coreutils-9.11-5.1.hum1.src.rpm",
+              "upstream": "coreutils-9.11-6.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1028,12 +1028,12 @@
             "attributes": {
               "package": "coreutils",
               "arch": "x86_64",
-              "version": "9.11-5.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/coreutils-9.11-5.1.hum1.x86_64.rpm",
-              "sha256": "492f724c7634f2fcf6803ac59f1708aa66b057415c90962b0ab4112949302d4b",
+              "version": "9.11-6.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/coreutils-9.11-6.hum1.x86_64.rpm",
+              "sha256": "f218e1a49716ab7271c82881fcfea363afddcdde249bd3d0d593d19710d069c0",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "coreutils-9.11-5.1.hum1.src.rpm",
+              "upstream": "coreutils-9.11-6.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1042,12 +1042,12 @@
             "attributes": {
               "package": "coreutils-common",
               "arch": "aarch64",
-              "version": "9.11-5.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/c/coreutils-common-9.11-5.1.hum1.aarch64.rpm",
-              "sha256": "ea052c93a74b2cba39c97e022a31bbcad897004c3d68848bc7b1a9b495a778e5",
+              "version": "9.11-6.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/c/coreutils-common-9.11-6.hum1.aarch64.rpm",
+              "sha256": "a07905c837da9d5e491023b93da6199bd64aac5cbbaff4f6474aef72ef248be0",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "coreutils-9.11-5.1.hum1.src.rpm",
+              "upstream": "coreutils-9.11-6.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1056,12 +1056,12 @@
             "attributes": {
               "package": "coreutils-common",
               "arch": "x86_64",
-              "version": "9.11-5.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/coreutils-common-9.11-5.1.hum1.x86_64.rpm",
-              "sha256": "900cf1b2ef089af53f511475e33be0b752c7d1025eb31c07a04b768b9f291fcb",
+              "version": "9.11-6.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/coreutils-common-9.11-6.hum1.x86_64.rpm",
+              "sha256": "e0d8e53affee9d886cd7c53f32d4352514d3a80fd700f1a208442cc4c093c483",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "coreutils-9.11-5.1.hum1.src.rpm",
+              "upstream": "coreutils-9.11-6.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },

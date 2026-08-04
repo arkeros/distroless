@@ -8,6 +8,9 @@ namespaced — see `@terraform.bzl//:gcp.bzl` and `@terraform.bzl//:k8s.bzl`.
 
 load(
     "//terraform:defs.bzl",
+    _DEPLOY_TAG_KIND_TASK = "DEPLOY_TAG_KIND_TASK",
+    _deploy_tags = "deploy_tags",
+    _deploy_task = "deploy_task",
     _merge_tf = "merge_tf",
     _output = "output",
     _remote_state = "remote_state",
@@ -33,6 +36,14 @@ remote_state = _remote_state
 var = _var
 variable = _variable
 merge_tf = _merge_tf
+
+# Deploy-DAG helpers, for nodes that are not Terraform roots.
+# `deploy_task` wraps an existing runnable; `deploy_tags` is the primitive
+# underneath it, for macros that create their own target and can tag it
+# directly.
+deploy_task = _deploy_task
+deploy_tags = _deploy_tags
+DEPLOY_TAG_KIND_TASK = _DEPLOY_TAG_KIND_TASK
 tf_script_test = _tf_script_test
 tf_script_binary = _tf_script_binary
 tf_toolchain = _tf_toolchain

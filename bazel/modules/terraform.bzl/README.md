@@ -102,15 +102,31 @@ can still see.
 | Argument | Default | Tag |
 | --- | --- | --- |
 | — | — | `tf-root` on every root |
-| `deploy` | `True` | `tf-deploy` |
+| `deploy` | `True` | `tf-deploy`, `tf-kind=root` |
 | `bootstrap` | `False` | `tf-bootstrap` |
-| `deploy_tier` | `0` | `tf-tier=<n>` |
+| `deploy_after` | `[]` | one `tf-after=<label>` per edge |
 
 ```bash
-bazel query 'attr(tags, "tf-deploy", //...)'     # what an orchestrator would apply
-bazel query 'attr(tags, "tf-bootstrap", //...)'  # what it must not apply itself
-bazel query 'attr(tags, "tf-tier=2", //...)'     # what goes last
+bazel query 'attr(tags, "tf-deploy", //...)'      # every node in the graph
+bazel query 'attr(tags, "tf-bootstrap", //...)'   # what CI must not apply itself
+bazel query 'attr(tags, "tf-after=//x:y", //...)' # what waits on //x:y
 ```
+
+Nodes are **operations, not roots**. `deploy_task` puts a plain runnable in the
+graph, so a step that manages no state — pushing an image, warming a cache,
+running a smoke check — is an ordinary node with ordinary edges:
+
+```python
+deploy_task(
+    name = "push",
+    run = ":image_push",
+    after = ["//infra/cloud/gcp/gar:terraform"],
+)
+```
+
+That distinction is what lets an edge name the thing that actually holds the
+dependency. An app's image push needs its registry to exist; the app's
+Terraform does not.
 
 The module only publishes these. It does not act on them — walking the set is
 the orchestrator's job (in senku, `.aspect/{plan,apply}.axl`). That split is
@@ -153,39 +169,41 @@ foundational without being bootstrap: the registry is a hard prerequisite for
 every image-pushing root, but applying it cannot lock CI out of its own
 account, so it is ordinary.
 
-### `deploy_tier` — what has to exist first?
+### `deploy_after` — what has to exist first?
 
-Roots apply in ascending tier. Within a tier the order is unspecified and
-**must not matter** — if two roots in a tier depend on each other, the fix is a
-tier boundary between them, not a lucky sort.
+An edge means "the resources that node creates must already exist." Nodes are
+topologically sorted; ready nodes go in sorted order, so a graph with slack
+always linearises the same way. A cycle is reported by name and fails.
 
-Tiers rather than per-root edges because tiers fail in the safe direction. A
-root added without a thought lands at tier 0 and therefore applies *before*
-everything else — early, possibly needlessly, but never late. A missing edge in
-a `deploy_after` scheme fails the other way: silently too late, which is
-exactly the failure the metadata exists to prevent.
+**A deploy dependency is not a build dependency.** This is the distinction an
+edge encodes, and the one that is easy to get wrong:
 
-A useful pattern is to have a wrapper macro claim the tier so callers never
-think about it. In senku, `tf_root_with_image` prepends an image push to
-`pre_apply`, so the registry must already exist and the macro assigns tier 1 —
-a new app inherits a correct position from the macro it was already using.
-
-**A deploy dependency is not a build dependency.** This is the distinction the
-tier encodes, and the one that is easy to get wrong:
-
-| Root A does this to root B | Deploy dependency? |
+| A does this to B | Deploy dependency? |
 | --- | --- |
 | Names B's Cloud Run service in a serverless NEG | **Yes** — GCP validates the reference; a missing service serves a bare 404 |
 | `load()`s a bucket *name* from B for a log filter | **No** — a filter string is never validated |
 
 Both look identical in the build graph: A imports a constant from B. Whether
 the reference is checked is a property of the provider's API, not of Starlark,
-so the tier cannot be inferred from `load()` edges and has to be stated. See
-[ADR 0008](../../../docs/adr/0008-derived-terraform-deploy-set.md) for the case
-where inferring it produces a wrong answer.
+so it cannot be read off `load()` edges and has to be stated.
 
-Tiers are single-digit (`0..9`) and the macro rejects anything else: tags are
-matched by substring, so `tf-tier=1` would otherwise also select `tf-tier=10`.
+**Derive edges; do not hand-maintain them.** A list nobody has to remember to
+update cannot drift, and that is the whole point — this module grew deploy
+metadata because a hand-maintained deploy list silently lost an entry. Two
+patterns do most of the work:
+
+- **Hand the dependency out with the address.** Rather than exporting a
+  registry hostname on its own, export a descriptor carrying the host *and*
+  the root that provisions it, and have the pushing macro turn the latter into
+  its edge. A caller then cannot resolve where to push without also learning
+  what it must wait for.
+- **Derive from data the node already needs.** senku's load balancer takes its
+  edges from the same backend dict it uses to build routes: a backend that
+  routes through it is necessarily in that dict.
+
+See [ADR 0008](../../../docs/adr/0008-derived-terraform-deploy-set.md) for the
+alternatives considered — integer tiers, inferring order from the `load()`
+graph, and a degenerate `tf_root` in place of `deploy_task`.
 
 ## Layout
 

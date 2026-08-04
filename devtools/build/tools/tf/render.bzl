@@ -19,31 +19,67 @@ because only senku consumes rules_img's `DeployInfo`.
 """
 
 load("@jq.bzl//jq:jq.bzl", "jq")
+load("@rules_img//img:push.bzl", "image_push")
 load("@rules_img//img/private/providers:deploy_info.bzl", "DeployInfo")
-load("@terraform.bzl", _tf_root = "tf_root")
+load("@terraform.bzl", _deploy_tags = "deploy_tags", _tf_root = "tf_root")
 
 # Sentinel inserted in the JSON wherever the digest URI should land. Distinct
 # enough to never collide with real content; not Terraform-interpretable, so a
 # plan run against an unrendered template fails loudly.
 IMAGE_URI = "___BAZEL_IMAGE_URI___"
 
-# Deploy tiers. `aspect apply` walks the deploy set tier by tier, ascending.
-#
-# The registry sits at tier 0 because everything else is defined relative to
-# it. Any root that pushes an image needs the Artifact Registry repository to
-# already exist — `tf_root_with_image` prepends an `image_push` to `pre_apply`,
-# and that push happens before terraform runs — so every such root is tier 1
-# by construction, with no per-call-site declaration. That is the whole point:
-# a new app inherits its position from the macro it already uses.
-REGISTRY_DEPLOY_TIER = 0
+# Every deployed image is tagged the same way: a moving `latest` plus two
+# immutable stamps. Callers that need something else (the registry's debug
+# variant) pass their own.
+DEFAULT_TAG_LIST = [
+    "latest",
+    "{{.STABLE_MONOREPO_IMAGE_TAG_VERSION}}",
+    "{{.STABLE_MONOREPO_SHORT_VERSION}}",
+]
 
-IMAGE_ROOT_DEPLOY_TIER = 1
+def registry_push(name, image, registry, repository, tag_list = None, deploy = True, **kwargs):
+    """Push an image to a Terraform-managed registry, as a deploy-DAG node.
 
-# The load balancer goes last. Its serverless NEGs name Cloud Run services by
-# string, and a NEG whose service does not exist resolves to a bare 404 rather
-# than an error — so every backend must be applied first. Tier 2 clears both
-# tier 0 and every image-pushing root at tier 1.
-LB_DEPLOY_TIER = IMAGE_ROOT_DEPLOY_TIER + 1
+    This is the target that actually depends on the registry existing: it
+    writes into a repository some root provisions, and fails until that root
+    has applied. Carrying the edge here rather than on the consuming
+    `tf_root` attaches it to the operation that has the dependency — an app's
+    Terraform is perfectly happy without a registry; only its push is not.
+
+    Args:
+        name: Target name; this is the node's label.
+        image: Label of the image to push.
+        registry: A registry descriptor — `host`, `repository_prefix` and the
+            `root` that creates it. See `//infra/cloud/gcp/gar:defs.bzl`.
+            Passed rather than hardcoded so the address and the dependency
+            arrive together: a caller cannot resolve where to push without
+            also learning what it has to wait for.
+        repository: Repository leaf under the registry's prefix — usually the
+            service name.
+        tag_list: Overrides `DEFAULT_TAG_LIST`.
+        deploy: False builds the push target but leaves it out of the deploy
+            DAG, for images that exist only as manual tooling.
+        **kwargs: Forwarded to `image_push`.
+    """
+    tags = ["manual"]
+    if deploy:
+        tags += _deploy_tags(
+            after = [registry.root],
+            context = "registry_push({})".format(name),
+        )
+
+    image_push(
+        name = name,
+        image = image,
+        registry = registry.host,
+        repository = registry.repository_prefix + "/" + repository,
+        # Immutable version tags are only meaningful when the workspace status
+        # is stamped in, and every caller wants them.
+        stamp = "force",
+        tag_list = tag_list or DEFAULT_TAG_LIST,
+        tags = tags,
+        **kwargs
+    )
 
 def _deploy_manifest_impl(ctx):
     return [DefaultInfo(files = depset([ctx.attr.image_push[DeployInfo].deploy_manifest]))]
@@ -141,11 +177,13 @@ def tf_root_with_image(name, image_push, pre_apply = None, **kwargs):
             out = out,
         )
 
-    # Pushing an image means the registry has to exist already, so an
-    # image-pushing root is never tier 0. Callers may still override — a
-    # future root might need to land later still — but they never have to
-    # think about it to be correct.
-    kwargs.setdefault("deploy_tier", IMAGE_ROOT_DEPLOY_TIER)
+    # The push is a deploy node in its own right (see `registry_push`), and this
+    # root consumes what it produces: `main.tf.json` already carries the
+    # digest, but the image only exists at that digest once the push has run.
+    # So the edge is root-after-push, and the push carries the edge to the
+    # registry — nobody declares "this app needs GAR", because the app's
+    # Terraform doesn't; its push does.
+    kwargs["deploy_after"] = [image_push] + list(kwargs.get("deploy_after") or [])
 
     _tf_root(
         name = name,

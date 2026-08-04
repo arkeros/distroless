@@ -184,16 +184,18 @@ layer, not the build core*. We agreed and dropped it.
 
 Sequencing now lives in `.aspect/{plan,apply}.axl`. `stdlib.axl` discovers the
 roots by querying the build graph — each `tf_root` publishes its own
-membership and deploy tier as tags, so there is no list to keep in sync (this
+membership and deploy edges as tags, so there is no list to keep in sync (this
 was an ordered `TF_ROOTS` list until it drifted; see
 [ADR 0008](adr/0008-derived-terraform-deploy-set.md)). The tasks are thin
 Starlark wrappers around `bazel run <root>.{plan,apply}`:
 
 ```python
 # .aspect/stdlib.axl — roughly
-members = query('attr(tags, "tf-deploy", //...)')
-for tier in range(0, 10):
-    ordered.extend(sorted(query('attr(tags, "tf-tier=%d", set(%s))' % (tier, members))))
+nodes = query('attr(tags, "tf-deploy", //...)')
+for node in nodes:                       # edges live on the dependent
+    for dependent in query('attr(tags, "tf-after=%s", set(%s))' % (node, nodes)):
+        predecessors[dependent].append(node)
+ordered = topo_sort(nodes, predecessors)  # `aspect dag` prints this
 ```
 
 ```bash

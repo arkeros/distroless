@@ -143,48 +143,121 @@ def _merge(*docs):
 
 # ---------- tf_root ---------------------------------------------------------
 
-# Deploy metadata is published as tags rather than kept in an
-# orchestrator-side list, so a root's membership, tier and bootstrap status
-# travel with the root itself. `tf_root` is a macro — its arguments are erased
-# at analysis time — so tags on the public target are the only thing
-# `bazel query` can still see.
-def _deploy_tags(name, deploy, bootstrap, deploy_tier):
-    if not deploy:
-        return [DEPLOY_TAG_ROOT]
-    if type(deploy_tier) != "int" or deploy_tier < 0 or deploy_tier > MAX_DEPLOY_TIER:
-        fail("tf_root({}): deploy_tier must be an int in 0..{}, got {}".format(
-            name,
-            MAX_DEPLOY_TIER,
-            deploy_tier,
-        ))
-    tags = [
-        DEPLOY_TAG_ROOT,
-        DEPLOY_TAG_DEPLOY,
-        "{}{}".format(DEPLOY_TAG_TIER_PREFIX, deploy_tier),
+# --- deploy DAG metadata -----------------------------------------------------
+#
+# The deploy graph is published as tags rather than kept in an orchestrator-side
+# list, so what a node is and what it waits for travel with the node itself.
+# `tf_root` is a macro — its arguments are erased at analysis time — so tags on
+# the public target are the only thing `bazel query` can still see.
+#
+# Nodes are *operations*, not roots. A Terraform root is one kind of node; a
+# plain runnable (senku pushes container images) is another. Modelling the
+# operation is what lets an edge point at the thing that actually has the
+# dependency: an app's image push needs the registry to exist, while the app's
+# Terraform does not.
+
+# Marks every `tf_root`, deployable or not. Handy for "show me all the roots";
+# not what the orchestrator selects on.
+DEPLOY_TAG_ROOT = "tf-root"
+
+# Membership. A node without this is never planned or applied — examples and
+# fixtures opt out here.
+DEPLOY_TAG_DEPLOY = "tf-deploy"
+
+# How to run the node. A root is driven through its `.apply` runnable; a task
+# is a runnable that is simply executed. The module stays agnostic about what a
+# task does — that a task might push an image is senku's business, not ours.
+DEPLOY_TAG_KIND_ROOT = "tf-kind=root"
+
+DEPLOY_TAG_KIND_TASK = "tf-kind=task"
+
+# Roots that provision the CI identity itself, so a CI-side apply could revoke
+# its own permissions. Skipped under `$CI`, walked locally.
+DEPLOY_TAG_BOOTSTRAP = "tf-bootstrap"
+
+# One per edge, as `tf-after=<absolute label>`. The named node must have run to
+# completion first.
+DEPLOY_TAG_AFTER = "tf-after="
+
+def _abs_label(label, context):
+    """Absolute form of `label`, so a tag matches what `bazel query` prints.
+
+    Relative labels are resolved against the calling package, which is what
+    makes `deploy_after = [":image_push"]` work in the common case of a node
+    depending on a sibling.
+    """
+    if label.startswith("//"):
+        return label
+    if label.startswith(":"):
+        return "//{}{}".format(native.package_name(), label)
+    fail("{}: deploy_after entries must be labels (`//pkg:target` or `:target`), got {}".format(
+        context,
+        label,
+    ))
+
+def deploy_tags(after = [], kind = DEPLOY_TAG_KIND_TASK, context = "deploy_tags"):
+    """Tags marking any target as a node in the deploy DAG.
+
+    Exported for nodes that are not `tf_root`s. senku uses it to make a
+    container-image push a first-class node: the push is what needs the
+    registry to exist, so the push is what carries the edge.
+
+    Args:
+        after: labels of nodes that must run first.
+        kind: `DEPLOY_TAG_KIND_TASK` (run the target) or
+            `DEPLOY_TAG_KIND_ROOT` (run its `.apply`).
+        context: name used in error messages.
+    """
+    return [DEPLOY_TAG_DEPLOY, kind] + [
+        DEPLOY_TAG_AFTER + _abs_label(a, context) for a in after
     ]
+
+def deploy_task(name, run, after = None, deploy = True, visibility = None):
+    """A deploy-DAG node that runs an existing target.
+
+    The counterpart to `tf_root`: a node that is a plain runnable rather than
+    a Terraform root. Use it for a step that has to happen in a particular
+    place in the deploy order but manages no state of its own — pushing a
+    container image, warming a cache, running a smoke check.
+
+    Prefer this over a `tf_root` with `docs = []`. That works, but every root
+    carries a backend, so a "root" managing nothing still creates a state
+    object, takes an `init`/`apply` round trip on every deploy, and shows up
+    as "No changes." in every plan.
+
+    Emitted as an alias, so the node has its own label in the graph while the
+    underlying target stays independently runnable. `manual` keeps it out of
+    wildcard builds — being in the deploy DAG is what makes it run.
+
+    Args:
+        name: Target name; this is the node's label.
+        run: Label of the executable to run.
+        after: Labels of nodes that must run first.
+        deploy: False leaves the alias in place but out of the graph.
+        visibility: Standard.
+    """
+    native.alias(
+        name = name,
+        actual = run,
+        tags = ["manual"] + (deploy_tags(
+            after = after or [],
+            context = "deploy_task({})".format(name),
+        ) if deploy else []),
+        visibility = visibility,
+    )
+
+def _root_deploy_tags(name, deploy, bootstrap, deploy_after):
+    if not deploy:
+        # Still identifiable as a root, just not part of the graph.
+        return [DEPLOY_TAG_ROOT]
+    tags = [DEPLOY_TAG_ROOT] + deploy_tags(
+        after = deploy_after,
+        kind = DEPLOY_TAG_KIND_ROOT,
+        context = "tf_root({})".format(name),
+    )
     if bootstrap:
         tags.append(DEPLOY_TAG_BOOTSTRAP)
     return tags
-
-# Marks every `tf_root`, deployable or not. Handy for "show me all the
-# roots"; not what the orchestrator selects on.
-DEPLOY_TAG_ROOT = "tf-root"
-
-# The deploy set. A root without this tag is never planned or applied by
-# `aspect plan` / `aspect apply` — examples and fixtures opt out here.
-DEPLOY_TAG_DEPLOY = "tf-deploy"
-
-# Tier-0 in the credential sense: roots that provision the CI identity
-# itself, so a CI-side apply could revoke its own permissions.
-DEPLOY_TAG_BOOTSTRAP = "tf-bootstrap"
-
-# Deploy-order bucket, appended as `tf-tier=<n>`. Roots run tier by tier,
-# ascending. Single-digit by construction: the orchestrator selects tiers
-# with a substring match, and `tf-tier=1` would otherwise also match
-# `tf-tier=10`.
-DEPLOY_TAG_TIER_PREFIX = "tf-tier="
-
-MAX_DEPLOY_TIER = 9
 
 def tf_root(
         name,
@@ -200,7 +273,7 @@ def tf_root(
         providers = None,
         deploy = True,
         bootstrap = False,
-        deploy_tier = 0,
+        deploy_after = None,
         visibility = None):
     """Emit `.tf.json` files + plan/apply runnables for one Terraform root.
 
@@ -263,12 +336,15 @@ def tf_root(
             `aspect plan` / `aspect apply` skip these under `$CI` — a
             botched CI-side apply could revoke the SA's own permissions
             and leave CI unable to recover — but walk them locally.
-        deploy_tier: Deploy-order bucket, 0..9. Roots apply tier by tier,
-            ascending; within a tier, order is unspecified and must not
-            matter. A root belongs one tier above anything whose *GCP
-            resources* it needs to already exist — which is not the same
-            as what it `load()`s: importing a bucket's name is a build
-            dependency, not a deploy one.
+        deploy_after: Labels of deploy nodes that must run to completion
+            before this root is applied. Absolute (`//pkg:target`) or
+            relative to this package (`:target`).
+            An edge means "the resources that node creates must already
+            exist", which is not the same as what the root `load()`s:
+            importing another root's bucket *name* into a log filter is a
+            build dependency, not a deploy one. Prefer deriving these from
+            data the root already has — a list nobody has to remember to
+            update cannot drift.
         visibility: Standard.
     """
     tfvars = tfvars or []
@@ -353,7 +429,7 @@ def tf_root(
     native.filegroup(
         name = name,
         srcs = generated,
-        tags = _deploy_tags(name, deploy, bootstrap, deploy_tier),
+        tags = _root_deploy_tags(name, deploy, bootstrap, deploy_after or []),
         visibility = visibility,
     )
 

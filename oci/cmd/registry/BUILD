@@ -9,12 +9,8 @@ load(
     "//devtools/bifrost/modules:cloudrun.bzl",
     "service_cloudrun",
 )
-load("//devtools/build/tools/tf:render.bzl", "IMAGE_URI", "tf_root_with_image")
-load(
-    "//infra/cloud/gcp/gar:defs.bzl",
-    "GAR_REGISTRY",
-    "GAR_REPOSITORY_PREFIX",
-)
+load("//devtools/build/tools/tf:render.bzl", "IMAGE_URI", "registry_push", "tf_root_with_image")
+load("//infra/cloud/gcp/gar:defs.bzl", "REGISTRY")
 load(
     "//oci:config.bzl",
     "OCI_REGISTRY",
@@ -111,18 +107,20 @@ go_binary(
 # scope per ADR 0006. `aspect apply` re-pushes against the same digest via
 # the registry root's pre_apply hook.
 [
-    image_push(
+    registry_push(
         name = "image" + mode + "_push_gar",
+        # Only the non-debug image is deployed. The debug variant exists for
+        # `gcloud run services proxy` sessions and is pushed by hand, so it is
+        # built here but stays out of the deploy DAG.
+        deploy = not mode,
         image = ":image" + mode,
-        registry = GAR_REGISTRY,
-        repository = GAR_REPOSITORY_PREFIX + "/registry",
-        stamp = "force",
+        registry = REGISTRY,
+        repository = "registry",
         tag_list = [
             "debug" if mode else "latest",
             "{{.STABLE_MONOREPO_IMAGE_TAG_VERSION}}" + mode.replace("_", "-"),
             "{{.STABLE_MONOREPO_SHORT_VERSION}}" + mode.replace("_", "-"),
         ],
-        tags = ["manual"],
     )
     for mode in DEBUG_MODE
 ]

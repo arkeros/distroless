@@ -16,6 +16,10 @@ REGIONS = [
 
 LB_BACKEND = {
     "service_name": "registry",
+    # The root that creates the Cloud Run service named above. The LB turns
+    # this into a deploy edge, so a backend is always running before anything
+    # routes to it.
+    "root": "//oci/cmd/registry:terraform",
     "regions": REGIONS,
     "paths": ["/v2/*"],
 }

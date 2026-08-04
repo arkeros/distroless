@@ -37,6 +37,24 @@ GAR_REGISTRY = GAR_LOCATION + "-docker.pkg.dev"
 # the image name (e.g. `<repository_prefix>/registry`).
 GAR_REPOSITORY_PREFIX = GAR_PROJECT + "/" + GAR_REPOSITORY_ID
 
+# Everything a pusher needs to know about this registry, in one value: where
+# to write, and which root brings it into existence.
+#
+# The two travel together because they are two halves of one fact. A push
+# aimed at `host` fails until `root` has applied, so anything that resolves
+# the address should be unable to do so without also learning the
+# dependency — handing out the strings alone is what lets a caller push to a
+# registry it never waited for.
+#
+# `root` is a literal rather than `native.package_name()`: this file is
+# evaluated while loading *other* packages' BUILD files, where that would
+# name the caller instead of us.
+REGISTRY = struct(
+    host = GAR_REGISTRY,
+    repository_prefix = GAR_REPOSITORY_PREFIX,
+    root = "//infra/cloud/gcp/gar:terraform",
+)
+
 # Artifact Registry API has to be enabled before we can create repositories
 # in the project. Managed here so a fresh project bootstraps in a single
 # apply instead of requiring an out-of-band `gcloud services enable`.

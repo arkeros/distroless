@@ -4,12 +4,12 @@ load("@rules_img//img:image.bzl", "image_from_binary")
 load("@rules_img//img:load.bzl", "image_load")
 load("@rules_img//img:push.bzl", "image_push")
 load("@terraform.bzl//:gcp.bzl", "google_provider", "service_account")
-load("@terraform.bzl", "output")
+load("@terraform.bzl", "output", "tf_root")
 load(
     "//devtools/bifrost/modules:cloudrun.bzl",
     "service_cloudrun",
 )
-load("//devtools/build/tools/tf:render.bzl", "IMAGE_URI", "registry_push", "tf_root_with_image")
+load("//devtools/build/tools/tf:render.bzl", "image_uri", "registry_push")
 load("//infra/cloud/gcp/gar:defs.bzl", "REGISTRY")
 load(
     "//oci:config.bzl",
@@ -21,9 +21,10 @@ load("//oci:supply_chain.bzl", "image_supply_chain")
 load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 load(
     ":defs.bzl",
-    "LB_BACKEND",
+    "LB_BACKEND_TF",
     "PROJECT",
     "REGIONS",
+    "SERVICE_NAME",
 )
 
 package(default_visibility = [
@@ -175,9 +176,10 @@ services = [
             "--repo=" + image
             for image in CATALOG
         ],
-        # Sentinel substituted with the digest URI at Bazel build time
-        # (see `tf_root_with_image.image_push` below). No `var.image` round-trip.
-        image = IMAGE_URI,
+        # A `ref` to the push node's digest export: resolved at build time,
+        # and it brings this root's deploy edge on the push along with it.
+        # No `var.image` round-trip.
+        image = image_uri(":image_push_gar"),
         ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER",
         probes = {
             "startup_path": "/v2/",
@@ -213,9 +215,13 @@ SERVICE_URIS = "${ {" + ", ".join([
     for region in REGIONS
 ]) + "} }"
 
-tf_root_with_image(
+tf_root(
     name = "terraform",
     backend_bucket = "senku-prod-terraform-state",
+    # Published for other roots to `ref`. The LB names this to build its
+    # serverless NEG, and takes its deploy edge from the same reference —
+    # so a backend is always running before anything routes to it.
+    exports = {"service_name": SERVICE_NAME},
     docs = [
         google_provider(project = PROJECT),
         sa,
@@ -223,7 +229,7 @@ tf_root_with_image(
         output(
             "lb_backends",
             description = "LB backends exposed for external (terraform-only) consumers. In-repo callers (//infra/cloud/gcp/lb) load `LB_BACKEND` from `:defs.bzl` directly — same content, no `terraform_remote_state` round-trip.",
-            value = {"registry": LB_BACKEND},
+            value = {"registry": LB_BACKEND_TF},
         ),
         output(
             "service_account_email",
@@ -236,7 +242,10 @@ tf_root_with_image(
             value = SERVICE_URIS,
         ),
     ],
-    image_push = ":image_push_gar",
+    # The digest in `main.tf.json` is baked in at build time; the push is what
+    # makes it real. Keeping it here means a bare `bazel run :terraform.apply`
+    # is correct on its own, not only under `aspect apply`.
+    pre_apply = [":image_push_gar"],
     providers = ["@terraform_providers//:google"],
     visibility = ["//visibility:public"],
 )

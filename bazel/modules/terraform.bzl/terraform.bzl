@@ -7,10 +7,17 @@ namespaced — see `@terraform.bzl//:gcp.bzl` and `@terraform.bzl//:k8s.bzl`.
 """
 
 load(
-    "//terraform:defs.bzl",
-    _DEPLOY_TAG_KIND_TASK = "DEPLOY_TAG_KIND_TASK",
-    _deploy_tags = "deploy_tags",
+    "//terraform:deploy.bzl",
+    _TfDeployInfo = "TfDeployInfo",
     _deploy_task = "deploy_task",
+)
+load(
+    "//terraform:refs.bzl",
+    _TfExportsInfo = "TfExportsInfo",
+    _ref = "ref",
+)
+load(
+    "//terraform:defs.bzl",
     _merge_tf = "merge_tf",
     _output = "output",
     _remote_state = "remote_state",
@@ -37,13 +44,17 @@ var = _var
 variable = _variable
 merge_tf = _merge_tf
 
-# Deploy-DAG helpers, for nodes that are not Terraform roots.
-# `deploy_task` wraps an existing runnable; `deploy_tags` is the primitive
-# underneath it, for macros that create their own target and can tag it
-# directly.
+# Deploy-DAG vocabulary, for nodes that are not Terraform roots.
+# `deploy_task` makes an existing runnable a node; `TfDeployInfo` is what
+# `deploy_after` requires, so it is also what a rule outside this module would
+# provide to become a node in its own right.
 deploy_task = _deploy_task
-deploy_tags = _deploy_tags
-DEPLOY_TAG_KIND_TASK = _DEPLOY_TAG_KIND_TASK
+TfDeployInfo = _TfDeployInfo
+
+# Cross-root references. `ref` names another root's `exports` entry; the deploy
+# edge comes from the same token, so the two cannot disagree.
+ref = _ref
+TfExportsInfo = _TfExportsInfo
 tf_script_test = _tf_script_test
 tf_script_binary = _tf_script_binary
 tf_toolchain = _tf_toolchain

@@ -11,9 +11,22 @@ bzl_library(
     name = "defs",
     srcs = ["defs.bzl"],
     deps = [
+        ":deploy",
         ":lockfile",
+        ":refs",
         ":rule",
     ],
+)
+
+bzl_library(
+    name = "deploy",
+    srcs = ["deploy.bzl"],
+    deps = [":refs"],
+)
+
+bzl_library(
+    name = "refs",
+    srcs = ["refs.bzl"],
 )
 
 bzl_library(

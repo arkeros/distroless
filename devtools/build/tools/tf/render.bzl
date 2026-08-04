@@ -1,32 +1,30 @@
-"""Build-time substitution of image-push digests into a tf_root's main.tf.json.
+"""Container images as deploy-DAG nodes, and their digests as cross-root values.
 
-`render_main_with_image` extracts the `<registry>/<repo>@sha256:<digest>` URI
-from an `image_push` target's deploy manifest and substitutes it into a
-template (the `main.tf.json` template tf_root produces). Replaces the older
-flow of shipping a `var.image` Terraform variable with an
-`image.auto.tfvars.json` — keeps the digest plumbing inside Bazel.
+`registry_push` pushes an image to a Terraform-managed registry and makes the
+push a node in the deploy graph. The digest-pinned
+`<registry>/<repo>@sha256:...` URI is published as an *export* of that node, so
+a root names it with `image_uri()` — an ordinary `ref` — and gets both the
+value and its deploy edge from the same token. Replaces the older flow of
+shipping a `var.image` Terraform variable with an `image.auto.tfvars.json`,
+and the bespoke `IMAGE_URI` sentinel that replaced that.
 
-`tf_root_with_image` wraps the module's plain `tf_root` with two extras:
+A root that deploys an image is then an ordinary `tf_root`: it names the digest
+with `image_uri()` and lists the push in `pre_apply`, so a bare
+`bazel run //x:terraform.apply` pushes before Terraform reads the registry back.
+No wrapper macro left in between.
 
-  1. `main_postprocess` is bound to `render_main_with_image` so the IMAGE_URI
-     sentinel in `docs` becomes a digest-pinned reference by the time
-     `main.tf.json` lands in bazel-bin.
-  2. `image_push` is auto-prepended to `pre_apply` so `aspect apply` pushes
-     the image before `terraform apply` reads from the registry.
-
-The module's `tf_root` itself stays generic — only senku needs this glue
-because only senku consumes rules_img's `DeployInfo`.
+The module's `tf_root` stays generic — only senku needs this glue, because
+only senku consumes rules_img's `DeployInfo`.
 """
 
 load("@jq.bzl//jq:jq.bzl", "jq")
 load("@rules_img//img:push.bzl", "image_push")
 load("@rules_img//img/private/providers:deploy_info.bzl", "DeployInfo")
-load("@terraform.bzl", _deploy_tags = "deploy_tags", _tf_root = "tf_root")
+load("@terraform.bzl", "ref", _deploy_task = "deploy_task")
 
-# Sentinel inserted in the JSON wherever the digest URI should land. Distinct
-# enough to never collide with real content; not Terraform-interpretable, so a
-# plan run against an unrendered template fails loudly.
-IMAGE_URI = "___BAZEL_IMAGE_URI___"
+# Name the push node publishes its digest-pinned URI under. Roots reach it
+# with `image_uri(":image_push_gar")` rather than naming the export directly.
+IMAGE_URI_EXPORT = "image_uri"
 
 # Every deployed image is tagged the same way: a moving `latest` plus two
 # immutable stamps. Callers that need something else (the registry's debug
@@ -36,6 +34,11 @@ DEFAULT_TAG_LIST = [
     "{{.STABLE_MONOREPO_IMAGE_TAG_VERSION}}",
     "{{.STABLE_MONOREPO_SHORT_VERSION}}",
 ]
+
+# `registry_push(name = "x")` emits the push as `:x` and its deploy node as
+# `:x.deploy`. Named once here because `image_uri()` has to derive the same
+# label to build its reference.
+PUSH_NODE_SUFFIX = ".deploy"
 
 def registry_push(name, image, registry, repository, tag_list = None, deploy = True, **kwargs):
     """Push an image to a Terraform-managed registry, as a deploy-DAG node.
@@ -61,13 +64,6 @@ def registry_push(name, image, registry, repository, tag_list = None, deploy = T
             DAG, for images that exist only as manual tooling.
         **kwargs: Forwarded to `image_push`.
     """
-    tags = ["manual"]
-    if deploy:
-        tags += _deploy_tags(
-            after = [registry.root],
-            context = "registry_push({})".format(name),
-        )
-
     image_push(
         name = name,
         image = image,
@@ -77,9 +73,45 @@ def registry_push(name, image, registry, repository, tag_list = None, deploy = T
         # is stamped in, and every caller wants them.
         stamp = "force",
         tag_list = tag_list or DEFAULT_TAG_LIST,
-        tags = tags,
+        tags = ["manual"],
         **kwargs
     )
+
+    # The node is a sibling rather than the push itself: `image_push` is
+    # rules_img's rule and cannot provide the deploy providers, and wrapping it
+    # in place would hide the `DeployInfo` the digest is extracted from.
+    # `.deploy` follows the `.plan`/`.apply` convention — the label names an
+    # operation on the target it is suffixed to.
+    if deploy:
+        # The digest-pinned URI, published as an export so a root can `ref` it
+        # like any other cross-root value. It is a file rather than a literal
+        # because only the push knows the digest, and it knows it by building
+        # the image — but it is settled long before Terraform runs, which is
+        # all `ref` requires.
+        manifest_target = "_{}_manifest".format(name)
+        uri_target = "_{}_uri".format(name)
+
+        _deploy_manifest(
+            name = manifest_target,
+            image_push = ":" + name,
+            visibility = ["//visibility:private"],
+        )
+
+        jq(
+            name = uri_target,
+            srcs = [":" + manifest_target],
+            filter = '.operations[0] | "\\(.registry)/\\(.repository)@\\(.root.digest)"',
+            args = ["-r"],
+            out = "_{}_uri.txt".format(name),
+            visibility = ["//visibility:private"],
+        )
+
+        _deploy_task(
+            name = name + PUSH_NODE_SUFFIX,
+            run = ":" + name,
+            after = [registry.root],
+            export_files = {":" + uri_target: IMAGE_URI_EXPORT},
+        )
 
 def _deploy_manifest_impl(ctx):
     return [DefaultInfo(files = depset([ctx.attr.image_push[DeployInfo].deploy_manifest]))]
@@ -92,102 +124,18 @@ _deploy_manifest = rule(
     doc = "Expose an `image_push` target's `DeployInfo.deploy_manifest` as a DefaultInfo file so `jq` can consume it via `srcs`.",
 )
 
-def render_main_with_image(name, template, image_push, out):
-    """Substitute `IMAGE_URI` in `template` with `image_push`'s digest URI.
+def image_uri(image_push):
+    """A `ref` to the digest-pinned URI `registry_push` publishes.
 
-    Three actions chain: deploy_manifest → jq (extract URI as raw text) →
-    genrule (sed substitute into the template).
-
-    Args:
-        name: Target name (the genrule emitting `out`).
-        template: Label of the template file (the unsubstituted main.tf.json).
-        image_push: Label of an `image_push` target (provides DeployInfo).
-        out: Path of the rendered output file (relative to package).
-    """
-    manifest_target = "_{}_manifest".format(name)
-    uri_target = "_{}_uri".format(name)
-
-    _deploy_manifest(
-        name = manifest_target,
-        image_push = image_push,
-        visibility = ["//visibility:private"],
-    )
-
-    jq(
-        name = uri_target,
-        srcs = [":" + manifest_target],
-        filter = '.operations[0] | "\\(.registry)/\\(.repository)@\\(.root.digest)"',
-        args = ["-r"],
-        out = "_{}_uri.txt".format(name),
-        visibility = ["//visibility:private"],
-    )
-
-    native.genrule(
-        name = name,
-        srcs = [template, ":" + uri_target],
-        outs = [out],
-        cmd = """\
-set -euo pipefail
-URI=$$(cat $(execpath :{uri}))
-[ -n "$$URI" ] || (echo "render_main_with_image: empty URI from {uri}" >&2; exit 1)
-sed "s|{placeholder}|$$URI|g" $(execpath {template}) > $@
-""".format(
-            uri = uri_target,
-            template = template,
-            placeholder = IMAGE_URI,
-        ),
-    )
-
-def tf_root_with_image(name, image_push, pre_apply = None, **kwargs):
-    """`tf_root` + IMAGE_URI substitution + auto-push pre_apply hook.
-
-    Wraps the module's plain `tf_root` for the (senku-specific) case
-    where `docs` contains `IMAGE_URI` sentinels that should resolve to
-    a digest-pinned `<registry>/<repo>@sha256:...` reference at Bazel
-    build time, and where the image must be pushed to the registry
-    before `terraform apply` reads it back.
+    `service_cloudrun(image = image_uri(":image_push_gar"))` resolves to
+    `<registry>/<repo>@sha256:...` in the generated JSON, and gives the root
+    its deploy edge on the push at the same time — the reference is the edge.
 
     Args:
-        name: Same as `tf_root`.
-        image_push: Label of an `image_push` target. Its `DeployInfo.deploy_manifest`
-            drives both the URI substitution and the pre-apply push.
-        pre_apply: Optional list of additional executables run before
-            `terraform apply`. `image_push` is auto-prepended so the
-            image lands in the registry before terraform reads it; if
-            you pass `image_push` here yourself, no double-push.
-        **kwargs: Forwarded to `tf_root` (docs, providers, backend_bucket, ...).
+        image_push: Label of a `registry_push` target, absolute or relative
+            to the calling package.
     """
-    pre = list(pre_apply or [])
-    if image_push not in pre:
-        pre = [image_push] + pre
-
-    # Nested `def` so the closure captures `image_push` from the
-    # enclosing scope. `tf_root`'s `main_postprocess` contract is
-    # `(name, template, out) -> None` — three args — but
-    # `render_main_with_image` needs a fourth (`image_push`), so we
-    # have to pre-bind it. Starlark has no `functools.partial` and no
-    # lambdas, so a nested `def` is the only way to produce a callback
-    # with the right arity. Each `tf_root_with_image` call creates a
-    # fresh closure with its own `image_push`.
-    def _postprocess(name, template, out):
-        render_main_with_image(
-            name = name,
-            template = template,
-            image_push = image_push,
-            out = out,
-        )
-
-    # The push is a deploy node in its own right (see `registry_push`), and this
-    # root consumes what it produces: `main.tf.json` already carries the
-    # digest, but the image only exists at that digest once the push has run.
-    # So the edge is root-after-push, and the push carries the edge to the
-    # registry — nobody declares "this app needs GAR", because the app's
-    # Terraform doesn't; its push does.
-    kwargs["deploy_after"] = [image_push] + list(kwargs.get("deploy_after") or [])
-
-    _tf_root(
-        name = name,
-        pre_apply = pre,
-        main_postprocess = _postprocess,
-        **kwargs
-    )
+    node = image_push + PUSH_NODE_SUFFIX
+    if node.startswith(":"):
+        node = "//{}{}".format(native.package_name(), node)
+    return ref(node, IMAGE_URI_EXPORT)

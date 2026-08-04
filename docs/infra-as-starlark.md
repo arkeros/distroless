@@ -183,19 +183,18 @@ named exactly the smell: *multi-process orchestration belongs in the task
 layer, not the build core*. We agreed and dropped it.
 
 Sequencing now lives in `.aspect/{plan,apply}.axl`. `stdlib.axl` discovers the
-roots by querying the build graph — each `tf_root` publishes its own
-membership and deploy edges as tags, so there is no list to keep in sync (this
-was an ordered `TF_ROOTS` list until it drifted; see
+roots by querying the build graph — a deployable `tf_root` *is* a node rule,
+and its edges are an ordinary label attribute, so there is no list to keep in
+sync and no edge Bazel hasn't already checked (this was an ordered `TF_ROOTS`
+list until it drifted; see
 [ADR 0008](adr/0008-derived-terraform-deploy-set.md)). The tasks are thin
 Starlark wrappers around `bazel run <root>.{plan,apply}`:
 
 ```python
 # .aspect/stdlib.axl — roughly
-nodes = query('attr(tags, "tf-deploy", //...)')
-for node in nodes:                       # edges live on the dependent
-    for dependent in query('attr(tags, "tf-after=%s", set(%s))' % (node, nodes)):
-        predecessors[dependent].append(node)
-ordered = topo_sort(nodes, predecessors)  # `aspect dag` prints this
+graph = query('kind("tf_root_node|tf_deploy_task", //...)')  # class + attrs
+predecessors = {n: graph[n].deploy_after for n in graph}     # edges on the dependent
+ordered = topo_sort(graph, predecessors)                     # `aspect dag` prints this
 ```
 
 ```bash
@@ -214,10 +213,10 @@ plan comments are posted by `plan.axl` itself rather than by a `needs:` graph.
 `oci/cmd/registry/BUILD` after migration:
 
 ```python
-load("@terraform.bzl", "var")
 load("@terraform.bzl//:gcp.bzl", "service_account")
 load("//devtools/bifrost/modules:cloudrun.bzl", "service_cloudrun")
-load("//devtools/build/tools/tf:render.bzl", "IMAGE_URI", "tf_root_with_image")
+load("@terraform.bzl", "tf_root", "var")
+load("//devtools/build/tools/tf:render.bzl", "image_uri")
 
 REGIONS = ["us-central1", "europe-west3", "asia-northeast1"]
 
@@ -233,10 +232,11 @@ services = [
         name = "registry_%s" % r.replace("-", "_"),
         project = var("project_id"),
         region = r,
-        # Sentinel substituted with `<registry>/<repo>@sha256:<digest>` at
-        # Bazel build time — see `tf_root_with_image.image_push` below. No
-        # `var.image` round-trip via `*.auto.tfvars.json`.
-        image = IMAGE_URI,
+        # A `ref` to the push node's digest export, resolved to
+        # `<registry>/<repo>@sha256:<digest>` at Bazel build time, and
+        # carrying this root's deploy edge on the push. No `var.image`
+        # round-trip via `*.auto.tfvars.json`.
+        image = image_uri(":image_push_gar"),
         service_account_email = sa.email,         # <-- the cross-resource ref
         args = [
             "--upstream=ghcr.io",
@@ -248,10 +248,10 @@ services = [
     for r in REGIONS
 ]
 
-tf_root_with_image(
+tf_root(
     name = "terraform",
     backend_bucket = "senku-prod-terraform-state",
-    image_push = ":image_push_gar",   # auto-prepended to pre_apply
+    pre_apply = [":image_push_gar"],   # push before terraform reads the digest
     docs = [sa] + services + [
         # outputs consumed by //infra/cloud/gcp/lb
         {"output": {"lb_backends": {"value": {
@@ -266,8 +266,8 @@ tf_root_with_image(
 ```
 
 `bazel run //oci/cmd/registry:terraform.apply` replaces `deploy.sh`. The image
-push + apply chain is encoded by `tf_root_with_image` (it auto-prepends
-`image_push` to `pre_apply`); no separate shell script, no tfvars round-trip.
+push + apply chain is the root's `pre_apply`; no separate shell script, no
+tfvars round-trip.
 
 ## Migration plan
 
@@ -569,13 +569,13 @@ one language.
 > Historical note: this is the layout as originally proposed. Post-migration,
 > the rules + toolchain + resource constructors live in the standalone
 > `bazel/modules/terraform.bzl/` module; the senku-side `render.bzl`
-> (IMAGE_URI + `tf_root_with_image`) is the only piece still under
-> `devtools/build/tools/tf/`.
+> (`registry_push` + `image_uri`, the rules_img glue) is the only piece still
+> under `devtools/build/tools/tf/`.
 
 ```
 devtools/build/tools/tf/
 ├── defs.bzl              — tf_root, resource, var, remote_state
-├── render.bzl            — IMAGE_URI sentinel + render_main_with_image
+├── render.bzl            — registry_push + image_uri (rules_img glue)
 ├── resources/
 │   └── gcp.bzl           — service_account, project_service, ...
 ├── run.sh                — per-root plan/apply runner

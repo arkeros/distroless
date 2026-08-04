@@ -72,7 +72,7 @@ error rather than a plan-time surprise.
 
 | Load path | Surface |
 | --- | --- |
-| `@terraform.bzl` | `tf_root`, `resource`, `output`, `var`, `variable`, `remote_state`, `merge_tf`, `tf_toolchain`, `tf_script_{test,binary}` |
+| `@terraform.bzl` | `tf_root`, `deploy_task`, `ref`, `TfDeployInfo`, `TfExportsInfo`, `resource`, `output`, `var`, `variable`, `remote_state`, `merge_tf`, `tf_toolchain`, `tf_script_{test,binary}` |
 | `@terraform.bzl//:gcp.bzl` | 21 GCP constructors — IAM, Cloud Scheduler, Secret Manager, Cloud SQL, GCS, Artifact Registry, WIF, monitoring |
 | `@terraform.bzl//:k8s.bzl` | `kubernetes_provider`, `kubernetes_manifest` |
 
@@ -94,23 +94,32 @@ resolves everything locally and never reaches the network:
 
 A repo with more than one root needs to know three things no single root can
 answer alone: which roots are real, which may be applied by CI, and what has to
-exist before what. `tf_root` takes these as arguments and republishes them as
-**tags on the public target**, which is the only channel that survives — the
-macro's arguments are erased at analysis time, so tags are all `bazel query`
-can still see.
+exist before what. `tf_root` takes these as arguments and gives them a type:
+a deployable root's public target is a `tf_root_node` rule providing
+`TfDeployInfo`, and the facts are its attributes.
 
-| Argument | Default | Tag |
+| Argument | Default | Becomes |
 | --- | --- | --- |
-| — | — | `tf-root` on every root |
-| `deploy` | `True` | `tf-deploy`, `tf-kind=root` |
-| `bootstrap` | `False` | `tf-bootstrap` |
-| `deploy_after` | `[]` | one `tf-after=<label>` per edge |
+| `deploy` | `True` | `True` → a `tf_root_node`; `False` → a plain `filegroup` |
+| `bootstrap` | `False` | the node's `bootstrap` attribute |
+| `deploy_after` | `[]` | the node's `deploy_after` label list, unioned with the edges implied by any `ref()` in `docs` |
+| `exports` | `{}` | the node's `exports`, readable by another root's `ref()` |
 
 ```bash
-bazel query 'attr(tags, "tf-deploy", //...)'      # every node in the graph
-bazel query 'attr(tags, "tf-bootstrap", //...)'   # what CI must not apply itself
-bazel query 'attr(tags, "tf-after=//x:y", //...)' # what waits on //x:y
+bazel query 'kind("tf_root_node|tf_deploy_task", //...)'  # every node in the graph
+bazel query 'attr(bootstrap, 1, //...)'                   # what CI must not apply itself
+bazel query 'attr(deploy_after, "//x:y", //...)'          # what waits on //x:y
 ```
+
+Membership is the rule class rather than a flag, so there is nothing to read
+and nothing to trust: a non-deployable root cannot be mistaken for a node
+because it isn't one.
+
+Edges are checked by Bazel, not by whatever walks them. `deploy_after`
+requires `TfDeployInfo`, so a label that names nothing fails at load time and
+one that names a non-node fails at analysis, both citing the BUILD line that
+declared it. A wrong edge cannot reach a deploy, which matters because a
+dropped edge is silent in exactly the way a bad deploy order is.
 
 Nodes are **operations, not roots**. `deploy_task` puts a plain runnable in the
 graph, so a step that manages no state — pushing an image, warming a cache,
@@ -189,27 +198,88 @@ so it cannot be read off `load()` edges and has to be stated.
 
 **Derive edges; do not hand-maintain them.** A list nobody has to remember to
 update cannot drift, and that is the whole point — this module grew deploy
-metadata because a hand-maintained deploy list silently lost an entry. Two
-patterns do most of the work:
+metadata because a hand-maintained deploy list silently lost an entry. In order
+of preference:
 
-- **Hand the dependency out with the address.** Rather than exporting a
-  registry hostname on its own, export a descriptor carrying the host *and*
-  the root that provisions it, and have the pushing macro turn the latter into
-  its edge. A caller then cannot resolve where to push without also learning
-  what it must wait for.
-- **Derive from data the node already needs.** senku's load balancer takes its
-  edges from the same backend dict it uses to build routes: a backend that
-  routes through it is necessarily in that dict.
+- **`ref()` the value you need** (below). The reference *is* the edge, so
+  there is nothing to keep in agreement with anything.
+- **Hand the dependency out with the address.** Where a value never reaches
+  the generated JSON — a registry hostname, which is a Bazel rule attribute —
+  export a descriptor carrying the address *and* the root that provisions it,
+  and have the consuming macro turn the latter into its edge. A caller then
+  cannot resolve where to push without also learning what it must wait for.
+- **Declare `deploy_after` by hand.** For a dependency no value passes
+  through at all.
 
 See [ADR 0008](../../../docs/adr/0008-derived-terraform-deploy-set.md) for the
 alternatives considered — integer tiers, inferring order from the `load()`
 graph, and a degenerate `tf_root` in place of `deploy_task`.
+
+## Cross-root references
+
+A root publishes build-time constants with `exports`; another root names one
+with `ref`, and the deploy edge comes from the same token.
+
+```python
+# //apps/cluedo-bayes:BUILD — the producer
+tf_root(
+    name = "terraform",
+    exports = {"service_name": SERVICE_NAME},
+    docs = [...],
+)
+
+# //infra/cloud/gcp/lb:defs.bzl — the consumer
+"service_name": ref("//apps/cluedo-bayes:terraform", "service_name")
+```
+
+The LB declares no `deploy_after`: `tf_root` scans the document it is about to
+serialise, finds the reference, and takes the edge from it. The value routed to
+and the root waited on cannot come to disagree, because there is only one of
+them. `ref()` returns a sentinel string, so it survives ordinary string
+building — concatenation, `%`, `.format()` — and is substituted by an
+analysis-time action before Terraform sees anything.
+
+Everything is checked at build time. A label naming nothing fails at load; a
+label naming a non-root fails on the missing provider; an export name that
+does not exist fails with the available names listed; a root referencing its
+own exports fails with that said plainly rather than as a dependency cycle.
+
+An export is usually a literal, but it does not have to be: a node can export
+the *contents of a file* the build produces. senku's image pushes do exactly
+that — the digest-pinned URI is only known once the image is built, so
+`registry_push` publishes it as a file-backed export and a root names it with
+an ordinary `ref`. Literals are placed at analysis time, file-backed values
+during the action; `ref` does not distinguish them, because both are settled
+before Terraform runs and that is the only property that matters.
+
+**Exports are not Terraform outputs**, and the distinction is the whole reason
+they are named differently:
+
+| | `output()` in `docs` | `exports` |
+| --- | --- | --- |
+| Resolved | at apply, by Terraform | at analysis, by Bazel |
+| May be dynamic | yes — an allocated IP | **no** — literals only |
+| Read with | `remote_state()` | `ref()` |
+| In state | yes | no |
+
+`tf_root` rejects an export containing `${`, pointing at `output()` +
+`remote_state()`, which remain the mechanism for values that only exist after
+an apply.
+
+Two limits worth knowing. A reference only resolves inside the document of the
+root that makes it — a value needed in a Bazel rule attribute (an
+`image_push`'s registry) or in Starlark control flow (a dict key, a loop
+bound) has to stay an ordinary `load()`ed constant. And a `ref` always implies
+an edge, so a value the provider never validates — a bucket name in a log
+filter — should keep using `load()`, which claims nothing.
 
 ## Layout
 
 | Path | Contents |
 | --- | --- |
 | `terraform/defs.bzl` | `tf_root` and the value helpers — `resource`, `output`, `var`, `variable`, `remote_state`, `merge_tf` |
+| `terraform/deploy.bzl` | `TfDeployInfo` and the node rules — `tf_root_node`, `tf_deploy_task`, `deploy_task` |
+| `terraform/refs.bzl` | `TfExportsInfo`, `ref` and the sentinel resolver — cross-root values and the edges they imply |
 | `terraform/rule.bzl` | `tf_runner` — resolves the toolchain at analysis time and bakes the paths into a wrapper, so direct-spawn callers work without `bazel run` |
 | `terraform/extensions.bzl` | The `terraform` module extension: `toolchain()` and `install()` |
 | `terraform/resources/` | Provider-specific constructors (`gcp.bzl`, `k8s.bzl`) |

@@ -152,8 +152,10 @@ jobs:
   # ---------------------------------------------------------------------------
   # Terraform deploys, orchestrated via Aspect CLI.
   #
-  # `aspect plan` / `aspect apply` walk the ordered list of roots from
-  # `.aspect/stdlib.axl` (`TF_ROOTS`). Same commands work locally and in CI.
+  # `aspect plan` / `aspect apply` discover the roots by querying the build
+  # graph for the tags each `tf_root` publishes, then walk them in tier
+  # order — there is no list to keep in sync. Same commands work locally and
+  # in CI. See docs/adr/0008-derived-terraform-deploy-set.md.
   # `aspect plan` itself upserts per-root PR comments via the
   # //devtools/build/tools/tf_pr_comment Go binary when run under `$CI` —
   # see `.aspect/plan.axl`. CI's job is just to provide the auth + token;

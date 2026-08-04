@@ -27,6 +27,24 @@ load("@terraform.bzl", _tf_root = "tf_root")
 # plan run against an unrendered template fails loudly.
 IMAGE_URI = "___BAZEL_IMAGE_URI___"
 
+# Deploy tiers. `aspect apply` walks the deploy set tier by tier, ascending.
+#
+# The registry sits at tier 0 because everything else is defined relative to
+# it. Any root that pushes an image needs the Artifact Registry repository to
+# already exist — `tf_root_with_image` prepends an `image_push` to `pre_apply`,
+# and that push happens before terraform runs — so every such root is tier 1
+# by construction, with no per-call-site declaration. That is the whole point:
+# a new app inherits its position from the macro it already uses.
+REGISTRY_DEPLOY_TIER = 0
+
+IMAGE_ROOT_DEPLOY_TIER = 1
+
+# The load balancer goes last. Its serverless NEGs name Cloud Run services by
+# string, and a NEG whose service does not exist resolves to a bare 404 rather
+# than an error — so every backend must be applied first. Tier 2 clears both
+# tier 0 and every image-pushing root at tier 1.
+LB_DEPLOY_TIER = IMAGE_ROOT_DEPLOY_TIER + 1
+
 def _deploy_manifest_impl(ctx):
     return [DefaultInfo(files = depset([ctx.attr.image_push[DeployInfo].deploy_manifest]))]
 
@@ -122,6 +140,12 @@ def tf_root_with_image(name, image_push, pre_apply = None, **kwargs):
             image_push = image_push,
             out = out,
         )
+
+    # Pushing an image means the registry has to exist already, so an
+    # image-pushing root is never tier 0. Callers may still override — a
+    # future root might need to land later still — but they never have to
+    # think about it to be correct.
+    kwargs.setdefault("deploy_tier", IMAGE_ROOT_DEPLOY_TIER)
 
     _tf_root(
         name = name,

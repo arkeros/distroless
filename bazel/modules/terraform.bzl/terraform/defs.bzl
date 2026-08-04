@@ -143,6 +143,49 @@ def _merge(*docs):
 
 # ---------- tf_root ---------------------------------------------------------
 
+# Deploy metadata is published as tags rather than kept in an
+# orchestrator-side list, so a root's membership, tier and bootstrap status
+# travel with the root itself. `tf_root` is a macro — its arguments are erased
+# at analysis time — so tags on the public target are the only thing
+# `bazel query` can still see.
+def _deploy_tags(name, deploy, bootstrap, deploy_tier):
+    if not deploy:
+        return [DEPLOY_TAG_ROOT]
+    if type(deploy_tier) != "int" or deploy_tier < 0 or deploy_tier > MAX_DEPLOY_TIER:
+        fail("tf_root({}): deploy_tier must be an int in 0..{}, got {}".format(
+            name,
+            MAX_DEPLOY_TIER,
+            deploy_tier,
+        ))
+    tags = [
+        DEPLOY_TAG_ROOT,
+        DEPLOY_TAG_DEPLOY,
+        "{}{}".format(DEPLOY_TAG_TIER_PREFIX, deploy_tier),
+    ]
+    if bootstrap:
+        tags.append(DEPLOY_TAG_BOOTSTRAP)
+    return tags
+
+# Marks every `tf_root`, deployable or not. Handy for "show me all the
+# roots"; not what the orchestrator selects on.
+DEPLOY_TAG_ROOT = "tf-root"
+
+# The deploy set. A root without this tag is never planned or applied by
+# `aspect plan` / `aspect apply` — examples and fixtures opt out here.
+DEPLOY_TAG_DEPLOY = "tf-deploy"
+
+# Tier-0 in the credential sense: roots that provision the CI identity
+# itself, so a CI-side apply could revoke its own permissions.
+DEPLOY_TAG_BOOTSTRAP = "tf-bootstrap"
+
+# Deploy-order bucket, appended as `tf-tier=<n>`. Roots run tier by tier,
+# ascending. Single-digit by construction: the orchestrator selects tiers
+# with a substring match, and `tf-tier=1` would otherwise also match
+# `tf-tier=10`.
+DEPLOY_TAG_TIER_PREFIX = "tf-tier="
+
+MAX_DEPLOY_TIER = 9
+
 def tf_root(
         name,
         docs,
@@ -155,6 +198,9 @@ def tf_root(
         pre_apply = None,
         main_postprocess = None,
         providers = None,
+        deploy = True,
+        bootstrap = False,
+        deploy_tier = 0,
         visibility = None):
     """Emit `.tf.json` files + plan/apply runnables for one Terraform root.
 
@@ -206,6 +252,23 @@ def tf_root(
             production to the callback. Used by senku's `render.bzl` to
             substitute `IMAGE_URI` sentinels with `image_push` digest URIs.
             Module is otherwise agnostic to the substitution semantics.
+        deploy: Whether this root belongs to the deploy set that
+            `aspect plan` / `aspect apply` walk. Defaults True, so a new
+            root is deployed without anyone remembering to register it —
+            forgetting to *register* is silent, whereas a root that
+            deploys when it shouldn't fails loudly on the next apply.
+            Set False for examples and fixtures: they are still built and
+            analyzed, just never planned or applied.
+        bootstrap: Marks a root that provisions the CI identity itself.
+            `aspect plan` / `aspect apply` skip these under `$CI` — a
+            botched CI-side apply could revoke the SA's own permissions
+            and leave CI unable to recover — but walk them locally.
+        deploy_tier: Deploy-order bucket, 0..9. Roots apply tier by tier,
+            ascending; within a tier, order is unspecified and must not
+            matter. A root belongs one tier above anything whose *GCP
+            resources* it needs to already exist — which is not the same
+            as what it `load()`s: importing a bucket's name is a build
+            dependency, not a deploy one.
         visibility: Standard.
     """
     tfvars = tfvars or []
@@ -290,6 +353,7 @@ def tf_root(
     native.filegroup(
         name = name,
         srcs = generated,
+        tags = _deploy_tags(name, deploy, bootstrap, deploy_tier),
         visibility = visibility,
     )
 

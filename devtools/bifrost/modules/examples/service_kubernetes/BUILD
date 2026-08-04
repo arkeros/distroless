@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load(
     "@terraform.bzl//:gcp.bzl",
     "google_provider",
@@ -125,7 +126,13 @@ api = service_kubernetes(
 
 tf_root(
     name = "terraform",
-    backend_bucket = "senku-prod-terraform-state",
+    # Two independent reasons this can never reach prod. `deploy = False`
+    # keeps it out of the set `aspect apply` walks; the bucket name is
+    # syntactically invalid for GCS (uppercase), so even a hand-run
+    # `bazel run :terraform.apply` dies in `terraform init` — before auth,
+    # before any provider call, before any resource exists.
+    backend_bucket = "EXAMPLE-NEVER-APPLIED",
+    deploy = False,
     docs = [
         google_provider(
             project = PROJECT,
@@ -152,4 +159,13 @@ tf_root(
         "@terraform_providers//:kubernetes",
     ],
     visibility = ["//visibility:private"],
+)
+
+# The comment above says "just analyzed"; this is what makes that true rather
+# than aspirational. `deploy = False` keeps the root out of every apply, and
+# this keeps it building — so a regression in the macros it exercises fails
+# here instead of rotting unnoticed.
+build_test(
+    name = "terraform_build_test",
+    targets = [":terraform"],
 )

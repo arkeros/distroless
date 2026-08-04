@@ -182,17 +182,18 @@ Aspect Build's [outside-of-Bazel pattern](https://blog.aspect.build/outside-of-b
 named exactly the smell: *multi-process orchestration belongs in the task
 layer, not the build core*. We agreed and dropped it.
 
-Sequencing now lives in `.aspect/{plan,apply}.axl`. `stdlib.axl` defines
-`TF_ROOTS` (the ordered list). The tasks are thin Starlark wrappers around
-`bazel run <root>.{plan,apply}`:
+Sequencing now lives in `.aspect/{plan,apply}.axl`. `stdlib.axl` discovers the
+roots by querying the build graph — each `tf_root` publishes its own
+membership and deploy tier as tags, so there is no list to keep in sync (this
+was an ordered `TF_ROOTS` list until it drifted; see
+[ADR 0008](adr/0008-derived-terraform-deploy-set.md)). The tasks are thin
+Starlark wrappers around `bazel run <root>.{plan,apply}`:
 
 ```python
-# .aspect/stdlib.axl
-TF_ROOTS = [
-    "//infra/cloud/gcp/gar:terraform",
-    "//oci/cmd/registry:terraform",
-    "//infra/cloud/gcp/lb:terraform",
-]
+# .aspect/stdlib.axl — roughly
+members = query('attr(tags, "tf-deploy", //...)')
+for tier in range(0, 10):
+    ordered.extend(sorted(query('attr(tags, "tf-tier=%d", set(%s))' % (tier, members))))
 ```
 
 ```bash
@@ -202,8 +203,9 @@ aspect plan                                   # all roots
 aspect plan //infra/cloud/gcp/lb:terraform    # one root
 ```
 
-CI's `needs:` graph mirrors `TF_ROOTS` for per-step UI (per-root PR plan
-comments, per-root retries). Same source of truth, two surfaces.
+CI does not re-encode the order: the apply job is a single `aspect apply`,
+and the sequencing comes from the same query a local run makes. Per-root PR
+plan comments are posted by `plan.axl` itself rather than by a `needs:` graph.
 
 ## Worked example: registry
 
@@ -431,6 +433,12 @@ Result: targets `//infra/cloud/gcp/gar:prod_terraform.{plan,apply}` and
 state under its own backend prefix; same code path otherwise.
 
 ### Aspect CLI
+
+> **Superseded in part by [ADR 0008](adr/0008-derived-terraform-deploy-set.md).**
+> The deploy set is no longer a list, so a per-env sketch would key off a tag
+> (`tf-env=staging`) filtered into the same discovery query rather than a dict
+> keyed by env. The rest of this section — one `tf_root` per env, own backend
+> prefix, `--env` flag — still holds. Kept as written for the shape.
 
 `TF_ROOTS` becomes a dict keyed by env; `aspect apply` / `aspect plan` accept
 an `--env` flag (defaulting to `prod`):

@@ -6,14 +6,18 @@ NODEJS_ARCHITECTURES = {
     "hummingbird": ["amd64", "arm64"],
 }
 
-# ADR 0007 step 6 ships 20/24/26 from nodejs.org tarballs on the cc-hummingbird
-# base. Refresh by bumping these three majors plus the matching http_archive
+# ADR 0007 step 6 ships 24/26 from nodejs.org tarballs on the cc-hummingbird
+# base. Refresh by bumping these majors plus the matching http_archive
 # entries in //bazel/include/oci.MODULE.bazel (versions + SHASUMS256 from
 # https://nodejs.org/dist/v<version>/SHASUMS256.txt).
+#
+# Only lines still receiving upstream security releases belong here. The 20
+# line was dropped when it went EOL: its last release (20.20.2, 2026-03-24)
+# carries CVE-2026-58043 with no fix coming, and `_cve_test` has no honest
+# way to pass on a runtime nobody patches any more.
 NODEJS_VERSIONS = {
-    "20": "20.20.2",
-    "24": "24.15.0",
-    "26": "26.1.0",
+    "24": "24.19.0",
+    "26": "26.6.0",
 }
 
 NODEJS_MAJOR_VERSIONS = list(NODEJS_VERSIONS.keys())

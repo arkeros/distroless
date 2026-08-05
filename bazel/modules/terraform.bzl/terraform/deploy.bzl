@@ -63,6 +63,7 @@ def _after_labels(ctx):
 def _export_files(ctx):
     """`{export name: File}` from the `export_files` label→name mapping."""
     files = {}
+    exported_by = {}
     for target, name in ctx.attr.export_files.items():
         candidates = target[DefaultInfo].files.to_list()
         if len(candidates) != 1:
@@ -70,7 +71,18 @@ def _export_files(ctx):
                 target.label,
                 len(candidates),
             ))
+
+        # The attribute keys the dict by label, so labels are unique and names
+        # are not. Without this, the second file silently wins and a `ref` for
+        # that name resolves to the wrong value with nothing to notice it.
+        if name in exported_by:
+            fail("export_files: {} and {} both export \"{}\"".format(
+                exported_by[name],
+                target.label,
+                name,
+            ))
         files[name] = candidates[0]
+        exported_by[name] = target.label
     return files
 
 def _tf_root_node_impl(ctx):

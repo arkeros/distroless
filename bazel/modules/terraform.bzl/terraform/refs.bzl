@@ -78,6 +78,12 @@ def ref(root, name):
         fail("ref: `{}` may not contain {}".format(_SEP, _SEP))
     if _MARKER in root or _MARKER in name:
         fail("ref: `{}` may not contain the reference marker".format(_MARKER))
+
+    # Checked after the marker, which starts with `_END`, so a name carrying a
+    # whole marker gets the more specific message. `collect_refs` reads up to
+    # the first `_END`, so an embedded one would silently truncate the key.
+    if _END in root or _END in name:
+        fail("ref: `{}{}{}` may not contain {}".format(root, _SEP, name, _END))
     return _MARKER + root + _SEP + name + _END
 
 def ref_key_label(key):

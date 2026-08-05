@@ -133,11 +133,17 @@ def _tf_deploy_task_impl(ctx):
         target_file = ctx.executable.run,
         is_executable = True,
     )
+
+    # `default_runfiles` is nullable, and `merge` takes a `runfiles`, not
+    # `None` — an executable that carries nothing must still make a node.
+    runfiles = ctx.runfiles(files = [ctx.executable.run])
+    upstream = ctx.attr.run[DefaultInfo].default_runfiles
+    if upstream != None:
+        runfiles = runfiles.merge(upstream)
     return [
         DefaultInfo(
             executable = out,
-            runfiles = ctx.runfiles(files = [ctx.executable.run])
-                .merge(ctx.attr.run[DefaultInfo].default_runfiles),
+            runfiles = runfiles,
         ),
         TfDeployInfo(
             kind = "task",

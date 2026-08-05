@@ -250,7 +250,7 @@ services = [
 
 tf_root(
     name = "terraform",
-    backend_bucket = "senku-prod-terraform-state",
+    backend_prefix = "oci/cmd/registry",
     pre_apply = [":image_push_gar"],   # push before terraform reads the digest
     docs = [sa] + services + [
         # outputs consumed by //infra/cloud/gcp/lb

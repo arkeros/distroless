@@ -11,6 +11,16 @@ bzl_library(
 )
 
 bzl_library(
+    name = "staticsite",
+    srcs = ["staticsite.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@terraform.bzl//:gcp",
+        "@terraform.bzl//:terraform",
+    ],
+)
+
+bzl_library(
     name = "kubernetes",
     srcs = ["kubernetes.bzl"],
     visibility = ["//visibility:public"],

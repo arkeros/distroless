@@ -467,11 +467,18 @@ def storage_bucket(
         lifecycle_rule = None,
         labels = None,
         public_access_prevention = None,
-        versioning = None):
+        versioning = None,
+        website = None):
     """`google_storage_bucket`.
 
     `bucket_name` is the GCS bucket name (the TF schema's `name` field).
     `name` is the Terraform resource block key.
+
+    `website` takes `{"main_page_suffix": ..., "not_found_page": ...}`. A
+    bucket without it answers a request for its root with an XML listing of
+    its objects — a 200, not a 404 — so a site served through a backend
+    bucket shows that listing at `/` unless `main_page_suffix` names the
+    index to serve instead.
     """
     body = {
         "project": project,
@@ -490,6 +497,8 @@ def storage_bucket(
         body["public_access_prevention"] = public_access_prevention
     if versioning != None:
         body["versioning"] = versioning if type(versioning) == type([]) else [versioning]
+    if website != None:
+        body["website"] = website if type(website) == type([]) else [website]
     return resource(
         rtype = "google_storage_bucket",
         name = name,

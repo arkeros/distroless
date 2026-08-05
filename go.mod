@@ -4,6 +4,7 @@ go 1.26.5
 
 require (
 	cloud.google.com/go/secretmanager v1.21.0
+	cloud.google.com/go/storage v1.62.2
 	github.com/anchore/grype v0.116.1
 	github.com/bazelbuild/buildtools v0.0.0-20260527145659-eb0c58a06830
 	github.com/google/go-containerregistry v0.21.8
@@ -13,6 +14,7 @@ require (
 	github.com/zclconf/go-cty v1.19.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	golang.org/x/text v0.40.0
+	google.golang.org/api v0.287.1
 	k8s.io/api v0.36.3
 	k8s.io/apimachinery v0.36.3
 	knative.dev/serving v0.50.0
@@ -30,7 +32,6 @@ require (
 	cloud.google.com/go/kms v1.31.0 // indirect
 	cloud.google.com/go/longrunning v1.0.0 // indirect
 	cloud.google.com/go/monitoring v1.25.0 // indirect
-	cloud.google.com/go/storage v1.62.2 // indirect
 	connectrpc.com/connect v1.20.0 // indirect
 	cuelabs.dev/go/oci/ociregistry v0.0.0-20251212221603-3adeb8663819 // indirect
 	cuelang.org/go v0.16.1 // indirect
@@ -530,7 +531,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	gonum.org/v1/gonum v0.17.0 // indirect
-	google.golang.org/api v0.287.1 // indirect
 	google.golang.org/genproto v0.0.0-20260406210006-6f92a3bedf2d // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260630182238-925bb5da69e7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260630182238-925bb5da69e7 // indirect

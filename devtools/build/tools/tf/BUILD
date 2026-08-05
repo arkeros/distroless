@@ -9,3 +9,15 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = ["@terraform.bzl//:terraform"],
 )
+
+bzl_library(
+    name = "bucket_push",
+    srcs = ["bucket_push.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["@terraform.bzl//:terraform"],
+)
+
+exports_files(
+    ["publish.sh.tpl"],
+    visibility = ["//visibility:public"],
+)

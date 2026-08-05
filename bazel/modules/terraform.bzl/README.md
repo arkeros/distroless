@@ -156,7 +156,7 @@ The default is `True` on purpose, because the two mistakes are not
 symmetric. A root that silently *fails* to deploy is invisible — the resources
 it should have created simply do not exist, and you find out when something
 downstream serves the wrong thing. A root that deploys when it shouldn't fails
-loudly on the very next apply. Defaulting to in makes the silent failure
+loudly on the very next apply. Defaulting to `True` makes the silent failure
 structurally impossible.
 
 That default is only safe if a non-deployable root cannot do damage when

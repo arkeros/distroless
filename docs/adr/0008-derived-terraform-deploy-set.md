@@ -28,7 +28,7 @@ A list that must be edited in lockstep with another file is a synchronization pr
 | Root → its own push | the `image_uri()` naming the digest it deploys | none — the reference is the edge |
 | LB → its backends | the `ref()` naming the service it routes to | none — the reference is the edge |
 
-`deploy` defaults to **True** deliberately. The two mistakes are not symmetric: a root that silently fails to deploy is a 404 that surfaces hours later in a browser, while a root that deploys when it shouldn't fails loudly on the next apply. Defaulting to in makes the silent failure structurally impossible and leaves only the loud one — but see *Prerequisite* below, because that reasoning does not hold on its own.
+`deploy` defaults to **True** deliberately. The two mistakes are not symmetric: a root that silently fails to deploy is a 404 that surfaces hours later in a browser, while a root that deploys when it shouldn't fails loudly on the next apply. Defaulting to **True** makes the silent failure structurally impossible and leaves only the loud one — but see *Prerequisite* below, because that reasoning does not hold on its own.
 
 ## Every edge is derived
 

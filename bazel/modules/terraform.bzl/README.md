@@ -82,13 +82,18 @@ the constructors are conveniences over it, not a closed set.
 ## What ends up in bazel-bin
 
 `tf_root` stages a complete Terraform working directory, so `terraform init`
-resolves everything locally and never reaches the network:
+resolves every provider locally and never reaches the network for them:
 
 | File | Written when |
 | --- | --- |
 | `main.tf.json` | always — the serialised `docs` |
 | `backend.tf.json` | always — GCS backend, `backend_prefix` defaults to the package path |
 | `providers.tf.json`, `.terraform.lock.hcl`, `_providers/` | when `providers` is set — a filesystem mirror of the provider archives |
+
+Provider resolution is the only part that goes offline. The GCS backend in
+`backend.tf.json` is still a remote one, so `terraform init` — and every `plan`
+/ `apply` / `destroy` after it — needs network access and Google credentials to
+reach the state bucket.
 
 ## Deploy metadata
 

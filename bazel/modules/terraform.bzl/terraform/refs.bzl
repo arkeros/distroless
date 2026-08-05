@@ -75,9 +75,9 @@ def ref(root, name):
     if not root.startswith("//"):
         fail("ref: `root` must be an absolute label (`//pkg:target`), got {}".format(root))
     if _SEP in root or _SEP in name:
-        fail("ref: `{}` may not contain {}".format(_SEP, _SEP))
+        fail("ref: `{}` / `{}` may not contain {}".format(root, name, _SEP))
     if _MARKER in root or _MARKER in name:
-        fail("ref: `{}` may not contain the reference marker".format(_MARKER))
+        fail("ref: `{}` / `{}` may not contain the reference marker {}".format(root, name, _MARKER))
 
     # Checked after the marker, which starts with `_END`, so a name carrying a
     # whole marker gets the more specific message. `collect_refs` reads up to

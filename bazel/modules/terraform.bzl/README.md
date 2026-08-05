@@ -171,7 +171,11 @@ pipeline never had.
 
 So a bootstrap root is applied **locally, by a person, with their own
 credentials**. Orchestrators skip it under `$CI` and walk it normally
-otherwise, which keeps a developer's plan showing the whole picture.
+otherwise, which keeps a developer's plan showing the whole picture. The
+attribute governs what an orchestrator *discovers*, not what it is allowed to
+run: senku's skips it only when walking the whole graph, and a target named
+explicitly on the command line still runs under `$CI`. Same split as `deploy`
+— these say what a default walk includes, and neither is an access control.
 
 Note this is about *credentials*, not importance or ordering. A root can be
 foundational without being bootstrap: the registry is a hard prerequisite for

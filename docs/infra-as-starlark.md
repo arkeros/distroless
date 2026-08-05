@@ -316,18 +316,20 @@ runtime indirection, fail-fast at Bazel build time.
 
 ### Step 5 — Adopt Aspect CLI for orchestration + wire CI
 
-Add `.aspect/{stdlib,plan,apply}.axl`:
+Add `.aspect/{stdlib,plan,apply,dag}.axl`:
 
-- `stdlib.axl` exports `TF_ROOTS` (ordered list) and a small `bazel_run`
-  helper that auto-sets `TF_AUTO_APPROVE` when `$CI` is set.
-- `plan.axl` defines `aspect plan [<target>]` — runs all roots or one.
-- `apply.axl` defines `aspect apply [<target>]` — runs all in order, with
-  `--stamp` (registry's image tags need it).
+- `stdlib.axl` derives the deploy set from one `bazel query` over the node
+  rule classes, topo-sorts it on the `deploy_after` edges, and exposes a
+  `build_and_run` helper that auto-sets `TF_AUTO_APPROVE` when `$CI` is set.
+- `plan.axl` defines `aspect plan [<target>]` — runs all nodes or one.
+- `apply.axl` defines `aspect apply [<target>]` — runs all in dependency
+  order.
+- `dag.axl` defines `aspect dag` — prints that order without touching
+  Terraform, state, or credentials.
 
-Three new GHA jobs (`gar`, `registry`, `lb`), each invoking
-`bazel run //path:terraform.{plan,apply}` (or `aspect <command>` if
-aspect-cli is set up in CI). Plans run in parallel on PR, applies chain
-via `needs:` on push.
+Two GHA jobs, not one per root: `aspect plan` on PR and `aspect apply` on
+push. Both are a single step, because the order lives in the graph rather
+than in a `needs:` chain — adding a root changes no CI file.
 
 ### Step 6 — Delete the HCL twin of `service_cloudrun` and its example
 

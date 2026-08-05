@@ -64,21 +64,30 @@ NGINX_VEX_STATEMENTS = [
     ),
 ]
 
-vex_document(
-    name = "vex",
-    author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
-    statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS + NGINX_VEX_STATEMENTS,
-    timestamp = "2026-08-01T00:00:00Z",
-)
+# Per channel, because NGINX_FIXED_VEX_STATEMENTS differs between stable
+# and mainline — Debian's fixed version sorts between the two nginx.org
+# pins. The CVE-2013-0337 statement above applies to both.
+[
+    vex_document(
+        name = "vex_" + channel,
+        author = "rafael@arquero.cat",
+        id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#debian-" + channel,
+        statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS,
+        timestamp = "2026-08-01T00:00:00Z",
+    )
+    for channel in NGINX_VERSIONS.keys()
+]
 
-vex_document(
-    name = "debug_vex",
-    author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#debug",
-    statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS + NGINX_VEX_STATEMENTS,
-    timestamp = "2026-08-01T00:00:00Z",
-)
+[
+    vex_document(
+        name = "debug_vex_" + channel,
+        author = "rafael@arquero.cat",
+        id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#debian-" + channel + "-debug",
+        statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS,
+        timestamp = "2026-08-01T00:00:00Z",
+    )
+    for channel in NGINX_VERSIONS.keys()
+]
 
 # CVE-2026-60005 — uninitialized-memory disclosure in
 # ngx_http_slice_module. Fixed upstream in nginx 1.30.4 (stable) and
@@ -133,16 +142,17 @@ _IGNORE_CVES_BY_DISTRO = {
 
 # Per (channel, distro). Hummingbird stable carries the current
 # release-tag VEX (see _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX); mainline
-# carries none. Debian uses the same VEX doc for both channels — both
-# the CVE-2013-0337 log-permissions statement and the nginx.org-vs-
-# Debian-tracker statements apply regardless of channel.
+# carries none. Debian is per-channel too: the CVE-2013-0337
+# log-permissions statement applies to both channels, but the
+# nginx.org-vs-Debian-tracker statement only still matches stable
+# (see NGINX_FIXED_VEX_STATEMENTS).
 _VEX_BY_CHANNEL_AND_DISTRO = {
     "stable": {
-        "debian": [":vex"],
+        "debian": [":vex_stable"],
         "hummingbird": [":vex_hummingbird_stable"],
     },
     "mainline": {
-        "debian": [":vex"],
+        "debian": [":vex_mainline"],
         "hummingbird": [":vex_hummingbird_mainline"],
     },
 }
@@ -253,7 +263,7 @@ _NGINX_RPM_REPO = {
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
         debug_layers = nginx_layers("stable"),
-        debug_vex = [":debug_vex"] if distro == "debian" else [],
+        debug_vex = [":debug_vex_stable"] if distro == "debian" else [],
         distro = distro,
         entrypoint = _NGINX_ENTRYPOINT,
         env = DEFAULT_ENV,
@@ -280,7 +290,7 @@ _NGINX_RPM_REPO = {
             "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD",
         },
         debug_layers = nginx_layers("mainline"),
-        debug_vex = [":debug_vex"] if distro == "debian" else [],
+        debug_vex = [":debug_vex_mainline"] if distro == "debian" else [],
         distro = distro,
         entrypoint = _NGINX_ENTRYPOINT,
         env = DEFAULT_ENV,

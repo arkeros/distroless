@@ -47,19 +47,30 @@ NCURSES_FIXED_VEX_STATEMENTS = []
 #
 # Shared by //oci/distroless/nginx and by every frontend image built on
 # the nginx base (apps/*), all of which ship the same nginx.org .deb.
-NGINX_FIXED_VEX_STATEMENTS = [
-    # Heap buffer overflow when a `map` directive uses regex matching and
-    # a string expression references the map's capture variables before
-    # the map output variable. nginx.org's advisory lists 1.30.4+ and
-    # 1.31.3+ as not vulnerable; our stable pin is 1.30.4-1~trixie and
-    # mainline is 1.31.3-1~trixie, both of which carry the fix. Debian's
-    # tracker has it `<unfixed>` for *Debian's* nginx package, which is
-    # what grype matches against.
-    vex_statement(
-        expires = "2026-09-15",
-        impact_statement = "The .deb shipped here is nginx.org's 1.30.4-1~trixie (stable) / 1.31.3-1~trixie (mainline), both listed not-vulnerable in https://nginx.org/en/security_advisories.html. The match comes from Debian's tracker entry for Debian's own nginx source package, which grype selects because rules_distroless emits pkg:deb/debian/nginx with no vendor namespace.",
-        products = ["pkg:deb/debian/nginx"],
-        status = "fixed",
-        vulnerability = "CVE-2026-42533",
-    ),
-]
+#
+# Keyed by nginx channel because the two channels pin different upstream
+# versions, and grype compares those against Debian's *single* fixed
+# version — so a Debian fix can land above one pin and below the other.
+# Same shape as NGINX_IGNORE_CVES in //oci/distroless/nginx:BUILD.
+NGINX_FIXED_VEX_STATEMENTS = {
+    "stable": [
+        # Heap buffer overflow when a `map` directive uses regex matching
+        # and a string expression references the map's capture variables
+        # before the map output variable. nginx.org's advisory lists
+        # 1.30.4+ as not vulnerable and our stable pin is 1.30.4-1~trixie,
+        # which carries the fix. Debian fixed its own nginx package in
+        # 1.30.4-3, and dpkg orders `1.30.4-1~trixie` below `1.30.4-3`
+        # (`~` sorts before end-of-string), so grype still matches.
+        vex_statement(
+            expires = "2026-09-15",
+            impact_statement = "The .deb shipped here is nginx.org's 1.30.4-1~trixie, listed not-vulnerable in https://nginx.org/en/security_advisories.html. The match comes from Debian's tracker entry for Debian's own nginx source package (fixed in 1.30.4-3), which grype selects because rules_distroless emits pkg:deb/debian/nginx with no vendor namespace.",
+            products = ["pkg:deb/debian/nginx"],
+            status = "fixed",
+            vulnerability = "CVE-2026-42533",
+        ),
+    ],
+    # Empty: mainline pins 1.31.3-1~trixie, which sorts above Debian's
+    # 1.30.4-3 fix, so grype stops matching CVE-2026-42533 on its own.
+    # A statement here would be stale — `_cve_test_stale_vex` enforces.
+    "mainline": [],
+}

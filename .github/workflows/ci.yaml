@@ -70,7 +70,14 @@ jobs:
       - name: Fetch Sigstore trusted root
         run: |
           set -euo pipefail
-          COSIGN=$(bazel cquery //bazel/toolchains/cosign:compiled_cosign_toolchain --output=files)
+          # cquery only analyses — it prints a path without producing the file,
+          # and --remote_download_outputs=minimal keeps build outputs remote.
+          # Build the binary and pull it down explicitly rather than relying on
+          # a later `bazel run` to materialise it as a side effect.
+          bazel build --remote_download_outputs=all \
+              //bazel/toolchains/cosign:compiled_cosign_toolchain
+          COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:compiled_cosign_toolchain --output=files)")
+          echo "COSIGN=${COSIGN}" >> "$GITHUB_ENV"
           TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
           for attempt in 1 2 3 4 5; do
             if "${COSIGN}" trusted-root create \
@@ -80,10 +87,10 @@ jobs:
               exit 0
             fi
             delay=$((attempt * 15))
-            echo "Sigstore TUF fetch failed; retrying in ${delay}s (attempt ${attempt}/5)" >&2
+            echo "trusted-root create failed (see cosign's error above); retrying in ${delay}s (attempt ${attempt}/5)" >&2
             sleep "${delay}"
           done
-          echo "ERROR: could not fetch the Sigstore trusted root after 5 attempts." >&2
+          echo "ERROR: could not create the Sigstore trusted root after 5 attempts." >&2
           exit 1
 
       # Bazel-native cosign signing per ADR 0006. `mirror_push` macros emit
@@ -133,7 +140,6 @@ jobs:
       - name: Verify just-published images (positive test)
         run: |
           set -euo pipefail
-          COSIGN=$(bazel cquery //bazel/toolchains/cosign:compiled_cosign_toolchain --output=files)
           while IFS=' ' read -r REF HAS_SBOM; do
             [[ -z "$REF" ]] && continue
             echo "::group::verify ${REF}"
@@ -162,7 +168,6 @@ jobs:
       - name: Verify policy is strict (negative test)
         run: |
           set -euo pipefail
-          COSIGN=$(bazel cquery //bazel/toolchains/cosign:compiled_cosign_toolchain --output=files)
           STDERR=$(mktemp)
           # Negative case: rejects a correctly-signed-but-wrong-identity image.
           if "${COSIGN}" verify-attestation \

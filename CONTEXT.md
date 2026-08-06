@@ -48,6 +48,14 @@ _Avoid_: entrypoint (that names the bundle), entry bundle, shell, app shell
 Writing a **Webroot** into a bucket, stamping each object's headers, and deleting what the build no longer produces.
 _Avoid_: deploy (a publish is one step of a deploy), sync, upload
 
+**Retire**:
+To date a **Webroot** object the build has stopped producing, leaving it served until the bucket's **Retention** expires.
+_Avoid_: delete, prune, expire (the publish does none of these itself)
+
+**Retention**:
+How long a **Retired** object outlives the **Publish** that orphaned it — long enough that a client which loaded the previous **Entry document** can still fetch a lazily-loaded chunk.
+_Avoid_: TTL (that is a cache lifetime, not an object's), grace period
+
 **Wave**:
 One barrier-separated stage of a **Publish** — every object in a wave is written before any object in the next is begun.
 _Avoid_: batch, phase, pass, stage
@@ -79,8 +87,8 @@ _Avoid_: using "service" for any deployable
 - A **StaticSite** or a **Runtime** is realised by exactly one **Driver**, which determines its **Origin**
 - A **StaticSite** compiles to a **Webroot** and a **Cache policy**; both are rendered from one declaration
 - A **Publish** writes a **Webroot** to a bucket **Origin**; a **Root** creates the bucket, and the publish follows it
-- A **Publish** applies its **Wave**s in order — **Content-addressed** objects, then the **Entry document** and the other stable-named files, then the deletions
-- A **Content-addressed** object is unreachable until an **Entry document** names it, which is what a **Wave** boundary buys: the new names are all in place before anything hands them out
+- A **Publish** applies its **Wave**s in order — **Content-addressed** objects, then the **Entry document** and the other stable-named files. It deletes nothing; what the build stopped producing is **Retired**
+- A **Wave** boundary protects a client reading the *new* **Entry document**: the names it hands out are all in place before it hands them out. It does nothing for a client reading the old one, which is what **Retention** is for
 - The load balancer routes a host to one **Origin**, and adds the **SPA fallback** only when that origin's **Driver** is `gcs-cdn`
 - Every **Root**, image push and **Publish** is a **Deploy node**; their edges are the `ref()`s between them
 
@@ -95,7 +103,9 @@ _Avoid_: using "service" for any deployable
 > **Dev:** "So a **Publish** overwrites the whole **Webroot** at once?"
 > **Domain expert:** "It can't — a bucket has no transaction. It writes in **Wave**s instead. Every **Content-addressed** object goes first, and none of them is reachable yet, because the only thing that hands out those names is the **Entry document** and that still has yesterday's bytes. Then the **Entry document** flips, and the whole new site becomes reachable in one write."
 > **Dev:** "And if the first wave dies halfway?"
-> **Domain expert:** "Then the **Entry document** never flips and the site is still yesterday's, coherently. That's the point of the boundary — a **Publish** either lands or it doesn't, rather than leaving a page that names objects nobody uploaded."
+> **Domain expert:** "Then the **Entry document** never flips, and a client arriving afterwards gets yesterday's site. That much the boundary does buy — a **Publish** never leaves a *newly served* page naming objects nobody uploaded."
+> **Dev:** "Only a client arriving afterwards?"
+> **Domain expert:** "Right, and that's the limit of it. Someone who loaded the page before the publish is holding yesterday's chunk URLs, and a lazy route is fetched when they navigate — maybe an hour later. No **Wave** ordering reaches them, because they already have the old **Entry document**. That's why a **Publish** deletes nothing: it **Retire**s the old objects and the bucket collects them a **Retention** window later."
 
 ## Flagged ambiguities
 

@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/arkeros/senku/devtools/build/tools/webroot"
@@ -83,12 +84,13 @@ func run(ctx context.Context, bucket, webrootDir, rulesPath string, dryRun bool)
 	defer client.Close()
 	bkt := client.Bucket(bucket)
 
-	remote, err := list(ctx, bkt)
+	remote, dated, err := list(ctx, bkt)
 	if err != nil {
 		return err
 	}
 
 	changes := webroot.Plan(local, remote)
+	retire := webroot.Retire(orphans(changes.Orphaned, dated))
 
 	first, last := changes.UploadOrder(rules)
 
@@ -99,30 +101,30 @@ func run(ctx context.Context, bucket, webrootDir, rulesPath string, dryRun bool)
 		// names, which a sorted list of every object hides.
 		printUploads(bucket, "content-addressed, written first", first, rules)
 		printUploads(bucket, "mutable, written once the first wave has landed", last, rules)
-		fmt.Println("# stale, removed once every upload has landed")
-		for _, name := range changes.Delete {
-			fmt.Printf("delete gs://%s/%s\n", bucket, name)
+		fmt.Println("# orphaned, dated now and deleted by the bucket's lifecycle rule")
+		for _, name := range retire {
+			fmt.Printf("retire gs://%s/%s\n", bucket, name)
 		}
 		return nil
 	}
 
-	// Three waves, each finishing before the next begins, so that at no
-	// point in the publish does a live client hold a URL for an object that
-	// is not there. The chunks a new index.html names have to exist before
-	// index.html does; the chunks the old index.html named have to keep
-	// existing until nothing can still be reading it.
+	// Uploads go in two waves, the second beginning only once the first has
+	// landed, so that a client reading a new index.html never holds a URL
+	// for an object that is not there yet. Nothing is deleted: a client
+	// reading the *old* index.html holds URLs the new build does not
+	// produce, and ordering cannot help it — see webroot.Retire.
 	if err := uploadAll(ctx, bkt, webrootDir, first, rules); err != nil {
 		return err
 	}
 	if err := uploadAll(ctx, bkt, webrootDir, last, rules); err != nil {
 		return err
 	}
-	if err := deleteAll(ctx, bkt, changes.Delete); err != nil {
+	if err := retireAll(ctx, bkt, retire, time.Now()); err != nil {
 		return err
 	}
 
-	log.Printf("published %d objects to gs://%s (%d stale removed)",
-		len(changes.Upload), bucket, len(changes.Delete))
+	log.Printf("published %d objects to gs://%s (%d newly orphaned, %d awaiting collection)",
+		len(changes.Upload), bucket, len(retire), len(changes.Orphaned)-len(retire))
 	return nil
 }
 
@@ -171,19 +173,37 @@ func walk(dir string) ([]string, error) {
 	return names, nil
 }
 
-func list(ctx context.Context, bkt *storage.BucketHandle) ([]string, error) {
+// list reports every object in the bucket and the date it carries, if any.
+// The date is what a previous publish stamped on an object it orphaned, so
+// this publish can tell an orphan it has already retired from one it is
+// seeing stale for the first time.
+func list(ctx context.Context, bkt *storage.BucketHandle) ([]string, map[string]time.Time, error) {
 	var names []string
+	dated := map[string]time.Time{}
 	it := bkt.Objects(ctx, nil)
 	for {
 		attrs, err := it.Next()
 		if errors.Is(err, iterator.Done) {
-			return names, nil
+			return names, dated, nil
 		}
 		if err != nil {
-			return nil, fmt.Errorf("listing bucket: %w", err)
+			return nil, nil, fmt.Errorf("listing bucket: %w", err)
 		}
 		names = append(names, attrs.Name)
+		if !attrs.CustomTime.IsZero() {
+			dated[attrs.Name] = attrs.CustomTime
+		}
 	}
+}
+
+// orphans pairs each name the build no longer produces with the date a
+// previous publish stamped on it, zero if none did.
+func orphans(names []string, dated map[string]time.Time) []webroot.Orphan {
+	out := make([]webroot.Orphan, 0, len(names))
+	for _, name := range names {
+		out = append(out, webroot.Orphan{Name: name, OrphanedAt: dated[name]})
+	}
+	return out
 }
 
 func uploadAll(ctx context.Context, bkt *storage.BucketHandle, dir string, names []string, rules webroot.Rules) error {
@@ -214,12 +234,17 @@ func upload(ctx context.Context, bkt *storage.BucketHandle, dir, name string, ru
 	return w.Close()
 }
 
-func deleteAll(ctx context.Context, bkt *storage.BucketHandle, names []string) error {
+// retireAll stamps each newly-orphaned object with the time it went stale.
+// Deleting it here is what breaks a client still on the previous version of
+// the site, so the bucket's lifecycle rule does the deleting, a retention
+// window later — see `staticsite` and webroot.Retire.
+func retireAll(ctx context.Context, bkt *storage.BucketHandle, names []string, now time.Time) error {
 	return eachConcurrently(names, func(name string) error {
+		_, err := bkt.Object(name).Update(ctx, storage.ObjectAttrsToUpdate{CustomTime: now})
 		// Tolerate an already-absent object: a retried publish, or two
 		// running at once, should converge rather than fail.
-		if err := bkt.Object(name).Delete(ctx); err != nil && !errors.Is(err, storage.ErrObjectNotExist) {
-			return fmt.Errorf("deleting %s: %w", name, err)
+		if err != nil && !errors.Is(err, storage.ErrObjectNotExist) {
+			return fmt.Errorf("retiring %s: %w", name, err)
 		}
 		return nil
 	})

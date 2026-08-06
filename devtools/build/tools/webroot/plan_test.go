@@ -3,9 +3,41 @@ package webroot_test
 import (
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/arkeros/senku/devtools/build/tools/webroot"
 )
+
+// A publish must not delete what it orphans. A client that loaded the
+// previous index.html holds URLs for chunks this build no longer produces,
+// and react-router fetches a lazy route's chunk when the user navigates —
+// which can be long after the page loaded. Dating the object hands the
+// deletion to the bucket's lifecycle rule, a retention window later.
+func TestRetireDatesAnOrphanTheFirstTimeItIsSeen(t *testing.T) {
+	got := webroot.Retire([]webroot.Orphan{
+		{Name: "dino_bundle/Play-OLD.js"},
+		{Name: "dino_bundle/chunk-OLD.js"},
+	})
+
+	want := []string{"dino_bundle/Play-OLD.js", "dino_bundle/chunk-OLD.js"}
+	if !slices.Equal(got, want) {
+		t.Errorf("Retire = %v, want %v", got, want)
+	}
+}
+
+// Every publish sees the same orphan until the bucket collects it. Re-dating
+// one would push its deletion out by a full window each time, so an object
+// orphaned once would outlive every retention policy it was given.
+func TestRetireLeavesAnAlreadyDatedOrphanAlone(t *testing.T) {
+	got := webroot.Retire([]webroot.Orphan{{
+		Name:       "dino_bundle/Play-OLD.js",
+		OrphanedAt: time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+	}})
+
+	if len(got) != 0 {
+		t.Errorf("Retire = %v, want empty — the date already stands", got)
+	}
+}
 
 func TestPlanUploadsEverythingIntoAnEmptyBucket(t *testing.T) {
 	got := webroot.Plan(
@@ -17,8 +49,8 @@ func TestPlanUploadsEverythingIntoAnEmptyBucket(t *testing.T) {
 	if !slices.Equal(got.Upload, want) {
 		t.Errorf("Upload = %v, want %v", got.Upload, want)
 	}
-	if len(got.Delete) != 0 {
-		t.Errorf("Delete = %v, want empty", got.Delete)
+	if len(got.Orphaned) != 0 {
+		t.Errorf("Orphaned = %v, want empty", got.Orphaned)
 	}
 }
 
@@ -75,14 +107,14 @@ func TestUploadOrderWritesContentAddressedObjectsFirst(t *testing.T) {
 
 // Stale content-addressed chunks accumulate forever otherwise: every deploy
 // adds a new hash and nothing ever removes the old one.
-func TestPlanDeletesObjectsTheBuildNoLongerProduces(t *testing.T) {
+func TestPlanOrphansObjectsTheBuildNoLongerProduces(t *testing.T) {
 	got := webroot.Plan(
 		[]string{"index.html", "dino_bundle/chunk-NEW.js"},
 		[]string{"index.html", "dino_bundle/chunk-OLD.js"},
 	)
 
 	want := []string{"dino_bundle/chunk-OLD.js"}
-	if !slices.Equal(got.Delete, want) {
-		t.Errorf("Delete = %v, want %v", got.Delete, want)
+	if !slices.Equal(got.Orphaned, want) {
+		t.Errorf("Orphaned = %v, want %v", got.Orphaned, want)
 	}
 }

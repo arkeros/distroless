@@ -64,6 +64,24 @@ def site_gcs(
         # `inherited` rather than `enforced`: the grant below is public by
         # necessity, not by oversight. See its comment.
         public_access_prevention = "inherited",
+        # This is the deletion half of a publish. `bucket_push` does not
+        # delete the objects a build stops producing — a browser that loaded
+        # the previous index.html still fetches a lazy route's chunk when the
+        # user navigates, which can be long after the deploy landed, and
+        # deleting on the publish that orphaned it turns that navigation into
+        # a 404. The publish stamps `customTime` on an orphan instead and
+        # this rule collects it 30 days later, which outlasts any session.
+        #
+        # Retention belongs here rather than in the uploader for two reasons:
+        # ADR 0009 gives Terraform the bucket's lifecycle, and a rule keeps
+        # collecting whether or not anyone ever deploys again.
+        #
+        # A re-uploaded object is a new generation with no `customTime`, so a
+        # hash that comes back stops matching this condition on its own.
+        lifecycle_rule = [{
+            "condition": [{"days_since_custom_time": 30}],
+            "action": [{"type": "Delete"}],
+        }],
         # Without this, a request for the bucket root returns an XML listing
         # of every object — with a 200. That is not a 404, so the URL map's
         # SPA fallback never sees one and never fires, and `/` serves XML to

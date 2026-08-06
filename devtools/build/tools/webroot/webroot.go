@@ -75,6 +75,23 @@ func (r Rules) CacheControl(name string) string {
 	return r.DefaultCacheControl
 }
 
+// Immutable reports whether name's policy declares the bytes under that URL
+// fixed — which is to say the name carries a content hash.
+//
+// The `immutable` directive is not being read as a proxy for something else:
+// it says exactly that a client never needs to ask about this URL again,
+// which is only true of a content-addressed one. A name it is absent from is
+// a name whose bytes change under a deploy, and those are the objects that
+// name others.
+func (r Rules) Immutable(name string) bool {
+	for _, directive := range strings.Split(r.CacheControl(name), ",") {
+		if strings.TrimSpace(directive) == "immutable" {
+			return true
+		}
+	}
+	return false
+}
+
 // ParseRules reads the JSON rendered by `cache.bzl`.
 func ParseRules(src io.Reader) (Rules, error) {
 	var rules Rules

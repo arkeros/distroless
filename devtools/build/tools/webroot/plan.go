@@ -6,13 +6,41 @@ import (
 
 // Changes is the work of one publish: what to write, then what to remove.
 //
-// The order is not a preference. A client that has already parsed
-// index.html holds URLs for the chunks it names, so the new objects have to
-// exist before the old ones stop existing — otherwise a request in flight
-// during the deploy resolves to nothing. Apply Upload in full before Delete.
+// The order is not a preference. Objects that name other objects have to be
+// written after the ones they name and deleted before them, because a client
+// reads them in that order too: it parses index.html, then fetches the chunks
+// index.html named. Apply UploadOrder's waves in turn, then Delete.
 type Changes struct {
 	Upload []string
 	Delete []string
+}
+
+// UploadOrder splits Upload into the two waves a publish writes in turn.
+//
+// Content-addressed objects go first and have to land in full before the
+// second wave begins: the mutable objects — index.html, the unhashed entry
+// bundle, the stylesheets — are how a client discovers every hashed URL, so
+// a client that fetched a new one while its chunks were still uploading
+// would resolve a script tag to nothing.
+//
+// One barrier is enough because of what a client can reach, not because of
+// what the first wave names — the chunks do name each other, since a lazy
+// route chunk imports the shared vendor one. A name written in the first
+// wave is either a hash nothing published yet links to, or a hash that was
+// already there and whose bytes are identical. Either way, no URL a live
+// client holds changes meaning until the second wave republishes the
+// objects that hand those URLs out.
+//
+// Within a wave the writes are independent and order does not matter.
+func (c Changes) UploadOrder(rules Rules) (immutable, mutable []string) {
+	for _, name := range c.Upload {
+		if rules.Immutable(name) {
+			immutable = append(immutable, name)
+		} else {
+			mutable = append(mutable, name)
+		}
+	}
+	return immutable, mutable
 }
 
 // Plan diffs the built webroot against what the bucket currently holds.

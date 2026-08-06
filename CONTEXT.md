@@ -36,9 +36,21 @@ _Avoid_: dist, bundle (the bundle is one part of it), assets
 The ordered, first-match-wins rule list assigning `Cache-Control` to each webroot path. Declared once, rendered into both an nginx config and object metadata.
 _Avoid_: cache headers, cache rules (as a synonym for the mechanism rather than the declaration)
 
+**Content-addressed**:
+A **Webroot** object whose name carries a hash of its own bytes, so the name never resolves to anything else.
+_Avoid_: hashed (as a noun), fingerprinted, CAS
+
+**Entry document**:
+The one **Webroot** object a client can request without having been told its name, and from which it discovers every **Content-addressed** URL — `index.html`.
+_Avoid_: entrypoint (that names the bundle), entry bundle, shell, app shell
+
 **Publish**:
 Writing a **Webroot** into a bucket, stamping each object's headers, and deleting what the build no longer produces.
 _Avoid_: deploy (a publish is one step of a deploy), sync, upload
+
+**Wave**:
+One barrier-separated stage of a **Publish** — every object in a wave is written before any object in the next is begun.
+_Avoid_: batch, phase, pass, stage
 
 **SPA fallback**:
 Serving `/index.html` with a 200 for a path the **Origin** has no object for, so a client-routed application can resolve the route itself.
@@ -67,6 +79,8 @@ _Avoid_: using "service" for any deployable
 - A **StaticSite** or a **Runtime** is realised by exactly one **Driver**, which determines its **Origin**
 - A **StaticSite** compiles to a **Webroot** and a **Cache policy**; both are rendered from one declaration
 - A **Publish** writes a **Webroot** to a bucket **Origin**; a **Root** creates the bucket, and the publish follows it
+- A **Publish** applies its **Wave**s in order — **Content-addressed** objects, then the **Entry document**, then the deletions
+- A **Content-addressed** object is unreachable until an **Entry document** names it, which is what a **Wave** boundary buys: the new names are all in place before anything hands them out
 - The load balancer routes a host to one **Origin**, and adds the **SPA fallback** only when that origin's **Driver** is `gcs-cdn`
 - Every **Root**, image push and **Publish** is a **Deploy node**; their edges are the `ref()`s between them
 
@@ -78,9 +92,14 @@ _Avoid_: using "service" for any deployable
 > **Domain expert:** "That one's a **Runtime**. It's a real process; it can't be a **StaticSite** on any driver."
 > **Dev:** "Why does only the games' host get the **SPA fallback**, then?"
 > **Domain expert:** "Because a bucket **Origin** can't answer for a path it has no object at — it 404s. A **Runtime** answers its own unknown paths, so it doesn't need one."
+> **Dev:** "So a **Publish** overwrites the whole **Webroot** at once?"
+> **Domain expert:** "It can't — a bucket has no transaction. It writes in **Wave**s instead. Every **Content-addressed** object goes first, and none of them is reachable yet, because the only thing that hands out those names is the **Entry document** and that still has yesterday's bytes. Then the **Entry document** flips, and the whole new site becomes reachable in one write."
+> **Dev:** "And if the first wave dies halfway?"
+> **Domain expert:** "Then the **Entry document** never flips and the site is still yesterday's, coherently. That's the point of the boundary — a **Publish** either lands or it doesn't, rather than leaving a page that names objects nobody uploaded."
 
 ## Flagged ambiguities
 
 - "kind" was used for both the bifrost document type (`Service`, `CronJob`) and the LB's bucket-vs-container choice — resolved: the latter is a **Driver**, and `LB_BACKEND` names it `driver`.
 - "service" was used for Cloud Run services, for **Runtime**s generally, and for any deployable including the **StaticSite**s — resolved: it means a Cloud Run service and nothing else. The games' `SERVICE_NAME` was renamed to `SITE_NAME`, since it names a GAR repository and a bucket, not a service. `SERVICE_NAME` survives only in `//oci/cmd/registry`, where it is one.
 - "deploy" was used for both the whole DAG walk and the bucket upload alone — resolved: the upload is a **Publish**.
+- "unhashed" was used as though it described `index.html` alone, when a built webroot also serves stable-named stylesheets, the entry bundle and the icons — 11 of `table-for-two`'s 18 objects. Resolved: **Entry document** means `index.html` and nothing else, and everything on the render path is being made **Content-addressed** so that the two words finally describe the same split.

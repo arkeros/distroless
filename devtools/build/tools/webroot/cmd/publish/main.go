@@ -90,21 +90,31 @@ func run(ctx context.Context, bucket, webrootDir, rulesPath string, dryRun bool)
 
 	changes := webroot.Plan(local, remote)
 
+	first, last := changes.UploadOrder(rules)
+
 	if dryRun {
-		for _, name := range changes.Upload {
-			fmt.Printf("upload gs://%s/%s  [%s] [%s]\n",
-				bucket, name, webroot.ContentType(name), rules.CacheControl(name))
-		}
+		// The plan prints as the waves the publish applies rather than as
+		// one flat list. The ordering is the part of a plan worth reading —
+		// a reviewer has to be able to see index.html follow the chunks it
+		// names, which a sorted list of every object hides.
+		printUploads(bucket, "content-addressed, written first", first, rules)
+		printUploads(bucket, "mutable, written once the first wave has landed", last, rules)
+		fmt.Println("# stale, removed once every upload has landed")
 		for _, name := range changes.Delete {
 			fmt.Printf("delete gs://%s/%s\n", bucket, name)
 		}
 		return nil
 	}
 
-	// Uploads complete before a single delete is issued. A client that has
-	// already parsed index.html holds URLs for the chunks it names, so a
-	// delete that overtook an upload would resolve one of those to nothing.
-	if err := uploadAll(ctx, bkt, webrootDir, changes.Upload, rules); err != nil {
+	// Three waves, each finishing before the next begins, so that at no
+	// point in the publish does a live client hold a URL for an object that
+	// is not there. The chunks a new index.html names have to exist before
+	// index.html does; the chunks the old index.html named have to keep
+	// existing until nothing can still be reading it.
+	if err := uploadAll(ctx, bkt, webrootDir, first, rules); err != nil {
+		return err
+	}
+	if err := uploadAll(ctx, bkt, webrootDir, last, rules); err != nil {
 		return err
 	}
 	if err := deleteAll(ctx, bkt, changes.Delete); err != nil {
@@ -114,6 +124,17 @@ func run(ctx context.Context, bucket, webrootDir, rulesPath string, dryRun bool)
 	log.Printf("published %d objects to gs://%s (%d stale removed)",
 		len(changes.Upload), bucket, len(changes.Delete))
 	return nil
+}
+
+// printUploads renders one wave of a dry run. why labels it, because a plan
+// whose interesting property is its ordering has to say what the ordering
+// buys — a bare list of object names does not.
+func printUploads(bucket, why string, names []string, rules webroot.Rules) {
+	fmt.Printf("# %s\n", why)
+	for _, name := range names {
+		fmt.Printf("upload gs://%s/%s  [%s] [%s]\n",
+			bucket, name, webroot.ContentType(name), rules.CacheControl(name))
+	}
 }
 
 func readRules(path string) (webroot.Rules, error) {

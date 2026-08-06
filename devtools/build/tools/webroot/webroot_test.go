@@ -8,14 +8,12 @@ import (
 
 // The rules a react_app's webroot ships with, in the order
 // `//devtools/build/react_component:cache.bzl` declares them. Mirrors what
-// the nginx `default.conf` expresses with location precedence: the exact
-// unhashed entry beats the bundle prefix, and the prefixes beat the
-// extension suffixes.
+// the nginx `default.conf` expresses with location precedence: the prefixes
+// beat the extension suffixes.
 func appRules() webroot.Rules {
 	return webroot.Rules{
 		DefaultCacheControl: "no-cache",
 		Rules: []webroot.Rule{
-			{Match: webroot.MatchExact, Path: "dino_bundle/dino_main.js", CacheControl: "no-cache"},
 			{Match: webroot.MatchPrefix, Path: "dino_bundle/", CacheControl: immutable},
 			{Match: webroot.MatchPrefix, Path: "assets/", CacheControl: immutable},
 			{Match: webroot.MatchSuffix, Path: ".html", CacheControl: "no-cache"},
@@ -35,9 +33,12 @@ func TestCacheControl(t *testing.T) {
 		path string
 		want string
 	}{{
-		name: "unhashed entry bundle revalidates",
-		path: "dino_bundle/dino_main.js",
-		want: "no-cache",
+		// The entry carries a content hash like every other file esbuild
+		// emits, so the prefix rule covers it and the exact rule that once
+		// had to precede that prefix is gone.
+		name: "content-addressed entry bundle is immutable",
+		path: "dino_bundle/dino_main-A1B2C3D4.js",
+		want: immutable,
 	}, {
 		name: "hashed chunk under the same prefix is immutable",
 		path: "dino_bundle/chunk-A1B2C3D4.js",

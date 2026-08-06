@@ -308,6 +308,12 @@ bzl_library(
 )
 
 bzl_library(
+    name = "hummingbird_fixed_vex",
+    srcs = ["hummingbird_fixed_vex.bzl"],
+    deps = ["//oci:vex"],
+)
+
+bzl_library(
     name = "variables",
     srcs = ["variables.bzl"],
 )

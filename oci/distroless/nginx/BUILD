@@ -11,7 +11,8 @@ load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NGINX_FIXED_VEX_STATEMENTS")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
+load("//oci/distroless/common:hummingbird_fixed_vex.bzl", "NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
 exports_files([
@@ -89,32 +90,14 @@ NGINX_VEX_STATEMENTS = [
     for channel in NGINX_VERSIONS.keys()
 ]
 
-# CVE-2026-60005 — uninitialized-memory disclosure in
-# ngx_http_slice_module. Fixed upstream in nginx 1.30.4 (stable) and
-# 1.31.3 (mainline) per https://nginx.org/en/security_advisories.html —
-# the exact versions our lockfiles pin. Mainline doesn't match at all;
-# stable does, because the match routes via Hummingbird's secdb, whose
-# advisory names Hummingbird's own `nginx-1.30.4-2.hum1` rebuild as the
-# fixed version and rpmvercmp ranks the nginx.org release tag
-# `1.el10.ngx` below `2.hum1`. Cross-vendor release-tag comparison, not
-# a real version gap: the binary is upstream 1.30.4, which carries the
-# fix. Switching to Hummingbird's own nginx rpm would silence this, but
-# at the cost of its nginx/nginx-core/nginx-filesystem decomposition and
+# The CVE-2026-60005 statement that used to live here now sits in
+# //oci/distroless/common:hummingbird_fixed_vex.bzl, because the frontend
+# apps built on the hummingbird nginx base ship the same nginx.org rpm and
+# inherit the same release-tag match. Switching to Hummingbird's own nginx
+# rpm would silence it without a statement, but at the cost of its
+# nginx/nginx-core/nginx-filesystem decomposition and
 # gperftools/libunwind/libxcrypt linkage — the reason
 # //bazel/include/oci.MODULE.bazel sources nginx from nginx.org instead.
-#
-# Third statement of this exact class, after CVE-2026-9256 and
-# CVE-2026-42055, both of which `_cve_test_stale_vex` pruned once the
-# rpm pin moved past the advisory range.
-_NGINX_HUMMINGBIRD_STABLE_FIXED_VEX = [
-    vex_statement(
-        expires = "2026-09-15",
-        impact_statement = "Fixed upstream in nginx 1.30.4; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.4-2.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 2.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
-        products = ["pkg:rpm/nginx.org/nginx"],
-        status = "fixed",
-        vulnerability = "CVE-2026-60005",
-    ),
-]
 
 # No statements: the mainline rpm (1.31.2) carries no scanner matches.
 vex_document(
@@ -130,18 +113,18 @@ vex_document(
     name = "vex_hummingbird_stable",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/senku/blob/main/oci/distroless/nginx/BUILD#hummingbird-stable",
-    statements = _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX,
+    statements = NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS["stable"],
     timestamp = "2026-08-01T00:00:00Z",
     version = 4,
 )
 
 _IGNORE_CVES_BY_DISTRO = {
-    "debian": DEBIAN_WONTFIX_CVES,
+    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES,
     "hummingbird": [],
 }
 
 # Per (channel, distro). Hummingbird stable carries the current
-# release-tag VEX (see _NGINX_HUMMINGBIRD_STABLE_FIXED_VEX); mainline
+# release-tag VEX (see NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS); mainline
 # carries none. Debian is per-channel too: the CVE-2013-0337
 # log-permissions statement applies to both channels, but the
 # nginx.org-vs-Debian-tracker statement only still matches stable

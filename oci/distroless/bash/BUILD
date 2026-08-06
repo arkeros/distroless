@@ -7,7 +7,7 @@ load("//oci:vex.bzl", "vex_document", "vex_statement")
 load("//oci/distroless:matrix.bzl", "distroless_matrix")
 load("//oci/distroless:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//oci/distroless/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NCURSES_FIXED_VEX_STATEMENTS")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
+load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
 load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "bash_layers")
 
 package(default_visibility = ["//visibility:public"])
@@ -71,7 +71,7 @@ vex_document(
 )
 
 _IGNORE_CVES = {
-    "debian": DEBIAN_WONTFIX_CVES,
+    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES,
     "hummingbird": [],
 }
 

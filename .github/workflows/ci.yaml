@@ -58,6 +58,34 @@ jobs:
           bazel build //oci:cosign_policy_env
           cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
 
+      # Fetch the Sigstore trusted root once, up front, and hand it to every
+      # verify below via --trusted-root. Without it each cosign invocation
+      # re-refreshes TUF metadata from tuf-repo-cdn.sigstore.dev, so a single
+      # CDN hiccup somewhere in a few dozen verifies fails the whole job on
+      # signatures that are perfectly good — see run 31056638456, which died on
+      # a 503 for 16.root.json. `trusted-root create --with-default-services`
+      # goes through the same TUF client and the same signature checks the
+      # verifies would have done individually; this is one fetch, not a weaker
+      # one. That leaves exactly one network call to protect, so retry it.
+      - name: Fetch Sigstore trusted root
+        run: |
+          set -euo pipefail
+          COSIGN=$(bazel cquery //bazel/toolchains/cosign:compiled_cosign_toolchain --output=files)
+          TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
+          for attempt in 1 2 3 4 5; do
+            if "${COSIGN}" trusted-root create \
+                --with-default-services \
+                --out "${TRUSTED_ROOT}"; then
+              echo "TRUSTED_ROOT=${TRUSTED_ROOT}" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            delay=$((attempt * 15))
+            echo "Sigstore TUF fetch failed; retrying in ${delay}s (attempt ${attempt}/5)" >&2
+            sleep "${delay}"
+          done
+          echo "ERROR: could not fetch the Sigstore trusted root after 5 attempts." >&2
+          exit 1
+
       # Bazel-native cosign signing per ADR 0006. `mirror_push` macros emit
       # <name>_push, <name>_sign, <name>_attest, optional <name>_attest_sbom.
       # Discover via `cosign_sign rule` since that's unambiguous: every mirror
@@ -110,12 +138,14 @@ jobs:
             [[ -z "$REF" ]] && continue
             echo "::group::verify ${REF}"
             "${COSIGN}" verify-attestation \
+                --trusted-root="${TRUSTED_ROOT}" \
                 --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
                 --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
                 --type=slsaprovenance \
                 "${REF}" > /dev/null
             if [[ "${HAS_SBOM}" == "1" ]]; then
               "${COSIGN}" verify-attestation \
+                  --trusted-root="${TRUSTED_ROOT}" \
                   --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
                   --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
                   --type=cyclonedx \
@@ -136,11 +166,22 @@ jobs:
           STDERR=$(mktemp)
           # Negative case: rejects a correctly-signed-but-wrong-identity image.
           if "${COSIGN}" verify-attestation \
+              --trusted-root="${TRUSTED_ROOT}" \
               --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
               --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
               --type=slsaprovenance \
               gcr.io/distroless/static-debian12:nonroot 2> "${STDERR}"; then
             echo "ERROR: verify policy is too permissive — accepted gcr.io/distroless/static-debian12:nonroot, which was signed by Google's distroless workflow, not ours." >&2
+            echo "--- cosign stderr ---" >&2
+            cat "${STDERR}" >&2
+            exit 1
+          fi
+          # cosign failing is not on its own evidence of a strict policy — a
+          # Sigstore CDN outage fails the same way. Require the rejection to be
+          # the identity mismatch we are actually asserting, so infrastructure
+          # trouble surfaces as a failure instead of a vacuous pass.
+          if ! grep -q "none of the expected identities matched" "${STDERR}"; then
+            echo "ERROR: cosign rejected the reference, but not because the identity mismatched — this assertion proves nothing about the policy." >&2
             echo "--- cosign stderr ---" >&2
             cat "${STDERR}" >&2
             exit 1

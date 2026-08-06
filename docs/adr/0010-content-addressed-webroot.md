@@ -1,6 +1,6 @@
 # A content-addressed webroot with one mutable entry document
 
-Every file on a webroot's render path is content-addressed and served `immutable`; `index.html` is the only object whose bytes change under a stable name. Publishing therefore becomes: write a set of objects nothing yet references, then overwrite exactly one. Immutability is carried by *placement* — hashed output lives under a prefix that already has an `IMMUTABLE` rule — so `//devtools/build/react_component:cache.bzl` remains the single declaration of the cache policy that [ADR 0009](./0009-frontends-are-served-from-buckets.md) made it.
+Every file on a webroot's render path is content-addressed and served `immutable`; `index.html` is the only mutable object left on that path. Publishing therefore becomes: write a set of objects nothing yet references, then overwrite the one document through which they become reachable. Immutability is carried by *placement* — hashed output lives under a prefix that already has an `IMMUTABLE` rule — so `//devtools/build/react_component:cache.bzl` remains the single declaration of the cache policy that [ADR 0009](./0009-frontends-are-served-from-buckets.md) made it.
 
 ## Why
 
@@ -36,6 +36,6 @@ The safety of placement depends on hashing and placement being one decision rath
 
 - **Concurrent publishes to one bucket still interleave, and nothing prevents it.** Hashing shrinks the blast radius — two overlapping publishes now race on one object rather than twelve — but a lock would need a leased GCS object with stale-lock recovery, and the failure mode of getting that wrong is a wedged deploy path. Deliberately not built. Each app has its own bucket and its publish is a deploy node ordered after its own root, so overlap requires two concurrent deploy runs.
 
-- **Rollback is unchanged: still a rebuild, not a traffic flip.** Hashing does not add versioning. The previous bytes are still reproduced by `git checkout <sha> && bazel run //apps/x:bucket_push`, which is what ADR 0009 settled on. What is new is that the last step of that rollback is a single-object write.
+- **Rollback is unchanged: still a rebuild, not a traffic flip.** Hashing does not add versioning. The previous bytes are still reproduced by `git checkout <sha> && bazel run //apps/x:bucket_push`, which is what ADR 0009 settled on. What is new is that the write which makes that rollback visible is a single one, to `index.html`.
 
 - **The icons and `manifest.webmanifest` stay unhashed.** They are off the render path, and `manifest.webmanifest` → `icon-192.png` is a stable-to-stable reference, which always resolves regardless of publish order. Hashing them would cost a build step for no round trip anyone waits on.

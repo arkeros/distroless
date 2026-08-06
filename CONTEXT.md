@@ -79,7 +79,7 @@ _Avoid_: using "service" for any deployable
 - A **StaticSite** or a **Runtime** is realised by exactly one **Driver**, which determines its **Origin**
 - A **StaticSite** compiles to a **Webroot** and a **Cache policy**; both are rendered from one declaration
 - A **Publish** writes a **Webroot** to a bucket **Origin**; a **Root** creates the bucket, and the publish follows it
-- A **Publish** applies its **Wave**s in order — **Content-addressed** objects, then the **Entry document**, then the deletions
+- A **Publish** applies its **Wave**s in order — **Content-addressed** objects, then the **Entry document** and the other stable-named files, then the deletions
 - A **Content-addressed** object is unreachable until an **Entry document** names it, which is what a **Wave** boundary buys: the new names are all in place before anything hands them out
 - The load balancer routes a host to one **Origin**, and adds the **SPA fallback** only when that origin's **Driver** is `gcs-cdn`
 - Every **Root**, image push and **Publish** is a **Deploy node**; their edges are the `ref()`s between them

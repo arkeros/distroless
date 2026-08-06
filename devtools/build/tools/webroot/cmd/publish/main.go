@@ -21,13 +21,16 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/arkeros/senku/devtools/build/tools/webroot"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
 )
 
@@ -84,13 +87,13 @@ func run(ctx context.Context, bucket, webrootDir, rulesPath string, dryRun bool)
 	defer client.Close()
 	bkt := client.Bucket(bucket)
 
-	remote, dated, err := list(ctx, bkt)
+	remote, state, err := list(ctx, bkt)
 	if err != nil {
 		return err
 	}
 
 	changes := webroot.Plan(local, remote)
-	retire := webroot.Retire(orphans(changes.Orphaned, dated))
+	date, remove := webroot.Retire(orphans(changes.Orphaned, state), rules)
 
 	first, last := changes.UploadOrder(rules)
 
@@ -101,30 +104,44 @@ func run(ctx context.Context, bucket, webrootDir, rulesPath string, dryRun bool)
 		// names, which a sorted list of every object hides.
 		printUploads(bucket, "content-addressed, written first", first, rules)
 		printUploads(bucket, "mutable, written once the first wave has landed", last, rules)
-		fmt.Println("# orphaned, dated now and deleted by the bucket's lifecycle rule")
-		for _, name := range retire {
+		fmt.Println("# content-addressed orphans, dated now and collected by the bucket's lifecycle rule")
+		for _, name := range date {
 			fmt.Printf("retire gs://%s/%s\n", bucket, name)
+		}
+		fmt.Println("# stable-named orphans, deleted now — nothing holds a URL their removal did not mean to break")
+		for _, name := range remove {
+			fmt.Printf("delete gs://%s/%s\n", bucket, name)
 		}
 		return nil
 	}
 
 	// Uploads go in two waves, the second beginning only once the first has
 	// landed, so that a client reading a new index.html never holds a URL
-	// for an object that is not there yet. Nothing is deleted: a client
-	// reading the *old* index.html holds URLs the new build does not
-	// produce, and ordering cannot help it — see webroot.Retire.
+	// for an object that is not there yet. Orphans are handled last, and
+	// how depends on the name — see webroot.Retire.
 	if err := uploadAll(ctx, bkt, webrootDir, first, rules); err != nil {
 		return err
 	}
 	if err := uploadAll(ctx, bkt, webrootDir, last, rules); err != nil {
 		return err
 	}
-	if err := retireAll(ctx, bkt, retire, time.Now()); err != nil {
+	retireSkipped, err := retireAll(ctx, bkt, date, state, time.Now())
+	if err != nil {
+		return err
+	}
+	deleteSkipped, err := deleteAll(ctx, bkt, remove, state)
+	if err != nil {
 		return err
 	}
 
-	log.Printf("published %d objects to gs://%s (%d newly orphaned, %d awaiting collection)",
-		len(changes.Upload), bucket, len(retire), len(changes.Orphaned)-len(retire))
+	log.Printf("published %d objects to gs://%s (%d retired, %d deleted, %d awaiting collection)",
+		len(changes.Upload), bucket, len(date)-retireSkipped, len(remove)-deleteSkipped,
+		len(changes.Orphaned)-len(date)-len(remove))
+	// Silence here would read as a clean publish that quietly did less than
+	// it planned, which is the same trap the plan output exists to avoid.
+	if skipped := retireSkipped + deleteSkipped; skipped > 0 {
+		log.Printf("left %d object(s) alone: rewritten by another publish after this one listed the bucket", skipped)
+	}
 	return nil
 }
 
@@ -173,37 +190,53 @@ func walk(dir string) ([]string, error) {
 	return names, nil
 }
 
-// list reports every object in the bucket and the date it carries, if any.
-// The date is what a previous publish stamped on an object it orphaned, so
-// this publish can tell an orphan it has already retired from one it is
-// seeing stale for the first time.
-func list(ctx context.Context, bkt *storage.BucketHandle) ([]string, map[string]time.Time, error) {
+// objectState is what this publish saw when it listed the bucket: the date a
+// previous publish stamped on the object, if any, and the generation it had
+// at that moment.
+//
+// The generation is what makes the plan safe to act on later. Everything
+// between the listing and the writes is decided from a snapshot, and another
+// publish may have moved on since — see the preconditions below.
+type objectState struct {
+	orphanedAt time.Time
+	generation int64
+}
+
+func list(ctx context.Context, bkt *storage.BucketHandle) ([]string, map[string]objectState, error) {
 	var names []string
-	dated := map[string]time.Time{}
+	state := map[string]objectState{}
 	it := bkt.Objects(ctx, nil)
 	for {
 		attrs, err := it.Next()
 		if errors.Is(err, iterator.Done) {
-			return names, dated, nil
+			return names, state, nil
 		}
 		if err != nil {
 			return nil, nil, fmt.Errorf("listing bucket: %w", err)
 		}
 		names = append(names, attrs.Name)
-		if !attrs.CustomTime.IsZero() {
-			dated[attrs.Name] = attrs.CustomTime
+		state[attrs.Name] = objectState{
+			orphanedAt: attrs.CustomTime,
+			generation: attrs.Generation,
 		}
 	}
 }
 
 // orphans pairs each name the build no longer produces with the date a
 // previous publish stamped on it, zero if none did.
-func orphans(names []string, dated map[string]time.Time) []webroot.Orphan {
+func orphans(names []string, state map[string]objectState) []webroot.Orphan {
 	out := make([]webroot.Orphan, 0, len(names))
 	for _, name := range names {
-		out = append(out, webroot.Orphan{Name: name, OrphanedAt: dated[name]})
+		out = append(out, webroot.Orphan{Name: name, OrphanedAt: state[name].orphanedAt})
 	}
 	return out
+}
+
+// staleGeneration reports whether err is GCS refusing a write because the
+// object moved since this publish listed it.
+func staleGeneration(err error) bool {
+	var apiErr *googleapi.Error
+	return errors.As(err, &apiErr) && apiErr.Code == http.StatusPreconditionFailed
 }
 
 func uploadAll(ctx context.Context, bkt *storage.BucketHandle, dir string, names []string, rules webroot.Rules) error {
@@ -234,20 +267,61 @@ func upload(ctx context.Context, bkt *storage.BucketHandle, dir, name string, ru
 	return w.Close()
 }
 
-// retireAll stamps each newly-orphaned object with the time it went stale.
-// Deleting it here is what breaks a client still on the previous version of
-// the site, so the bucket's lifecycle rule does the deleting, a retention
-// window later — see `staticsite` and webroot.Retire.
-func retireAll(ctx context.Context, bkt *storage.BucketHandle, names []string, now time.Time) error {
-	return eachConcurrently(names, func(name string) error {
-		_, err := bkt.Object(name).Update(ctx, storage.ObjectAttrsToUpdate{CustomTime: now})
+// retireAll stamps each newly-orphaned content-addressed object with the
+// time it went stale. Deleting one here is what breaks a client still on the
+// previous version of the site, so the bucket's lifecycle rule does the
+// deleting, a retention window later — see `staticsite` and webroot.Retire.
+func retireAll(ctx context.Context, bkt *storage.BucketHandle, names []string, state map[string]objectState, now time.Time) (int, error) {
+	var skipped atomic.Int64
+	err := eachConcurrently(names, func(name string) error {
+		obj := bkt.Object(name).If(storage.Conditions{GenerationMatch: state[name].generation})
+		_, err := obj.Update(ctx, storage.ObjectAttrsToUpdate{CustomTime: now})
+		switch {
+		case err == nil:
+			return nil
+		// The object was rewritten after this publish listed it, so it is
+		// live again and this plan is talking about a generation that no
+		// longer exists. Dating it would hand a file somebody just uploaded
+		// to the lifecycle rule.
+		case staleGeneration(err):
+			skipped.Add(1)
+			return nil
 		// Tolerate an already-absent object: a retried publish, or two
 		// running at once, should converge rather than fail.
-		if err != nil && !errors.Is(err, storage.ErrObjectNotExist) {
-			return fmt.Errorf("retiring %s: %w", name, err)
+		case errors.Is(err, storage.ErrObjectNotExist):
+			return nil
 		}
-		return nil
+		return fmt.Errorf("retiring %s: %w", name, err)
 	})
+	return int(skipped.Load()), err
+}
+
+// deleteAll removes stable-named orphans. Retention would keep answering at
+// a URL somebody deliberately took down, so these go now.
+//
+// The generation precondition is what stops a stale plan from undoing a
+// newer one. Two publishes can overlap — nothing serialises them, by the
+// decision in ADR 0010 — and without it an older run could delete a route
+// object a newer run had just uploaded, leaving a declared route 404ing
+// until somebody published again. A mismatch means the newer writer won, so
+// there is nothing to remove and the next publish replans from what it finds.
+func deleteAll(ctx context.Context, bkt *storage.BucketHandle, names []string, state map[string]objectState) (int, error) {
+	var skipped atomic.Int64
+	err := eachConcurrently(names, func(name string) error {
+		obj := bkt.Object(name).If(storage.Conditions{GenerationMatch: state[name].generation})
+		err := obj.Delete(ctx)
+		switch {
+		case err == nil:
+			return nil
+		case staleGeneration(err):
+			skipped.Add(1)
+			return nil
+		case errors.Is(err, storage.ErrObjectNotExist):
+			return nil
+		}
+		return fmt.Errorf("deleting %s: %w", name, err)
+	})
+	return int(skipped.Load()), err
 }
 
 // eachConcurrently runs fn over every name with bounded parallelism and

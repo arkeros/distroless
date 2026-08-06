@@ -45,12 +45,12 @@ The one **Webroot** object a client can request without having been told its nam
 _Avoid_: entrypoint (that names the bundle), entry bundle, shell, app shell
 
 **Publish**:
-Writing a **Webroot** into a bucket, stamping each object's headers, and deleting what the build no longer produces.
+Writing a **Webroot** into a bucket, stamping each object's headers, and **Retire**ing or deleting what the build no longer produces.
 _Avoid_: deploy (a publish is one step of a deploy), sync, upload
 
 **Retire**:
-To date a **Webroot** object the build has stopped producing, leaving it served until the bucket's **Retention** expires.
-_Avoid_: delete, prune, expire (the publish does none of these itself)
+To date a **Content-addressed** object the build has stopped producing, leaving it served until the bucket's **Retention** expires.
+_Avoid_: delete (a stable-named orphan is deleted outright and is never retired), prune, expire
 
 **Retention**:
 How long a **Retired** object outlives the **Publish** that orphaned it — long enough that a client which loaded the previous **Entry document** can still fetch a lazily-loaded chunk.
@@ -61,8 +61,12 @@ One barrier-separated stage of a **Publish** — every object in a wave is writt
 _Avoid_: batch, phase, pass, stage
 
 **SPA fallback**:
-Serving `/index.html` with a 200 for a path the **Origin** has no object for, so a client-routed application can resolve the route itself.
-_Avoid_: 404 rewrite, catch-all
+Serving `/index.html` as the body of a 404 for a path the **Origin** has no object for, so a client-routed application renders its own not-found page under an honest status.
+_Avoid_: 404 rewrite, catch-all, soft 404 (that is the thing this stopped being)
+
+**Route object**:
+An **Entry document** rendered for a declared route and materialised at that route's path, so the **Origin** answers it with a 200 the ordinary way — by holding an object there — and so it can name the chunk that route needs.
+_Avoid_: prerender (nothing is rendered), stub, alias
 
 ### Deploying
 
@@ -87,9 +91,10 @@ _Avoid_: using "service" for any deployable
 - A **StaticSite** or a **Runtime** is realised by exactly one **Driver**, which determines its **Origin**
 - A **StaticSite** compiles to a **Webroot** and a **Cache policy**; both are rendered from one declaration
 - A **Publish** writes a **Webroot** to a bucket **Origin**; a **Root** creates the bucket, and the publish follows it
-- A **Publish** applies its **Wave**s in order — **Content-addressed** objects, then the **Entry document** and the other stable-named files. It deletes nothing; what the build stopped producing is **Retired**
+- A **Publish** applies its **Wave**s in order — **Content-addressed** objects, then the **Entry document** and the other stable-named files. What the build stopped producing it **Retire**s if content-addressed and deletes if not
 - A **Wave** boundary protects a client reading the *new* **Entry document**: the names it hands out are all in place before it hands them out. It does nothing for a client reading the old one, which is what **Retention** is for
 - The load balancer routes a host to one **Origin**, and adds the **SPA fallback** only when that origin's **Driver** is `gcs-cdn`
+- A declared route is a **Route object** in the **Webroot**; the **SPA fallback** answers everything else, so a 200 means the site really serves that path
 - Every **Root**, image push and **Publish** is a **Deploy node**; their edges are the `ref()`s between them
 
 ## Example dialogue
@@ -105,7 +110,9 @@ _Avoid_: using "service" for any deployable
 > **Dev:** "And if the first wave dies halfway?"
 > **Domain expert:** "Then the **Entry document** never flips, and a client arriving afterwards gets yesterday's site. That much the boundary does buy — a **Publish** never leaves a *newly served* page naming objects nobody uploaded."
 > **Dev:** "Only a client arriving afterwards?"
-> **Domain expert:** "Right, and that's the limit of it. Someone who loaded the page before the publish is holding yesterday's chunk URLs, and a lazy route is fetched when they navigate — maybe an hour later. No **Wave** ordering reaches them, because they already have the old **Entry document**. That's why a **Publish** deletes nothing: it **Retire**s the old objects and the bucket collects them a **Retention** window later."
+> **Domain expert:** "Right, and that's the limit of it. Someone who loaded the page before the publish is holding yesterday's chunk URLs, and a lazy route is fetched when they navigate — maybe an hour later. No **Wave** ordering reaches them, because they already have the old **Entry document**. That's why a **Publish** never deletes a hashed object: it **Retire**s it and the bucket collects it a **Retention** window later."
+> **Dev:** "Does everything it orphans get that treatment?"
+> **Domain expert:** "No, and it mustn't. Retention is for names a client is still holding, which only hashed ones are. A stable-named orphan — the **Route object** for a page you deleted — goes on the spot, because keeping it would answer 200 at a URL you deliberately took down."
 
 ## Flagged ambiguities
 

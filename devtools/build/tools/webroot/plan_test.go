@@ -8,20 +8,23 @@ import (
 	"github.com/arkeros/senku/devtools/build/tools/webroot"
 )
 
-// A publish must not delete what it orphans. A client that loaded the
-// previous index.html holds URLs for chunks this build no longer produces,
-// and react-router fetches a lazy route's chunk when the user navigates —
-// which can be long after the page loaded. Dating the object hands the
-// deletion to the bucket's lifecycle rule, a retention window later.
-func TestRetireDatesAnOrphanTheFirstTimeItIsSeen(t *testing.T) {
-	got := webroot.Retire([]webroot.Orphan{
+// A publish must not delete a content-addressed object it orphans. A client
+// that loaded the previous index.html holds URLs for chunks this build no
+// longer produces, and react-router fetches a lazy route's chunk when the
+// user navigates — which can be long after the page loaded. Dating the
+// object hands the deletion to the bucket's lifecycle rule, a window later.
+func TestRetireDatesAContentAddressedOrphan(t *testing.T) {
+	date, remove := webroot.Retire([]webroot.Orphan{
 		{Name: "dino_bundle/Play-OLD.js"},
 		{Name: "dino_bundle/chunk-OLD.js"},
-	})
+	}, appRules())
 
 	want := []string{"dino_bundle/Play-OLD.js", "dino_bundle/chunk-OLD.js"}
-	if !slices.Equal(got, want) {
-		t.Errorf("Retire = %v, want %v", got, want)
+	if !slices.Equal(date, want) {
+		t.Errorf("date = %v, want %v", date, want)
+	}
+	if len(remove) != 0 {
+		t.Errorf("remove = %v, want empty", remove)
 	}
 }
 
@@ -29,13 +32,33 @@ func TestRetireDatesAnOrphanTheFirstTimeItIsSeen(t *testing.T) {
 // one would push its deletion out by a full window each time, so an object
 // orphaned once would outlive every retention policy it was given.
 func TestRetireLeavesAnAlreadyDatedOrphanAlone(t *testing.T) {
-	got := webroot.Retire([]webroot.Orphan{{
+	date, remove := webroot.Retire([]webroot.Orphan{{
 		Name:       "dino_bundle/Play-OLD.js",
 		OrphanedAt: time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
-	}})
+	}}, appRules())
 
-	if len(got) != 0 {
-		t.Errorf("Retire = %v, want empty — the date already stands", got)
+	if len(date) != 0 || len(remove) != 0 {
+		t.Errorf("date = %v, remove = %v, want both empty — the date stands", date, remove)
+	}
+}
+
+// Retention exists for one reason: an old entry document hands out hashed
+// URLs. A stable-named orphan is something else — a route the app dropped,
+// say — and nothing holds a URL to it that the removal did not mean to
+// break. Retaining it would serve a page the router no longer has, under a
+// 200, for a month.
+func TestRetireDeletesAStableNamedOrphanAtOnce(t *testing.T) {
+	date, remove := webroot.Retire([]webroot.Orphan{
+		{Name: "how-to-play/index.html"},
+		{Name: "old-icon.png"},
+	}, appRules())
+
+	want := []string{"how-to-play/index.html", "old-icon.png"}
+	if !slices.Equal(remove, want) {
+		t.Errorf("remove = %v, want %v", remove, want)
+	}
+	if len(date) != 0 {
+		t.Errorf("date = %v, want empty", date)
 	}
 }
 

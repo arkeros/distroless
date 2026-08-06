@@ -90,10 +90,12 @@ def site_gcs(
         # one broken URL is the only one anybody actually visits.
         #
         # No `not_found_page`. It would serve index.html for a missing
-        # object but keep the 404 status, which is the thing the URL map's
-        # `override_response_code` exists to avoid — see
-        # //infra/cloud/gcp/lb:defs.bzl. Root pages here, unknown routes
-        # there, one mechanism each.
+        # object and keep the 404 — which is now exactly what the URL map's
+        # fallback does, so this would be a second mechanism doing one
+        # thing. The fallback is the one that stays, because it is also
+        # where a declared route's 200 is reasoned about. Root pages here,
+        # unknown routes there, one mechanism each. See
+        # //infra/cloud/gcp/lb:defs.bzl and ADR 0011.
         website = {"main_page_suffix": "index.html"},
         labels = labels,
     )

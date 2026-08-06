@@ -13,32 +13,41 @@ type Orphan struct {
 	OrphanedAt time.Time
 }
 
-// Retire selects the orphans this publish has to date.
+// Retire splits the objects this build stopped producing into the ones to
+// date and the ones to delete outright.
 //
-// A publish does not delete what it orphans. A client still on the page
-// loaded the previous entry document, so it holds URLs for chunks this build
-// no longer produces — and a lazy route's chunk is fetched when the user
-// navigates to it, not when the page loaded. Wave ordering cannot help:
+// A content-addressed orphan is dated, not deleted. A client still on the
+// page loaded the previous entry document, so it holds hashed URLs this
+// build no longer produces — and a lazy route's chunk is fetched when the
+// user navigates to it, not when the page loaded. Wave ordering cannot help:
 // ordering protects a client reading the *new* entry document, and this one
-// is reading the old one. Only elapsed time does.
+// is reading the old one. Only elapsed time does. Dating hands the object to
+// the bucket's lifecycle rule, which deletes it a retention window later —
+// see `staticsite`. That keeps retention where ADR 0009 put the rest of the
+// bucket's lifecycle, in Terraform, and means orphans are collected whether
+// or not anyone deploys again.
 //
-// Dating an object hands it to the bucket's lifecycle rule, which deletes it
-// a retention window later — see `staticsite`. That keeps the retention
-// where ADR 0009 put the rest of the bucket's lifecycle, in Terraform, and
-// means orphans are collected whether or not anyone deploys again.
+// A stable-named orphan is deleted at once, because that reasoning does not
+// reach it. Nothing holds a URL to it that its removal did not mean to
+// break: a route the app dropped, an icon it stopped shipping. Retaining one
+// would keep answering 200 at a URL the router no longer has — the soft 404
+// that serving honest status codes exists to avoid — for a full window after
+// somebody deliberately took it down.
 //
 // An orphan already carrying a date is left alone. Every later publish sees
 // it again until the bucket collects it, and re-dating would push its
-// deletion out by a full window each time — an object orphaned once would
-// then outlive any retention it was given.
-func Retire(orphans []Orphan) []string {
-	var stamp []string
+// deletion out by a window each time, so an object orphaned once would
+// outlive any retention it was given.
+func Retire(orphans []Orphan, rules Rules) (date, remove []string) {
 	for _, o := range orphans {
-		if o.OrphanedAt.IsZero() {
-			stamp = append(stamp, o.Name)
+		switch {
+		case !rules.Immutable(o.Name):
+			remove = append(remove, o.Name)
+		case o.OrphanedAt.IsZero():
+			date = append(date, o.Name)
 		}
 	}
-	return stamp
+	return date, remove
 }
 
 // Changes is the work of one publish: what to write, then what the build has

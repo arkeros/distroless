@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//devtools/build/tools/webroot",
         "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//googleapi",
         "@org_golang_google_api//iterator",
     ],
 )

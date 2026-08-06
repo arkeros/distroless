@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/storage v1.62.2
 	github.com/anchore/grype v0.116.1
 	github.com/bazelbuild/buildtools v0.0.0-20260527145659-eb0c58a06830
-	github.com/google/go-containerregistry v0.21.8
+	github.com/google/go-containerregistry v0.21.9
 	github.com/google/go-github/v86 v86.0.0
 	github.com/hashicorp/hcl/v2 v2.24.0
 	github.com/spf13/cobra v1.10.2

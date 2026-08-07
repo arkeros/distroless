@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1785862112",
-    "repomd_sha256": "8fc62d8f56e5fba924cc2641c79f957ce257cca20a5e600dbeabe3ea457d2189"
+    "revision": "1786123014",
+    "repomd_sha256": "fa0baac06daaa7b449f609bc4965b82ecdd0333d94a0865f1a27039b283c5e7a"
   },
   "packages": {
     "audit-libs": {
@@ -377,18 +377,18 @@
     },
     "libselinux": {
       "aarch64": {
-        "version": "3.11-3.hum1",
-        "sha256": "5dd7094ef959b3e30c135edd055df1c689e06d721bfd0074d58e30e8afedc246",
-        "path": "aarch64/Packages/l/libselinux-3.11-3.hum1.aarch64.rpm",
-        "size": 105874,
-        "upstream": "libselinux-3.11-3.hum1.src.rpm"
+        "version": "3.11-4.hum1",
+        "sha256": "69a5a024862bdda48cb1ece750b88c6c4fafc764f21372d581c1a484240c9deb",
+        "path": "aarch64/Packages/l/libselinux-3.11-4.hum1.aarch64.rpm",
+        "size": 105691,
+        "upstream": "libselinux-3.11-4.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.11-3.hum1",
-        "sha256": "b5dc832453f75fb303ac0a6934bb1686a3410e90d533dbc3b2aeb51f92179d53",
-        "path": "x86_64/Packages/l/libselinux-3.11-3.hum1.x86_64.rpm",
-        "size": 110391,
-        "upstream": "libselinux-3.11-3.hum1.src.rpm"
+        "version": "3.11-4.hum1",
+        "sha256": "cc17c0045efb686c8ce85c8483e925a167b7a19b5db026f2a8354ddc58d2b0c7",
+        "path": "x86_64/Packages/l/libselinux-3.11-4.hum1.x86_64.rpm",
+        "size": 110182,
+        "upstream": "libselinux-3.11-4.hum1.src.rpm"
       }
     },
     "libsepol": {

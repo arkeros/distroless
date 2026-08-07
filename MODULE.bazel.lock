@@ -905,7 +905,7 @@
         "bzlTransitiveDigest": "mlfnpI6GvLQ3uMmZfG7MWce/glf6Qm6p814SsHdPAeI=",
         "usagesDigest": "Z8jkWld2AZyR7w4MQe3uygL0hDUN4DjAyFwHUwjDs08=",
         "recordedInputs": [
-          "FILE:@@//hummingbird.lock.json 76c46e55a95ae07891ad9ac9a4912fc4d9ff53b41fc145ed7a0d35e94efa72ba",
+          "FILE:@@//hummingbird.lock.json 3bde34b3c643e3ba1bcc88b55f2c303f3253aba26eaa546965da5a144fb8e9e1",
           "FILE:@@//oci/distroless/nginx/nginx-stable.hummingbird.lock.json 60a2affc847db0707f26440e367abf510a290f5e9d00c172cb585d666e2e58bc",
           "FILE:@@//oci/distroless/nginx/nginx-mainline.hummingbird.lock.json 804ae41ea9d34ba1a189a638afcfd7bb142728d3751e37db478d1d75ad20d070"
         ],
@@ -1545,12 +1545,12 @@
             "attributes": {
               "package": "libselinux",
               "arch": "aarch64",
-              "version": "3.11-3.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libselinux-3.11-3.hum1.aarch64.rpm",
-              "sha256": "5dd7094ef959b3e30c135edd055df1c689e06d721bfd0074d58e30e8afedc246",
+              "version": "3.11-4.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libselinux-3.11-4.hum1.aarch64.rpm",
+              "sha256": "69a5a024862bdda48cb1ece750b88c6c4fafc764f21372d581c1a484240c9deb",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libselinux-3.11-3.hum1.src.rpm",
+              "upstream": "libselinux-3.11-4.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1559,12 +1559,12 @@
             "attributes": {
               "package": "libselinux",
               "arch": "x86_64",
-              "version": "3.11-3.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libselinux-3.11-3.hum1.x86_64.rpm",
-              "sha256": "b5dc832453f75fb303ac0a6934bb1686a3410e90d533dbc3b2aeb51f92179d53",
+              "version": "3.11-4.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libselinux-3.11-4.hum1.x86_64.rpm",
+              "sha256": "cc17c0045efb686c8ce85c8483e925a167b7a19b5db026f2a8354ddc58d2b0c7",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libselinux-3.11-3.hum1.src.rpm",
+              "upstream": "libselinux-3.11-4.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },

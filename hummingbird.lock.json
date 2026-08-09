@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1786123014",
-    "repomd_sha256": "fa0baac06daaa7b449f609bc4965b82ecdd0333d94a0865f1a27039b283c5e7a"
+    "revision": "1786253551",
+    "repomd_sha256": "3e5fda6cb527bdb9ac284d71b93c76a27b0abb0b56d8b37c2b2b518ee81d9330"
   },
   "packages": {
     "audit-libs": {
@@ -272,18 +272,18 @@
     },
     "libatomic": {
       "aarch64": {
-        "version": "16.1.1-2.hum1",
-        "sha256": "1faa3cadbefdeddfabeace9c10cbd505ac9add837e4bfcc46bbc1a6477c5e4b3",
-        "path": "aarch64/Packages/l/libatomic-16.1.1-2.hum1.aarch64.rpm",
-        "size": 57608,
-        "upstream": "gcc-16.1.1-2.hum1.src.rpm"
+        "version": "16.2.1-1.hum1",
+        "sha256": "f3ca509e3da94840ee3f242989fc31c093571cbe3affd044eb601674973711ca",
+        "path": "aarch64/Packages/l/libatomic-16.2.1-1.hum1.aarch64.rpm",
+        "size": 62471,
+        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "16.1.1-2.hum1",
-        "sha256": "a2f056b39c87c7c3f47232f3c0a01c1384b5b9437a7f1ad2549d3d6bf7bf52ae",
-        "path": "x86_64/Packages/l/libatomic-16.1.1-2.hum1.x86_64.rpm",
-        "size": 57717,
-        "upstream": "gcc-16.1.1-2.hum1.src.rpm"
+        "version": "16.2.1-1.hum1",
+        "sha256": "3c3647ece244a926c74f5238606a628daaf1fc7c3600113a28299b139d9b8550",
+        "path": "x86_64/Packages/l/libatomic-16.2.1-1.hum1.x86_64.rpm",
+        "size": 62581,
+        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
       }
     },
     "libattr": {
@@ -361,18 +361,18 @@
     },
     "libgcc": {
       "aarch64": {
-        "version": "16.1.1-2.hum1",
-        "sha256": "7b132b477391cafbfdd079ec0fdb297bfaf1a2eb61871f90ee8e64722e55b692",
-        "path": "aarch64/Packages/l/libgcc-16.1.1-2.hum1.aarch64.rpm",
-        "size": 121730,
-        "upstream": "gcc-16.1.1-2.hum1.src.rpm"
+        "version": "16.2.1-1.hum1",
+        "sha256": "34a4be6584240039b3f4316a9be3f3469325c29b5441a0db3800b481379b5289",
+        "path": "aarch64/Packages/l/libgcc-16.2.1-1.hum1.aarch64.rpm",
+        "size": 126530,
+        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "16.1.1-2.hum1",
-        "sha256": "b7faaaa5bddb952a33c537f7a3317b226c013151f1b92b2327c01b49a4e3f5f8",
-        "path": "x86_64/Packages/l/libgcc-16.1.1-2.hum1.x86_64.rpm",
-        "size": 140526,
-        "upstream": "gcc-16.1.1-2.hum1.src.rpm"
+        "version": "16.2.1-1.hum1",
+        "sha256": "d726c186556dc49559a349c03ad71558bd74b203031675e9220b387bd4bcb7ed",
+        "path": "x86_64/Packages/l/libgcc-16.2.1-1.hum1.x86_64.rpm",
+        "size": 145453,
+        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
       }
     },
     "libselinux": {
@@ -409,18 +409,18 @@
     },
     "libstdc++": {
       "aarch64": {
-        "version": "16.1.1-2.hum1",
-        "sha256": "9ee1f5a379431df392c1b63b4a109b775883dc2cbeabf6261b03beaf283bac6e",
-        "path": "aarch64/Packages/l/libstdc++-16.1.1-2.hum1.aarch64.rpm",
-        "size": 944643,
-        "upstream": "gcc-16.1.1-2.hum1.src.rpm"
+        "version": "16.2.1-1.hum1",
+        "sha256": "efd274ccba695e935931cb4e0ecb4404c8d867d8fdca28be82e02f192fe85171",
+        "path": "aarch64/Packages/l/libstdc++-16.2.1-1.hum1.aarch64.rpm",
+        "size": 950199,
+        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "16.1.1-2.hum1",
-        "sha256": "e59a1f5877a67794accc63d60b5cc20e9f208f32347111d0b1c1b84950c1d1d6",
-        "path": "x86_64/Packages/l/libstdc++-16.1.1-2.hum1.x86_64.rpm",
-        "size": 1055921,
-        "upstream": "gcc-16.1.1-2.hum1.src.rpm"
+        "version": "16.2.1-1.hum1",
+        "sha256": "da891603970b9056ab9e5e710519f85b09a883d6ee1bc6f053daa809c2efb183",
+        "path": "x86_64/Packages/l/libstdc++-16.2.1-1.hum1.x86_64.rpm",
+        "size": 1058762,
+        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
       }
     },
     "libtasn1": {

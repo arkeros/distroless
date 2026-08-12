@@ -7,7 +7,6 @@
 manifest:
   modules_mapping:
     absl: absl_py
-    ada92cb5d92a588d1b93__mypyc: charset_normalizer
     adbc_driver_duckdb: duckdb
     blake3: blake3
     certifi: certifi
@@ -25,4 +24,4 @@ manifest:
     urllib3: urllib3
   pip_repository:
     name: pip
-integrity: 51709a03b940ac78182c5dbd43c84b98e9ea56fc7bbcbd0029fa58b7b0ed00f2
+integrity: 5c289f00cb930ff592b0b8a5f4338a89e814474ad0c2c590bf33545d57d224f9

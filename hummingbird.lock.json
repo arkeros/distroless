@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1786462266",
-    "repomd_sha256": "3258cc8812b42a9252afb3273180ef08306aa0b25be8b9eb5d68f426246d7a54"
+    "revision": "1786634206",
+    "repomd_sha256": "d3c78426e4810ba1186e6605bbd354bd4575fa35ae0f17ea19887ee8ae46d2bb"
   },
   "packages": {
     "audit-libs": {
@@ -24,18 +24,18 @@
     },
     "bash": {
       "aarch64": {
-        "version": "5.3.15-2.hum1",
-        "sha256": "889857909e4d48dba648659db26110e738cd906f1388e17fd2c8469741cc8ffd",
-        "path": "aarch64/Packages/b/bash-5.3.15-2.hum1.aarch64.rpm",
-        "size": 1942737,
-        "upstream": "bash-5.3.15-2.hum1.src.rpm"
+        "version": "5.3.15-2.1.hum1",
+        "sha256": "c642de7662f0fbec8a66c7d42431ac5ac6079c26a2c3e51bc65584a68b4333af",
+        "path": "aarch64/Packages/b/bash-5.3.15-2.1.hum1.aarch64.rpm",
+        "size": 1942534,
+        "upstream": "bash-5.3.15-2.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "5.3.15-2.hum1",
-        "sha256": "3cc67f8314d7d3dc70b7935d75392755215ad4e0248c1d0289eeb1ed1d96bc81",
-        "path": "x86_64/Packages/b/bash-5.3.15-2.hum1.x86_64.rpm",
-        "size": 1996422,
-        "upstream": "bash-5.3.15-2.hum1.src.rpm"
+        "version": "5.3.15-2.1.hum1",
+        "sha256": "dc5fdf0ed2b6d259563bbfe6fa4a07f63adbb620dfe343b155ee7f12e1de12fe",
+        "path": "x86_64/Packages/b/bash-5.3.15-2.1.hum1.x86_64.rpm",
+        "size": 1996696,
+        "upstream": "bash-5.3.15-2.1.hum1.src.rpm"
       }
     },
     "busybox": {
@@ -272,18 +272,18 @@
     },
     "libatomic": {
       "aarch64": {
-        "version": "16.2.1-1.hum1",
-        "sha256": "f3ca509e3da94840ee3f242989fc31c093571cbe3affd044eb601674973711ca",
-        "path": "aarch64/Packages/l/libatomic-16.2.1-1.hum1.aarch64.rpm",
-        "size": 62471,
-        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
+        "version": "16.2.1-1.1.hum1",
+        "sha256": "c1f79e96da9c89fa0c4ef922c85f8c3f207a7935201e87c6c3683a1aa854505b",
+        "path": "aarch64/Packages/l/libatomic-16.2.1-1.1.hum1.aarch64.rpm",
+        "size": 62492,
+        "upstream": "gcc-16.2.1-1.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "16.2.1-1.hum1",
-        "sha256": "3c3647ece244a926c74f5238606a628daaf1fc7c3600113a28299b139d9b8550",
-        "path": "x86_64/Packages/l/libatomic-16.2.1-1.hum1.x86_64.rpm",
-        "size": 62581,
-        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
+        "version": "16.2.1-1.1.hum1",
+        "sha256": "cc5fec3fb2849e638b164803eb41da56302d853c382fa44bd767aeb917f08e56",
+        "path": "x86_64/Packages/l/libatomic-16.2.1-1.1.hum1.x86_64.rpm",
+        "size": 62597,
+        "upstream": "gcc-16.2.1-1.1.hum1.src.rpm"
       }
     },
     "libattr": {
@@ -361,18 +361,18 @@
     },
     "libgcc": {
       "aarch64": {
-        "version": "16.2.1-1.hum1",
-        "sha256": "34a4be6584240039b3f4316a9be3f3469325c29b5441a0db3800b481379b5289",
-        "path": "aarch64/Packages/l/libgcc-16.2.1-1.hum1.aarch64.rpm",
-        "size": 126530,
-        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
+        "version": "16.2.1-1.1.hum1",
+        "sha256": "195ac6fce6caa1ca10d76cf7f2f890cafd2b08c83ad2dc9fa449a499a969a19a",
+        "path": "aarch64/Packages/l/libgcc-16.2.1-1.1.hum1.aarch64.rpm",
+        "size": 126556,
+        "upstream": "gcc-16.2.1-1.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "16.2.1-1.hum1",
-        "sha256": "d726c186556dc49559a349c03ad71558bd74b203031675e9220b387bd4bcb7ed",
-        "path": "x86_64/Packages/l/libgcc-16.2.1-1.hum1.x86_64.rpm",
-        "size": 145453,
-        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
+        "version": "16.2.1-1.1.hum1",
+        "sha256": "88c820e23345ab3b0e7f6c94a1a9672a1ecbb703f038551982de5c7d1c7f70f7",
+        "path": "x86_64/Packages/l/libgcc-16.2.1-1.1.hum1.x86_64.rpm",
+        "size": 145468,
+        "upstream": "gcc-16.2.1-1.1.hum1.src.rpm"
       }
     },
     "libselinux": {
@@ -409,18 +409,18 @@
     },
     "libstdc++": {
       "aarch64": {
-        "version": "16.2.1-1.hum1",
-        "sha256": "efd274ccba695e935931cb4e0ecb4404c8d867d8fdca28be82e02f192fe85171",
-        "path": "aarch64/Packages/l/libstdc++-16.2.1-1.hum1.aarch64.rpm",
-        "size": 950199,
-        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
+        "version": "16.2.1-1.1.hum1",
+        "sha256": "e10d66bb1f9ab3c444ca4e690121246305be4f0ff34fa44d4b0e32a88d51e5a8",
+        "path": "aarch64/Packages/l/libstdc++-16.2.1-1.1.hum1.aarch64.rpm",
+        "size": 949787,
+        "upstream": "gcc-16.2.1-1.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "16.2.1-1.hum1",
-        "sha256": "da891603970b9056ab9e5e710519f85b09a883d6ee1bc6f053daa809c2efb183",
-        "path": "x86_64/Packages/l/libstdc++-16.2.1-1.hum1.x86_64.rpm",
-        "size": 1058762,
-        "upstream": "gcc-16.2.1-1.hum1.src.rpm"
+        "version": "16.2.1-1.1.hum1",
+        "sha256": "9ae97a9cb356cea0606ff1d60be7c1b98b05ff05d046276c0c1b9af235dd5854",
+        "path": "x86_64/Packages/l/libstdc++-16.2.1-1.1.hum1.x86_64.rpm",
+        "size": 1058757,
+        "upstream": "gcc-16.2.1-1.1.hum1.src.rpm"
       }
     },
     "libtasn1": {

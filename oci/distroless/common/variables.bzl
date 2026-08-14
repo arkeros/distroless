@@ -75,12 +75,13 @@ DEFAULT_DEBUG_ENV = {
 # in via lockfile bumps; this list is what's still pending upstream as of the
 # current snapshot. Companion `_cve_test_stale_ignores` test fails when any
 # entry vanishes from the scan, forcing us to delete it.
-DEBIAN_WONTFIX_CVES = [
-    # glibc (libc6) — currently unfixed in sid 2.42-16. CVE-2026-5450 and
-    # CVE-2026-5928 were fixed by the same snapshot that fixed the previous
-    # openssl batch (see OPENSSL_WONTFIX_CVES below).
-    "CVE-2026-5435",
-]
+#
+# Currently empty: the last entry, glibc's CVE-2026-5435, stopped matching
+# with the 2026-08-14 grype DB — the same way CVE-2026-5450 and CVE-2026-5928
+# left before it. The threading stays in place (every image that scans Debian
+# packages passes this list to `ignore_cves`), so the next no-DSA finding is
+# one line.
+DEBIAN_WONTFIX_CVES = []
 
 # OpenSSL (libssl3t64 / openssl-provider-legacy 3.6.3-1) — unfixed in sid, so
 # it can't ride in on a lockfile bump like most Debian findings do. Kept out

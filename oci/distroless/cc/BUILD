@@ -72,8 +72,10 @@ _VEX = {
 #   libstdc++6   → libstdc++ (+ libgcc; libstdc++.so.6 dynlinks libgcc_s.so.1)
 #   libssl3t64   → openssl-libs (libssl.so.3 + libcrypto.so.3)
 # glibc-2.42-13.hum1 is the version Red Hat's CVE API names as carrying
-# backports for CVE-2026-5435/5450/5928 — the three glibc CVEs Debian sid
-# still has on its wontfix list. This layer is the proof point for ADR 0007.
+# backports for CVE-2026-5435/5450/5928 — the three glibc CVEs that sat on
+# Debian sid's wontfix list (`DEBIAN_WONTFIX_CVES`) while ADR 0007 was
+# argued; the last of them, CVE-2026-5435, left the scan on 2026-08-14.
+# Hummingbird carried the backports first, which is the ADR's proof point.
 [
     flatten(
         name = "cc_amd64_hummingbird_layer",

@@ -13,7 +13,7 @@ binary doesn't actually have.
 The companion `_cve_test_stale_vex` test (in supply_chain.bzl) fires when a
 statement here outlives the scanner's fix sync — i.e. silences nothing.
 That's how this list gets pruned: stale tests turn red, statements get
-deleted. Two predecessors of the nginx statement below (CVE-2026-9256 and
+deleted. Two predecessors of the nginx statements below (CVE-2026-9256 and
 CVE-2026-42055) were removed exactly that way.
 
 Statement-name conventions (`<package>_HUMMINGBIRD_FIXED_VEX_STATEMENTS`)
@@ -45,9 +45,24 @@ NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS = {
             status = "fixed",
             vulnerability = "CVE-2026-60005",
         ),
+        # CVE-2026-42533 — heap buffer overflow when a `map` directive uses
+        # regex matching and a string expression references the map's capture
+        # variables before the map output variable. nginx.org's advisory lists
+        # 1.30.4+ (stable) and 1.31.3+ (mainline) as not vulnerable, and our
+        # stable lockfile pins exactly 1.30.4. Same release-tag artifact as
+        # CVE-2026-60005 above, and the Debian twin of this statement lives in
+        # NGINX_FIXED_VEX_STATEMENTS["stable"] — the two distros flag the same
+        # nginx.org build for the same reason.
+        vex_statement(
+            expires = "2026-09-15",
+            impact_statement = "Fixed upstream in nginx 1.30.4; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.4-2.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 2.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
+            products = ["pkg:rpm/nginx.org/nginx"],
+            status = "fixed",
+            vulnerability = "CVE-2026-42533",
+        ),
     ],
-    # Empty: mainline pins 1.31.3, which sorts above the advisory's fixed
-    # version, so grype stops matching on its own. A statement here would be
+    # Empty: mainline pins 1.31.3, which sorts above both advisories' fixed
+    # versions, so grype stops matching on its own. A statement here would be
     # stale — `_cve_test_stale_vex` enforces that.
     "mainline": [],
 }

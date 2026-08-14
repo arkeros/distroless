@@ -12,34 +12,27 @@ load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "bash_layers")
 
 package(default_visibility = ["//visibility:public"])
 
-# rust-coreutils 0.8.0-1 carries two unfixed Highs in Debian sid:
-# mkfifo (CVE-2026-35341) and mkdir TOCTOU (CVE-2026-35352). The
-# rust-coreutils multicall binary contains all subcommands, but our
-# images only expose the symlinks enumerated in
+# rust-coreutils 0.8.0-1 carries one unfixed High in Debian sid:
+# mkfifo (CVE-2026-35341). The rust-coreutils multicall binary contains
+# all subcommands, but our images only expose the symlinks enumerated in
 # //oci/distroless/common:BUILD's COREUTILS_COMMANDS. mkfifo was never
-# in that set; mkdir was removed alongside this VEX. Neither subcommand
-# is resolvable by name on PATH — invoking them requires the
-# non-standard `/bin/coreutils <name>` multicall form, which neither
-# the entrypoint nor any layered tooling uses. Drops the moment Debian
-# ships a fix (`_cve_test_stale_vex` will turn red and force deletion).
-# The chroot statement (CVE-2026-35368) was pruned by exactly that
-# mechanism when the grype DB stopped flagging it.
+# in that set, so it is not resolvable by name on PATH — invoking it
+# requires the non-standard `/bin/coreutils mkfifo` multicall form,
+# which neither the entrypoint nor any layered tooling uses. Drops the
+# moment Debian ships a fix (`_cve_test_stale_vex` will turn red and
+# force deletion). Two former neighbours were pruned by exactly that
+# mechanism when the grype DB stopped flagging them: chroot
+# (CVE-2026-35368), and mkdir TOCTOU (CVE-2026-35352) with the
+# 2026-08-14 DB. mkdir stays out of COREUTILS_COMMANDS regardless —
+# that removal was a composition decision, not a consequence of the VEX.
 RUST_COREUTILS_VEX_STATEMENTS = [
     vex_statement(
-        expires = "2026-08-11",
+        expires = "2026-11-12",
         impact_statement = "mkfifo is not in COREUTILS_COMMANDS — no /usr/bin/mkfifo symlink to the rust-coreutils multicall.",
         justification = "vulnerable_code_not_in_execute_path",
         products = ["pkg:oci/bash"],
         status = "not_affected",
         vulnerability = "CVE-2026-35341",
-    ),
-    vex_statement(
-        expires = "2026-08-11",
-        impact_statement = "mkdir was removed from COREUTILS_COMMANDS. Debug variants resolve mkdir to /busybox/mkdir (different implementation, not affected); non-debug variants don't expose mkdir on PATH.",
-        justification = "vulnerable_code_not_in_execute_path",
-        products = ["pkg:oci/bash"],
-        status = "not_affected",
-        vulnerability = "CVE-2026-35352",
     ),
 ]
 

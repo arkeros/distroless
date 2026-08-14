@@ -106,11 +106,13 @@ tar(
 # Create symlinks for rust-coreutils (avoids GNU coreutils which pulls in libsystemd0)
 # rust-coreutils is a multicall binary at /bin/coreutils.
 #
-# `mkdir` is intentionally omitted: rust-coreutils 0.8.0-1 carries an
-# unfixed TOCTOU (CVE-2026-35352). Debug variants fall back to
-# /busybox/mkdir (different implementation, not affected); non-debug
-# images simply don't expose mkdir on PATH. Companion VEX in
-# //oci/distroless/bash:vex documents the non-reachability.
+# `mkdir` is intentionally omitted: rust-coreutils 0.8.0-1 carried a
+# TOCTOU (CVE-2026-35352) that the grype DB stopped flagging on
+# 2026-08-14, which retired the companion VEX in //oci/distroless/bash.
+# The omission stands on its own — a scanner dropping a match is not the
+# same as an upstream fix, and nothing here needs mkdir. Debug variants
+# fall back to /busybox/mkdir (different implementation); non-debug
+# images simply don't expose mkdir on PATH.
 COREUTILS_COMMANDS = [
     "env",
     "uname",

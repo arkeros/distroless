@@ -56,7 +56,7 @@ package(default_visibility = ["//visibility:public"])
 # upstream lands a fix (`_cve_test_stale_vex` enforces).
 NGINX_VEX_STATEMENTS = [
     vex_statement(
-        expires = "2026-08-11",
+        expires = "2026-11-12",
         impact_statement = "nginx.conf routes error_log to /dev/stderr and access_log to /dev/stdout; entrypoint pins -e /dev/stderr. No log files are created on disk, so the world-readable log-file default is never reached.",
         justification = "vulnerable_code_not_in_execute_path",
         products = ["pkg:oci/nginx"],

@@ -20,9 +20,9 @@ JAVA_ARCHITECTURES = {
 # `build` is Adoptium's build counter appended after the `+` in the release
 # name (e.g. `jdk-21.0.11+10`).
 JAVA_VERSIONS = {
-    "17": ("17.0.19", "10"),
-    "21": ("21.0.11", "10"),
-    "25": ("25.0.3", "9"),
+    "17": ("17.0.20", "8"),
+    "21": ("21.0.12", "8"),
+    "25": ("25.0.4", "7"),
 }
 
 JAVA_MAJOR_VERSIONS = list(JAVA_VERSIONS.keys())

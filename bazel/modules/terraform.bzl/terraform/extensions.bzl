@@ -133,13 +133,51 @@ def _provider_url(source, version, platform):
     Source layout is `<namespace>/<type>` (e.g. `hashicorp/google`); the
     URL only embeds the type, not the namespace. The release host serves
     zips for all of HashiCorp's official providers under this path;
-    third-party namespaces would need a different scheme.
+    third-party namespaces resolve through the registry download API
+    instead (`_download_provider_zip`).
     """
     _, ptype = source.split("/")
     return "https://releases.hashicorp.com/terraform-provider-{ptype}/{version}/terraform-provider-{ptype}_{version}_{platform}.zip".format(
         ptype = ptype,
         version = version,
         platform = platform,
+    )
+
+def _download_provider_zip(rctx, source, version, platform, output):
+    """Download one provider zip, resolving the URL by namespace.
+
+    `hashicorp/*` archives live at a predictable `releases.hashicorp.com`
+    path. Every other namespace (community providers: `bunnyway/bunnynet`,
+    `integrations/github`, ...) hosts its archives wherever it likes — the
+    registry's download API is the only sanctioned resolver: GET
+    `/v1/providers/<ns>/<type>/<version>/download/<os>/<arch>` returns a
+    JSON doc whose `download_url` points at the actual zip (typically a
+    GitHub release asset). The extra hop happens at fetch time inside this
+    repository rule; the zh: verification in the caller is unchanged and
+    covers both paths.
+    """
+    ns, _ = source.split("/")
+    if ns == "hashicorp":
+        return rctx.download(
+            url = _provider_url(source, version, platform),
+            output = output,
+        )
+    os_name, _, arch = platform.partition("_")
+    meta_name = "_registry_download.json"
+    rctx.download(
+        url = "https://registry.terraform.io/v1/providers/{source}/{version}/download/{os}/{arch}".format(
+            source = source,
+            version = version,
+            os = os_name,
+            arch = arch,
+        ),
+        output = meta_name,
+    )
+    meta = json.decode(rctx.read(meta_name))
+    rctx.delete(meta_name)
+    return rctx.download(
+        url = meta["download_url"],
+        output = output,
     )
 
 def _provider_archive_repo_impl(rctx):
@@ -153,14 +191,15 @@ def _provider_archive_repo_impl(rctx):
       upstream zip would produce a sha256 outside the `zh:` set and
       `fail()` here.
 
-      What this check does NOT catch: if `_provider_url` for platform X
+      What this check does NOT catch: if the URL resolution for platform X
       somehow returned the *wrong but still upstream-blessed* artifact
       — say the `_manifest.json` or a different platform's zip whose
       sha256 also happens to be in the `zh:` set — we'd accept the
       download here, and bazel would fail later (unzip error, terraform
       init mismatch). In other words, this verifies "the downloaded
       bytes were not tampered with mid-flight," not "the URL pointed at
-      the file we expected." We trust `_provider_url` to be correct.
+      the file we expected." We trust `_download_provider_zip` to be
+      correct.
 
       Why we don't tighten: terraform's `.terraform.lock.hcl` lists all
       `zh:` hashes flat — manifest, sig, per-platform zips, cross-
@@ -176,9 +215,12 @@ def _provider_archive_repo_impl(rctx):
         version = rctx.attr.version,
         platform = rctx.attr.platform,
     )
-    result = rctx.download(
-        url = _provider_url(rctx.attr.source, rctx.attr.version, rctx.attr.platform),
-        output = zip_name,
+    result = _download_provider_zip(
+        rctx,
+        rctx.attr.source,
+        rctx.attr.version,
+        rctx.attr.platform,
+        zip_name,
     )
     if result.sha256 not in rctx.attr.valid_zh_sha256s:
         fail(("downloaded {zip} has sha256 {got} which does not appear in " +

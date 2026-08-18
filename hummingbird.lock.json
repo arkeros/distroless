@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1786634206",
-    "repomd_sha256": "d3c78426e4810ba1186e6605bbd354bd4575fa35ae0f17ea19887ee8ae46d2bb"
+    "revision": "1787050236",
+    "repomd_sha256": "4227304add8ffa3288716db73d267e31f946ce9bca917a98e50a8ae61c6637c3"
   },
   "packages": {
     "audit-libs": {
@@ -500,18 +500,18 @@
     },
     "openssl-libs": {
       "aarch64": {
-        "version": "1:3.5.6-0.4.hum1",
-        "sha256": "7952bcb455d713ccdc7697036e40985cc1455de4240c27d20493983ad307bff4",
-        "path": "aarch64/Packages/o/openssl-libs-3.5.6-0.4.hum1.aarch64.rpm",
-        "size": 2241817,
-        "upstream": "openssl-3.5.6-0.4.hum1.src.rpm"
+        "version": "1:3.5.6-0.5.hum1",
+        "sha256": "356a611e8f59e0054fdaa7dee097ae3e80033778388c3a27c51cb25742f0a209",
+        "path": "aarch64/Packages/o/openssl-libs-3.5.6-0.5.hum1.aarch64.rpm",
+        "size": 2242953,
+        "upstream": "openssl-3.5.6-0.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "1:3.5.6-0.4.hum1",
-        "sha256": "7d6b4eb43bd2a525b63de451bacf9c363eb39d8ecec96617a02859c291d758cb",
-        "path": "x86_64/Packages/o/openssl-libs-3.5.6-0.4.hum1.x86_64.rpm",
-        "size": 2478335,
-        "upstream": "openssl-3.5.6-0.4.hum1.src.rpm"
+        "version": "1:3.5.6-0.5.hum1",
+        "sha256": "6256fb0b17c02f26c7fda8956abaecb82f127f9beb84c8ce5ada574966113dfd",
+        "path": "x86_64/Packages/o/openssl-libs-3.5.6-0.5.hum1.x86_64.rpm",
+        "size": 2477250,
+        "upstream": "openssl-3.5.6-0.5.hum1.src.rpm"
       }
     },
     "p11-kit": {

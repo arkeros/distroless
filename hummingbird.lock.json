@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1787050236",
-    "repomd_sha256": "4227304add8ffa3288716db73d267e31f946ce9bca917a98e50a8ae61c6637c3"
+    "revision": "1787153215",
+    "repomd_sha256": "ea3818aca8eef1415432f67ddd01840f38342c34f7374bc0ae035bab1ec74b9e"
   },
   "packages": {
     "audit-libs": {

@@ -913,7 +913,7 @@
         "bzlTransitiveDigest": "mlfnpI6GvLQ3uMmZfG7MWce/glf6Qm6p814SsHdPAeI=",
         "usagesDigest": "Z8jkWld2AZyR7w4MQe3uygL0hDUN4DjAyFwHUwjDs08=",
         "recordedInputs": [
-          "FILE:@@//hummingbird.lock.json 393e79fbe9f3775418d43f616f6fcd17b25c5e14aa96d7828f6c119902dc9703",
+          "FILE:@@//hummingbird.lock.json 7cedac8bfe5575135fa6a0d8e54d7e3e4547e25c8fa93dbba01422fceb5ace1a",
           "FILE:@@//oci/distroless/nginx/nginx-stable.hummingbird.lock.json 60a2affc847db0707f26440e367abf510a290f5e9d00c172cb585d666e2e58bc",
           "FILE:@@//oci/distroless/nginx/nginx-mainline.hummingbird.lock.json 4f6670699a5a33702ac54687c0c3cfc34e0ea4046c9199f93e59e9f1a6101f81"
         ],
@@ -1483,12 +1483,12 @@
             "attributes": {
               "package": "libeconf",
               "arch": "aarch64",
-              "version": "0.7.9-4.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libeconf-0.7.9-4.hum1.aarch64.rpm",
-              "sha256": "0af86ac0852092ce787bdb8a4650024525dc4964fb4ee41a61029b6292db36b6",
+              "version": "0.7.9-4.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libeconf-0.7.9-4.1.hum1.aarch64.rpm",
+              "sha256": "4b95d5ea553340b7f6d01d391c2a00b8f1cdbe1811d6260e90134075ac9d9a1c",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libeconf-0.7.9-4.hum1.src.rpm",
+              "upstream": "libeconf-0.7.9-4.1.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1497,12 +1497,12 @@
             "attributes": {
               "package": "libeconf",
               "arch": "x86_64",
-              "version": "0.7.9-4.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libeconf-0.7.9-4.hum1.x86_64.rpm",
-              "sha256": "80545029580a026a800c59e71215822940c89720e7acab451c1fc24cc5c20e26",
+              "version": "0.7.9-4.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libeconf-0.7.9-4.1.hum1.x86_64.rpm",
+              "sha256": "ec1ba3d6d399dee347fb27ce90ddd63dd3dc8acbbda29cfbba39aea4f4e92f4a",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libeconf-0.7.9-4.hum1.src.rpm",
+              "upstream": "libeconf-0.7.9-4.1.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },

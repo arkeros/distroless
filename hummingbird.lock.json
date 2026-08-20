@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1787153215",
-    "repomd_sha256": "ea3818aca8eef1415432f67ddd01840f38342c34f7374bc0ae035bab1ec74b9e"
+    "revision": "1787244022",
+    "repomd_sha256": "d26cb631c0ee9db9d8f4065595981e67f9807ca61e02f863d26cea9d5a27a319"
   },
   "packages": {
     "audit-libs": {
@@ -336,18 +336,18 @@
     },
     "libeconf": {
       "aarch64": {
-        "version": "0.7.9-4.hum1",
-        "sha256": "0af86ac0852092ce787bdb8a4650024525dc4964fb4ee41a61029b6292db36b6",
-        "path": "aarch64/Packages/l/libeconf-0.7.9-4.hum1.aarch64.rpm",
-        "size": 41881,
-        "upstream": "libeconf-0.7.9-4.hum1.src.rpm"
+        "version": "0.7.9-4.1.hum1",
+        "sha256": "4b95d5ea553340b7f6d01d391c2a00b8f1cdbe1811d6260e90134075ac9d9a1c",
+        "path": "aarch64/Packages/l/libeconf-0.7.9-4.1.hum1.aarch64.rpm",
+        "size": 41893,
+        "upstream": "libeconf-0.7.9-4.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "0.7.9-4.hum1",
-        "sha256": "80545029580a026a800c59e71215822940c89720e7acab451c1fc24cc5c20e26",
-        "path": "x86_64/Packages/l/libeconf-0.7.9-4.hum1.x86_64.rpm",
-        "size": 43015,
-        "upstream": "libeconf-0.7.9-4.hum1.src.rpm"
+        "version": "0.7.9-4.1.hum1",
+        "sha256": "ec1ba3d6d399dee347fb27ce90ddd63dd3dc8acbbda29cfbba39aea4f4e92f4a",
+        "path": "x86_64/Packages/l/libeconf-0.7.9-4.1.hum1.x86_64.rpm",
+        "size": 43022,
+        "upstream": "libeconf-0.7.9-4.1.hum1.src.rpm"
       }
     },
     "libffi": {

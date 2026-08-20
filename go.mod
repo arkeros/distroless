@@ -1,6 +1,6 @@
 module github.com/arkeros/senku
 
-go 1.26.7
+go 1.27.0
 
 require (
 	cloud.google.com/go/secretmanager v1.21.0

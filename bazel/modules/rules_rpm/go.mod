@@ -1,6 +1,6 @@
 module github.com/arkeros/senku/bazel/modules/rules_rpm
 
-go 1.26.7
+go 1.27.0
 
 require (
 	github.com/ProtonMail/go-crypto v1.4.1

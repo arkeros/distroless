@@ -15,8 +15,8 @@ require (
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	golang.org/x/text v0.41.0
 	google.golang.org/api v0.293.0
-	k8s.io/api v0.36.3
-	k8s.io/apimachinery v0.36.3
+	k8s.io/api v0.36.4
+	k8s.io/apimachinery v0.36.4
 	knative.dev/serving v0.50.0
 	sigs.k8s.io/yaml v1.6.0
 )

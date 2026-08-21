@@ -918,7 +918,7 @@
         "bzlTransitiveDigest": "mlfnpI6GvLQ3uMmZfG7MWce/glf6Qm6p814SsHdPAeI=",
         "usagesDigest": "Z8jkWld2AZyR7w4MQe3uygL0hDUN4DjAyFwHUwjDs08=",
         "recordedInputs": [
-          "FILE:@@//hummingbird.lock.json 7cedac8bfe5575135fa6a0d8e54d7e3e4547e25c8fa93dbba01422fceb5ace1a",
+          "FILE:@@//hummingbird.lock.json 7ea9548d54e2d55199b5f8eb6b2563a7e190efe76b6c13e5a1c8ced54720b1cc",
           "FILE:@@//oci/distroless/nginx/nginx-stable.hummingbird.lock.json 60a2affc847db0707f26440e367abf510a290f5e9d00c172cb585d666e2e58bc",
           "FILE:@@//oci/distroless/nginx/nginx-mainline.hummingbird.lock.json 4f6670699a5a33702ac54687c0c3cfc34e0ea4046c9199f93e59e9f1a6101f81"
         ],
@@ -1460,12 +1460,12 @@
             "attributes": {
               "package": "libcap-ng",
               "arch": "aarch64",
-              "version": "0.9.3-4.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libcap-ng-0.9.3-4.hum1.aarch64.rpm",
-              "sha256": "d705ad2c022721fcec85f40c050844c4521abefe7fb56becedc1ea50cfa38a6a",
+              "version": "0.9.5-1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libcap-ng-0.9.5-1.hum1.aarch64.rpm",
+              "sha256": "e36997ffaa4d24a737310ea1dc6b7d333f37e6362093220b6e9143214a862af0",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libcap-ng-0.9.3-4.hum1.src.rpm",
+              "upstream": "libcap-ng-0.9.5-1.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1474,12 +1474,12 @@
             "attributes": {
               "package": "libcap-ng",
               "arch": "x86_64",
-              "version": "0.9.3-4.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libcap-ng-0.9.3-4.hum1.x86_64.rpm",
-              "sha256": "4d23bf005b705f402fadc25dd8c0003557b1470f33892758af96e292c99e7c57",
+              "version": "0.9.5-1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libcap-ng-0.9.5-1.hum1.x86_64.rpm",
+              "sha256": "5ce41e7199066d9029ff892311ab48197736c189404c487752b4cb07112ade97",
               "gpg_key": "@@//:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "libcap-ng-0.9.3-4.hum1.src.rpm",
+              "upstream": "libcap-ng-0.9.5-1.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },

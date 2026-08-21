@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1787244022",
-    "repomd_sha256": "d26cb631c0ee9db9d8f4065595981e67f9807ca61e02f863d26cea9d5a27a319"
+    "revision": "1787331405",
+    "repomd_sha256": "fca89f0564a16418cf5633dc22adb007bb1deaf79e341db6cac5398d18f7c7a5"
   },
   "packages": {
     "audit-libs": {
@@ -320,18 +320,18 @@
     },
     "libcap-ng": {
       "aarch64": {
-        "version": "0.9.3-4.hum1",
-        "sha256": "d705ad2c022721fcec85f40c050844c4521abefe7fb56becedc1ea50cfa38a6a",
-        "path": "aarch64/Packages/l/libcap-ng-0.9.3-4.hum1.aarch64.rpm",
-        "size": 41766,
-        "upstream": "libcap-ng-0.9.3-4.hum1.src.rpm"
+        "version": "0.9.5-1.hum1",
+        "sha256": "e36997ffaa4d24a737310ea1dc6b7d333f37e6362093220b6e9143214a862af0",
+        "path": "aarch64/Packages/l/libcap-ng-0.9.5-1.hum1.aarch64.rpm",
+        "size": 41987,
+        "upstream": "libcap-ng-0.9.5-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "0.9.3-4.hum1",
-        "sha256": "4d23bf005b705f402fadc25dd8c0003557b1470f33892758af96e292c99e7c57",
-        "path": "x86_64/Packages/l/libcap-ng-0.9.3-4.hum1.x86_64.rpm",
-        "size": 41395,
-        "upstream": "libcap-ng-0.9.3-4.hum1.src.rpm"
+        "version": "0.9.5-1.hum1",
+        "sha256": "5ce41e7199066d9029ff892311ab48197736c189404c487752b4cb07112ade97",
+        "path": "x86_64/Packages/l/libcap-ng-0.9.5-1.hum1.x86_64.rpm",
+        "size": 41590,
+        "upstream": "libcap-ng-0.9.5-1.hum1.src.rpm"
       }
     },
     "libeconf": {

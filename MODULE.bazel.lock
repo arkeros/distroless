@@ -39,8 +39,8 @@
     "https://bcr.bazel.build/modules/aspect_rules_js/3.4.0/MODULE.bazel": "88844ac411e1961f4574a92f3c5be5b20d1c6997778c6b88316c5c3b4b60e284",
     "https://bcr.bazel.build/modules/aspect_rules_js/3.4.1/MODULE.bazel": "e46853c134b48bc84c9bb5c4a4c8ae792dcfd5277acac9d90c444d65fa43dd19",
     "https://bcr.bazel.build/modules/aspect_rules_js/3.4.1/source.json": "b11f550b53d451800ebd0b4f38a048aea33fbfbd78fb5c77dca847f6b9b47a3b",
-    "https://bcr.bazel.build/modules/aspect_rules_py/1.11.7/MODULE.bazel": "62dbd22ee6d6f63f02609898420a15168b6983c3d9165c70c9b9cfbf1ee0a20f",
-    "https://bcr.bazel.build/modules/aspect_rules_py/1.11.7/source.json": "2ce9610b658e8e7fbafb9058716e5ff8f3e1050c99c612fe7ac79605cc59ae7c",
+    "https://bcr.bazel.build/modules/aspect_rules_py/1.12.0/MODULE.bazel": "37caf4dbf847ef0606b9091638c6530b91500e5c36d23fb70a28d12e7411236a",
+    "https://bcr.bazel.build/modules/aspect_rules_py/1.12.0/source.json": "7229e81eed1f6595c600b52e4845a5dda8951f924e165aa6544af85b3dbdaedd",
     "https://bcr.bazel.build/modules/aspect_rules_ts/3.10.1/MODULE.bazel": "035205a7834b0ed9724ed3c4790e12d1c779ef2520d72496ab234e6307715e6c",
     "https://bcr.bazel.build/modules/aspect_rules_ts/3.10.1/source.json": "d42b6560206adb5524caad2abc40ae0b5b34478dd38184a9f6ea4a5fed848cd6",
     "https://bcr.bazel.build/modules/aspect_tools_telemetry/0.3.3/MODULE.bazel": "37c764292861c2f70314efa9846bb6dbb44fc0308903b3285da6528305450183",
@@ -510,7 +510,7 @@
     "@@aspect_tools_telemetry+//:extension.bzl%telemetry": {
       "general": {
         "bzlTransitiveDigest": "p3HZXBuuCckZ77JfNe0tUU6MghORhZ/LkjHijK6BRGc=",
-        "usagesDigest": "/LjoEhsiEDRAjmY9xXvWpMRpf2+Q/9TDqNd34jrnxvE=",
+        "usagesDigest": "mzcnH2b8KqC9sDWf96zpkOptWKkD95iYMTkTgtpFesU=",
         "recordedInputs": [
           "REPO_MAPPING:aspect_tools_telemetry+,bazel_lib bazel_lib+",
           "REPO_MAPPING:aspect_tools_telemetry+,bazel_skylib bazel_skylib+",
@@ -524,7 +524,7 @@
                 "aspect_rules_js": "3.4.1",
                 "aspect_rules_ts": "3.10.1",
                 "aspect_rules_esbuild": "0.27.0",
-                "aspect_rules_py": "1.11.7",
+                "aspect_rules_py": "1.12.0",
                 "aspect_tools_telemetry": "0.5.1"
               },
               "last_notice": 2

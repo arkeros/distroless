@@ -124,5 +124,5 @@ The legacy cosign scheme (sibling tags `<digest>.sig` / `.att`) doesn't survive 
 - [`//oci:cosign_policy.bzl`](../oci/cosign_policy.bzl) — single source of truth for the verify policy
 - [`//oci:mirror_push.bzl`](../oci/mirror_push.bzl) — the build-graph policy unit
 - [ADR 0006](./adr/0006-bazel-native-cosign-mirror-signing.md) — Bazel-native cosign mirror signing
-- [`docs/oci-CONTEXT.md`](./oci-CONTEXT.md) — verification perimeter, threat model
+- [`CONTEXT.md`](../CONTEXT.md) — verification perimeter, and the vocabulary these docs use
 - [OCI 1.1 referrers API](https://github.com/opencontainers/distribution-spec/blob/main/spec.md#listing-referrers)

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/arkeros/distroless/base/cache/lru"
+	"github.com/hashicorp/golang-lru/v2"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
@@ -49,8 +49,14 @@ func New(upstream, repositoryPrefix string, opts ...Option) *Proxy {
 		upstream:         upstream,
 		repositoryPrefix: repositoryPrefix,
 		scheme:           "https",
-		transports:       lru.New[string, http.RoundTripper](MaxCacheEntries),
 	}
+	// Only errors on a non-positive size, and MaxCacheEntries is a positive
+	// constant — so this cannot fail at runtime.
+	transports, err := lru.New[string, http.RoundTripper](MaxCacheEntries)
+	if err != nil {
+		panic(err)
+	}
+	p.transports = transports
 	for _, o := range opts {
 		o(p)
 	}
@@ -226,7 +232,7 @@ func (p *Proxy) getTransport(repo string) (http.RoundTripper, error) {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
 
-	p.transports.Put(repo, t)
+	p.transports.Add(repo, t)
 	return t, nil
 }
 

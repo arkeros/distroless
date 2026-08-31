@@ -16,5 +16,4 @@ go_test(
     name = "toolversions_test",
     srcs = ["toolversions_test.go"],
     embed = [":toolversions"],
-    deps = ["//base/cmp"],
 )

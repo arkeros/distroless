@@ -22,10 +22,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/arkeros/distroless/oci/cmd/registry",
     visibility = ["//visibility:private"],
-    deps = [
-        "//base/flag/stringslice",
-        "//oci/pkg/proxy",
-    ],
+    deps = ["//oci/pkg/proxy"],
 )
 
 go_binary(

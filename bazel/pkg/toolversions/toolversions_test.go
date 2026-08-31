@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/arkeros/distroless/base/cmp"
 )
 
 var testCfg = Config{
@@ -109,7 +108,7 @@ func TestCompareVersionsCalVer(t *testing.T) {
 	}
 	for _, c := range cases {
 		got := CompareVersions(c.a, c.b)
-		if cmp.Sign(got) != cmp.Sign(c.want) {
+		if sign(got) != sign(c.want) {
 			t.Errorf("CompareVersions(%q, %q) = %d, want sign %d", c.a, c.b, got, c.want)
 		}
 	}
@@ -160,5 +159,18 @@ func TestWriteKnifeTool(t *testing.T) {
 		if !strings.Contains(s, want) {
 			t.Errorf("output missing %q\n---\n%s", want, s)
 		}
+	}
+}
+
+// sign normalizes a Compare result to -1, 0 or 1, so the table can state the
+// direction of the comparison without depending on its magnitude.
+func sign(n int) int {
+	switch {
+	case n < 0:
+		return -1
+	case n > 0:
+		return 1
+	default:
+		return 0
 	}
 }

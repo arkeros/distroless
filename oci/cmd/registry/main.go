@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -11,15 +12,24 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/arkeros/distroless/base/flag/stringslice"
 	"github.com/arkeros/distroless/oci/pkg/proxy"
 )
+
+// repeatedString collects a flag given more than once, e.g. `--repo=a --repo=b`.
+type repeatedString []string
+
+func (r *repeatedString) String() string { return fmt.Sprintf("%v", *r) }
+
+func (r *repeatedString) Set(s string) error {
+	*r = append(*r, s)
+	return nil
+}
 
 var (
 	port             *string
 	upstream         *string
 	repositoryPrefix *string
-	repos            stringslice.Value
+	repos            repeatedString
 )
 
 func init() {

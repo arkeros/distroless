@@ -6,10 +6,10 @@ go_library(
     importpath = "github.com/arkeros/distroless/oci/pkg/proxy",
     visibility = ["//visibility:public"],
     deps = [
-        "//base/cache/lru",
         "@com_github_google_go_containerregistry//pkg/authn",
         "@com_github_google_go_containerregistry//pkg/name",
         "@com_github_google_go_containerregistry//pkg/v1/remote/transport",
+        "@com_github_hashicorp_golang_lru_v2//:golang-lru",
     ],
 )
 

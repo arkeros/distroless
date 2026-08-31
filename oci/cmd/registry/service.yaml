@@ -1,0 +1,64 @@
+# Cloud Run service definition for the registry mirror, applied with
+# `gcloud run services replace` by the `deploy` job in
+# `.github/workflows/ci.yaml`.
+#
+# One service per region, all sharing this one manifest and the same name.
+# Region fan-out is for latency, not identity — the services are replicas of
+# the same workload, so they share one runtime GSA. Cloud Run service names are
+# region-scoped, so `registry` in every region does not collide.
+#
+# `image` is a placeholder: the deploy job substitutes the digest-pinned URI of
+# the image it just pushed. Never commit a resolved digest here — the manifest
+# describes the shape of the service, the pipeline supplies the contents.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: registry
+  labels:
+    app: registry
+  annotations:
+    # Ingress locked to LB-only. Org policy on senku-prod forbids `all`, and
+    # architecturally the registry sits behind the shared external HTTPS LB
+    # anyway. The `allUsers` invoker binding the deploy job applies stays
+    # necessary because the LB's Serverless NEG calls without injecting an
+    # OIDC identity, so the service must accept anonymous invokes — this
+    # ingress filter is what keeps it off the open internet.
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/cpu-throttling: "true"
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      serviceAccountName: svc-registry@senku-prod.iam.gserviceaccount.com
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - name: registry
+          image: IMAGE_PLACEHOLDER
+          args:
+            - --upstream=ghcr.io
+            - --repository-prefix=arkeros/senku
+            # TODO: keep sorted and up-to-date
+            - --repo=bash
+            - --repo=nginx
+          ports:
+            - name: http1
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /v2/
+          livenessProbe:
+            httpGet:
+              path: /v2/
+  traffic:
+    - percent: 100
+      latestRevision: true

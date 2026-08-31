@@ -6,13 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  # Bump together. The sha256 must match `aspect-cli-x86_64-unknown-linux-musl`
-  # for the pinned tag — re-compute via:
-  #   curl -fsSL https://github.com/aspect-build/aspect-cli/releases/download/${ASPECT_CLI_VERSION}/aspect-cli-x86_64-unknown-linux-musl | sha256sum
-  ASPECT_CLI_VERSION: v2026.17.17
-  ASPECT_CLI_SHA256: db45968e114c22af0e0d3dddadfb7091c81983f66499eed9d01d782bb09483d0
-
 jobs:
   publish:
     name: Publish mirror images
@@ -196,83 +189,39 @@ jobs:
           cat "${STDERR}"
 
   # ---------------------------------------------------------------------------
-  # Terraform deploys, orchestrated via Aspect CLI.
+  # Cloud Run deploy.
   #
-  # `aspect plan` / `aspect apply` discover the nodes with one `bazel query`
-  # over the build graph and walk them in dependency order — there is no list
-  # to keep in sync, and a bad deploy edge fails the ordinary build long
-  # before it gets here. Same commands work locally and in CI. See
-  # docs/adr/0008-derived-terraform-deploy-set.md.
-  # `aspect plan` itself upserts per-root PR comments via the
-  # //devtools/build/tools/tf_pr_comment Go binary when run under `$CI` —
-  # see `.aspect/plan.axl`. CI's job is just to provide the auth + token;
-  # no fan-out, no matrix, no follow-up github-script step.
+  # The service is described by the Knative manifest at
+  # //oci/cmd/registry:service.yaml and applied with `gcloud run services
+  # replace`, once per region. The manifest is the desired state; this job only
+  # supplies the image and the region.
+  #
+  # Terraform is not in this path. `//infra` owns the durable substrate (the
+  # Artifact Registry repo and the runtime GSA) and is applied out of band —
+  # it changes on the order of never, whereas this deploys every push to main.
   # ---------------------------------------------------------------------------
 
-  plan:
-    name: Terraform Plan
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    # `pr-plan` is unprotected (any branch, no reviewers) — its job is
-    # to make every plan-path token environment-tagged so the WIF
-    # principalSet for the plan SA has a specific claim to bind to.
-    # The plan SA itself only carries read-only roles, so an unprotected
-    # environment is the right trade-off: PR plans must run on any branch.
-    environment: pr-plan
-    permissions:
-      contents: read
-      id-token: write
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: v1.27.0
-          bazelrc: |
-            common --config=ci
-            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
-
-      - name: Install Aspect CLI
-        uses: ./.github/actions/setup-aspect
-        with:
-          version: ${{ env.ASPECT_CLI_VERSION }}
-          sha256: ${{ env.ASPECT_CLI_SHA256 }}
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
-          service_account: github-actions-senku-plan@senku-prod.iam.gserviceaccount.com
-
-      - name: Plan
-        env:
-          # The tf_pr_comment Go binary that `aspect plan` invokes uses
-          # the same env vars as `gh` for auth. The action's default
-          # token has `pull-requests: write` (set above), which is what
-          # we need to upsert per-root plan comments.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: aspect plan
-
-  apply:
-    name: Terraform Apply
+  deploy:
+    name: Deploy registry
+    needs: publish
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     # `prod` is configured in repo settings with `main`-only deployment
-    # branches and required reviewers. GitHub validates both *before*
-    # minting the OIDC token, so the branch/reviewer gate lives in the
-    # identity layer — not in this YAML, which any committer can edit.
-    # The apply SA's WIF binding is keyed on `attribute.environment/prod`,
-    # so a token from any other environment cannot impersonate it.
+    # branches and required reviewers. GitHub validates both *before* minting
+    # the OIDC token, so the branch/reviewer gate lives in the identity layer —
+    # not in this YAML, which any committer can edit. The deploy SA's WIF
+    # binding is keyed on `attribute.environment/prod`, so a token from any
+    # other environment cannot impersonate it.
     environment: prod
     permissions:
       contents: read
       id-token: write
-      packages: write
+    strategy:
+      # Regions are independent replicas of one workload. Deploy them one at a
+      # time so a bad image stops at the first region instead of all three.
+      max-parallel: 1
+      matrix:
+        region: [us-central1, europe-west3, asia-northeast1]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -286,12 +235,7 @@ jobs:
           bazelrc: |
             common --config=ci
             common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
-
-      - name: Install Aspect CLI
-        uses: ./.github/actions/setup-aspect
-        with:
-          version: ${{ env.ASPECT_CLI_VERSION }}
-          sha256: ${{ env.ASPECT_CLI_SHA256 }}
+            build --stamp
 
       - name: Authenticate to Google Cloud
         id: auth
@@ -301,6 +245,9 @@ jobs:
           service_account: github-actions-senku-apply@senku-prod.iam.gserviceaccount.com
           token_format: access_token
 
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
       - name: Login to Artifact Registry
         uses: docker/login-action@v4
         with:
@@ -308,5 +255,42 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
-      - name: Apply
-        run: aspect apply
+      # Pushing on every region is a no-op after the first: same digest, same
+      # tags. Kept in the matrix rather than hoisted so a re-run of one region
+      # is self-contained.
+      - name: Push image to Artifact Registry
+        run: bazel run //oci/cmd/registry:image_push_gar
+
+      # Resolve the tag we just pushed to its digest, and deploy *that*. The
+      # manifest never carries a mutable tag: two regions deploying an hour
+      # apart must land the same bytes, and `latest` cannot promise that.
+      - name: Resolve pushed digest
+        run: |
+          set -euo pipefail
+          REPO="europe-docker.pkg.dev/senku-prod/containers/registry"
+          DIGEST=$(gcloud artifacts docker images describe "${REPO}:latest" \
+              --format='value(image_summary.digest)')
+          echo "IMAGE=${REPO}@${DIGEST}" >> "$GITHUB_ENV"
+          echo "Deploying ${REPO}@${DIGEST}"
+
+      - name: Deploy to Cloud Run (${{ matrix.region }})
+        run: |
+          set -euo pipefail
+          MANIFEST=$(mktemp --suffix=.yaml)
+          # The placeholder is a fixed token, so a literal substitution is
+          # enough — no YAML templating engine in the deploy path.
+          sed "s|IMAGE_PLACEHOLDER|${IMAGE}|" \
+              oci/cmd/registry/service.yaml > "${MANIFEST}"
+          gcloud run services replace "${MANIFEST}" --region="${{ matrix.region }}"
+
+      # Not expressible in the Knative manifest: `run.invoker` for `allUsers`
+      # is an IAM policy on the service, not part of its spec. The LB's
+      # Serverless NEG calls without injecting an OIDC identity, so the service
+      # must accept anonymous invokes; the ingress annotation in the manifest
+      # is what keeps it off the open internet. Idempotent.
+      - name: Allow unauthenticated invokes (LB fronts this)
+        run: |
+          gcloud run services add-iam-policy-binding registry \
+              --region="${{ matrix.region }}" \
+              --member=allUsers \
+              --role=roles/run.invoker

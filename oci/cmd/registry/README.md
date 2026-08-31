@@ -77,27 +77,32 @@ Push is not supported; images are pushed directly to GHCR via CI.
 
 ## Deployment
 
-Deployed to Cloud Run in three regions — `us-central1`, `europe-west3`, `asia-northeast1` — by the co-located `tf_root` in [`BUILD`](./BUILD). Each region is a separate service (`registry_us_central1`, `registry_europe_west3`, `registry_asia_northeast1`) sharing one runtime GSA, all emitted by a Starlark loop over the plain `google_cloud_run_v2_service` / `google_cloud_run_v2_service_iam_member` constructors from `@terraform.bzl//:gcp.bzl`. Those are 1:1 wrappers over the provider schema, so the resource blocks in `BUILD` are what lands in `main.tf.json` — no Terraform `module` indirection.
+Deployed to Cloud Run in three regions — `us-central1`, `europe-west3`, `asia-northeast1` — by the `deploy` job in [`.github/workflows/ci.yaml`](../../../.github/workflows/ci.yaml). Each region is a separate service, all applied from the one Knative manifest at [`service.yaml`](./service.yaml) via `gcloud run services replace --region=<region>`, and all sharing one runtime GSA. Cloud Run service names are region-scoped, so `registry` in every region does not collide.
 
-Image pull path is the shared multi-region `europe` GAR provisioned by [`//infra/cloud/gcp/gar`](../../../infra/cloud/gcp/gar). All three Cloud Run regions pull from the same `europe-docker.pkg.dev/senku-prod/containers/registry@<digest>` URL.
+Region fan-out is for latency, not identity — the services are replicas of the same workload, so they share one service account (one row in audit logs and IAM bindings, not three). Fronting them behind a single anycast IP is the job of the external HTTPS load balancer.
 
-The image is pushed to **two** destinations: **GHCR** for the public `distroless.io` mirror, and **GAR** for Cloud Run's deploy-time pull (Cloud Run can't pull from GHCR directly). Separate Bazel targets for each. `tf_root.image_push` splices the digest URI into the generated `main.tf.json` at Bazel build time, and the same `image_push` target is auto-injected as a `pre_apply` hook so `bazel run :terraform.apply` pushes-then-applies in one command. No tfvars edits, no `var.image` round-trip.
+The manifest is the desired state and carries no image: the deploy job substitutes `IMAGE_PLACEHOLDER` with the digest it just pushed. Regions deploy sequentially (`max-parallel: 1`), so a bad image stops at the first one.
 
-The deploy flow is wrapped by [`deploy.sh`](./deploy.sh):
+Terraform is not in the deploy path. [`//infra`](../../../infra) owns the durable substrate — the Artifact Registry repo and the `svc-registry` runtime GSA — and is applied out of band, because it changes on the order of never while this deploys on every push to `main`. The `allUsers` `run.invoker` binding is applied by the deploy job rather than the manifest, because IAM on a Cloud Run service is a policy, not part of its Knative spec.
+
+Image pull path is the shared multi-region `europe` GAR provisioned by `//infra`. All three Cloud Run regions pull from the same `europe-docker.pkg.dev/senku-prod/containers/registry@<digest>` URL.
+
+The image is pushed to **two** destinations: **GHCR** for the public `distroless.io` mirror, and **GAR** for Cloud Run's deploy-time pull (Cloud Run can't pull from GHCR directly). Separate Bazel targets for each — `:image_push` and `:image_push_gar`.
+
+To deploy by hand — normally CI's job, but useful for a one-off region or a rollback:
 
 ```sh
-./oci/cmd/registry/deploy.sh
+bazel run //oci/cmd/registry:image_push_gar
+
+REPO=europe-docker.pkg.dev/senku-prod/containers/registry
+DIGEST=$(gcloud artifacts docker images describe "$REPO:latest" \
+    --format='value(image_summary.digest)')
+
+sed "s|IMAGE_PLACEHOLDER|$REPO@$DIGEST|" oci/cmd/registry/service.yaml \
+    | gcloud run services replace - --region=europe-west3
 ```
 
-Which runs:
-
-```sh
-bazel run //oci/cmd/registry:image_push_gar    # push to deploy-side GAR
-bazel run //oci/cmd/registry:image_tfvars      # digest → image.auto.tfvars.json
-(cd oci/cmd/registry/terraform && terraform init && terraform apply)
-```
-
-`image.auto.tfvars.json` is gitignored — it rotates on every image build. The GHCR public-mirror push (`:image_push_ghcr`) is separate so a release can gate the public distribution independently. Debug variants: `image_debug_push_ghcr` / `image_debug_push_gar`.
+The GHCR public-mirror push (`:image_push`) is separate so a release can gate the public distribution independently. Debug variants: `:image_debug_push` / `:image_debug_push_gar`.
 
 ## Testing
 

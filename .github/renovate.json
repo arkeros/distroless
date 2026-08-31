@@ -115,7 +115,7 @@
           "bazel mod tidy"
         ],
         "fileFilters": [
-          ".terraform.lock.hcl",
+          "infra/.terraform.lock.hcl",
           "MODULE.bazel.lock"
         ],
         "executionMode": "update"

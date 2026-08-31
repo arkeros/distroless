@@ -1,17 +1,10 @@
 load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary", "gazelle_test")
 
 exports_files([
-    # Canonical terraform.required_providers + terraform-native lockfile.
-    # Renovate's `terraform` and `terraform-lockfile` managers auto-discover
-    # these; senku's `terraform.install(...)` reads the lockfile at the
-    # MODULE evaluation. `bazel run @terraform_providers//:pin` from the
-    # repo root re-runs `terraform providers lock` for all four platforms.
-    ".terraform.lock.hcl",
     # Consumed by rules_rpm via @hummingbird//... — see bazel/include/oci.MODULE.bazel.
     "hummingbird-release.pgp",
     "hummingbird.lock.json",
     "hummingbird_install.json",
-    "versions.tf",
 ])
 
 # Ignore Claude Code worktrees

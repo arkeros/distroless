@@ -2,8 +2,12 @@
 OCI_REGISTRY = "ghcr.io"
 OCI_REPOSITORY_PREFIX = "arkeros/senku"
 
-# GAR destination is owned by `//infra/cloud/gcp/gar:defs.bzl` (the root that
-# provisions it). Load `GAR_REGISTRY` / `GAR_REPOSITORY_PREFIX` from there.
+# GAR — the internal Cloud Run pull substrate, provisioned by the plain
+# Terraform root at `//infra`. These must agree with `local.location`,
+# `local.project` and `local.repository_id` there; they are duplicated rather
+# than derived because Terraform state is not readable at Bazel analysis time.
+GAR_REGISTRY = "europe-docker.pkg.dev"
+GAR_REPOSITORY_PREFIX = "senku-prod/containers"
 
 GO_DISTROS = ["debian"]
 GO_ARCHITECTURES = {

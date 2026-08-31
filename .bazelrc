@@ -66,6 +66,13 @@ common:gcs --google_default_credentials
 common:gcs --remote_cache_compression
 common:gcs --remote_cache_async
 
+# Allow many actions in flight at once, rather than the default of one per
+# CPU core. CI builds are dominated by remote cache round trips (~22k actions
+# against the GCS HTTP cache with a critical path under 20s), and the 4-vCPU
+# runners throttled them to 4 concurrent lookups. Local execution is still
+# bounded by --local_resources, so this does not oversubscribe the CPU.
+common:ci --jobs=200
+
 # Skip tests that need real arm64 silicon. qemu-user can register linux/arm64
 # binaries (binfmt) but its CPU-feature/syscall emulation is incomplete; in
 # particular HotSpot silently bails during startup probes, so the

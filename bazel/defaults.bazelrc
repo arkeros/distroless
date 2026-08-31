@@ -99,13 +99,6 @@ common --incompatible_enforce_starlark_utf8="error"
 common --incompatible_modify_execution_info_additive
 # Docs: https://registry.build/flag/bazel?filter=incompatible_modify_execution_info_additive
 
-# Allow many actions in flight at once, rather than the default of one per CPU core.
-# CI builds are dominated by remote cache round trips (~22k actions against the GCS
-# HTTP cache, critical path <20s), and the 4-vCPU runner throttled them to 4 at a time.
-# Local execution is still bounded by --local_resources, so this does not oversubscribe CPU.
-common:ci --jobs=200
-# Docs: https://registry.build/flag/bazel?filter=jobs
-
 # Fail the build if the MODULE.bazel.lock file is out of date.
 # Using this mode in ci prevents the lockfile from being out of date.
 common:ci --lockfile_mode="error"

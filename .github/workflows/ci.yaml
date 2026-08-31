@@ -355,6 +355,25 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    # Only the rollout needs ordering. `test` is order-independent and
+    # `push-gar` is content-addressed — pushing the same digest twice, or two
+    # digests in either order, converges — so serialising those would cost
+    # wall-clock and buy nothing. `gcloud run services replace` is the one step
+    # where last-writer-wins decides what production runs, and until the `prod`
+    # approval prompt was removed nothing serialised it except the accident of
+    # a human not approving two deploys at once.
+    #
+    # Keyed per region because a concurrency group holds exactly one pending
+    # entry and a newly queued entry evicts it: one shared group would have the
+    # three matrix legs cancel each other out of that slot. Per region they
+    # never contend, while the same region across two runs still queues.
+    #
+    # `cancel-in-progress: false` so a rollout already talking to Cloud Run is
+    # never killed part-way. A superseded *pending* rollout is still dropped,
+    # so a burst of pushes settles on the newest commit.
+    concurrency:
+      group: deploy-registry-${{ matrix.region }}
+      cancel-in-progress: false
     strategy:
       # Regions are independent replicas of one workload. Deploy them one at a
       # time so a bad image stops at the first region instead of all three.

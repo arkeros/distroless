@@ -13,7 +13,7 @@ bazel_dep(name = "rules_shell", version = "0.8.0")
 # Hermetic LLVM cc toolchain — the sole cc toolchain here. Works on the macOS
 # host (cross-compiles to linux ELFs) and on the linux CI runners, so a build
 # resolves the same compiler everywhere without a system toolchain.
-bazel_dep(name = "llvm", version = "0.8.18")
+bazel_dep(name = "llvm", version = "0.8.19")
 
 # FIXME: drop once upstream links compiler-rt builtins via -L/-l on macOS
 # (or otherwise stops baking config-hash archive paths into Go stdlib cgo

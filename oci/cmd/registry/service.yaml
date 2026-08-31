@@ -19,10 +19,10 @@ metadata:
   annotations:
     # Ingress locked to LB-only. Org policy on senku-prod forbids `all`, and
     # architecturally the registry sits behind the shared external HTTPS LB
-    # anyway. The `allUsers` invoker binding the deploy job applies stays
-    # necessary because the LB's Serverless NEG calls without injecting an
-    # OIDC identity, so the service must accept anonymous invokes — this
-    # ingress filter is what keeps it off the open internet.
+    # anyway. The `allUsers` invoker binding in //infra stays necessary
+    # because the LB's Serverless NEG calls without injecting an OIDC
+    # identity, so the service must accept anonymous invokes — this ingress
+    # filter is what keeps it off the open internet.
     run.googleapis.com/ingress: internal-and-cloud-load-balancing
 spec:
   template:

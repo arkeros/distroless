@@ -16,6 +16,12 @@ locals {
   # rather than shaving a second off it.
   location      = "europe"
   repository_id = "containers"
+
+  # The regions the registry is deployed to, read from the same file the
+  # deploy workflow builds its matrix from — adding a region there gives it an
+  # invoker binding here without a second edit.
+  registry_regions = jsondecode(file("${path.module}/../oci/cmd/registry/regions.json"))
+  registry_service = "registry"
 }
 
 # Artifact Registry API has to be enabled before we can create repositories in
@@ -64,4 +70,29 @@ resource "google_artifact_registry_repository_iam_member" "registry_reader" {
   repository = google_artifact_registry_repository.containers.name
   role       = "roles/artifactregistry.reader"
   member     = "serviceAccount:${google_service_account.registry.email}"
+}
+
+# The registry Cloud Run services accept anonymous invokes: the external HTTPS
+# load balancer's Serverless NEG calls them without injecting an OIDC identity,
+# so `allUsers` needs `run.invoker`. What keeps the services off the open
+# internet is the ingress annotation in //oci/cmd/registry:service.yaml, not
+# this binding.
+#
+# The services themselves are not Terraform-managed — they are deployed from
+# that Knative manifest by CI — but IAM on a Cloud Run service is a separate
+# resource, so binding to one by name is well defined. This is durable policy:
+# it does not change when a new revision ships, which is why it lives here
+# rather than in the deploy job.
+#
+# Ordering: the service must exist before its binding can be created. A
+# brand-new region therefore deploys first and applies this second; every
+# subsequent apply is a no-op.
+resource "google_cloud_run_v2_service_iam_member" "registry_public" {
+  for_each = toset(local.registry_regions)
+
+  project  = local.project
+  location = each.value
+  name     = local.registry_service
+  role     = "roles/run.invoker"
+  member   = "allUsers"
 }

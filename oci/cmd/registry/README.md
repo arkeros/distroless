@@ -85,7 +85,7 @@ Region fan-out is for latency, not identity — the services are replicas of the
 
 The manifest is the desired state and carries no image: the deploy job substitutes `IMAGE_PLACEHOLDER` with the digest it just pushed. Regions deploy sequentially (`max-parallel: 1`), so a bad image stops at the first one.
 
-Terraform is not in the deploy path. [`//infra`](../../../infra) owns the durable substrate — the Artifact Registry repo and the `svc-registry` runtime GSA — and is applied out of band, because it changes on the order of never while this deploys on every push to `main`. The `allUsers` `run.invoker` binding is applied by the deploy job rather than the manifest, because IAM on a Cloud Run service is a policy, not part of its Knative spec.
+Only the revision ships from CI. [`//infra`](../../../infra) owns everything durable — the Artifact Registry repo, the `svc-registry` runtime GSA, and the `allUsers` `run.invoker` bindings — and is applied out of band, because none of it changes when a new revision does. Those bindings can't live in the manifest anyway: IAM on a Cloud Run service is a policy, not part of its Knative spec. Terraform reads the same `regions.json` the deploy matrix does, so a new region gets its binding without a second edit.
 
 Image pull path is the shared multi-region `europe` GAR provisioned by `//infra`. All three Cloud Run regions pull from the same `europe-docker.pkg.dev/senku-prod/containers/registry@<digest>` URL.
 

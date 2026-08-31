@@ -202,9 +202,10 @@ jobs:
   # the image is resolved exactly once and every region provably deploys the
   # same bytes rather than each re-deriving them.
   #
-  # Terraform is not in this path. `//infra` owns the durable substrate (the
-  # Artifact Registry repo and the runtime GSA) and is applied out of band —
-  # it changes on the order of never, whereas this deploys every push to main.
+  # Only the revision ships from here. `//infra` owns everything durable — the
+  # Artifact Registry repo, the runtime GSA, and the `allUsers` invoker
+  # bindings — and is applied out of band, because none of it changes when a
+  # new revision does.
   # ---------------------------------------------------------------------------
 
   push-gar:
@@ -321,15 +322,3 @@ jobs:
           # enough — no YAML templating engine in the deploy path.
           sed "s|IMAGE_PLACEHOLDER|${IMAGE}|" oci/cmd/registry/service.yaml \
               | gcloud run services replace - --region="${{ matrix.region }}"
-
-      # Not expressible in the Knative manifest: `run.invoker` for `allUsers`
-      # is an IAM policy on the service, not part of its spec. The LB's
-      # Serverless NEG calls without injecting an OIDC identity, so the service
-      # must accept anonymous invokes; the ingress annotation in the manifest
-      # is what keeps it off the open internet. Idempotent.
-      - name: Allow unauthenticated invokes (LB fronts this)
-        run: |
-          gcloud run services add-iam-policy-binding registry \
-              --region="${{ matrix.region }}" \
-              --member=allUsers \
-              --role=roles/run.invoker

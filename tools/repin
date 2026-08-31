@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
 # After adding a new third-party dependency, developers should run this script.
+#
+# `multitool update` resolves each GitHub-release-hosted tool to the latest
+# release and rewrites its URLs and sha256s. Extra args are forwarded, so
+# `./tools/repin --tool grype` scopes the bump to one tool — Renovate uses
+# that form to keep one tool per PR. Tools not hosted on GitHub Releases
+# (kubectl, terraform) are left alone by multitool and are bumped by hand.
 set -o errexit -o nounset -o pipefail
 
 SCRIPT_DIR="$(realpath "$(dirname "$0")")"
 
-bazel run @multitool//tools/multitool -- --lockfile="$SCRIPT_DIR/tools.lock.json" update
+bazel run @multitool//tools/multitool -- --lockfile="$SCRIPT_DIR/tools.lock.json" update "$@"

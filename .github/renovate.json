@@ -128,6 +128,37 @@
       ],
       "groupName": "rules_img",
       "groupSlug": "rules_img"
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        "tools/tools.lock.json"
+      ],
+      "postUpgradeTasks": {
+        "commands": [
+          "./tools/repin --tool {{{depName}}}"
+        ],
+        "fileFilters": [
+          "tools/tools.lock.json"
+        ],
+        "executionMode": "update"
+      }
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "rules_multitool lockfile: tools published as GitHub Releases. The postUpgradeTask below re-runs multitool, which is what actually rewrites the URLs and sha256s for the bumped tool. kubectl and terraform are deliberately absent: multitool only understands GitHub Releases, so bumping their URLs here would leave a stale sha256 and break the build.",
+      "managerFilePatterns": [
+        "tools/tools.lock.json"
+      ],
+      "matchStrings": [
+        "https://github\\.com/(?<packageScope>[^/\"]+)/(?<depName>[^/\"]+)/releases/download/(?<currentValue>v[^/\"]+)/"
+      ],
+      "packageNameTemplate": "{{{packageScope}}}/{{{depName}}}",
+      "datasourceTemplate": "github-releases"
     }
   ]
 }

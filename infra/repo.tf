@@ -159,8 +159,16 @@ resource "github_repository_ruleset" "main_review" {
 # Adopting a whole `github_repository` to hold one boolean is a real cost: every
 # other attribute here is transcribed from the live repository, and any one this
 # omits would be reset to the provider's default on the next apply. They are
-# spelled out rather than left implicit for that reason. `prevent_destroy`
-# because destroying this resource deletes the repository.
+# spelled out rather than left implicit for that reason.
+#
+# Destroying this resource deletes the repository, so it carries two guards
+# that fail in different situations. `prevent_destroy` refuses a destroy while
+# the block is in the configuration — but it is part of that block, so it is
+# gone the moment the resource is not, which is exactly what a plan run from a
+# checkout predating this file does: it reports the repository as "not in
+# configuration" and proposes deleting it. `archive_on_destroy` lives in state
+# rather than in config, so it still applies then, and turns the irreversible
+# outcome into an archived repository that can be restored.
 resource "github_repository" "this" {
   name         = local.github_repo_name
   description  = "Minimal, reproducible distroless OCI base images built with Bazel — signed, SBOM'd and CVE-scanned."
@@ -190,6 +198,9 @@ resource "github_repository" "this" {
   squash_merge_commit_message = "COMMIT_MESSAGES"
   merge_commit_title          = "MERGE_MESSAGE"
   merge_commit_message        = "PR_TITLE"
+
+  # Survives the resource leaving the configuration; `prevent_destroy` does not.
+  archive_on_destroy = true
 
   lifecycle {
     prevent_destroy = true

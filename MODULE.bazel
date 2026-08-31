@@ -118,16 +118,3 @@ register_toolchains(
     # bifrost module extension and fall through to that.
     "//bazel/toolchains/bifrost:bifrost",
 )
-
-# resolve-secrets has no Starlark-rule consumer inside senku; the extension
-# exists to let external modules (e.g. astrograde) depend on the prebuilt
-# binary as a sh_binary without rebuilding the Go source. The dev_dependency
-# flag keeps it off downstream modules' resolution graph — they opt in by
-# declaring their own use_extension. Senku, as the root module, still sees
-# it activated via the use_repo below.
-resolve_secrets = use_extension(
-    "//platform/k8s/resolve-secrets/prebuilt:extensions.bzl",
-    "resolve_secrets",
-    dev_dependency = True,
-)
-use_repo(resolve_secrets, "resolve_secrets")

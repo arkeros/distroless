@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Image}} — SBOM</title>
+<link rel="stylesheet" href="/directory/static/sbom.css">
+</head>
+<body>
+<main>
+  <h1>{{.Image}}</h1>
+  <p class="digest"><code>{{.Digest}}</code></p>
+
+  {{if gt (len .Architectures) 1}}
+  <nav class="arches" aria-label="Architecture">
+    {{range .Architectures}}<a href="?arch={{.}}"{{if eq . $.Arch}} aria-current="page"{{end}}>{{.}}</a>{{end}}
+  </nav>
+  {{end}}
+
+  <div class="controls">
+    <input id="filter" type="search" placeholder="Filter components" autocomplete="off" spellcheck="false" aria-label="Filter components">
+    <p id="count" aria-live="polite">{{len .Rows}} components</p>
+  </div>
+
+  <table id="sbom">
+    <thead>
+      <tr>
+        <th data-column="name" aria-sort="ascending"><button type="button">Component</button></th>
+        <th data-column="version"><button type="button">Version</button></th>
+        <th data-column="license"><button type="button">License</button></th>
+        <th data-column="type"><button type="button">Type</button></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Rows}}
+      <tr data-version-rank="{{.VersionRank}}">
+        <td>{{.Name}}</td>
+        <td>{{.Version}}</td>
+        <td class="license" title="{{.License}}">{{.License}}</td>
+        <td>{{.Type}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</main>
+<script src="/directory/static/sbom.js" defer></script>
+</body>
+</html>

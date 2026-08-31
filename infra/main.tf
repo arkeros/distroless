@@ -2,6 +2,13 @@ provider "google" {
   project = local.project
 }
 
+# No `token`: the provider falls back to `gh auth token`, so this root stays
+# applicable by hand with the `gh` login the operator already has, and there is
+# no long-lived PAT to store or rotate for it. See repo.tf for what it manages.
+provider "github" {
+  owner = local.github_owner
+}
+
 locals {
   project = "senku-prod"
 

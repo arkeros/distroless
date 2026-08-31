@@ -33,28 +33,25 @@ deploy targets cannot drift apart.
 
 ## Apply order
 
+None any more, and the reason is worth knowing because it used to bite.
+
 An invoker binding names a Cloud Run service, and Terraform cannot
-`depends_on` a service another system creates — so whether ordering matters
-depends on who creates it.
+`depends_on` a service another system creates. While the deploy alone made the
+services, a brand-new service or region needed an apply, a deploy, then a
+second apply — the first failing with a 404 on a service that did not exist
+yet.
 
-`web`'s services are created here, as shells whose template the deploy then
-replaces. Its bindings reference a resource Terraform owns, so the ordering is
-an ordinary graph edge and adding a region is one apply.
+Both services' *shells* are Terraform's now, so the bindings reference a
+resource in the graph and adding a region is one apply. CI still owns every
+revision: `ignore_changes` on the template means an apply never reverts a
+deploy, and a deploy never fights an apply.
 
-`registry`'s are not. They predate that arrangement and exist only because the
-deploy made them, so a brand-new registry region deploys first and applies
-second:
-
-```sh
-# 1. add the region to oci/cmd/registry/regions.json, merge, let CI deploy it
-# 2. then:
-cd infra && terraform apply
-```
-
-Every subsequent apply is a no-op. Bringing `registry` in line means adopting
-the live services with `import` blocks, which deserves someone watching the
-plan run against production — worth doing, not urgent, since the services
-already exist and this only bites when a region is added.
+The first apply after this change adopts the three existing `registry`
+services. Expect the plan to read **3 to import, 0 to add, 0 to change, 0 to
+destroy**. Anything else — a change, and above all a replacement — means a
+service-level field drifted from what `main.tf` declares, and wants
+reconciling before the apply rather than after: these three serve
+`distroless.io`.
 
 ## WIF
 

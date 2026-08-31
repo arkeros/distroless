@@ -86,27 +86,81 @@ resource "google_artifact_registry_repository_iam_member" "registry_reader" {
   member     = "serviceAccount:${google_service_account.registry.email}"
 }
 
+# The service shells. Terraform owns that they exist and what ingress they
+# accept; CI owns every revision — the deploy replaces the template from the
+# Knative manifest with a digest-pinned image, and `ignore_changes` stops the
+# next apply reverting it.
+#
+# The shell exists to dissolve an ordering problem, not to manage Cloud Run.
+# `google_cloud_run_v2_service_iam_member` binds to a service by name, and
+# Terraform cannot `depends_on` something another system creates — so a
+# brand-new service or region needed an apply, a deploy, then a second apply.
+# Owning the shell turns that into an ordinary reference.
+#
+# `ingress` is deliberately *not* ignored. It is what keeps the services off
+# the open internet — the `allUsers` binding below is only safe behind it — so
+# it stays managed and drift shows up as a diff. The Knative manifests declare
+# it too, and must: `gcloud run services replace` is a whole-object replace, so
+# a manifest omitting it would reset the service to public on every deploy.
+#
+# These predate the arrangement, so they are adopted rather than created. The
+# `import` block is the whole point — without it Terraform would try to create
+# services that already serve distroless.io and fail on the conflict. Nothing
+# here forces replacement (`name`, `location` and `project` are the only
+# replace-triggering fields and all three match), so adoption is a state
+# operation, not a rollout.
+resource "google_cloud_run_v2_service" "registry" {
+  for_each = toset(local.registry_regions)
+
+  project             = local.project
+  location            = each.value
+  name                = local.registry_service
+  ingress             = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  deletion_protection = true
+
+  # Never actually applied to these: they exist already, and the template is
+  # ignored from the moment they are imported. It is here because the schema
+  # requires one.
+  template {
+    service_account = google_service_account.registry.email
+
+    containers {
+      image = "us-docker.pkg.dev/cloudrun/container/hello"
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template,
+      traffic,
+      labels,
+      annotations,
+      client,
+      client_version,
+    ]
+  }
+}
+
+import {
+  for_each = toset(local.registry_regions)
+
+  to = google_cloud_run_v2_service.registry[each.value]
+  id = "projects/${local.project}/locations/${each.value}/services/${local.registry_service}"
+}
+
 # The registry Cloud Run services accept anonymous invokes: the external HTTPS
 # load balancer's Serverless NEG calls them without injecting an OIDC identity,
 # so `allUsers` needs `run.invoker`. What keeps the services off the open
-# internet is the ingress annotation in //oci/cmd/registry:service.yaml, not
-# this binding.
+# internet is `ingress` above, not this binding.
 #
-# The services themselves are not Terraform-managed — they are deployed from
-# that Knative manifest by CI — but IAM on a Cloud Run service is a separate
-# resource, so binding to one by name is well defined. This is durable policy:
-# it does not change when a new revision ships, which is why it lives here
-# rather than in the deploy job.
-#
-# Ordering: the service must exist before its binding can be created. A
-# brand-new region therefore deploys first and applies this second; every
-# subsequent apply is a no-op.
+# This is durable policy: it does not change when a new revision ships, which
+# is why it lives here rather than in the deploy job.
 resource "google_cloud_run_v2_service_iam_member" "registry_public" {
-  for_each = toset(local.registry_regions)
+  for_each = google_cloud_run_v2_service.registry
 
   project  = local.project
-  location = each.value
-  name     = local.registry_service
+  location = each.value.location
+  name     = each.value.name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
@@ -134,22 +188,9 @@ resource "google_artifact_registry_repository_iam_member" "web_reader" {
   member     = "serviceAccount:${google_service_account.web.email}"
 }
 
-# The service shell, owned here only so that it exists. Everything about a
-# *revision* stays CI's: the deploy replaces the template from
-# //web/cmd/server:service.yaml with a digest-pinned image, and `ignore_changes`
-# stops the next apply reverting it.
-#
-# This exists to dissolve an ordering problem, not to manage Cloud Run.
-# `google_cloud_run_v2_service_iam_member` binds to a service by name, and
-# Terraform cannot `depends_on` something another system creates — so a
-# brand-new service used to need an apply, a deploy, then a second apply.
-# Creating the shell here turns that into an ordinary reference.
-#
-# `ingress` is deliberately *not* ignored. It is what keeps the service off the
-# open internet — the `allUsers` binding below is only safe behind it — so it
-# stays managed and drift shows up as a diff. The Knative manifest declares it
-# too, and must: `gcloud run services replace` is a whole-object replace, so a
-# manifest omitting it would reset the service to public on every deploy.
+# Same arrangement as `registry` above, minus the adoption: these services do
+# not exist yet, so Terraform creates them and the first deploy replaces the
+# placeholder template.
 resource "google_cloud_run_v2_service" "web" {
   for_each = toset(local.web_regions)
 

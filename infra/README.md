@@ -33,8 +33,17 @@ deploy targets cannot drift apart.
 
 ## Apply order
 
-The invoker bindings need their service to exist. A brand-new region therefore
-deploys first and applies second:
+An invoker binding names a Cloud Run service, and Terraform cannot
+`depends_on` a service another system creates — so whether ordering matters
+depends on who creates it.
+
+`web`'s services are created here, as shells whose template the deploy then
+replaces. Its bindings reference a resource Terraform owns, so the ordering is
+an ordinary graph edge and adding a region is one apply.
+
+`registry`'s are not. They predate that arrangement and exist only because the
+deploy made them, so a brand-new registry region deploys first and applies
+second:
 
 ```sh
 # 1. add the region to oci/cmd/registry/regions.json, merge, let CI deploy it
@@ -42,7 +51,10 @@ deploys first and applies second:
 cd infra && terraform apply
 ```
 
-Every subsequent apply is a no-op. This only bites when adding a region.
+Every subsequent apply is a no-op. Bringing `registry` in line means adopting
+the live services with `import` blocks, which deserves someone watching the
+plan run against production — worth doing, not urgent, since the services
+already exist and this only bites when a region is added.
 
 ## WIF
 

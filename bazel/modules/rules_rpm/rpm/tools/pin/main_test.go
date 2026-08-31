@@ -86,12 +86,12 @@ func TestValidateUnknownPackage(t *testing.T) {
 func TestSkipRequire(t *testing.T) {
 	cases := map[string]bool{
 		// Skip — pin can't / shouldn't resolve these via primary.xml.
-		"rpmlib(PayloadIsZstd)":      true,
+		"rpmlib(PayloadIsZstd)":       true,
 		"rpmlib(CompressedFileNames)": true,
-		"config(crypto-policies)":    true,
-		"solvable:fips":              true,
-		"/usr/sbin/ldconfig":         true,
-		"/bin/sh":                    true,
+		"config(crypto-policies)":     true,
+		"solvable:fips":               true,
+		"/usr/sbin/ldconfig":          true,
+		"/bin/sh":                     true,
 		// Rich/boolean conditional deps (rpm-4.13+ "X if Y" syntax). Out of scope.
 		"(glibc-gconv-extra(x86-64) = 2.42-13.hum1 if redhat-rpm-config)": true,
 		// Keep — real soname / package-name deps that pin must resolve.
@@ -131,14 +131,14 @@ func TestCloseDepsTransitive(t *testing.T) {
 		},
 	}
 	providesIndex := map[string][]pkgKey{
-		"openssl-libs":              {{"openssl-libs", "x86_64"}},
-		"glibc":                     {{"glibc", "x86_64"}},
-		"zlib-ng-compat":            {{"zlib-ng-compat", "x86_64"}},
-		"unrelated":                 {{"unrelated", "x86_64"}},
-		"libc.so.6()(64bit)":        {{"glibc", "x86_64"}},
-		"libz.so.1()(64bit)":        {{"zlib-ng-compat", "x86_64"}},
-		"libssl.so.3()(64bit)":      {{"openssl-libs", "x86_64"}},
-		"some-other-thing":          {{"unrelated", "x86_64"}},
+		"openssl-libs":         {{"openssl-libs", "x86_64"}},
+		"glibc":                {{"glibc", "x86_64"}},
+		"zlib-ng-compat":       {{"zlib-ng-compat", "x86_64"}},
+		"unrelated":            {{"unrelated", "x86_64"}},
+		"libc.so.6()(64bit)":   {{"glibc", "x86_64"}},
+		"libz.so.1()(64bit)":   {{"zlib-ng-compat", "x86_64"}},
+		"libssl.so.3()(64bit)": {{"openssl-libs", "x86_64"}},
+		"some-other-thing":     {{"unrelated", "x86_64"}},
 	}
 	closure, err := closeDeps(candidates, providesIndex, []string{"x86_64"}, []string{"openssl-libs"})
 	if err != nil {
@@ -637,5 +637,42 @@ func TestCloseDepsSelfReference(t *testing.T) {
 	}
 	if !closure[pkgKey{"glibc", "x86_64"}] || len(closure) != 1 {
 		t.Errorf("closure = %v, want {glibc/x86_64: true}", closure)
+	}
+}
+
+// RPM records a package's licence in its repository metadata, unlike apt,
+// where the Packages index has no licence field at all. Capturing it in the
+// lock means the SBOM can report licences without ever downloading an rpm.
+//
+// The element is namespace-qualified (`xmlns:rpm`), so this guards the struct
+// tag as much as the plumbing.
+func TestPrimaryCapturesLicense(t *testing.T) {
+	const primary = `<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm" packages="1">
+<package type="rpm">
+  <name>ca-certificates</name>
+  <arch>noarch</arch>
+  <version epoch="0" ver="2026.2" rel="1.hum1"/>
+  <checksum type="sha256">abc</checksum>
+  <size package="123"/>
+  <location href="noarch/Packages/c/ca-certificates-2026.2-1.hum1.noarch.rpm"/>
+  <format>
+    <rpm:license>MIT AND GPL-2.0-or-later</rpm:license>
+    <rpm:sourcerpm>ca-certificates-2026.2-1.hum1.src.rpm</rpm:sourcerpm>
+  </format>
+</package>
+</metadata>`
+
+	var parsed primaryMetadata
+	if err := xml.Unmarshal([]byte(primary), &parsed); err != nil {
+		t.Fatalf("unmarshal primary.xml: %v", err)
+	}
+	if len(parsed.Packages) != 1 {
+		t.Fatalf("got %d packages, want 1", len(parsed.Packages))
+	}
+	// An SPDX expression, not a bare identifier — RHEL-derived distros
+	// publish these already normalised, so nothing needs mapping.
+	if got := parsed.Packages[0].Format.License; got != "MIT AND GPL-2.0-or-later" {
+		t.Errorf("license = %q, want %q", got, "MIT AND GPL-2.0-or-later")
 	}
 }

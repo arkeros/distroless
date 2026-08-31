@@ -9,6 +9,7 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 # beside debian.lock.json: its package list is declared inline in
 # MODULE.bazel, per ADR 0007.
 exports_files([
+    "debian.licenses.json",
     "debian.lock.json",
     "hummingbird-release.pgp",
     "hummingbird.lock.json",

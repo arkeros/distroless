@@ -86,12 +86,8 @@ use_repo(
     "com_github_mikefarah_yq_v4",
     "com_github_sigstore_cosign_v3",
     "com_github_spf13_cobra",
-    "com_github_yannh_kubeconform",
     "com_google_cloud_go_storage",
     "in_yaml_go_yaml_v4",
-    "io_k8s_sigs_kustomize_kustomize_v5",
-    "land_oras_oras",
     "org_golang_google_api",
     "org_golang_x_text",
-    "sh_helm_helm_v4",
 )

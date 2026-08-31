@@ -97,11 +97,11 @@ runs:
         # Avoid `grep -q` under `pipefail` — early grep exit can SIGPIPE the
         # upstream `git diff` and turn a real match into a false negative.
         #
-        # Pathspec is `*.lock.json`, NOT `**/*.lock.json`: git's `**/`
-        # requires a directory prefix, so it silently skips the root-level
-        # `hummingbird.lock.json` and the gate would misread every real
-        # hummingbird binary update as metadata-only churn. `*` already
-        # crosses `/`, so this matches both the root and nested lockfiles.
+        # Pathspec is `*.lock.json`, NOT `**/*.lock.json`: git's `*` already
+        # crosses `/`, so it matches every lockfile at any depth. Every one
+        # of them is nested now (images/hummingbird.lock.json, the two
+        # images/nginx/*.hummingbird.lock.json), so `**/` would happen to
+        # work too — but `*` stays correct if one ever moves to the root.
         if ! git diff -- '*.lock.json' \
              | grep -E '^[+-].*"sha256"' \
              | grep -v 'repomd_sha256' >/dev/null; then
@@ -130,8 +130,8 @@ runs:
 
           Per-repo lockfiles updated:
           - `@hummingbird` → `hummingbird.lock.json`
-          - `@nginx_stable_rpm` → `oci/distroless/nginx/nginx-stable.hummingbird.lock.json`
-          - `@nginx_mainline_rpm` → `oci/distroless/nginx/nginx-mainline.hummingbird.lock.json`
+          - `@nginx_stable_rpm` → `images/nginx/nginx-stable.hummingbird.lock.json`
+          - `@nginx_mainline_rpm` → `images/nginx/nginx-mainline.hummingbird.lock.json`
 
           Repo-metadata-only revision bumps (where `repomd_sha256` shifts but
           no per-package `sha256` does) are discarded to avoid PR-queue noise.

@@ -28,7 +28,7 @@ def oci_image(
             statement no longer corresponds to a scan match.
         created: Optional label of a one-file target whose contents are an
             RFC 3339 timestamp; emitted into `image.config.created`.
-            Use //oci/distroless/common:created_{debian,hummingbird}
+            Use //images/common:created_{debian,hummingbird}
             (derived from the upstream-snapshot anchor in each distro's
             lockfile — see //oci:created_timestamp.bzl and ADR 0007
             §"Build horizon" amendment). Absent → image config has no

@@ -49,7 +49,7 @@ The OIDC subject pin is workflow-bound on `main` (`…/ci.yaml@refs/heads/main`)
 
 ## Scope
 
-Every image pushed to the mirror surface goes through `mirror_push` (currently: `oci/distroless/{bash,nginx}`, `oci/cmd/registry`, `devtools/workstation`). The GAR copy of `oci/cmd/registry` is **out of scope** — it's the Cloud Run deploy substrate, IAM-trusted, same digest as the GHCR copy but a different surface.
+Every image pushed to the mirror surface goes through `mirror_push` (currently: `//images/bash`, `//images/nginx`, `oci/cmd/registry`, `devtools/workstation`). The GAR copy of `oci/cmd/registry` is **out of scope** — it's the Cloud Run deploy substrate, IAM-trusted, same digest as the GHCR copy but a different surface.
 
 ## Composition shape
 
@@ -169,7 +169,7 @@ No `referrers_mode` knob exists on the rules. Cosign 3.x dropped `--registry-ref
 **What did change in this round (the work behind this addendum):**
 
 - `oci/pkg/proxy` (the `distroless.io` registry proxy) gained handling for `GET /v2/<name>/referrers/<digest>`. Before, the path passed through to GHCR but the auth-scope was malformed because `findOp` didn't recognize `referrers`, so verifying via `distroless.io` didn't work. It does now.
-- Verification guidance was published at `oci/distroless/README.md` with the cosign / oras / crane discovery commands.
+- Verification guidance was published at `docs/images.md` with the cosign / oras / crane discovery commands.
 
 **What does not change.** The trust root (keyless OIDC), the verify policy regex (`CERTIFICATE_IDENTITY_REGEXP` in `oci/cosign_policy.bzl`), the SLSA L2 claim, and the consumer-facing `cosign verify-attestation` command are all identical. Cosign 3.x discovers referrers by default and accepts no flag on `verify` to change that — consumers don't need a new flag either.
 

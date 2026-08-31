@@ -4,7 +4,7 @@ Senku's distroless surface (`distroless.io/*`) is Hummingbird-derived. All image
 
 ## Why not Debian sid
 
-[[oci/distroless/common/variables.bzl]] currently silences three glibc CVEs (CVE-2026-5435, 5450, 5928) via `DEBIAN_WONTFIX_CVES`, all unfixed in Debian sid's `libc6 2.42-15`. Tracking sid was chosen specifically to dodge Debian-stable's "no-DSA Minor" backport-skipping policy, but sid still inherits whatever upstream glibc ships, and the three CVEs sit unpatched upstream. The Hummingbird Project ships `glibc-2.42-13.hum1` containing backports for all three (advisory `RHSA-2026:12740` per Red Hat's CVE API). For glibc-bearing images this is the only OSS-pure source of those backports.
+[[images/common/variables.bzl]] currently silences three glibc CVEs (CVE-2026-5435, 5450, 5928) via `DEBIAN_WONTFIX_CVES`, all unfixed in Debian sid's `libc6 2.42-15`. Tracking sid was chosen specifically to dodge Debian-stable's "no-DSA Minor" backport-skipping policy, but sid still inherits whatever upstream glibc ships, and the three CVEs sit unpatched upstream. The Hummingbird Project ships `glibc-2.42-13.hum1` containing backports for all three (advisory `RHSA-2026:12740` per Red Hat's CVE API). For glibc-bearing images this is the only OSS-pure source of those backports.
 
 ## Why not the alternatives
 
@@ -34,12 +34,12 @@ All images ship a single uniform identity (`ID=hummingbird`) and use the same su
 | `tzdata` 2026a-1.1.hum1 | Hummingbird, noarch | Timezone data |
 | `ca-certificates` 2025.2.80_v9.0.304-7.1.hum1 | Hummingbird, noarch | CA bundle |
 | `mailcap` 2.1.54-10.1.hum1 | Hummingbird, noarch | `/etc/mime.types` |
-| rootfs / passwd / home / group / tmp / os-release | senku-synthesized | Existing tar generators in [[oci/distroless/common/BUILD]]; os-release rewritten with `ID=hummingbird` per the attribution block above |
+| rootfs / passwd / home / group / tmp / os-release | senku-synthesized | Existing tar generators in [[images/common/BUILD]]; os-release rewritten with `ID=hummingbird` per the attribution block above |
 | EULA | senku-synthesized (cp from Hummingbird's `/usr/share/hummingbird-release/EULA` at lock time) | Placed at `/usr/share/licenses/hummingbird/EULA` |
 
 This is *fewer* upstream packages than Debian-static currently consumes (which pulls `base-files`, `netbase`, `tzdata`, `media-types`). The Hummingbird `setup`, `filesystem`, and `hummingbird-release` packages are deliberately *not* consumed — senku synthesizes the rootfs skeleton, user database, and os-release directly, which gives tighter control of identity and attribution than the upstream rpms would.
 
-Image-by-image migration uses the existing `*_DISTROS` matrix axis — see [[oci/distroless/matrix.bzl]]. Static migrates first because it has the smallest dep closure (no glibc transitive graph) and exercises the rules_rpm path on the simplest case.
+Image-by-image migration uses the existing `*_DISTROS` matrix axis — see [[images/matrix.bzl]]. Static migrates first because it has the smallest dep closure (no glibc transitive graph) and exercises the rules_rpm path on the simplest case.
 
 ## Identity claim: `ID=hummingbird` in `/etc/os-release`
 
@@ -66,7 +66,7 @@ NAME="distroless.io"
 PRETTY_NAME="distroless.io (Hummingbird-derived)"
 VERSION_ID="<hummingbird snapshot revision>"
 HOME_URL="https://distroless.io/"
-SUPPORT_URL="https://github.com/arkeros/senku/blob/main/oci/distroless/README.md"
+SUPPORT_URL="https://github.com/arkeros/senku/blob/main/docs/images.md"
 ```
 
 The `ID` field is functionally a scanner-routing key. `NAME` and `PRETTY_NAME` carry the actual branding. Consumers see "distroless.io (Hummingbird-derived)" everywhere a human reads the image; scanner tooling reads `ID` to route correctly.
@@ -75,7 +75,7 @@ The `ID` field is functionally a scanner-routing key. `NAME` and `PRETTY_NAME` c
 
 | Option | Verdict |
 |---|---|
-| **`rules_rpm` (Bazel-native, rules_jvm_external-style) + two Go binaries** | **Chosen.** New Bazel ruleset: `hummingbird.install(...)` module extension takes the package list inline in `MODULE.bazel`, pins via a checked-in `hummingbird_install.json` (JSON, not YAML), `bazel run @hummingbird//:pin` regenerates the lockfile from the declared list. Per-package tar emission shape-compatible with the existing `@debian//pkg/arch` label convention, so [[oci/distroless/matrix.bzl]] and image BUILDs need only the `_DISTROS` axis bumped. |
+| **`rules_rpm` (Bazel-native, rules_jvm_external-style) + two Go binaries** | **Chosen.** New Bazel ruleset: `hummingbird.install(...)` module extension takes the package list inline in `MODULE.bazel`, pins via a checked-in `hummingbird_install.json` (JSON, not YAML), `bazel run @hummingbird//:pin` regenerates the lockfile from the declared list. Per-package tar emission shape-compatible with the existing `@debian//pkg/arch` label convention, so [[images/matrix.bzl]] and image BUILDs need only the `_DISTROS` axis bumped. |
 | YAML manifest + JSON lockfile (rules_distroless apt mimic) | Rejected. Two formats for no senku gain; rules_distroless inherited the split from pip/apt conventions that don't carry over to bazel-native ecosystems. |
 | Starlark-only lockfile (`hummingbird.lock.bzl`) | Rejected. JSON is data, not code — easier to query with `jq`, dependabot-friendly, clean GitHub diffs, no `load()` semantics. Bazel's `json.decode()` makes JSON parsing trivial in the extension. |
 | OCI-component overlay (per [[docs/research/deb-vs-apk-vs-oci-components.md]] §7) | Rejected for Hummingbird specifically. Hummingbird publishes ~10 application images (`hi/curl`, `hi/nodejs`, ...) but no standalone building-block images (no `hi/glibc`, no `hi/static`, no `hi/cc`). Their building-block-bearing artifact is the RPM repo, not a container image. Extraction from app-image layers is fragile and version-coupled. |
@@ -103,7 +103,7 @@ use_repo(hummingbird, "hummingbird")
 
 ## Closed manifest, not solver
 
-Package names listed inline in `MODULE.bazel` are the canonical intent. The pin tool (`bazel run @hummingbird//:pin`) resolves them against `primary.xml.gz` and errors if any listed package is missing — closed-manifest semantics, no auto-transitive-expansion. Manual maintenance cost is bounded because senku's package universe is small (~50–100 packages across all images); solver-grade flexibility would cost more than it saves. Same posture as the existing [[oci/distroless/debian.yaml]] approach, just expressed in Starlark instead of YAML.
+Package names listed inline in `MODULE.bazel` are the canonical intent. The pin tool (`bazel run @hummingbird//:pin`) resolves them against `primary.xml.gz` and errors if any listed package is missing — closed-manifest semantics, no auto-transitive-expansion. Manual maintenance cost is bounded because senku's package universe is small (~50–100 packages across all images); solver-grade flexibility would cost more than it saves. Same posture as the existing [[images/debian.yaml]] approach, just expressed in Starlark instead of YAML.
 
 ## Snapshot strategy
 
@@ -134,7 +134,7 @@ flatten(
         "@hummingbird//ca-certificates/amd64:content",
         "@hummingbird//mailcap/amd64:content",
         ":rpmdb",                              # merged from the same three
-        "//oci/distroless/common:rootfs",
+        "//images/common:rootfs",
         # ... senku-synthesized rootfs/passwd/etc ...
     ],
 )
@@ -173,7 +173,7 @@ Image-by-image migration preserves the existing `_DISTROS` matrix axis. Senku im
 | Hummingbird (`@hummingbird//pkg/arch`) | Glibc-bearing images post-migration |
 | Wolfi (`//oci/distroless/wolfi/busybox-static/arch`) | `busybox-static` for `*_debug` variants (existing, see commit `e176b66`) |
 
-The matrix factory in [[oci/distroless/matrix.bzl]] doesn't know which package manager produced any given tar — it just composes them. The `_DISTROS` list axis is the migration switch.
+The matrix factory in [[images/matrix.bzl]] doesn't know which package manager produced any given tar — it just composes them. The `_DISTROS` list axis is the migration switch.
 
 ## Threat model and fallbacks
 
@@ -188,7 +188,7 @@ The matrix factory in [[oci/distroless/matrix.bzl]] doesn't know which package m
 
 ## Operational considerations
 
-**Rebuild cadence is the actual competitive moat.** Chainguard's zero-CVE story is *continuous rebuild against current upstream*. Senku must match that or the zero claim drifts. Empirically, Hummingbird's `repomd.xml` revision bumped from `1778835791` to `1778852516` within ~3 hours during ADR drafting on 2026-05-15 — multiple updates per day. Daily auto-PR cadence is therefore the right floor; weekly would miss most upstream changes and let the wontfix window reopen. Recommend daily `@hummingbird//:pin` job with `_cve_test_stale_*` enforcement and "scan still clean" as the merge gate. Tracks closely to the existing [[oci/distroless/debian.yaml]] cadence with the same machinery, just faster.
+**Rebuild cadence is the actual competitive moat.** Chainguard's zero-CVE story is *continuous rebuild against current upstream*. Senku must match that or the zero claim drifts. Empirically, Hummingbird's `repomd.xml` revision bumped from `1778835791` to `1778852516` within ~3 hours during ADR drafting on 2026-05-15 — multiple updates per day. Daily auto-PR cadence is therefore the right floor; weekly would miss most upstream changes and let the wontfix window reopen. Recommend daily `@hummingbird//:pin` job with `_cve_test_stale_*` enforcement and "scan still clean" as the merge gate. Tracks closely to the existing [[images/debian.yaml]] cadence with the same machinery, just faster.
 
 **Triple-scanner verification.** CI gates each image on grype + trivy + at least one third scanner (snyk or osv-scanner) reporting zero. Single-scanner verification has been shown to be insufficient by this same investigation; the upstream-feed-ingestion lag is a real risk and only diverges between vendors.
 
@@ -303,6 +303,6 @@ The original §"Determinism" enumerated four invariants `rpmdb-merge` "must" sat
 
 - [[docs/research/deb-vs-apk-vs-oci-components.md]] — broader format/channel analysis; Option B (OCI-component overlay) was the prior recommendation; this ADR supersedes it for glibc-bearing images specifically while preserving its conclusions for non-glibc cases
 - [[devtools/build/tools/wolfi-apk-extract/main.go]] — apk extraction analog; pattern reused for rpm
-- [[oci/distroless/common/variables.bzl]] — `DEBIAN_WONTFIX_CVES` (to be renamed `WONTFIX_CVES[distro]` keyed map)
-- [[oci/distroless/matrix.bzl]] — the distro-agnostic image composition factory
+- [[images/common/variables.bzl]] — `DEBIAN_WONTFIX_CVES` (to be renamed `WONTFIX_CVES[distro]` keyed map)
+- [[images/matrix.bzl]] — the distro-agnostic image composition factory
 - [ADR 0006](0006-bazel-native-cosign-mirror-signing.md) — cosign signing chain (unchanged by this decision)

@@ -33,7 +33,7 @@ def hummingbird_created_timestamp(name, lock, **kwargs):
 
     Args:
         name: target name; emits `<name>.txt` consumable by `created = ":<name>"`.
-        lock: label of an rpm.install lockfile (e.g. `//:hummingbird.lock.json`).
+        lock: label of an rpm.install lockfile (e.g. `//images:hummingbird.lock.json`).
         **kwargs: forwarded to `jq` (e.g. `visibility`).
     """
     jq(
@@ -62,7 +62,7 @@ def debian_created_timestamp(name, lock, **kwargs):
 
     Args:
         name: target name; emits `<name>.txt` consumable by `created = ":<name>"`.
-        lock: label of an apt.install lockfile (e.g. `//oci/distroless:debian.lock.json`).
+        lock: label of an apt.install lockfile (e.g. `//images:debian.lock.json`).
         **kwargs: forwarded to `jq` (e.g. `visibility`).
     """
     jq(

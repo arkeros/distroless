@@ -31,7 +31,7 @@ jobs:
         uses: ./.github/actions/update-debian-packages
         with:
           manifests: >-
-            oci/distroless/debian.yaml
-            oci/distroless/nginx/nginx-stable.yaml
-            oci/distroless/nginx/nginx-mainline.yaml
+            images/debian.yaml
+            images/nginx/nginx-stable.yaml
+            images/nginx/nginx-mainline.yaml
           token: ${{ secrets.RENOVATE_TOKEN }}

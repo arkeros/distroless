@@ -57,7 +57,7 @@ def _rpmdb_merge_impl(ctx):
         # images" and that contract isn't satisfied by zero inputs.
         fail("rpmdb_merge: no RpmHeaderInfo reachable from targets %s; " % [str(t.label) for t in ctx.attr.targets] +
              "include at least one flatten/layer whose tars contain rpm_package targets " +
-             "(e.g. //oci/distroless/static:static_<arch>_hummingbird_layer).")
+             "(e.g. //images/static:static_<arch>_hummingbird_layer).")
 
     # Stable ordering keyed on (package, arch) so the sqlite output is
     # reproducible across builds regardless of aspect traversal order.

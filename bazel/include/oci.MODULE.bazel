@@ -51,26 +51,26 @@ apt = use_extension("@rules_distroless//apt:extensions.bzl", "apt")
 apt.install(
     name = "debian",
     distro = "debian-unstable",
-    lock = "//oci/distroless:debian.lock.json",
-    manifest = "//oci/distroless:debian.yaml",
+    lock = "//images:debian.lock.json",
+    manifest = "//images:debian.yaml",
     mergedusr = True,
-    package_template = "//oci/distroless/common:package.BUILD.tmpl",
+    package_template = "//images/common:package.BUILD.tmpl",
 )
 apt.install(
     name = "nginx_stable",
     distro = "debian-unstable",
-    lock = "//oci/distroless/nginx:nginx-stable.lock.json",
-    manifest = "//oci/distroless/nginx:nginx-stable.yaml",
+    lock = "//images/nginx:nginx-stable.lock.json",
+    manifest = "//images/nginx:nginx-stable.yaml",
     mergedusr = True,
-    package_template = "//oci/distroless/common:package.BUILD.tmpl",
+    package_template = "//images/common:package.BUILD.tmpl",
 )
 apt.install(
     name = "nginx_mainline",
     distro = "debian-unstable",
-    lock = "//oci/distroless/nginx:nginx-mainline.lock.json",
-    manifest = "//oci/distroless/nginx:nginx-mainline.yaml",
+    lock = "//images/nginx:nginx-mainline.lock.json",
+    manifest = "//images/nginx:nginx-mainline.yaml",
     mergedusr = True,
-    package_template = "//oci/distroless/common:package.BUILD.tmpl",
+    package_template = "//images/common:package.BUILD.tmpl",
 )
 use_repo(apt, "debian", "nginx_mainline", "nginx_stable")
 
@@ -90,8 +90,8 @@ rpm.install(
     # falls back to NVD-CPE matching and silently misses Hummingbird's
     # backported advisories.
     distro = "hummingbird-1",
-    gpg_key = "//:hummingbird-release.pgp",
-    lock_file = "//:hummingbird.lock.json",
+    gpg_key = "//images:hummingbird-release.pgp",
+    lock_file = "//images:hummingbird.lock.json",
     # Closed manifest of *root* packages; pin walks rpm:requires and adds
     # transitively reachable packages to the lockfile (same posture as
     # @debian's apt resolver). Trim entries here only if you also want
@@ -139,10 +139,10 @@ rpm.install(
 # nginx.org's own RPM repositories, mirroring how we already use their apt
 # repos on the Debian side. Stable and mainline are first-class separate
 # repos (no version-constraint pinning needed); each ships a single
-# self-contained `nginx` rpm — no nginx/nginx-core/nginx-filesystem
+# self-contained `nginx` rpm — no images/nginx/nginx-core/nginx-filesystem
 # decomposition and none of Hummingbird's gperftools / libunwind /
 # libxcrypt linkage. Lockfiles live alongside the consuming BUILD in
-# //oci/distroless/nginx/ — same convention as the apt-side
+# //images/nginx/ — same convention as the apt-side
 # nginx-{stable,mainline}.lock.json. rhel/10 binaries match Hummingbird's
 # glibc/openssl baseline at runtime.
 rpm.install(
@@ -159,11 +159,11 @@ rpm.install(
     # nginx.org rpm, so no flags surface today. Future advisories with
     # release-suffix-strict constraints (e.g. `< X-1.hum1`) may falsely
     # flag nginx.org's `*.el10.ngx` releases via rpmvercmp's suffix
-    # ordering; document those in //oci/distroless/nginx/BUILD under
+    # ordering; document those in //images/nginx/BUILD under
     # `NGINX_HUMMINGBIRD_*_VEX_STATEMENTS` when they arise.
     distro = "hummingbird-1",
-    gpg_key = "//oci/distroless/nginx:nginx_signing.key",
-    lock_file = "//oci/distroless/nginx:nginx-stable.hummingbird.lock.json",
+    gpg_key = "//images/nginx:nginx_signing.key",
+    lock_file = "//images/nginx:nginx-stable.hummingbird.lock.json",
     packages = ["nginx"],
     # Surfaces `pkg:rpm/nginx.org/nginx@...` in the image SBOM so grype
     # routes lookups to NVD-CPE rather than `pkg:rpm/nginx_stable_rpm/...`
@@ -185,8 +185,8 @@ rpm.install(
         "aarch64",
     ],
     distro = "hummingbird-1",
-    gpg_key = "//oci/distroless/nginx:nginx_signing.key",
-    lock_file = "//oci/distroless/nginx:nginx-mainline.hummingbird.lock.json",
+    gpg_key = "//images/nginx:nginx_signing.key",
+    lock_file = "//images/nginx:nginx-mainline.hummingbird.lock.json",
     packages = ["nginx"],
     purl_namespace = "nginx.org",
     repo_url = "https://nginx.org/packages/mainline/rhel/10",
@@ -197,7 +197,7 @@ http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-# Node.js runtime tarballs from nodejs.org. Consumed by //oci/distroless/nodejs
+# Node.js runtime tarballs from nodejs.org. Consumed by //images/nodejs
 # (ADR 0007 step 6, the "marquee demo" distroless node on Hummingbird's glibc).
 # Only `bin/node` is shipped in the image; npm/npx/corepack/headers/docs are
 # left in the bazel-out tree and never make it into the layer.
@@ -247,7 +247,7 @@ exports_files(["bin/node"])
 ]
 
 # Eclipse Temurin JRE tarballs from Adoptium GitHub releases. Consumed by
-# //oci/distroless/java — the headless JRE ships under /jre/, mirroring
+# //images/java — the headless JRE ships under /jre/, mirroring
 # nodejs's /nodejs/ prefix so the host distro's PATH never resolves to it.
 # The image entrypoint is the absolute path /jre/bin/java.
 #

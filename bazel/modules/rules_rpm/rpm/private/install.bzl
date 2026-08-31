@@ -97,7 +97,7 @@ def _rpm_package_repo_impl(rctx):
     # surfaces the rpm's identity to supply_chain_tools' gather_metadata
     # aspect. Without this, the image SBOM lists rpm-extract's Go module deps
     # as components instead of the actual rpm packages — see
-    # //oci/distroless/common:package.BUILD.tmpl for the apt-side analogue.
+    # //images/common:package.BUILD.tmpl for the apt-side analogue.
     rctx.file("BUILD.bazel", """
 load("@package_metadata//:defs.bzl", "package_metadata")
 load("@rules_rpm//rpm/private:per_package.bzl", "rpm_package")

@@ -30,7 +30,7 @@ bazel_dep(name = "gazelle", version = "0.53.0")
 # Spoke BUILD.bazel files emit a `package_metadata` target per (package, arch)
 # so the supply-chain `gather_metadata` aspect surfaces each rpm as its own
 # component in the image SBOM (matching the per-`.deb` shape of
-# //oci/distroless/common:package.BUILD.tmpl).
+# //images/common:package.BUILD.tmpl).
 bazel_dep(name = "package_metadata", version = "0.0.13")
 
 go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk", dev_dependency = True)

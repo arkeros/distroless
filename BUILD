@@ -1,12 +1,5 @@
 load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary", "gazelle_test")
 
-exports_files([
-    # Consumed by rules_rpm via @hummingbird//... — see bazel/include/oci.MODULE.bazel.
-    "hummingbird-release.pgp",
-    "hummingbird.lock.json",
-    "hummingbird_install.json",
-])
-
 # Ignore Claude Code worktrees
 # gazelle:exclude .claude
 # Prefer generated BUILD files to be called BUILD over BUILD.bazel

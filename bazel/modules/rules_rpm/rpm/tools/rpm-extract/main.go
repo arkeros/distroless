@@ -245,7 +245,7 @@ func shouldStrip(filename string) bool {
 // land in /etc/pki, /etc/crypto-policies, or are relative). The
 // rewrite is defensive against future packages and keeps the tar
 // internally consistent without relying on the base layer's root
-// symlinks (oci/distroless/common:usrmerge_symlinks_hummingbird).
+// symlinks (images/common:usrmerge_symlinks_hummingbird).
 func mergedUsr(filename string) (rewritten string, drop bool) {
 	clean := strings.TrimPrefix(filename, "./")
 	for _, prefix := range []string{"lib64", "lib", "bin", "sbin"} {

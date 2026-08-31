@@ -1,8 +1,8 @@
-load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_img//img:image.bzl", "image_from_binary")
 load("@rules_img//img:load.bzl", "image_load")
 load("@rules_img//img:push.bzl", "image_push")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 load(
     "//oci:config.bzl",
     "GAR_REGISTRY",
@@ -12,7 +12,6 @@ load(
 )
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:supply_chain.bzl", "image_supply_chain")
-load("//oci/distroless/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
 
 package(default_visibility = [
     "//oci/cmd/registry:__subpackages__",
@@ -38,7 +37,7 @@ go_binary(
 [
     image_from_binary(
         name = "image" + mode,
-        base = "//oci/distroless/static:static%s_nonroot_debian" % mode,
+        base = "//images/static:static%s_nonroot_debian" % mode,
         binary = ":registry",
         # This particular Go app is a statically linked binary with no runfiles deps.
         include_runfiles = False,

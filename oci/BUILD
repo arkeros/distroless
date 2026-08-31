@@ -30,9 +30,9 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         ":oci_image",
-        "//oci/distroless:platforms",
-        "//oci/distroless/common:variables",
-        "//oci/distroless/nginx:config",
+        "//images:platforms",
+        "//images/common:variables",
+        "//images/nginx:config",
         "@rules_img//img:image",
     ],
 )

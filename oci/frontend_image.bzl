@@ -1,16 +1,16 @@
 load("@rules_img//img:image.bzl", "image_index")
 load("@tar.bzl", "mutate", "tar")
-load("//oci/distroless:platforms.bzl", "ARCHITECTURE_PLATFORMS")
-load("//oci/distroless/common:variables.bzl", "NONROOT")
+load("//images:platforms.bzl", "ARCHITECTURE_PLATFORMS")
+load("//images/common:variables.bzl", "NONROOT")
 load(":oci_image.bzl", "oci_image")
-load("//oci/distroless/nginx:config.bzl", "NGINX_ARCHITECTURES")
+load("//images/nginx:config.bzl", "NGINX_ARCHITECTURES")
 
 NGINX_FRONTEND_DEFAULT_CHANNEL = "stable"
 
 # Canonical on-image location and owner for the statics nginx serves. The
 # web root matches the nginx base's `root` directive
-# (see //oci/distroless/nginx:default.conf); the username matches the UID
-# in //oci/distroless/common:variables.bzl#USER_IDS. Exposed so callers
+# (see //images/nginx:default.conf); the username matches the UID
+# in //images/common:variables.bzl#USER_IDS. Exposed so callers
 # producing their own statics_layer (e.g. react_static_layer) can line up
 # on the exact same paths/owner without hardcoding them independently.
 NGINX_WEB_ROOT = "/var/www/html"
@@ -95,7 +95,7 @@ def frontend_image(
         name = name + "_" + arch,
         # Wrap in Label() so the default resolves to @senku regardless of the
         # caller's repo.
-        base = base or Label("//oci/distroless/nginx:nginx_%s_nonroot_%s_%s" % (NGINX_FRONTEND_DEFAULT_CHANNEL, arch, distro)),
+        base = base or Label("//images/nginx:nginx_%s_nonroot_%s_%s" % (NGINX_FRONTEND_DEFAULT_CHANNEL, arch, distro)),
         layers = layers,
         platform = ARCHITECTURE_PLATFORMS[arch],
         **kwargs

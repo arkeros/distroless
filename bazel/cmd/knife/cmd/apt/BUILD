@@ -10,8 +10,8 @@ go_library(
     importpath = "github.com/arkeros/senku/bazel/cmd/knife/cmd/apt",
     visibility = ["//bazel/cmd/knife:__subpackages__"],
     deps = [
-        "//oci/distroless/debian/lockfile",
-        "//oci/distroless/debian/snapshot",
+        "//oci/debian/lockfile",
+        "//oci/debian/snapshot",
         "@com_github_spf13_cobra//:cobra",
     ],
 )

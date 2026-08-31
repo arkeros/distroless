@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/arkeros/senku/oci/distroless/debian/lockfile"
+	"github.com/arkeros/senku/oci/debian/lockfile"
 )
 
 type versionsOptions struct {
@@ -23,8 +23,8 @@ func newCmdVersions() *cobra.Command {
 		Long: `Extracts and displays package name and version pairs from an apt lock file.
 
 Examples:
-  knife apt versions oci/distroless/debian.lock.json
-  knife apt versions --arch amd64 oci/distroless/debian.lock.json`,
+  knife apt versions images/debian.lock.json
+  knife apt versions --arch amd64 images/debian.lock.json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.Path = args[0]

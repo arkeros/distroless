@@ -209,7 +209,7 @@ func TestVerifyRpmSignature_EmptyKeyPathSkips(t *testing.T) {
 // TestMergedUsrLink locks the symlink-target companion to mergedUsr.
 // Without this rewrite, an absolute target like `/lib/foo` would survive
 // past extraction and only resolve at runtime via the base layer's
-// `/lib -> usr/lib` symlink (oci/distroless/common:usrmerge_symlinks_hummingbird).
+// `/lib -> usr/lib` symlink (images/common:usrmerge_symlinks_hummingbird).
 // Rewriting here makes the per-package tar internally consistent and
 // removes the cross-layer-ordering dependency.
 //

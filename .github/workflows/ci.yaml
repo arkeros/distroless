@@ -261,15 +261,23 @@ jobs:
       - name: Push image to Artifact Registry
         run: bazel run //oci/cmd/registry:image_push_gar
 
-      # Resolve the tag we just pushed to its digest, and deploy *that*. The
-      # manifest never carries a mutable tag: two regions deploying an hour
-      # apart must land the same bytes, and `latest` cannot promise that.
-      - name: Resolve pushed digest
+      # The digest comes from the build, not from the registry. `image_push`
+      # pushes the index the `digest` output group names, and OCI digests are
+      # content addresses, so the two agree by construction. Asking the
+      # registry to resolve `:latest` instead would be a race — a concurrent
+      # push can move that tag between this job's push and its read — and it
+      # would make the deployed bytes depend on registry state rather than on
+      # the commit being built.
+      - name: Resolve image digest
         run: |
           set -euo pipefail
-          REPO="europe-docker.pkg.dev/senku-prod/containers/registry"
-          DIGEST=$(gcloud artifacts docker images describe "${REPO}:latest" \
-              --format='value(image_summary.digest)')
+          # cquery only analyses — it prints a path without producing the file,
+          # and --remote_download_outputs=minimal keeps build outputs remote.
+          bazel build --remote_download_outputs=all \
+              //oci/cmd/registry:image --output_groups=digest
+          DIGEST=$(cat "$(bazel cquery //oci/cmd/registry:image \
+              --output=files --output_groups=digest)")
+          REPO=europe-docker.pkg.dev/senku-prod/containers/registry
           echo "IMAGE=${REPO}@${DIGEST}" >> "$GITHUB_ENV"
           echo "Deploying ${REPO}@${DIGEST}"
 

@@ -94,9 +94,13 @@ To deploy by hand — normally CI's job, but useful for a one-off region or a ro
 ```sh
 bazel run //oci/cmd/registry:image_push_gar
 
+# The digest comes from the build, not from a tag lookup — same bytes as the
+# push, by construction.
+bazel build --remote_download_outputs=all \
+    //oci/cmd/registry:image --output_groups=digest
+DIGEST=$(cat "$(bazel cquery //oci/cmd/registry:image \
+    --output=files --output_groups=digest)")
 REPO=europe-docker.pkg.dev/senku-prod/containers/registry
-DIGEST=$(gcloud artifacts docker images describe "$REPO:latest" \
-    --format='value(image_summary.digest)')
 
 sed "s|IMAGE_PLACEHOLDER|$REPO@$DIGEST|" oci/cmd/registry/service.yaml \
     | gcloud run services replace - --region=europe-west3

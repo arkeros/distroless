@@ -13,7 +13,8 @@ State lives in `gs://senku-prod-terraform-state` under prefix `infra`.
 | Artifact Registry API + `containers` repo | The registry images are pushed to; exists before any deploy. |
 | `svc-registry` service account | Runtime identity the Cloud Run services run as. |
 | `allUsers` → `run.invoker`, per region | Durable policy. The LB's Serverless NEG calls without an OIDC identity, so the services must accept anonymous invokes; the ingress annotation in the Knative manifest is what keeps them off the open internet. |
-| WIF pool, provider, and the CI service account | The identity GitHub Actions deploys as. |
+| WIF pool, provider, and the CI service accounts | The identities GitHub Actions deploys and caches as. |
+| `senku-prod-bazel-cache` bucket + lifecycle | Bazel's remote cache. Durable, and its retention policy is not something a build should be able to change. |
 
 The Cloud Run services themselves are **not** managed here. They are deployed
 from [`//oci/cmd/registry:service.yaml`](../oci/cmd/registry/service.yaml) by
@@ -41,19 +42,47 @@ Every subsequent apply is a no-op. This only bites when adding a region.
 
 The `github` pool in this project belongs to `arkeros/senku`; this repo has its
 own `github-distroless` pool so that repo's infra cannot widen or revoke access
-here. Two gates, both in `github.tf`:
+here. The provider's `attribute_condition` pins `assertion.repository`, so no
+other repository can mint a credential in this pool at all.
 
-- the provider's `attribute_condition` pins `assertion.repository`, so no other
-  repository can mint a credential in this pool at all;
-- the service account binding is keyed on `attribute.environment/prod`, which
-  GitHub only issues after validating the environment's branch and reviewer
-  rules.
+Inside that gate are two accounts, because the two things CI does need very
+different reach:
+
+| Account | Bound to | Can |
+| --- | --- | --- |
+| `github-actions-distroless` (`github.tf`) | `attribute.environment/prod` | Push to Artifact Registry, deploy Cloud Run, act as `svc-registry` |
+| `github-actions-cache` (`cache.tf`) | `attribute.repository` | Read and write the Bazel cache bucket, and nothing else |
+
+The deploy binding is the narrow one: GitHub issues an `environment` claim only
+after validating `prod`'s branch and reviewer rules, so that gate lives in the
+identity layer rather than in workflow YAML any committer can edit. The cache
+binding is deliberately wider — a cache only `main` can reach is worth very
+little — which is why it hangs off an account that can do nothing else. Pull
+requests opened from a fork get no OIDC token at all, so cache writers are
+exactly the people who can already push a branch here.
 
 After `apply`, confirm the workflow's inputs match:
 
 ```sh
 terraform output github_workload_identity_provider
 terraform output github_service_account
+terraform output github_cache_service_account
+```
+
+## Bazel remote cache
+
+`cache.tf` owns the bucket the `gcs` config in [`//.bazelrc`](../.bazelrc)
+points at. The two have to agree on the name, and `terraform output
+bazel_remote_cache_url` prints what the bazelrc should say.
+
+Cache only — there is no remote execution, so every action still runs on the
+machine that invoked Bazel. Entries expire after 30 days, which bounds growth
+without anyone having to prune; a still-warm entry that ages out costs one
+rebuild. To use it locally:
+
+```sh
+gcloud auth application-default login
+bazel build --config=gcs //...
 ```
 
 ## Provider lockfile

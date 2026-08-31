@@ -44,7 +44,7 @@ resource "google_artifact_registry_repository" "containers" {
   location      = local.location
   repository_id = local.repository_id
   format        = "DOCKER"
-  description   = "Private container images for Senku workloads (deploy-time pulls by Cloud Run)."
+  description   = "Private container images for Distroless workloads (deploy-time pulls by Cloud Run)."
 
   depends_on = [google_project_service.artifactregistry]
 }

@@ -3,7 +3,7 @@
 Wraps `image_push` + `slsa_predicate` + `cosign_sign` + `cosign_attest` (+ a
 per-image SBOM attestation if `sbom` is set) into a coherent set of targets.
 There is no path to publish to the public mirror surface
-(`ghcr.io/arkeros/senku/*`) except via this macro, encoding the
+(`ghcr.io/arkeros/distroless/*`) except via this macro, encoding the
 "every mirror image is signed and provenance-attested" policy in the build
 graph rather than in CI script discipline.
 
@@ -54,7 +54,7 @@ def mirror_push(
         adds an `attest_sbom` step.
       registry: Mirror registry. Default: `OCI_REGISTRY` (`ghcr.io`).
       repository_prefix: Path prefix under the registry. Default:
-        `OCI_REPOSITORY_PREFIX` (`arkeros/senku`).
+        `OCI_REPOSITORY_PREFIX` (`arkeros/distroless`).
       bazel_target: String identifying the Bazel target in the SLSA predicate's
         `externalParameters.bazelTarget`. Defaults to `//<package>:<name>`.
       tags: Bazel tags forwarded to every generated target. Conventionally
@@ -84,7 +84,7 @@ def mirror_push(
         builder_id = BUILDER_ID,
         external_parameters = {
             "bazelTarget": bazel_target,
-            "sourceUri": "git+https://github.com/arkeros/senku@{{STABLE_GIT_COMMIT}}",
+            "sourceUri": "git+https://github.com/arkeros/distroless@{{STABLE_GIT_COMMIT}}",
         },
         internal_parameters = {
             "monorepoVersion": "{{STABLE_MONOREPO_VERSION}}",

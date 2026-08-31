@@ -13,7 +13,7 @@ package(default_visibility = ["//visibility:public"])
 vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/cc/BUILD",
+    id = "https://github.com/arkeros/distroless/blob/main/images/cc/BUILD",
     statements = GLIBC_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-01T00:00:00Z",
 )
@@ -21,7 +21,7 @@ vex_document(
 vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/cc/BUILD#debug",
+    id = "https://github.com/arkeros/distroless/blob/main/images/cc/BUILD#debug",
     statements = BUSYBOX_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-01T00:00:00Z",
 )
@@ -34,7 +34,7 @@ vex_document(
 vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/cc/BUILD#hummingbird",
+    id = "https://github.com/arkeros/distroless/blob/main/images/cc/BUILD#hummingbird",
     statements = [],
     timestamp = "2026-05-15T00:00:00Z",
 )

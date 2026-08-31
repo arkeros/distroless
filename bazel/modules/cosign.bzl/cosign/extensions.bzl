@@ -8,7 +8,7 @@ Usage in a consumer's MODULE.bazel:
     register_toolchains("@cosign_toolchains//:all")
 
 Source-compiling cosign from `github.com/sigstore/cosign/v3` instead is
-possible but the dep graph fights gazelle (see `bazel/patches/` in senku
+possible but the dep graph fights gazelle (see `bazel/patches/` in distroless
 for the in-progress workarounds). The prebuilt path is the default.
 """
 

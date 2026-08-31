@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/arkeros/senku/bazel/cmd/knife/cmd"
+	"github.com/arkeros/distroless/bazel/cmd/knife/cmd"
 )
 
 func main() {

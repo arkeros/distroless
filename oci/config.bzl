@@ -1,6 +1,6 @@
 # rules_img requires registry and repository as separate values
 OCI_REGISTRY = "ghcr.io"
-OCI_REPOSITORY_PREFIX = "arkeros/senku"
+OCI_REPOSITORY_PREFIX = "arkeros/distroless"
 
 # GAR — the internal Cloud Run pull substrate, provisioned by the plain
 # Terraform root at `//infra`. These must agree with `local.location`,

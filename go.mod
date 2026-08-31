@@ -1,4 +1,4 @@
-module github.com/arkeros/senku
+module github.com/arkeros/distroless
 
 go 1.27.0
 

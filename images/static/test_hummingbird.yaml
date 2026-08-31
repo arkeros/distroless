@@ -32,7 +32,7 @@ fileExistenceTests:
     path: '/etc/group'
     shouldExist: true
   # os-release(5): canonical at /usr/lib/os-release, /etc/os-release is a
-  # symlink. base-files ships the symlink on debian; senku synthesizes it
+  # symlink. base-files ships the symlink on debian; distroless synthesizes it
   # for hummingbird via //images/common:etc_os_release_symlink.
   - name: 'os-release canonical'
     path: '/usr/lib/os-release'

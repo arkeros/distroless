@@ -6,7 +6,7 @@ go_library(
         "print.go",
         "text.go",
     ],
-    importpath = "github.com/arkeros/senku/base/diff/text",
+    importpath = "github.com/arkeros/distroless/base/diff/text",
     visibility = ["//visibility:public"],
     deps = ["//base/diff"],
 )

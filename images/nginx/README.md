@@ -2,10 +2,10 @@
 
 Minimal nginx container images based on Debian Trixie (13), built from official [nginx.org](https://nginx.org/en/linux_packages.html#Debian) packages.
 
-Images are published to [GitHub Container Registry](https://github.com/arkeros/senku/pkgs/container/senku%2Fnginx/).
+Images are published to [GitHub Container Registry](https://github.com/arkeros/distroless/pkgs/container/distroless%2Fnginx/).
 
 ```bash
-docker pull ghcr.io/arkeros/senku/nginx:latest
+docker pull ghcr.io/arkeros/distroless/nginx:latest
 ```
 
 ## Channels

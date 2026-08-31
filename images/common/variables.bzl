@@ -9,14 +9,14 @@ DEBIAN_OS_RELEASE = dict(
     ID = "debian",
     VERSION_ID = "{VERSION}",
     VERSION = "Debian GNU/Linux {VERSION} ({CODENAME})",
-    HOME_URL = "https://github.com/arkeros/senku",
-    SUPPORT_URL = "https://github.com/arkeros/senku/blob/main/docs/images.md",
-    BUG_REPORT_URL = "https://github.com/arkeros/senku/issues/new",
+    HOME_URL = "https://github.com/arkeros/distroless",
+    SUPPORT_URL = "https://github.com/arkeros/distroless/blob/main/docs/images.md",
+    BUG_REPORT_URL = "https://github.com/arkeros/distroless/issues/new",
 )
 
 # Hummingbird-derived images. `ID=hummingbird` is the scanner-routing key
 # (grype/trivy match exact-string only, no ID_LIKE fallback — see ADR 0007);
-# NAME / PRETTY_NAME carry the senku brand for human readers. VERSION_ID is
+# NAME / PRETTY_NAME carry the distroless brand for human readers. VERSION_ID is
 # the Hummingbird snapshot revision (Unix timestamp from repomd.xml).
 HUMMINGBIRD_OS_RELEASE = dict(
     PRETTY_NAME = "distroless.io (Hummingbird-derived)",
@@ -24,9 +24,9 @@ HUMMINGBIRD_OS_RELEASE = dict(
     ID = "hummingbird",
     ID_LIKE = "rhel fedora",
     VERSION_ID = "{VERSION}",
-    HOME_URL = "https://github.com/arkeros/senku",
-    SUPPORT_URL = "https://github.com/arkeros/senku/blob/main/docs/images.md",
-    BUG_REPORT_URL = "https://github.com/arkeros/senku/issues/new",
+    HOME_URL = "https://github.com/arkeros/distroless",
+    SUPPORT_URL = "https://github.com/arkeros/distroless/blob/main/docs/images.md",
+    BUG_REPORT_URL = "https://github.com/arkeros/distroless/issues/new",
 )
 
 OS_RELEASE_BY_DISTRO = {
@@ -53,7 +53,7 @@ USERS = ["root", "nonroot"]
 
 COMPRESSION = "zstd"
 
-# Standard env every senku image carries. Previously inherited via
+# Standard env every distroless image carries. Previously inherited via
 # `base = //images/static` (which set these on its distroless_matrix).
 # Composition-style images set this explicitly. `SSL_CERT_FILE` resolves on
 # both Debian (native path) and Hummingbird (Debian-compat symlink shipped

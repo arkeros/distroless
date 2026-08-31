@@ -42,7 +42,7 @@ spec:
           image: IMAGE_PLACEHOLDER
           args:
             - --upstream=ghcr.io
-            - --repository-prefix=arkeros/senku
+            - --repository-prefix=arkeros/distroless
             # TODO: keep sorted and up-to-date
             - --repo=bash
             - --repo=nginx

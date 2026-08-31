@@ -6,9 +6,56 @@ on:
   pull_request:
     branches: [main]
 
+# Both values come from `terraform output` in //infra. The cache account is
+# separate from the deploy account in github.tf and deliberately weaker: it can
+# read and write one GCS bucket and nothing else, which is why every job here
+# can hold it while only `push-gar`/`deploy` hold the deploy identity.
+env:
+  WIF_PROVIDER: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
+  CACHE_SERVICE_ACCOUNT: github-actions-cache@senku-prod.iam.gserviceaccount.com
+
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # for the remote cache's workload identity federation
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # A pull request opened from a fork is not granted `id-token: write`, so
+      # it cannot mint the cache credential. Skip the step for those rather
+      # than fail on it — the build below then runs without a remote cache,
+      # which is slow but correct. `steps.auth.outcome` is what the bazelrc
+      # keys off, and it reads `skipped` here.
+      - name: Authenticate to Google Cloud
+        id: auth
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          bazelisk-cache: true
+          repository-cache: true
+          external-cache: true
+          cache-save: ${{ github.event_name != 'pull_request' }}
+          bazelrc: |
+            common --config=ci
+            ${{ steps.auth.outcome == 'success' && 'common --config=gcs' || '' }}
+
+      - name: Test
+        run: bazel test //...
+
   publish:
     name: Publish mirror images
+    needs: test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -21,6 +68,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Only reaches the Bazel cache bucket; pushing to GHCR below is
+      # authenticated separately with GITHUB_TOKEN.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
@@ -31,7 +86,7 @@ jobs:
           cache-save: ${{ github.event_name != 'pull_request' }}
           bazelrc: |
             common --config=ci
-            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+            common --config=gcs
             build --stamp
 
       - name: Login to GHCR
@@ -233,22 +288,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      # One job gets one set of application-default credentials, so this
+      # single auth covers both Artifact Registry and the Bazel cache — which
+      # is why //infra grants the deploy account access to the cache bucket
+      # too. It has to precede `bazel`, or the first invocation runs cold.
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: github-actions-distroless@senku-prod.iam.gserviceaccount.com
+          token_format: access_token
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
           bazelrc: |
             common --config=ci
-            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+            common --config=gcs
             build --stamp
-
-      - name: Authenticate to Google Cloud
-        id: auth
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
-          service_account: github-actions-distroless@senku-prod.iam.gserviceaccount.com
-          token_format: access_token
 
       - name: Login to Artifact Registry
         uses: docker/login-action@v4
@@ -308,7 +367,7 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: github-actions-distroless@senku-prod.iam.gserviceaccount.com
 
       - name: Set up gcloud

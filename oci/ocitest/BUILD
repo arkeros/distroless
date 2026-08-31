@@ -4,7 +4,7 @@ go_library(
     name = "ocitest",
     testonly = True,
     srcs = ["fakeregistry.go"],
-    importpath = "github.com/arkeros/senku/oci/ocitest",
+    importpath = "github.com/arkeros/distroless/oci/ocitest",
     visibility = ["//oci:__subpackages__"],
     deps = [
         "@com_github_google_go_containerregistry//pkg/name",

@@ -32,7 +32,7 @@ def oci_image(
             (derived from the upstream-snapshot anchor in each distro's
             lockfile — see //oci:created_timestamp.bzl and ADR 0007
             §"Build horizon" amendment). Absent → image config has no
-            `created` field, which leaves senku images policy-invisible
+            `created` field, which leaves distroless images policy-invisible
             to build-horizon admission controllers; epoch 0 would make
             them always-stale (the trap distroless PR #1203 fixed).
         **kwargs: Passed to image_manifest (base, layers, entrypoint, env, etc.).

@@ -30,7 +30,7 @@ package(default_visibility = ["//visibility:public"])
 vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/nodejs/BUILD#hummingbird",
+    id = "https://github.com/arkeros/distroless/blob/main/images/nodejs/BUILD#hummingbird",
     statements = [],
     timestamp = "2026-05-16T00:00:00Z",
 )
@@ -146,7 +146,7 @@ vex_document(
         ignore_cves = [],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless Node.js {} image".format(major),
-            "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/images/nodejs/BUILD",
+            "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/nodejs/BUILD",
         },
         layers = nodejs_layers(major),
         vex = [":vex_hummingbird"],

@@ -15,7 +15,7 @@ image_index(name = "image", ...)
 cosign_sign(
     name = "image_sign",
     image = ":image",
-    repository = "ghcr.io/arkeros/senku/distroless/static",
+    repository = "ghcr.io/arkeros/distroless/distroless/static",
 )
 ```
 
@@ -35,7 +35,7 @@ _attrs = {
     "repository": attr.string(
         doc = (
             "Registry + repository path the image will be signed at, e.g. " +
-            "`ghcr.io/arkeros/senku/distroless/static`. Must NOT contain a tag or digest. " +
+            "`ghcr.io/arkeros/distroless/distroless/static`. Must NOT contain a tag or digest. " +
             "Can be overridden at runtime via `--repository`."
         ),
     ),

@@ -6,7 +6,7 @@ which validates status/justification combinations at loading phase so
 malformed documents fail the build before they reach a scanner.
 
 NOTE: vex_statement requires an `expires` field (RFC3339 date) that is a
-**senku-flavored extension** to the OpenVEX 0.2.0 spec — the spec has no
+**distroless-flavored extension** to the OpenVEX 0.2.0 spec — the spec has no
 native expiry mechanism. The field appears in the emitted JSON; OpenVEX
 consumers that don't recognize it (every consumer except this repo's
 grype.bzl integration today) will silently skip it. grype.bzl validates
@@ -19,7 +19,7 @@ Example:
 
     vex_document(
         name = "registry_vex",
-        id = "https://github.com/arkeros/senku/blob/main/oci/cmd/registry/BUILD",
+        id = "https://github.com/arkeros/distroless/blob/main/oci/cmd/registry/BUILD",
         author = "rafael@arquero.cat",
         timestamp = "2026-04-30T00:00:00Z",
         statements = [

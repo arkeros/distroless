@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "lru",
     srcs = ["lru.go"],
-    importpath = "github.com/arkeros/senku/base/cache/lru",
+    importpath = "github.com/arkeros/distroless/base/cache/lru",
     visibility = ["//visibility:public"],
 )
 

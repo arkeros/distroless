@@ -107,9 +107,8 @@ bazel test //images/... //oci/...
 Package sets are regenerated with [`knife`](./bazel/cmd/knife), not by hand:
 
 ```bash
-knife apt update         # Debian package lockfiles
-knife prebuilts update   # upstream tarballs (node, JDK, ...)
-knife grype update       # vulnerability database pin
+knife apt update     # Debian package lockfiles
+knife grype update   # vulnerability database pin
 ```
 
 ## Infrastructure

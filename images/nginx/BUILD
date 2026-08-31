@@ -72,7 +72,7 @@ NGINX_VEX_STATEMENTS = [
     vex_document(
         name = "vex_" + channel,
         author = "rafael@arquero.cat",
-        id = "https://github.com/arkeros/senku/blob/main/images/nginx/BUILD#debian-" + channel,
+        id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#debian-" + channel,
         statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS,
         timestamp = "2026-08-01T00:00:00Z",
     )
@@ -83,7 +83,7 @@ NGINX_VEX_STATEMENTS = [
     vex_document(
         name = "debug_vex_" + channel,
         author = "rafael@arquero.cat",
-        id = "https://github.com/arkeros/senku/blob/main/images/nginx/BUILD#debian-" + channel + "-debug",
+        id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#debian-" + channel + "-debug",
         statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS,
         timestamp = "2026-08-01T00:00:00Z",
     )
@@ -103,7 +103,7 @@ NGINX_VEX_STATEMENTS = [
 vex_document(
     name = "vex_hummingbird_mainline",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/nginx/BUILD#hummingbird-mainline",
+    id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#hummingbird-mainline",
     statements = [],
     timestamp = "2026-07-10T00:00:00Z",
     version = 3,
@@ -112,7 +112,7 @@ vex_document(
 vex_document(
     name = "vex_hummingbird_stable",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/nginx/BUILD#hummingbird-stable",
+    id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#hummingbird-stable",
     statements = NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS["stable"],
     timestamp = "2026-08-01T00:00:00Z",
     version = 4,
@@ -164,7 +164,7 @@ tar(
 )
 
 # Debian layers (per channel × arch): nginx.org-shipped rpms via the
-# senku @nginx_stable / @nginx_mainline apt extension.
+# distroless @nginx_stable / @nginx_mainline apt extension.
 [
     flatten(
         name = version_label + "_" + arch + "_debian_layer",
@@ -181,7 +181,7 @@ tar(
 # Hummingbird-derived layers: nginx.org's RHEL10 rpms via @nginx_stable_rpm
 # / @nginx_mainline_rpm. Single self-contained `nginx` rpm — same binary
 # semantics as the Debian flatten on the apt side, just different package
-# format. Inherits glibc/openssl/zlib/pcre2 from the cc base (no senku-side
+# format. Inherits glibc/openssl/zlib/pcre2 from the cc base (no distroless-side
 # soname overlays needed — nginx.org's rpm doesn't link gperftools).
 _NGINX_RPM_REPO = {
     "stable": "@nginx_stable_rpm",
@@ -243,7 +243,7 @@ _NGINX_RPM_REPO = {
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image (debug)",
-            "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/images/nginx/BUILD",
+            "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD",
         },
         debug_layers = nginx_layers("stable"),
         debug_vex = [":debug_vex_stable"] if distro == "debian" else [],
@@ -253,7 +253,7 @@ _NGINX_RPM_REPO = {
         ignore_cves = NGINX_IGNORE_CVES["stable"] + _IGNORE_CVES_BY_DISTRO[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx stable image",
-            "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/images/nginx/BUILD",
+            "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD",
         },
         layers = nginx_layers("stable"),
         vex = _VEX_BY_CHANNEL_AND_DISTRO["stable"][distro],
@@ -270,7 +270,7 @@ _NGINX_RPM_REPO = {
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image (debug)",
-            "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/images/nginx/BUILD",
+            "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD",
         },
         debug_layers = nginx_layers("mainline"),
         debug_vex = [":debug_vex_mainline"] if distro == "debian" else [],
@@ -280,7 +280,7 @@ _NGINX_RPM_REPO = {
         ignore_cves = NGINX_IGNORE_CVES["mainline"] + _IGNORE_CVES_BY_DISTRO[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless nginx mainline image",
-            "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/images/nginx/BUILD",
+            "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD",
         },
         layers = nginx_layers("mainline"),
         vex = _VEX_BY_CHANNEL_AND_DISTRO["mainline"][distro],

@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "cmp",
     srcs = ["cmp.go"],
-    importpath = "github.com/arkeros/senku/base/cmp",
+    importpath = "github.com/arkeros/distroless/base/cmp",
     visibility = ["//visibility:public"],
 )
 

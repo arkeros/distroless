@@ -6,12 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/arkeros/senku/base/cmp"
+	"github.com/arkeros/distroless/base/cmp"
 )
 
 var testCfg = Config{
 	Tool:        "bifrost",
-	URLTemplate: "https://github.com/arkeros/senku/releases/download/bifrost/v%s/%s",
+	URLTemplate: "https://github.com/arkeros/distroless/releases/download/bifrost/v%s/%s",
 }
 
 func TestWriteBootstrap(t *testing.T) {
@@ -53,7 +53,7 @@ func TestWriteBootstrap(t *testing.T) {
 		`"bbb"`,
 		`"ccc"`,
 		`def get_bifrost_url(version, filename):`,
-		`"https://github.com/arkeros/senku/releases/download/bifrost/v{}/{}"`,
+		`"https://github.com/arkeros/distroless/releases/download/bifrost/v{}/{}"`,
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("output missing %q\n---\n%s", want, s)
@@ -140,7 +140,7 @@ func TestWriteKnifeTool(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "versions.bzl")
 	cfg := Config{
 		Tool:        "knife",
-		URLTemplate: "https://github.com/arkeros/senku/releases/download/knife/v%s/%s",
+		URLTemplate: "https://github.com/arkeros/distroless/releases/download/knife/v%s/%s",
 	}
 	releases := []Release{{
 		Version: "1.0.0",

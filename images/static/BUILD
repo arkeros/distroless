@@ -15,7 +15,7 @@ package(default_visibility = ["//visibility:public"])
 vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/static/BUILD",
+    id = "https://github.com/arkeros/distroless/blob/main/images/static/BUILD",
     statements = GLIBC_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-01T00:00:00Z",
 )
@@ -23,7 +23,7 @@ vex_document(
 vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/static/BUILD#debug",
+    id = "https://github.com/arkeros/distroless/blob/main/images/static/BUILD#debug",
     statements = BUSYBOX_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-01T00:00:00Z",
 )
@@ -34,7 +34,7 @@ vex_document(
 vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/static/BUILD#hummingbird",
+    id = "https://github.com/arkeros/distroless/blob/main/images/static/BUILD#hummingbird",
     statements = [],
     timestamp = "2026-05-15T00:00:00Z",
 )
@@ -56,7 +56,7 @@ _VEX = {
 _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # Debian flatten: per-arch label shape (`@debian//tzdata/amd64`). Uses the
-# senku `cacerts_<distro>_<arch>` extraction since Debian's ca-certificates
+# distroless `cacerts_<distro>_<arch>` extraction since Debian's ca-certificates
 # package needs path normalisation.
 [
     flatten(
@@ -81,9 +81,9 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ]
 
 # Hummingbird flatten: ADR 0007's static composition. Three Hummingbird
-# packages (tzdata, ca-certificates, mailcap — all noarch) + the senku-
+# packages (tzdata, ca-certificates, mailcap — all noarch) + the distroless-
 # synthesized rootfs/passwd/home/group/tmp + ID=hummingbird os-release.
-# No senku-side `cacerts` extractor needed: Hummingbird's ca-certificates
+# No distroless-side `cacerts` extractor needed: Hummingbird's ca-certificates
 # rpm already ships /etc/ssl/certs/ca-certificates.crt as a Debian-compat
 # symlink alongside its native /etc/pki/ca-trust layout, so the existing
 # SSL_CERT_FILE env in the matrix call resolves correctly.
@@ -174,7 +174,7 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ]
 
 # Hummingbird busybox layers per arch. busybox is the first arch-specific
-# rpm in the lockfile (everything else is noarch), so the senku arch name
+# rpm in the lockfile (everything else is noarch), so the distroless arch name
 # (amd64/arm64) maps to the rpm arch name (x86_64/aarch64) explicitly.
 busybox_layer(
     name = "busybox_amd64_hummingbird_layer",
@@ -209,7 +209,7 @@ busybox_layer(
 # Hummingbird structure tests reuse test_<user>.yaml (user/workdir/PATH are
 # distro-agnostic) plus a distro-specific test_hummingbird.yaml that asserts
 # the RHEL-shape paths actually shipped by ca-certificates/mailcap/tzdata
-# and the senku-synthesized /etc/os-release symlink + rpmdb sqlite.
+# and the distroless-synthesized /etc/os-release symlink + rpmdb sqlite.
 [
     container_structure_test(
         name = "static_" + user + "_hummingbird_test",

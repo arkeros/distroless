@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/arkeros/senku/bazel/modules/rules_rpm/rpm/tools/internal/keyring"
+	"github.com/arkeros/distroless/bazel/modules/rules_rpm/rpm/tools/internal/keyring"
 	"github.com/sassoftware/go-rpmutils"
 	"github.com/sassoftware/go-rpmutils/cpio"
 )
@@ -227,7 +227,7 @@ func shouldStrip(filename string) bool {
 
 // mergedUsr rewrites legacy root paths (/lib, /lib64, /bin, /sbin) onto
 // their /usr/* counterparts. RHEL's `filesystem` rpm ships the same as
-// runtime symlinks; senku deliberately doesn't pull `filesystem` (per ADR
+// runtime symlinks; distroless deliberately doesn't pull `filesystem` (per ADR
 // 0007), so the merge happens at extract time. Mirrors Debian's
 // `mergedusr = True` behaviour in rules_distroless.
 //
@@ -326,7 +326,7 @@ func writeCpioEntryAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cp
 		// is satisfied without losing the packager-set audit trail
 		// (e.g. "which build of libc.so.6 does this image actually carry?").
 		// Differs from rpmdb-merge intentionally: that one synthesizes a
-		// tar around senku-built bytes with no upstream provenance to
+		// tar around distroless-built bytes with no upstream provenance to
 		// preserve, so canonical zeros there are the *only* deterministic
 		// choice. Here they would be a loss.
 		//

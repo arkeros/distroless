@@ -13,16 +13,24 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write   # for the remote cache's workload identity federation
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+      # Bazel's remote cache is a GCS bucket read through workload identity
+      # federation; see //infra. Must precede setup-bazel's first invocation.
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
+          service_account: github-actions-cache@senku-prod.iam.gserviceaccount.com
       - name: Set up Bazelisk
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           bazelrc: |
             common --config=ci
-            common --remote_header=x-buildbuddy-api-key=${{ secrets.BUILDBUDDY_API_KEY }}
+            common --config=gcs
       - name: Install knife
         uses: ./.github/actions/setup-knife
         with:

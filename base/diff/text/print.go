@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/arkeros/senku/base/diff"
+	"github.com/arkeros/distroless/base/diff"
 )
 
 const noNewlineMessage = `\ No newline at end of file`

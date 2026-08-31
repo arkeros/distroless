@@ -20,7 +20,7 @@ package(default_visibility = [
 go_library(
     name = "registry_lib",
     srcs = ["main.go"],
-    importpath = "github.com/arkeros/senku/oci/cmd/registry",
+    importpath = "github.com/arkeros/distroless/oci/cmd/registry",
     visibility = ["//visibility:private"],
     deps = [
         "//base/flag/stringslice",

@@ -11,7 +11,7 @@
         "https://git.busybox.net/busybox/"
     ],
     "versions": [
-        "1.37.0.senku.1"
+        "1.37.0.distroless.1"
     ],
     "yanked_versions": {}
 }

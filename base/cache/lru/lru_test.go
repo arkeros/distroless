@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/arkeros/senku/base/cache/lru"
+	"github.com/arkeros/distroless/base/cache/lru"
 )
 
 func TestGet_miss(t *testing.T) {

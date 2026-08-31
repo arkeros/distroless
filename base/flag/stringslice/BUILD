@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "stringslice",
     srcs = ["stringslice.go"],
-    importpath = "github.com/arkeros/senku/base/flag/stringslice",
+    importpath = "github.com/arkeros/distroless/base/flag/stringslice",
     visibility = ["//visibility:public"],
 )
 

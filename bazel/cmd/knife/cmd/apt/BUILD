@@ -7,7 +7,7 @@ go_library(
         "update.go",
         "versions.go",
     ],
-    importpath = "github.com/arkeros/senku/bazel/cmd/knife/cmd/apt",
+    importpath = "github.com/arkeros/distroless/bazel/cmd/knife/cmd/apt",
     visibility = ["//bazel/cmd/knife:__subpackages__"],
     deps = [
         "//oci/debian/lockfile",

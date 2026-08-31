@@ -39,7 +39,7 @@ RUST_COREUTILS_VEX_STATEMENTS = [
 vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/bash/BUILD",
+    id = "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD",
     statements = GLIBC_FIXED_VEX_STATEMENTS + NCURSES_FIXED_VEX_STATEMENTS + RUST_COREUTILS_VEX_STATEMENTS,
     timestamp = "2026-05-13T00:00:00Z",
 )
@@ -47,7 +47,7 @@ vex_document(
 vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/bash/BUILD#debug",
+    id = "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD#debug",
     statements = BUSYBOX_FIXED_VEX_STATEMENTS + RUST_COREUTILS_VEX_STATEMENTS,
     timestamp = "2026-05-13T00:00:00Z",
 )
@@ -58,7 +58,7 @@ vex_document(
 vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/bash/BUILD#hummingbird",
+    id = "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD#hummingbird",
     statements = [],
     timestamp = "2026-05-15T00:00:00Z",
 )
@@ -82,7 +82,7 @@ _VEX = {
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],
         debug_index_annotations = {
             "org.opencontainers.image.description": "Distroless bash image (debug)",
-            "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/images/bash/BUILD",
+            "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD",
         },
         debug_layers = bash_layers,
         debug_vex = [":debug_vex"] if distro == "debian" else [],
@@ -92,7 +92,7 @@ _VEX = {
         ignore_cves = _IGNORE_CVES[distro],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless bash image",
-            "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/images/bash/BUILD",
+            "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD",
         },
         layers = bash_layers,
         vex = _VEX[distro],

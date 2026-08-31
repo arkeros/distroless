@@ -5,9 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/arkeros/senku/bazel/cmd/knife/cmd/apt"
-	"github.com/arkeros/senku/bazel/cmd/knife/cmd/grype"
-	"github.com/arkeros/senku/bazel/cmd/knife/cmd/prebuilts"
+	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/apt"
+	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/grype"
 )
 
 var rootCmd = &cobra.Command{
@@ -19,7 +18,6 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(apt.NewCmdApt())
 	rootCmd.AddCommand(grype.NewCmdGrype())
-	rootCmd.AddCommand(prebuilts.NewCmdPrebuilts())
 }
 
 func Execute(ctx context.Context) error {

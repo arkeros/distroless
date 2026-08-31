@@ -14,10 +14,6 @@ common --modify_execution_info=Tar=+no-remote-cache
 
 build --sandbox_add_mount_pair=/tmp
 
-# Grype CVE scans: database transfer to RBE workers is too slow (~80s vs ~2s local),
-# but results should still be cached remotely
-common --modify_execution_info=GrypeScan=+no-remote-exec
-
 build --workspace_status_command=bazel/workspace_status.sh
 
 # Local Bazel registry for vendored upstream packages with security patches
@@ -46,63 +42,36 @@ common --@rules_go//go/config:linkmode=pie
 common --repo_env=ANDROID_HOME=
 
 # Enforce ADR 0006 at analysis time: any `image_push` to the public mirror
-# surface (`ghcr.io/arkeros/senku/*`) without the `mirror_push_managed` tag
+# surface (`ghcr.io/arkeros/distroless/*`) without the `mirror_push_managed` tag
 # fails the build. Wired here (not as a `--config=`) so the policy is
 # unrepresentable in local dev too — there's no `bazel build` invocation
 # that bypasses it. See `//oci:aspects.bzl`.
 common --aspects=//oci:aspects.bzl%mirror_push_enforcement_aspect
 
-# Remote cache (GCS)
-common:gcs --remote_cache=https://storage.googleapis.com/bazel-senku-remote-cache
+# Remote cache (GCS).
+#
+# Cache only — there is no remote execution. Every action runs on the machine
+# that invoked Bazel; all that crosses the network is the action result store.
+# The bucket, its 30-day lifecycle rule, and the CI identities allowed to
+# read/write it are Terraform-managed in //infra (see infra/cache.tf).
+#
+# Opt-in, because it needs credentials: locally `gcloud auth
+# application-default login`, in CI the `google-github-actions/auth` step that
+# populates GOOGLE_APPLICATION_CREDENTIALS. `--config=ci` deliberately does
+# *not* imply this — a pull request opened from a fork gets no OIDC token, and
+# such a build should run cacheless rather than fail. Each workflow adds
+# `--config=gcs` for itself.
+common:gcs --remote_cache=https://storage.googleapis.com/senku-prod-bazel-cache
 common:gcs --google_default_credentials
 common:gcs --remote_cache_compression
 common:gcs --remote_cache_async
 
-# Remote cache (BuildBuddy)
-# Set API key in .bazelrc.user: common:buildbuddy --remote_header=x-buildbuddy-api-key=YOUR_KEY
-common:buildbuddy --remote_cache=grpcs://remote.buildbuddy.io
-common:buildbuddy --remote_cache_compression
-common:buildbuddy --remote_cache_async
-common:buildbuddy --remote_timeout=1200
-common:buildbuddy --grpc_keepalive_time=360s
-common:buildbuddy --grpc_keepalive_timeout=360s
-common:buildbuddy --bes_results_url=https://app.buildbuddy.io/invocation/
-common:buildbuddy --bes_backend=grpcs://remote.buildbuddy.io
-common:buildbuddy --remote_build_event_upload=minimal
-common:buildbuddy --nolegacy_important_outputs
-common:buildbuddy --noslim_profile
-common:buildbuddy --experimental_profile_include_target_label
-common:buildbuddy --experimental_profile_include_primary_output
-# Remote Build Execution (BuildBuddy)
-common:rbe --config=buildbuddy
-common:rbe --remote_executor=grpcs://remote.buildbuddy.io
-common:rbe --jobs=50
-# Schedule actions on the BuildBuddy worker pool via our local @rbe_platform
-# (see //bazel/toolchains:rbe.bzl). Cc toolchain selection happens through
-# the registered @llvm toolchains, not via crosstool_top.
-build:rbe --host_platform=@rbe_platform//:rbe_platform
-build:rbe --platforms=@rbe_platform//:rbe_platform
-build:rbe --extra_execution_platforms=@rbe_platform//:rbe_platform
-build:rbe --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
-# With RBE, tar outputs should be cached so remote workers can stage them
-build:rbe --modify_execution_info=Tar=-no-remote-cache
-# Disable Ryuk sidecar for testcontainers in Firecracker microVMs
-build:rbe --test_env=TESTCONTAINERS_RYUK_DISABLED=true
-# Use Docker bridge gateway for container connectivity in DinD environments
-test:ci --test_env=TESTCONTAINERS_HOST_OVERRIDE=172.17.0.1
-
 # Skip tests that need real arm64 silicon. qemu-user can register linux/arm64
 # binaries (binfmt) but its CPU-feature/syscall emulation is incomplete; in
 # particular HotSpot silently bails during startup probes, so the
-# java*_arm64_hummingbird_test commandTests fail with empty stdout under
-# BuildBuddy's amd64 + qemu runners. Drop this filter once an arm64 executor
-# pool is wired up via exec_properties.
+# java*_arm64_hummingbird_test commandTests fail with empty stdout on the
+# amd64 GitHub runners. Drop this filter once CI runs on arm64 hardware.
 test:ci --test_tag_filters=-requires-native-arm64
-
-# CI includes BuildBuddy RBE
-common:ci --config=buildbuddy
-common:ci --build_metadata=ROLE=CI
-common:ci --build_metadata=VISIBILITY=PUBLIC
 
 # Don't build protoc from the cc_binary, it's slow and spammy when cache miss
 common --@protobuf//bazel/toolchains:prefer_prebuilt_protoc

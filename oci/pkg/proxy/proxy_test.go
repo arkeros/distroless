@@ -9,13 +9,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/arkeros/senku/oci/pkg/proxy"
-	"github.com/arkeros/senku/oci/ocitest"
+	"github.com/arkeros/distroless/oci/pkg/proxy"
+	"github.com/arkeros/distroless/oci/ocitest"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 func TestV2Base(t *testing.T) {
-	p := proxy.New("ghcr.io", "arkeros/senku")
+	p := proxy.New("ghcr.io", "arkeros/distroless")
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -34,7 +34,7 @@ func TestV2Base(t *testing.T) {
 }
 
 func TestV2BaseIncludesDistributionHeader(t *testing.T) {
-	p := proxy.New("ghcr.io", "arkeros/senku")
+	p := proxy.New("ghcr.io", "arkeros/distroless")
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -54,15 +54,15 @@ func TestRewritePath(t *testing.T) {
 		path string
 		want string
 	}{
-		{"/v2/redis/manifests/latest", "/v2/arkeros/senku/redis/manifests/latest"},
-		{"/v2/redis/blobs/sha256:abc123", "/v2/arkeros/senku/redis/blobs/sha256:abc123"},
-		{"/v2/redis/tags/list", "/v2/arkeros/senku/redis/tags/list"},
-		{"/v2/go/debian/manifests/v1.0.0", "/v2/arkeros/senku/go/debian/manifests/v1.0.0"},
+		{"/v2/redis/manifests/latest", "/v2/arkeros/distroless/redis/manifests/latest"},
+		{"/v2/redis/blobs/sha256:abc123", "/v2/arkeros/distroless/redis/blobs/sha256:abc123"},
+		{"/v2/redis/tags/list", "/v2/arkeros/distroless/redis/tags/list"},
+		{"/v2/go/debian/manifests/v1.0.0", "/v2/arkeros/distroless/go/debian/manifests/v1.0.0"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
-			got := proxy.RewritePath(tt.path, "arkeros/senku")
+			got := proxy.RewritePath(tt.path, "arkeros/distroless")
 			if got != tt.want {
 				t.Errorf("RewritePath(%q) = %q, want %q", tt.path, got, tt.want)
 			}
@@ -121,7 +121,7 @@ func TestIsBlob(t *testing.T) {
 }
 
 func TestNonV2PathReturns404(t *testing.T) {
-	p := proxy.New("ghcr.io", "arkeros/senku")
+	p := proxy.New("ghcr.io", "arkeros/distroless")
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -138,7 +138,7 @@ func TestNonV2PathReturns404(t *testing.T) {
 
 func newTestProxy(t *testing.T, upstream *ocitest.Server) *httptest.Server {
 	t.Helper()
-	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
+	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/distroless", proxy.Insecure())
 	srv := httptest.NewServer(p)
 	t.Cleanup(srv.Close)
 	return srv
@@ -160,7 +160,7 @@ func firstLayerDigest(t *testing.T, img v1.Image) v1.Hash {
 
 func TestProxyManifest(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	img := upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
+	img := upstream.MustPushImage(t, "arkeros/distroless/redis", "latest")
 
 	srv := newTestProxy(t, upstream)
 
@@ -190,7 +190,7 @@ func TestProxyManifest(t *testing.T) {
 
 func TestProxyBlobDirectResponseReturns502(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	img := upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
+	img := upstream.MustPushImage(t, "arkeros/distroless/redis", "latest")
 	digest := firstLayerDigest(t, img)
 
 	srv := newTestProxy(t, upstream)
@@ -212,7 +212,7 @@ func TestProxyBlobRedirect(t *testing.T) {
 	upstream := ocitest.NewServer(t)
 	redirector := upstream.WithBlobRedirect(t, redirectURL)
 
-	p := proxy.New(redirector.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
+	p := proxy.New(redirector.Listener.Addr().String(), "arkeros/distroless", proxy.Insecure())
 	srv := httptest.NewServer(p)
 	t.Cleanup(srv.Close)
 
@@ -253,8 +253,8 @@ func TestUpstream404(t *testing.T) {
 
 func TestTagsList(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
-	upstream.MustPushImage(t, "arkeros/senku/redis", "v1.0.0")
+	upstream.MustPushImage(t, "arkeros/distroless/redis", "latest")
+	upstream.MustPushImage(t, "arkeros/distroless/redis", "v1.0.0")
 
 	srv := newTestProxy(t, upstream)
 
@@ -285,7 +285,7 @@ func TestTagsList(t *testing.T) {
 
 func TestTagsListMultiSegmentRepo(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	upstream.MustPushImage(t, "arkeros/senku/go/debian", "v1.0.0")
+	upstream.MustPushImage(t, "arkeros/distroless/go/debian", "v1.0.0")
 
 	srv := newTestProxy(t, upstream)
 
@@ -313,8 +313,8 @@ func TestTagsListMultiSegmentRepo(t *testing.T) {
 
 func TestPerRepoTokenScoping(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
-	upstream.MustPushImage(t, "arkeros/senku/nginx", "latest")
+	upstream.MustPushImage(t, "arkeros/distroless/redis", "latest")
+	upstream.MustPushImage(t, "arkeros/distroless/nginx", "latest")
 
 	srv := newTestProxy(t, upstream)
 
@@ -342,10 +342,10 @@ func TestPerRepoTokenScoping(t *testing.T) {
 func TestTransportCacheIsBounded(t *testing.T) {
 	upstream := ocitest.NewServer(t)
 	for i := range 200 {
-		upstream.MustPushImage(t, fmt.Sprintf("arkeros/senku/repo%d", i), "latest")
+		upstream.MustPushImage(t, fmt.Sprintf("arkeros/distroless/repo%d", i), "latest")
 	}
 
-	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
+	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/distroless", proxy.Insecure())
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -368,7 +368,7 @@ func TestTransportCacheIsBounded(t *testing.T) {
 }
 
 func TestCatalogEmpty(t *testing.T) {
-	p := proxy.New("ghcr.io", "arkeros/senku")
+	p := proxy.New("ghcr.io", "arkeros/distroless")
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -387,7 +387,7 @@ func TestCatalogEmpty(t *testing.T) {
 }
 
 func TestCatalog(t *testing.T) {
-	p := proxy.New("ghcr.io", "arkeros/senku", proxy.WithRepos([]string{"redis", "nginx"}))
+	p := proxy.New("ghcr.io", "arkeros/distroless", proxy.WithRepos([]string{"redis", "nginx"}))
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -413,9 +413,9 @@ func TestCatalog(t *testing.T) {
 
 func TestNonExistentRepoForwardsUpstreamStatus(t *testing.T) {
 	upstream := ocitest.NewServerDenyAuth(t)
-	upstream.MustPushImage(t, "arkeros/senku/nginx", "latest")
+	upstream.MustPushImage(t, "arkeros/distroless/nginx", "latest")
 
-	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
+	p := proxy.New(upstream.Listener.Addr().String(), "arkeros/distroless", proxy.Insecure())
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -431,7 +431,7 @@ func TestNonExistentRepoForwardsUpstreamStatus(t *testing.T) {
 }
 
 func TestCacheControlV2Base(t *testing.T) {
-	p := proxy.New("ghcr.io", "arkeros/senku")
+	p := proxy.New("ghcr.io", "arkeros/distroless")
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -447,7 +447,7 @@ func TestCacheControlV2Base(t *testing.T) {
 }
 
 func TestCacheControlCatalog(t *testing.T) {
-	p := proxy.New("ghcr.io", "arkeros/senku")
+	p := proxy.New("ghcr.io", "arkeros/distroless")
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -464,7 +464,7 @@ func TestCacheControlCatalog(t *testing.T) {
 
 func TestCacheControlManifestByTag(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
+	upstream.MustPushImage(t, "arkeros/distroless/redis", "latest")
 
 	srv := newTestProxy(t, upstream)
 
@@ -481,7 +481,7 @@ func TestCacheControlManifestByTag(t *testing.T) {
 
 func TestCacheControlManifestByDigest(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	img := upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
+	img := upstream.MustPushImage(t, "arkeros/distroless/redis", "latest")
 	digest, err := img.Digest()
 	if err != nil {
 		t.Fatal(err)
@@ -506,7 +506,7 @@ func TestCacheControlBlobRedirect(t *testing.T) {
 	upstream := ocitest.NewServer(t)
 	redirector := upstream.WithBlobRedirect(t, redirectURL)
 
-	p := proxy.New(redirector.Listener.Addr().String(), "arkeros/senku", proxy.Insecure())
+	p := proxy.New(redirector.Listener.Addr().String(), "arkeros/distroless", proxy.Insecure())
 	srv := httptest.NewServer(p)
 	t.Cleanup(srv.Close)
 
@@ -539,7 +539,7 @@ func TestCacheControlReferrers(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	p := proxy.New(strings.TrimPrefix(upstream.URL, "http://"), "arkeros/senku", proxy.Insecure())
+	p := proxy.New(strings.TrimPrefix(upstream.URL, "http://"), "arkeros/distroless", proxy.Insecure())
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -573,7 +573,7 @@ func TestProxyReferrersForwardsRewrittenPath(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	p := proxy.New(strings.TrimPrefix(upstream.URL, "http://"), "arkeros/senku", proxy.Insecure())
+	p := proxy.New(strings.TrimPrefix(upstream.URL, "http://"), "arkeros/distroless", proxy.Insecure())
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -586,7 +586,7 @@ func TestProxyReferrersForwardsRewrittenPath(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("status = %d, want %d", resp.StatusCode, http.StatusOK)
 	}
-	if want := "/v2/arkeros/senku/redis/referrers/sha256:abc123"; receivedPath != want {
+	if want := "/v2/arkeros/distroless/redis/referrers/sha256:abc123"; receivedPath != want {
 		t.Errorf("upstream received path = %q, want %q", receivedPath, want)
 	}
 	if ct := resp.Header.Get("Content-Type"); ct != "application/vnd.oci.image.index.v1+json" {
@@ -600,7 +600,7 @@ func TestProxyReferrersForwardsRewrittenPath(t *testing.T) {
 
 func TestCacheControlTagsList(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	upstream.MustPushImage(t, "arkeros/senku/redis", "latest")
+	upstream.MustPushImage(t, "arkeros/distroless/redis", "latest")
 
 	srv := newTestProxy(t, upstream)
 
@@ -642,7 +642,7 @@ func TestConditionalGetForwardsIfNoneMatch(t *testing.T) {
 	}))
 	defer upstream.Close()
 
-	p := proxy.New(strings.TrimPrefix(upstream.URL, "http://"), "arkeros/senku", proxy.Insecure())
+	p := proxy.New(strings.TrimPrefix(upstream.URL, "http://"), "arkeros/distroless", proxy.Insecure())
 	srv := httptest.NewServer(p)
 	defer srv.Close()
 
@@ -667,9 +667,9 @@ func TestConditionalGetForwardsIfNoneMatch(t *testing.T) {
 
 func TestQueryStringForwarded(t *testing.T) {
 	upstream := ocitest.NewServer(t)
-	upstream.MustPushImage(t, "arkeros/senku/redis", "v1.0.0")
-	upstream.MustPushImage(t, "arkeros/senku/redis", "v1.0.1")
-	upstream.MustPushImage(t, "arkeros/senku/redis", "v1.0.2")
+	upstream.MustPushImage(t, "arkeros/distroless/redis", "v1.0.0")
+	upstream.MustPushImage(t, "arkeros/distroless/redis", "v1.0.1")
+	upstream.MustPushImage(t, "arkeros/distroless/redis", "v1.0.2")
 
 	srv := newTestProxy(t, upstream)
 

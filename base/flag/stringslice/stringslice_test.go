@@ -4,7 +4,7 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/arkeros/senku/base/flag/stringslice"
+	"github.com/arkeros/distroless/base/flag/stringslice"
 )
 
 func TestSet(t *testing.T) {

@@ -63,7 +63,7 @@ import (
 	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/arkeros/senku/bazel/modules/rules_rpm/rpm/tools/internal/keyring"
+	"github.com/arkeros/distroless/bazel/modules/rules_rpm/rpm/tools/internal/keyring"
 	"github.com/sassoftware/go-rpmutils"
 )
 

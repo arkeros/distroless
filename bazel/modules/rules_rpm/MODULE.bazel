@@ -4,7 +4,7 @@ Shape mirrors rules_jvm_external / rules_apt: an `rpm.install(...)` tag class
 takes the package list inline, a checked-in JSON lockfile pins versions+sha256,
 and `bazel run @<name>//:pin` regenerates the lockfile from the declared list.
 
-Senku consumes this module via:
+Distroless consumes this module via:
 
     rpm = use_extension("@rules_rpm//rpm:extensions.bzl", "rpm")
     rpm.install(

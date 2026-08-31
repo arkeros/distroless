@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/arkeros/senku/base/cache/lru"
+	"github.com/arkeros/distroless/base/cache/lru"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"

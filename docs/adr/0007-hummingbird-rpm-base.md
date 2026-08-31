@@ -1,6 +1,6 @@
 # Hummingbird-based distroless
 
-Senku's distroless surface (`distroless.io/*`) is Hummingbird-derived. All images consume RPMs from `koji-s3-cache.hummingbird-project.io` as their package base, ship `ID=hummingbird` in `/etc/os-release` for correct vulnerability-scanner routing, and brand as "distroless.io (Hummingbird-derived)" in `PRETTY_NAME`. The competitive thesis is real consumer-scanner zero on glibc-bearing images — matching Chainguard's `glibc-dynamic` and Red Hat Hardened Images on an OSS-pure supply chain — plus uniform supply-chain identity across the senku surface (no mixed Debian/Hummingbird footguns in consumer SBOMs).
+Distroless's distroless surface (`distroless.io/*`) is Hummingbird-derived. All images consume RPMs from `koji-s3-cache.hummingbird-project.io` as their package base, ship `ID=hummingbird` in `/etc/os-release` for correct vulnerability-scanner routing, and brand as "distroless.io (Hummingbird-derived)" in `PRETTY_NAME`. The competitive thesis is real consumer-scanner zero on glibc-bearing images — matching Chainguard's `glibc-dynamic` and Red Hat Hardened Images on an OSS-pure supply chain — plus uniform supply-chain identity across the distroless surface (no mixed Debian/Hummingbird footguns in consumer SBOMs).
 
 ## Why not Debian sid
 
@@ -18,14 +18,14 @@ Senku's distroless surface (`distroless.io/*`) is Hummingbird-derived. All image
 | **stagex** | Rejected per [[docs/research/deb-vs-apk-vs-oci-components.md]] | Catalog ceiling (~250 packages) too tight for a base-distro role. |
 | **Hummingbird** | **Chosen** | OSS-permissive EULA (GPLv2 redistribution); ~17,400 packages in the public repo; multi-arch (amd64, arm64, ppc64le, s390x); source RPMs published; GPG-signed; ships actual backports for the CVEs Debian/SUSE/RHEL all defer. Per Red Hat's CVE API: `glibc-2.42-13.hum1` is the only acknowledged-fixed version anywhere in the public field. |
 
-## Scope: all senku images
+## Scope: all distroless images
 
 | Image | Composition |
 |---|---|
 | `static` | zero-by-exclusion (no glibc) on Hummingbird base — 3 upstream packages: `tzdata`, `ca-certificates`, `mailcap` |
 | `cc`, `bash`, `nginx`, `python`, `nodejs` (future) | glibc-bearing on Hummingbird base — adds `glibc`, `glibc-common`, `libgcc`, etc. |
 
-All images ship a single uniform identity (`ID=hummingbird`) and use the same supply chain. The earlier draft of this ADR carved `static` out on the grounds that "no glibc → no security benefit"; that reasoning was rejected because brand/identity coherence and rules_rpm amortization both argue for uniform sourcing. A senku surface split between Debian-`static` and Hummingbird-`cc` would leak the migration internals into the public contract and double the rebuild-cadence infrastructure for no security gain.
+All images ship a single uniform identity (`ID=hummingbird`) and use the same supply chain. The earlier draft of this ADR carved `static` out on the grounds that "no glibc → no security benefit"; that reasoning was rejected because brand/identity coherence and rules_rpm amortization both argue for uniform sourcing. A distroless surface split between Debian-`static` and Hummingbird-`cc` would leak the migration internals into the public contract and double the rebuild-cadence infrastructure for no security gain.
 
 ### Static composition on Hummingbird
 
@@ -34,10 +34,10 @@ All images ship a single uniform identity (`ID=hummingbird`) and use the same su
 | `tzdata` 2026a-1.1.hum1 | Hummingbird, noarch | Timezone data |
 | `ca-certificates` 2025.2.80_v9.0.304-7.1.hum1 | Hummingbird, noarch | CA bundle |
 | `mailcap` 2.1.54-10.1.hum1 | Hummingbird, noarch | `/etc/mime.types` |
-| rootfs / passwd / home / group / tmp / os-release | senku-synthesized | Existing tar generators in [[images/common/BUILD]]; os-release rewritten with `ID=hummingbird` per the attribution block above |
-| EULA | senku-synthesized (cp from Hummingbird's `/usr/share/hummingbird-release/EULA` at lock time) | Placed at `/usr/share/licenses/hummingbird/EULA` |
+| rootfs / passwd / home / group / tmp / os-release | distroless-synthesized | Existing tar generators in [[images/common/BUILD]]; os-release rewritten with `ID=hummingbird` per the attribution block above |
+| EULA | distroless-synthesized (cp from Hummingbird's `/usr/share/hummingbird-release/EULA` at lock time) | Placed at `/usr/share/licenses/hummingbird/EULA` |
 
-This is *fewer* upstream packages than Debian-static currently consumes (which pulls `base-files`, `netbase`, `tzdata`, `media-types`). The Hummingbird `setup`, `filesystem`, and `hummingbird-release` packages are deliberately *not* consumed — senku synthesizes the rootfs skeleton, user database, and os-release directly, which gives tighter control of identity and attribution than the upstream rpms would.
+This is *fewer* upstream packages than Debian-static currently consumes (which pulls `base-files`, `netbase`, `tzdata`, `media-types`). The Hummingbird `setup`, `filesystem`, and `hummingbird-release` packages are deliberately *not* consumed — distroless synthesizes the rootfs skeleton, user database, and os-release directly, which gives tighter control of identity and attribution than the upstream rpms would.
 
 Image-by-image migration uses the existing `*_DISTROS` matrix axis — see [[images/matrix.bzl]]. Static migrates first because it has the smallest dep closure (no glibc transitive graph) and exercises the rules_rpm path on the simplest case.
 
@@ -66,7 +66,7 @@ NAME="distroless.io"
 PRETTY_NAME="distroless.io (Hummingbird-derived)"
 VERSION_ID="<hummingbird snapshot revision>"
 HOME_URL="https://distroless.io/"
-SUPPORT_URL="https://github.com/arkeros/senku/blob/main/docs/images.md"
+SUPPORT_URL="https://github.com/arkeros/distroless/blob/main/docs/images.md"
 ```
 
 The `ID` field is functionally a scanner-routing key. `NAME` and `PRETTY_NAME` carry the actual branding. Consumers see "distroless.io (Hummingbird-derived)" everywhere a human reads the image; scanner tooling reads `ID` to route correctly.
@@ -76,7 +76,7 @@ The `ID` field is functionally a scanner-routing key. `NAME` and `PRETTY_NAME` c
 | Option | Verdict |
 |---|---|
 | **`rules_rpm` (Bazel-native, rules_jvm_external-style) + two Go binaries** | **Chosen.** New Bazel ruleset: `hummingbird.install(...)` module extension takes the package list inline in `MODULE.bazel`, pins via a checked-in `hummingbird_install.json` (JSON, not YAML), `bazel run @hummingbird//:pin` regenerates the lockfile from the declared list. Per-package tar emission shape-compatible with the existing `@debian//pkg/arch` label convention, so [[images/matrix.bzl]] and image BUILDs need only the `_DISTROS` axis bumped. |
-| YAML manifest + JSON lockfile (rules_distroless apt mimic) | Rejected. Two formats for no senku gain; rules_distroless inherited the split from pip/apt conventions that don't carry over to bazel-native ecosystems. |
+| YAML manifest + JSON lockfile (rules_distroless apt mimic) | Rejected. Two formats for no distroless gain; rules_distroless inherited the split from pip/apt conventions that don't carry over to bazel-native ecosystems. |
 | Starlark-only lockfile (`hummingbird.lock.bzl`) | Rejected. JSON is data, not code — easier to query with `jq`, dependabot-friendly, clean GitHub diffs, no `load()` semantics. Bazel's `json.decode()` makes JSON parsing trivial in the extension. |
 | OCI-component overlay (per [[docs/research/deb-vs-apk-vs-oci-components.md]] §7) | Rejected for Hummingbird specifically. Hummingbird publishes ~10 application images (`hi/curl`, `hi/nodejs`, ...) but no standalone building-block images (no `hi/glibc`, no `hi/static`, no `hi/cc`). Their building-block-bearing artifact is the RPM repo, not a container image. Extraction from app-image layers is fragile and version-coupled. |
 | `rules_distroless` patched to accept rpm repos | Rejected. Upstream is apt-shaped; bending it to rpm semantics is a larger refactor than a fresh module, and would muddy `@debian//` vs `@hummingbird//` boundaries. |
@@ -103,7 +103,7 @@ use_repo(hummingbird, "hummingbird")
 
 ## Closed manifest, not solver
 
-Package names listed inline in `MODULE.bazel` are the canonical intent. The pin tool (`bazel run @hummingbird//:pin`) resolves them against `primary.xml.gz` and errors if any listed package is missing — closed-manifest semantics, no auto-transitive-expansion. Manual maintenance cost is bounded because senku's package universe is small (~50–100 packages across all images); solver-grade flexibility would cost more than it saves. Same posture as the existing [[images/debian.yaml]] approach, just expressed in Starlark instead of YAML.
+Package names listed inline in `MODULE.bazel` are the canonical intent. The pin tool (`bazel run @hummingbird//:pin`) resolves them against `primary.xml.gz` and errors if any listed package is missing — closed-manifest semantics, no auto-transitive-expansion. Manual maintenance cost is bounded because distroless's package universe is small (~50–100 packages across all images); solver-grade flexibility would cost more than it saves. Same posture as the existing [[images/debian.yaml]] approach, just expressed in Starlark instead of YAML.
 
 ## Snapshot strategy
 
@@ -135,7 +135,7 @@ flatten(
         "@hummingbird//mailcap/amd64:content",
         ":rpmdb",                              # merged from the same three
         "//images/common:rootfs",
-        # ... senku-synthesized rootfs/passwd/etc ...
+        # ... distroless-synthesized rootfs/passwd/etc ...
     ],
 )
 
@@ -156,7 +156,7 @@ Per-package extraction is independent and cacheable; the merge runs once per ima
 `modernc.org/sqlite` keeps the *library* hermetic; the *output bytes* take explicit work. `rpmdb-merge` must:
 
 - **Sort inputs before insertion.** rpmdb's `Packages` table is `INTEGER PRIMARY KEY` (rowid alias); auto-assigned rowids follow insertion order, and b-tree page layout derives from rowids. Sort `header.blob`s by `(Name, EVR, Arch)` before the insert loop, and apply the same canonical ordering to every secondary-index population pass. Never iterate a Go map directly into a write.
-- **Zero senku-controlled install metadata.** The sqlite is synthesized directly (no `rpm --install` call), so every "install-time" tag is our choice, not librpm's. Set `RPMTAG_INSTALLTIME=0`, `RPMTAG_INSTALLTID=0` (librpm's default of `time(NULL)` is the canonical determinism trap), and fix `RPMTAG_INSTALLCOLOR` / `RPMTAG_INSTPREFIXES`. Pre-verify on `hi/curl` that syft's rpm-db cataloger reads only Name/EVR/Arch from each header — if any install-time field turns out to be consumed, switch that field to a canonical non-zero constant rather than zero.
+- **Zero distroless-controlled install metadata.** The sqlite is synthesized directly (no `rpm --install` call), so every "install-time" tag is our choice, not librpm's. Set `RPMTAG_INSTALLTIME=0`, `RPMTAG_INSTALLTID=0` (librpm's default of `time(NULL)` is the canonical determinism trap), and fix `RPMTAG_INSTALLCOLOR` / `RPMTAG_INSTPREFIXES`. Pre-verify on `hi/curl` that syft's rpm-db cataloger reads only Name/EVR/Arch from each header — if any install-time field turns out to be consumed, switch that field to a canonical non-zero constant rather than zero.
 - **Pin SQLite knobs explicitly.** `PRAGMA page_size = 4096` before any write; `PRAGMA journal_mode = OFF` during build with a clean close so no `-wal`/`-shm` artifacts leak into the tar; no `AUTOINCREMENT` on any table (keeps `sqlite_sequence` out of the file entirely); single transaction, then `VACUUM` to normalize free-page layout.
 - **Schema fixture, version-pinned.** Check in the schema dump from `hi/curl`'s actual `rpmdb.sqlite` as a test fixture; `rpmdb-merge` builds *that* exact schema. If a future Hummingbird rpm-version bump shifts the schema, the fixture mismatch fails loudly instead of drifting silently into a "Packages table + ~10 secondary indexes" handwave. Schema reference for the implementer: rpm-tools' `rpmdb.c` and `librpmstrpool`.
 - **Byte-compare determinism test.** Build the merged rpmdb twice from identical inputs in the same Bazel action and `cmp` the outputs. Belongs in the `rpmdb-merge` package, not at the image level — regressions caught at the source binary, before they propagate into every image's layer hash.
@@ -165,7 +165,7 @@ Tar wrapper around `rpmdb.sqlite` follows the canonical uid/gid/mode/mtime rules
 
 ## Multi-vendor sourcing during transition
 
-Image-by-image migration preserves the existing `_DISTROS` matrix axis. Senku images can compose layers from:
+Image-by-image migration preserves the existing `_DISTROS` matrix axis. Distroless images can compose layers from:
 
 | Source | Use for |
 |---|---|
@@ -188,7 +188,7 @@ The matrix factory in [[images/matrix.bzl]] doesn't know which package manager p
 
 ## Operational considerations
 
-**Rebuild cadence is the actual competitive moat.** Chainguard's zero-CVE story is *continuous rebuild against current upstream*. Senku must match that or the zero claim drifts. Empirically, Hummingbird's `repomd.xml` revision bumped from `1778835791` to `1778852516` within ~3 hours during ADR drafting on 2026-05-15 — multiple updates per day. Daily auto-PR cadence is therefore the right floor; weekly would miss most upstream changes and let the wontfix window reopen. Recommend daily `@hummingbird//:pin` job with `_cve_test_stale_*` enforcement and "scan still clean" as the merge gate. Tracks closely to the existing [[images/debian.yaml]] cadence with the same machinery, just faster.
+**Rebuild cadence is the actual competitive moat.** Chainguard's zero-CVE story is *continuous rebuild against current upstream*. Distroless must match that or the zero claim drifts. Empirically, Hummingbird's `repomd.xml` revision bumped from `1778835791` to `1778852516` within ~3 hours during ADR drafting on 2026-05-15 — multiple updates per day. Daily auto-PR cadence is therefore the right floor; weekly would miss most upstream changes and let the wontfix window reopen. Recommend daily `@hummingbird//:pin` job with `_cve_test_stale_*` enforcement and "scan still clean" as the merge gate. Tracks closely to the existing [[images/debian.yaml]] cadence with the same machinery, just faster.
 
 **Triple-scanner verification.** CI gates each image on grype + trivy + at least one third scanner (snyk or osv-scanner) reporting zero. Single-scanner verification has been shown to be insufficient by this same investigation; the upstream-feed-ingestion lag is a real risk and only diverges between vendors.
 
@@ -201,7 +201,7 @@ The matrix factory in [[images/matrix.bzl]] doesn't know which package manager p
 3. **`static` migrates to Hummingbird first.** Smallest dep closure (3 upstream packages); no glibc to wrangle; exercises the rules_rpm path on the simplest case. Validates the whole pipeline (lockfile → rpm-extract → rpmdb fragment → composed layer → scanner-zero verification with `ID=hummingbird`) end-to-end before the harder migrations.
 4. `cc` image migrated to Hummingbird — first glibc-bearing target. Validates the consumer-scanner-zero claim that motivates the whole ADR.
 5. `bash`, `nginx`, `python` migrated one at a time, each behind the same scanner-zero gate.
-6. `nodejs` distroless on Hummingbird — the marquee demo: ship a real distroless node, without npm or node-gyp, on the same glibc Hummingbird's own `hi/nodejs` ships. Tracer-bullet (shipped): nodejs.org prebuilt tarball on cc-hummingbird, ~95–145MB uncompressed per major (24/26; the 20 line was dropped on EOL), comparable to `hi/nodejs`'s 134MB. The ADR's earlier "30–50MB" estimate predated Node's growth and is unattainable from the `--enable-static-*` tarball regardless of stripping. Source-build with `--shared-{openssl,zlib,brotli,cares,nghttp2,libuv,zstd} --with-intl=system-icu` against Hummingbird's existing rpms (libicu alone unbundles ~30MB) is tracked in [#230](https://github.com/arkeros/senku/issues/230) and targets Chainguard-comparable ~60MB.
+6. `nodejs` distroless on Hummingbird — the marquee demo: ship a real distroless node, without npm or node-gyp, on the same glibc Hummingbird's own `hi/nodejs` ships. Tracer-bullet (shipped): nodejs.org prebuilt tarball on cc-hummingbird, ~95–145MB uncompressed per major (24/26; the 20 line was dropped on EOL), comparable to `hi/nodejs`'s 134MB. The ADR's earlier "30–50MB" estimate predated Node's growth and is unattainable from the `--enable-static-*` tarball regardless of stripping. Source-build with `--shared-{openssl,zlib,brotli,cares,nghttp2,libuv,zstd} --with-intl=system-icu` against Hummingbird's existing rpms (libicu alone unbundles ~30MB) is tracked in [#230](https://github.com/arkeros/distroless/issues/230) and targets Chainguard-comparable ~60MB.
 7. `java` distroless on Hummingbird — same shape as nodejs, with four decisions worth flagging up front because each looks like a smaller choice than it is.
 
     - **LTS-only policy (17 / 21 / 25).** Adoptium's LTS list is [8, 11, 17, 21, 25]; we ship the latest three. 8 and 11 are excluded — they're still in Adoptium's LTS catalogue but far down the EOL slope, and the per-quarter CPU rebuild promise has finite cycles. 26 is excluded as a non-LTS (six-month support window) — matches Google Distroless's `java/BUILD` posture. Auto-rolls forward: when JDK 29 ships in ~2027, 17 rolls off and 29 takes its place.
@@ -216,7 +216,7 @@ The matrix factory in [[images/matrix.bzl]] doesn't know which package manager p
 
 ## Amendment (2026-05-18): silent-zero gate is matcher-routed, not secdb-routed
 
-The `_cve_test_silent_zero` gate referenced in the Java section above was originally scoped to `pkg:(rpm|deb|apk)/` purls — the distro-secdb providers — on the framing that those were "secdb-routable" and everything else needed an explicit CPE. That framing was overgeneralized from the empirical evidence behind it. The test case in commit `461b5cfa` was `pkg:generic/` (the nodejs.org tarball Node 18.0.0 case): for that purl shape, "secdb-routable vs explicit CPE" *is* the routing binary, because grype really does have no matcher for `pkg:generic/`. The mistake was inferring the positive allowlist by enumeration of what the senku surface happened to ship at the time (rpm/deb/apk only) rather than from grype's matcher list.
+The `_cve_test_silent_zero` gate referenced in the Java section above was originally scoped to `pkg:(rpm|deb|apk)/` purls — the distro-secdb providers — on the framing that those were "secdb-routable" and everything else needed an explicit CPE. That framing was overgeneralized from the empirical evidence behind it. The test case in commit `461b5cfa` was `pkg:generic/` (the nodejs.org tarball Node 18.0.0 case): for that purl shape, "secdb-routable vs explicit CPE" *is* the routing binary, because grype really does have no matcher for `pkg:generic/`. The mistake was inferring the positive allowlist by enumeration of what the distroless surface happened to ship at the time (rpm/deb/apk only) rather than from grype's matcher list.
 
 Grype's `NewDefaultMatchers` wires 14 ecosystem matchers. Beyond rpm/deb/apk it routes `pkg:golang/`, `pkg:npm/`, `pkg:pypi/`, `pkg:maven/`, `pkg:gem/`, `pkg:cargo/`, `pkg:nuget/`, `pkg:hex/`, `pkg:bitnami/`, `pkg:alpm/` against GHSA and per-ecosystem advisory feeds — each without needing a CPE. Empirically verified at amendment time:
 
@@ -228,7 +228,7 @@ Grype's `NewDefaultMatchers` wires 14 ecosystem matchers. Beyond rpm/deb/apk it 
 | `pkg:maven/org.apache.logging.log4j@2.14.1` | 7 |
 | `pkg:pypi/django@3.2.0` | 30 |
 
-The first senku image to ship a Go binary in its layer (the registry proxy, `//oci/cmd/registry`) tripped the narrow gate on its 7 transitive Go-module components — the gate fired correctly on its own filter, but the filter itself was incomplete. Fixed in commit `2095c66b`: `_SILENT_ZERO_FILTER` in `oci/supply_chain.bzl` widened to grype's full matcher list, sourced from `grype/matcher/matchers.go`'s `NewDefaultMatchers` and to be kept in lock-step on grype upgrades.
+The first distroless image to ship a Go binary in its layer (the registry proxy, `//oci/cmd/registry`) tripped the narrow gate on its 7 transitive Go-module components — the gate fired correctly on its own filter, but the filter itself was incomplete. Fixed in commit `2095c66b`: `_SILENT_ZERO_FILTER` in `oci/supply_chain.bzl` widened to grype's full matcher list, sourced from `grype/matcher/matchers.go`'s `NewDefaultMatchers` and to be kept in lock-step on grype upgrades.
 
 **Restated invariant.** A component passes the silent-zero gate iff (a) its purl prefix matches one of grype's ecosystem matchers OR (b) it carries an explicit CPE for the `stock` matcher. The narrow rpm/deb/apk framing in the Java-section reference above was an over-fit to the original `pkg:generic/` evidence — accurate for that shape, misleading as a general rule. The Java decision (CPE on Temurin) stands unchanged: Java packages distributed outside any grype-matcher ecosystem still need a CPE, exactly as the Java section describes.
 
@@ -251,7 +251,7 @@ The trust chain at lock time now matches the threat-model claim: `repomd.xml.asc
 
 ## Amendment (2026-05-19): Hummingbird publishes no `repomd.xml.asc`
 
-The 2026-05-18 amendment was implemented and tested against an in-process fake repo; the first cron tick of the *real* `Update RPM Packages` workflow (run [26076116712](https://github.com/arkeros/senku/actions/runs/26076116712)) failed with `pin: fetch repomd.xml.asc x86_64: ... HTTP 404`. Empirical confirmation: the Hummingbird RHPG repodata directory listing (`<repo>/x86_64/repodata/`) contains exactly four files — `repomd.xml`, `*-primary.xml.gz`, `*-filelists.xml.gz`, `*-other.xml.gz` — and **no `.asc` sibling**. Verified across all four declared arches and against the origin (`packages.redhat.com`) as well as the koji-s3-cache CDN: Hummingbird's actual upstream-signing posture is per-RPM GPG signatures (already enforced at build time by `rpm-extract`) plus per-package sigstore attestations under `metadata/attestations/`, not a detached signature over `repomd.xml`. The 2026-05-18 verification implementation assumed the standard YUM/DNF convention; the standard convention doesn't hold for this upstream.
+The 2026-05-18 amendment was implemented and tested against an in-process fake repo; the first cron tick of the *real* `Update RPM Packages` workflow (run [26076116712](https://github.com/arkeros/distroless/actions/runs/26076116712)) failed with `pin: fetch repomd.xml.asc x86_64: ... HTTP 404`. Empirical confirmation: the Hummingbird RHPG repodata directory listing (`<repo>/x86_64/repodata/`) contains exactly four files — `repomd.xml`, `*-primary.xml.gz`, `*-filelists.xml.gz`, `*-other.xml.gz` — and **no `.asc` sibling**. Verified across all four declared arches and against the origin (`packages.redhat.com`) as well as the koji-s3-cache CDN: Hummingbird's actual upstream-signing posture is per-RPM GPG signatures (already enforced at build time by `rpm-extract`) plus per-package sigstore attestations under `metadata/attestations/`, not a detached signature over `repomd.xml`. The 2026-05-18 verification implementation assumed the standard YUM/DNF convention; the standard convention doesn't hold for this upstream.
 
 The trust-anchor row in §"Threat model and fallbacks" therefore weakens specifically for Hummingbird: at lock time, trust reduces to TLS to the upstream CDN; subverting `primary.xml.gz` would let a MITM redirect per-RPM digests to other valid Hummingbird RPMs (e.g. older versions with known CVEs). The remaining defenses are (1) HTTPS pinning to the CDN host, (2) per-RPM GPG verification at build time in `rpm-extract`, and (3) the sha256 chain in our committed lockfile, which an attacker would have to subvert through a PR to update. nginx.org's repos (the other rules_rpm consumer) **do** publish `repomd.xml.asc` and remain strictly verified.
 
@@ -266,24 +266,24 @@ Tests cover the four properties that matter under the new policy: `optional` tol
 
 ## Amendment (2026-05-19): build horizon — image-config `created` timestamps
 
-Chainguard names two concepts senku had been reinventing: **build horizon** ("the maximum amount of time a build artifact… is permitted to remain in use before it must be rebuilt" — https://edu.chainguard.dev/software-security/build-horizon/) and the **principle of ephemerality** ("Everything that can be ephemeral, should be ephemerality" — https://www.chainguard.dev/unchained/the-principle-of-ephemerality). Both are the rebuild-cadence-as-moat argument from §"Operational considerations", with admission-controller enforcement as the new mechanism. The build-horizon article specifically calls out a trap: tools that set image-config `created` to the Unix epoch *"will always appear to exceed any reasonable build horizon"*, recommending `SOURCE_DATE_EPOCH` so timestamps derive from the source commit rather than wall-clock.
+Chainguard names two concepts distroless had been reinventing: **build horizon** ("the maximum amount of time a build artifact… is permitted to remain in use before it must be rebuilt" — https://edu.chainguard.dev/software-security/build-horizon/) and the **principle of ephemerality** ("Everything that can be ephemeral, should be ephemerality" — https://www.chainguard.dev/unchained/the-principle-of-ephemerality). Both are the rebuild-cadence-as-moat argument from §"Operational considerations", with admission-controller enforcement as the new mechanism. The build-horizon article specifically calls out a trap: tools that set image-config `created` to the Unix epoch *"will always appear to exceed any reasonable build horizon"*, recommending `SOURCE_DATE_EPOCH` so timestamps derive from the source commit rather than wall-clock.
 
-Empirical audit pre-amendment: senku images had **no `created` field at all** — neither epoch-0 (always-stale trap) nor wall-clock (non-reproducible) nor source-derived. Third state: **policy-invisible**. An admission controller using sigstore/policy-controller's `fetchConfigFile` to gate on `created` would get `null` and apply its config default (fail-open or fail-closed). The rebuild-cadence claim was unverifiable from the image alone — consumers had no in-image signal to distinguish a fresh build from a six-month-old cached pull.
+Empirical audit pre-amendment: distroless images had **no `created` field at all** — neither epoch-0 (always-stale trap) nor wall-clock (non-reproducible) nor source-derived. Third state: **policy-invisible**. An admission controller using sigstore/policy-controller's `fetchConfigFile` to gate on `created` would get `null` and apply its config default (fail-open or fail-closed). The rebuild-cadence claim was unverifiable from the image alone — consumers had no in-image signal to distinguish a fresh build from a six-month-old cached pull.
 
 Closed by deriving `created` from each distro's upstream-snapshot anchor:
 
 - **Hummingbird**: `.repo.revision` from the rules_rpm lockfile (Unix epoch). Matches Hummingbird's own multi-update-per-day cadence (§Snapshot strategy).
-- **Debian**: the `snapshot.debian.org` archive timestamp embedded in every package URL (`/archive/debian/<YYYYMMDDTHHMMSSZ>/`). senku already pinned via snapshot.debian.org for build determinism; the `created` derivation just surfaces that anchor at the image-config layer too.
+- **Debian**: the `snapshot.debian.org` archive timestamp embedded in every package URL (`/archive/debian/<YYYYMMDDTHHMMSSZ>/`). distroless already pinned via snapshot.debian.org for build determinism; the `created` derivation just surfaces that anchor at the image-config layer too.
 
 Both implemented as one-line `jq` macros in `//oci:created_timestamp.bzl`, threaded through `oci_image(created = ...)` → `image_manifest(created = ...)`. Stable across same-lockfile rebuilds (Bazel caches cleanly), meaningful as a build-horizon signal (tracks dependency freshness, which is what horizon admission actually checks), and symmetric across distros for the image families that have a real anchor.
 
-**Stronger than commit time.** Google distroless PR #1203 (2023) used `SOURCE_DATE_EPOCH=<commit_date>` — a senku-side signal. The lockfile-revision approach is stricter: a senku-codebase change that doesn't touch the lockfile shouldn't bump "freshness" (the underlying packages are the same age). In practice the daily auto-pin cron keeps lockfile revisions in lockstep with rebuild events, so both signals usually align; when they diverge, lockfile-revision is the more honest answer.
+**Stronger than commit time.** Google distroless PR #1203 (2023) used `SOURCE_DATE_EPOCH=<commit_date>` — a distroless-side signal. The lockfile-revision approach is stricter: a distroless-codebase change that doesn't touch the lockfile shouldn't bump "freshness" (the underlying packages are the same age). In practice the daily auto-pin cron keeps lockfile revisions in lockstep with rebuild events, so both signals usually align; when they diverge, lockfile-revision is the more honest answer.
 
 **Asymmetry — nginx-on-debian is deliberately omitted.** nginx.org's apt repo doesn't operate a snapshot service (URLs are `https://nginx.org/packages/debian/pool/...` with no archive timestamp), so there's no honest upstream-anchor for nginx-on-debian variants. Shipping a misleading `created` (e.g. the base Debian snapshot, or git mtime of the per-channel lockfile) was rejected: missing-field is honest, misleading-field is a contract violation. Admission controllers can policy "field absent"; they can't policy "field lies." See #237 for the deferred design call.
 
 **Lesson.** Two principles a PR review surfaced after the initial implementation:
 1. *Falsifiable claims only*: the `created` field carries an implicit contract — "this image's deps are at most this stale". Don't populate the field on images where the contract can't be substantiated. Missing data > misleading data.
-2. *Wait for a consumer*: no admission controller currently gates on senku images' `created`. The implementation is preparation for hypothetical enforcement, justified by the cost-of-doing-later being roughly the cost-of-doing-now for the cases with a real anchor. Cases without a real anchor (nginx-on-debian) are explicitly deferred until a customer materializes — building speculative machinery for them is the over-engineering trap §"Lesson" from the silent-zero amendment warned against.
+2. *Wait for a consumer*: no admission controller currently gates on distroless images' `created`. The implementation is preparation for hypothetical enforcement, justified by the cost-of-doing-later being roughly the cost-of-doing-now for the cases with a real anchor. Cases without a real anchor (nginx-on-debian) are explicitly deferred until a customer materializes — building speculative machinery for them is the over-engineering trap §"Lesson" from the silent-zero amendment warned against.
 
 ## Amendment (2026-05-19): rpmdb-merge schema was overspecified
 

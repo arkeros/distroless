@@ -15,7 +15,7 @@ from the values below.
 # Source repo. The "github.com" host is implied; change-control this only
 # if the project moves runners (Codeberg, etc.) — see ADR 0006's note on
 # verify-policy lock-in for runner migration.
-SOURCE_REPO = "github.com/arkeros/senku"
+SOURCE_REPO = "github.com/arkeros/distroless"
 
 # The single workflow file authorized to sign mirror images. CODEOWNERS
 # on this file is the human-review gate; the OIDC subject is the

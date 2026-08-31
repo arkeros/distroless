@@ -17,3 +17,13 @@ output "github_service_account" {
   description = "Email for `google-github-actions/auth`'s `service_account` input."
   value       = google_service_account.github_actions.email
 }
+
+output "github_cache_service_account" {
+  description = "Email for `google-github-actions/auth`'s `service_account` input in jobs that only need the Bazel remote cache — i.e. every CI job that is not a deploy."
+  value       = google_service_account.github_actions_cache.email
+}
+
+output "bazel_remote_cache_url" {
+  description = "Value for Bazel's `--remote_cache`. Must match `common:gcs --remote_cache` in //.bazelrc."
+  value       = "https://storage.googleapis.com/${google_storage_bucket.bazel_cache.name}"
+}

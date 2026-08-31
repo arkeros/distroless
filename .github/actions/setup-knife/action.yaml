@@ -24,11 +24,11 @@ runs:
           PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')"
           VERSION="${{ inputs.version }}"
           if [ -z "$VERSION" ]; then
-            VERSION=$(gh release list --repo arkeros/senku --json tagName --jq '[.[] | select(.tagName | startswith("knife/"))][0].tagName // empty')
+            VERSION=$(gh release list --repo arkeros/distroless --json tagName --jq '[.[] | select(.tagName | startswith("knife/"))][0].tagName // empty')
             VERSION="${VERSION#knife/}"
           fi
           echo "Installing knife ${VERSION} for ${PLATFORM}"
-          gh release download "knife/${VERSION}" --repo arkeros/senku --pattern "knife-${PLATFORM}" --dir /tmp/knife
+          gh release download "knife/${VERSION}" --repo arkeros/distroless --pattern "knife-${PLATFORM}" --dir /tmp/knife
           install /tmp/knife/knife-"${PLATFORM}" /usr/local/bin/knife
           rm -rf /tmp/knife
         fi

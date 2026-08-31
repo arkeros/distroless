@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/arkeros/senku/base/flag/stringslice"
-	"github.com/arkeros/senku/oci/pkg/proxy"
+	"github.com/arkeros/distroless/base/flag/stringslice"
+	"github.com/arkeros/distroless/oci/pkg/proxy"
 )
 
 var (
@@ -25,7 +25,7 @@ var (
 func init() {
 	port = flag.String("port", "8080", "port to listen on")
 	upstream = flag.String("upstream", "ghcr.io", "upstream registry host")
-	repositoryPrefix = flag.String("repository-prefix", "arkeros/senku", "repository prefix to prepend to image names")
+	repositoryPrefix = flag.String("repository-prefix", "arkeros/distroless", "repository prefix to prepend to image names")
 	flag.Var(&repos, "repo", "repository to expose (may be repeated)")
 }
 

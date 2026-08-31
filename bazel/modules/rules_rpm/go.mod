@@ -1,4 +1,4 @@
-module github.com/arkeros/senku/bazel/modules/rules_rpm
+module github.com/arkeros/distroless/bazel/modules/rules_rpm
 
 go 1.27.0
 

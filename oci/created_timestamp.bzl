@@ -6,11 +6,11 @@ Background — see ADR 0007 §"Build horizon" amendment. Chainguard's
 defines the maximum age an image is permitted to remain in production
 before rebuild; admission controllers (e.g. sigstore/policy-controller's
 `fetchConfigFile`) gate deployment on `image.config.created`. Without
-a value, senku images are policy-invisible; with epoch 0, they appear
+a value, distroless images are policy-invisible; with epoch 0, they appear
 infinitely stale — the exact trap distroless PR #1203 fixed via
 `SOURCE_DATE_EPOCH` from the source commit timestamp.
 
-senku has a stronger signal than commit time: the upstream-snapshot
+distroless has a stronger signal than commit time: the upstream-snapshot
 timestamp embedded in each distro's lockfile. It tracks dependency
 freshness (which is what horizon admission actually cares about),
 stays stable across same-lockfile rebuilds (Bazel caches cleanly),

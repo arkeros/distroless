@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Re-pin SRI hashes for senku's local Bazel registry under bazel/registry/.
+"""Re-pin SRI hashes for distroless's local Bazel registry under bazel/registry/.
 
 For each module/version, downloads the upstream archive (cached under
 $TMPDIR/repin-registry-cache) and rewrites source.json with fresh SRI for the

@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "proxy",
     srcs = ["proxy.go"],
-    importpath = "github.com/arkeros/senku/oci/pkg/proxy",
+    importpath = "github.com/arkeros/distroless/oci/pkg/proxy",
     visibility = ["//visibility:public"],
     deps = [
         "//base/cache/lru",

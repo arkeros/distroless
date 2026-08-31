@@ -1,6 +1,6 @@
 # Distroless mirror images
 
-Public mirror of distroless container images. Pull from `distroless.io/<image>:<tag>` — the canonical bytes live at `ghcr.io/arkeros/senku/<image>:<tag>` and the `distroless.io` vanity domain is a proxy in front (see [`//oci/cmd/registry`](../oci/cmd/registry/README.md)). Both surfaces verify against the same identity policy; the examples below use `distroless.io` because that's the consumer-facing entry point.
+Public mirror of distroless container images. Pull from `distroless.io/<image>:<tag>` — the canonical bytes live at `ghcr.io/arkeros/distroless/<image>:<tag>` and the `distroless.io` vanity domain is a proxy in front (see [`//oci/cmd/registry`](../oci/cmd/registry/README.md)). Both surfaces verify against the same identity policy; the examples below use `distroless.io` because that's the consumer-facing entry point.
 
 Every image is published with three signed artifacts, all attached via the **OCI 1.1 referrers API** (the `subject` field of a separate manifest, not legacy `.sig` / `.att` sibling tags):
 
@@ -24,7 +24,7 @@ Cosign 3.x discovers referrers by default and accepts no flag on `verify` to alt
 
 ```bash
 cosign verify \
-    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-identity-regexp='^https://github\.com/arkeros/distroless/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     distroless.io/<image>:<tag>
 ```
@@ -33,7 +33,7 @@ cosign verify \
 
 ```bash
 cosign verify-attestation \
-    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-identity-regexp='^https://github\.com/arkeros/distroless/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=slsaprovenance \
     distroless.io/<image>:<tag>
@@ -45,7 +45,7 @@ Verify only:
 
 ```bash
 cosign verify-attestation \
-    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-identity-regexp='^https://github\.com/arkeros/distroless/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=cyclonedx \
     distroless.io/<image>:<tag>
@@ -57,7 +57,7 @@ Verify and extract the BOM as raw CycloneDX JSON:
 
 ```bash
 cosign verify-attestation \
-    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-identity-regexp='^https://github\.com/arkeros/distroless/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=cyclonedx \
     distroless.io/<image>:<tag> \
@@ -69,7 +69,7 @@ Verify and pipe straight into a vulnerability scanner (no temp file):
 
 ```bash
 cosign verify-attestation \
-    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-identity-regexp='^https://github\.com/arkeros/distroless/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=cyclonedx \
     distroless.io/<image>:<tag> \
@@ -81,7 +81,7 @@ Quick package summary:
 
 ```bash
 cosign verify-attestation \
-    --certificate-identity-regexp='^https://github\.com/arkeros/senku/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-identity-regexp='^https://github\.com/arkeros/distroless/\.github/workflows/ci\.yaml@refs/heads/main$' \
     --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
     --type=cyclonedx \
     distroless.io/<image>:<tag> \

@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 go_library(
     name = "pin_lib",
     srcs = ["main.go"],
-    importpath = "github.com/arkeros/senku/bazel/modules/rules_rpm/rpm/tools/pin",
+    importpath = "github.com/arkeros/distroless/bazel/modules/rules_rpm/rpm/tools/pin",
     visibility = ["//visibility:private"],
     deps = [
         "//rpm/tools/internal/keyring",

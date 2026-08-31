@@ -205,7 +205,7 @@ func populateRpmdb(dbPath string, sorted []headerEntry) (err error) {
 //
 // When `compress == "zstd"`, the tar stream is wrapped in zstd so the
 // resulting layer ships with `tar+zstd` media type matching the rest of
-// senku's distroless layers. `none` writes raw tar bytes (useful for
+// distroless's distroless layers. `none` writes raw tar bytes (useful for
 // in-process consumption / tests).
 func writeTar(outPath string, sqliteBytes []byte, compress string) error {
 	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {

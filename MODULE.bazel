@@ -1,5 +1,5 @@
 module(
-    name = "distroless.io",
+    name = "distroless",
     version = "0.0.0",
 )
 
@@ -10,10 +10,9 @@ bazel_dep(name = "jq.bzl", version = "0.6.1")
 bazel_dep(name = "gazelle", version = "0.53.0")
 bazel_dep(name = "rules_shell", version = "0.8.0")
 
-# Hermetic LLVM cc toolchain — sole cc toolchain for senku. Works on macOS
-# host (cross-compiles to linux ELFs) and on linux RBE workers (extracted
-# into the worker container; cached after first action). Replaces the
-# previous toolchains_buildbuddy split, modeled on openai/codex's setup.
+# Hermetic LLVM cc toolchain — the sole cc toolchain here. Works on the macOS
+# host (cross-compiles to linux ELFs) and on the linux CI runners, so a build
+# resolves the same compiler everywhere without a system toolchain.
 bazel_dep(name = "llvm", version = "0.8.18")
 
 # FIXME: drop once upstream links compiler-rt builtins via -L/-l on macOS
@@ -30,16 +29,10 @@ register_toolchains("@llvm//toolchain:all")
 # Patched busybox built via //bazel/registry. Consumed lazily — no compile
 # happens unless something depends on @busybox//... — but the dep is not
 # dev-only because the cc toolchain that builds it (llvm) isn't either.
-bazel_dep(name = "busybox", version = "1.37.0.senku.1")
-
-# Local repo rule emitting `@rbe_platform//:rbe_platform` for `--config=rbe`.
-# Pins the BuildBuddy worker image by SHA; see //bazel/toolchains:rbe.bzl.
-rbe_platform_repository = use_repo_rule("//bazel/toolchains:rbe.bzl", "rbe_platform_repository")
-
-rbe_platform_repository(name = "rbe_platform")
+bazel_dep(name = "busybox", version = "1.37.0.distroless.1")
 
 # Not dev_dependency: //:BUILD loads from this plugin to wire up gazelle, and
-# that load needs to succeed when @senku is consumed as a non-root bzlmod dep.
+# that load needs to succeed when @distroless is consumed as a non-root bzlmod dep.
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.2")
 
 bazel_dep(name = "lazy_bazel_env.bzl", version = "0.0.0", dev_dependency = True)

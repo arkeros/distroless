@@ -11,8 +11,8 @@ import (
 	"github.com/anchore/grype/grype/db/v6/distribution"
 	"github.com/spf13/cobra"
 
-	grypedbpkg "github.com/arkeros/senku/bazel/pkg/grypedb"
-	"github.com/arkeros/senku/bazel/pkg/mod"
+	grypedbpkg "github.com/arkeros/distroless/bazel/pkg/grypedb"
+	"github.com/arkeros/distroless/bazel/pkg/mod"
 )
 
 type updateOptions struct {

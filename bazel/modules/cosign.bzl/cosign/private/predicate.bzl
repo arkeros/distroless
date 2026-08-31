@@ -20,11 +20,11 @@ load("@cosign.bzl//cosign:defs.bzl", "slsa_predicate")
 
 slsa_predicate(
     name = "image_predicate",
-    build_type = "https://github.com/arkeros/senku/cosign.bzl/v1/bazel-mirror",
-    builder_id = "https://github.com/arkeros/senku/.github/workflows/ci.yaml@refs/heads/main",
+    build_type = "https://github.com/arkeros/distroless/cosign.bzl/v1/bazel-mirror",
+    builder_id = "https://github.com/arkeros/distroless/.github/workflows/ci.yaml@refs/heads/main",
     external_parameters = {
         "bazelTarget": "//images/static:image_mirror",
-        "sourceUri": "git+https://github.com/arkeros/senku@{{STABLE_GIT_COMMIT}}",
+        "sourceUri": "git+https://github.com/arkeros/distroless@{{STABLE_GIT_COMMIT}}",
     },
     internal_parameters = {
         "monorepoVersion": "{{STABLE_MONOREPO_VERSION}}",

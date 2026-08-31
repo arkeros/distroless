@@ -1,7 +1,7 @@
 """Aspects that enforce policy on the OCI build graph.
 
 `mirror_push_enforcement_aspect` fails analysis when a raw `image_push` rule
-targets the public mirror surface (`ghcr.io/arkeros/senku/*`) without going
+targets the public mirror surface (`ghcr.io/arkeros/distroless/*`) without going
 through the `mirror_push` macro. This is the build-graph-level enforcement
 of ADR 0006's "every mirror image is signed and attested" policy: there is
 no syntactically valid way to push to the mirror prefix that bypasses sign

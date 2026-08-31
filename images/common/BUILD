@@ -74,7 +74,7 @@ tar(
 # /etc/os-release -> /usr/lib/os-release per os-release(5). Debian's
 # base-files package ships this symlink for free; Hummingbird's package
 # set doesn't include a `setup` / `filesystem` rpm (deliberate, see ADR
-# 0007), so we synthesize it senku-side.
+# 0007), so we synthesize it distroless-side.
 tar(
     name = "etc_os_release_symlink",
     mtree = [

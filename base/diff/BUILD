@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "diff",
     srcs = ["diff.go"],
-    importpath = "github.com/arkeros/senku/base/diff",
+    importpath = "github.com/arkeros/distroless/base/diff",
     visibility = ["//visibility:public"],
 )
 

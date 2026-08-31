@@ -7,7 +7,7 @@ the proxy behind `registry.k8s.io`, but much simpler since we only need to front
 
 ## Why
 
-**Vanity domain.** Publishing container images to `ghcr.io/arkeros/senku/redis` ties image references to a
+**Vanity domain.** Publishing container images to `ghcr.io/arkeros/distroless/redis` ties image references to a
 specific hosting provider. A custom domain like `distroless.io/redis` decouples the public-facing image name
 from the backend, so we can migrate to a different registry (GAR, ECR, self-hosted, etc.) without breaking
 existing references.
@@ -28,7 +28,7 @@ sequenceDiagram
     participant GHCR
 
     Client->>Proxy: GET /v2/redis/manifests/latest
-    Proxy->>GHCR: GET /v2/arkeros/senku/redis/manifests/latest
+    Proxy->>GHCR: GET /v2/arkeros/distroless/redis/manifests/latest
     GHCR-->>Proxy: 200 OK + manifest
     Proxy-->>Client: 200 OK + manifest
 ```
@@ -44,7 +44,7 @@ sequenceDiagram
     participant CDN
 
     Client->>Proxy: GET /v2/redis/blobs/sha256:deadbeef
-    Proxy->>GHCR: GET /v2/arkeros/senku/redis/blobs/sha256:deadbeef
+    Proxy->>GHCR: GET /v2/arkeros/distroless/redis/blobs/sha256:deadbeef
     GHCR-->>Proxy: 307 Location: CDN
     Proxy-->>Client: 307 Location: CDN
     Client->>CDN: GET blob data (direct, bypasses proxy)
@@ -53,7 +53,7 @@ sequenceDiagram
 
 The proxy:
 1. Receives OCI Distribution API requests at `/v2/<name>/...`
-2. Rewrites paths by prepending the repository prefix: `/v2/arkeros/senku/<name>/...`
+2. Rewrites paths by prepending the repository prefix: `/v2/arkeros/distroless/<name>/...`
 3. Handles upstream auth transparently via the standard OCI token challenge flow
    (using [go-containerregistry](https://github.com/google/go-containerregistry)'s transport)
 4. Passes through redirect responses for blobs — the proxy never serves blob data itself,
@@ -62,7 +62,7 @@ The proxy:
 ## Usage
 
 ```sh
-registry --upstream=ghcr.io --repository-prefix=arkeros/senku --port=8080
+registry --upstream=ghcr.io --repository-prefix=arkeros/distroless --port=8080
 ```
 
 ## Supported endpoints

@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/arkeros/senku/oci/debian/lockfile"
+	"github.com/arkeros/distroless/oci/debian/lockfile"
 )
 
 type versionsOptions struct {

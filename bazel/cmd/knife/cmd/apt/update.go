@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/arkeros/senku/oci/debian/snapshot"
+	"github.com/arkeros/distroless/oci/debian/snapshot"
 )
 
 type updateOptions struct {

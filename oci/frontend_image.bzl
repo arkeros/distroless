@@ -93,7 +93,7 @@ def frontend_image(
 
     oci_image(
         name = name + "_" + arch,
-        # Wrap in Label() so the default resolves to @senku regardless of the
+        # Wrap in Label() so the default resolves to @distroless regardless of the
         # caller's repo.
         base = base or Label("//images/nginx:nginx_%s_nonroot_%s_%s" % (NGINX_FRONTEND_DEFAULT_CHANNEL, arch, distro)),
         layers = layers,

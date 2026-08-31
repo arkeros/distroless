@@ -167,7 +167,7 @@ func (s *Server) WithBlobRedirect(t *testing.T, redirectURL string) *httptest.Se
 }
 
 // MustPushImage pushes a random image to the given repo:tag and returns it.
-// The repo should be the full path as the upstream sees it (e.g. "arkeros/senku/redis").
+// The repo should be the full path as the upstream sees it (e.g. "arkeros/distroless/redis").
 func (s *Server) MustPushImage(t *testing.T, repo, tag string) v1.Image {
 	t.Helper()
 	ref, err := name.ParseReference(

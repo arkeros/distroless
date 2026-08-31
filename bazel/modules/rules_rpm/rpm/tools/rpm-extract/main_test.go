@@ -213,7 +213,7 @@ func TestVerifyRpmSignature_EmptyKeyPathSkips(t *testing.T) {
 // Rewriting here makes the per-package tar internally consistent and
 // removes the cross-layer-ordering dependency.
 //
-// Empirically (as of 2026-05-18) no package in the senku cc+static
+// Empirically (as of 2026-05-18) no package in the distroless cc+static
 // Hummingbird closure ships an absolute symlink into /lib*, /bin, or
 // /sbin — this is a defensive lock-in against future packages.
 func TestMergedUsrLink(t *testing.T) {

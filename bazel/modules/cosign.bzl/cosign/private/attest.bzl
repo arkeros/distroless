@@ -18,7 +18,7 @@ slsa_predicate(
 cosign_attest(
     name = "image_attest_provenance",
     image = ":image",
-    repository = "ghcr.io/arkeros/senku/distroless/static",
+    repository = "ghcr.io/arkeros/distroless/distroless/static",
     type = "slsaprovenance",
     predicate = ":image_predicate",
 )
@@ -38,7 +38,7 @@ _attrs = {
     "repository": attr.string(
         doc = (
             "Registry + repository path the attestation will be pushed to, e.g. " +
-            "`ghcr.io/arkeros/senku/distroless/static`. Must NOT contain a tag or digest."
+            "`ghcr.io/arkeros/distroless/distroless/static`. Must NOT contain a tag or digest."
         ),
     ),
     "type": attr.string(

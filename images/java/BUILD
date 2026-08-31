@@ -32,7 +32,7 @@ package(default_visibility = ["//visibility:public"])
 vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
-    id = "https://github.com/arkeros/senku/blob/main/images/java/BUILD#hummingbird",
+    id = "https://github.com/arkeros/distroless/blob/main/images/java/BUILD#hummingbird",
     statements = [],
     timestamp = "2026-05-17T00:00:00Z",
 )
@@ -190,7 +190,7 @@ vex_document(
         ignore_cves = [],
         index_annotations = {
             "org.opencontainers.image.description": "Distroless Java {} (Temurin) image".format(major),
-            "org.opencontainers.image.source": "https://github.com/arkeros/senku/blob/main/images/java/BUILD",
+            "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/java/BUILD",
         },
         layers = java_layers(major),
         vex = [":vex_hummingbird"],
@@ -257,11 +257,11 @@ vex_document(
 
 # arm64 cross-arch structure tests. container_structure_test forwards its
 # `platform` attr to docker via `--platform linux/arm64`. binfmt registration
-# (Docker Desktop auto, BuildBuddy via tonistiigi/binfmt or qemu-user-static)
-# is necessary but not sufficient for these to pass: HotSpot's startup uses
+# (Docker Desktop auto, CI via tonistiigi/binfmt or qemu-user-static) is
+# necessary but not sufficient for these to pass: HotSpot's startup uses
 # CPU feature probes and a handful of syscalls (e.g. perf_event_open paths
-# under ergonomics) that qemu-user emulates partially or not at all. On
-# BuildBuddy linux/amd64 + qemu, `java --version` exits 1 with empty stdout
+# under ergonomics) that qemu-user emulates partially or not at all. On a
+# linux/amd64 runner + qemu, `java --version` exits 1 with empty stdout
 # — the JVM launches and silently bails inside, not a binfmt issue. The
 # arm64 file-existence assertions in test_hummingbird_arm64.yaml would
 # pass; only the commandTests blow up. Splitting the config to keep file
@@ -270,9 +270,9 @@ vex_document(
 #
 # Pragmatic: tag `requires-native-arm64` so default CI skips. Run locally
 # on Apple Silicon / arm64 Linux hosts with
-# `--test_tag_filters=requires-native-arm64`, or wire a BuildBuddy arm64
-# executor pool via exec_properties and drop the tag. Same posture every
-# Bazel-Java repo I've seen lands on after one round of qemu pain.
+# `--test_tag_filters=requires-native-arm64`, or move CI onto arm64 runners
+# and drop the tag. Same posture every Bazel-Java repo I've seen lands on
+# after one round of qemu pain.
 #
 # Size stays `medium` for when they do run — native arm64 startup is
 # fast, but the multiplier costs nothing when the tests are skipped.

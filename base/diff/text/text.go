@@ -4,7 +4,7 @@ package text
 import (
 	"strings"
 
-	"github.com/arkeros/senku/base/diff"
+	"github.com/arkeros/distroless/base/diff"
 )
 
 // DiffLines splits strings by newline and feeds them to the generic diff algorithm.

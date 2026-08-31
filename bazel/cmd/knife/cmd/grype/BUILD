@@ -6,7 +6,7 @@ go_library(
         "grype.go",
         "update.go",
     ],
-    importpath = "github.com/arkeros/senku/bazel/cmd/knife/cmd/grype",
+    importpath = "github.com/arkeros/distroless/bazel/cmd/knife/cmd/grype",
     visibility = ["//bazel/cmd/knife:__subpackages__"],
     deps = [
         "//bazel/pkg/grypedb",

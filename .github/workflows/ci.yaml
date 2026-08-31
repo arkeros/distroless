@@ -217,8 +217,9 @@ jobs:
     # branches and required reviewers. GitHub validates both *before* minting
     # the OIDC token, so the branch/reviewer gate lives in the identity layer —
     # not in this YAML, which any committer can edit. The deploy SA's WIF
-    # binding is keyed on `attribute.environment/prod`, so a token from any
-    # other environment cannot impersonate it.
+    # binding is keyed on `attribute.environment/prod`, and the pool's provider
+    # condition pins `arkeros/distroless`, so neither another environment nor
+    # another repository can impersonate it. Both live in //infra.
     environment: prod
     permissions:
       contents: read
@@ -245,8 +246,8 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v3
         with:
-          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
-          service_account: github-actions-senku-apply@senku-prod.iam.gserviceaccount.com
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
+          service_account: github-actions-distroless@senku-prod.iam.gserviceaccount.com
           token_format: access_token
 
       - name: Login to Artifact Registry
@@ -307,8 +308,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
-          service_account: github-actions-senku-apply@senku-prod.iam.gserviceaccount.com
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
+          service_account: github-actions-distroless@senku-prod.iam.gserviceaccount.com
 
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v3

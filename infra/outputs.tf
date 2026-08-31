@@ -7,3 +7,13 @@ output "registry_service_account_email" {
   description = "Runtime GSA the registry Cloud Run service runs as. Grant downstream IAM (pull credentials, Secret Manager) here once — every region picks it up."
   value       = google_service_account.registry.email
 }
+
+output "github_workload_identity_provider" {
+  description = "Full resource name for `google-github-actions/auth`'s `workload_identity_provider` input."
+  value       = google_iam_workload_identity_pool_provider.github.name
+}
+
+output "github_service_account" {
+  description = "Email for `google-github-actions/auth`'s `service_account` input."
+  value       = google_service_account.github_actions.email
+}

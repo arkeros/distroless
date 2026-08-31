@@ -4,12 +4,15 @@ go_library(
     name = "apt",
     srcs = [
         "apt.go",
+        "licenses.go",
         "update.go",
         "versions.go",
     ],
     importpath = "github.com/arkeros/distroless/bazel/cmd/knife/cmd/apt",
     visibility = ["//bazel/cmd/knife:__subpackages__"],
     deps = [
+        "//oci/debian/copyright",
+        "//oci/debian/deb",
         "//oci/debian/lockfile",
         "//oci/debian/snapshot",
         "@com_github_spf13_cobra//:cobra",

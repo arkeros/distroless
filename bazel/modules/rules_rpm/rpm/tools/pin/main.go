@@ -102,6 +102,10 @@ type primaryPackage struct {
 }
 
 type primaryFormat struct {
+	// License is `<rpm:license>`. RHEL-derived distros publish SPDX
+	// expressions here (`MIT AND GPL-2.0-or-later`), so it needs no mapping —
+	// unlike apt, whose index carries no licence at all.
+	License   string         `xml:"license"`
 	SourceRpm string         `xml:"sourcerpm"`
 	Provides  primaryDepList `xml:"provides"`
 	Requires  primaryDepList `xml:"requires"`
@@ -126,10 +130,14 @@ type primarySize struct {
 }
 
 type lockEntry struct {
-	Version  string `json:"version"`
-	Sha256   string `json:"sha256"`
-	Path     string `json:"path"`
-	Size     int64  `json:"size"`
+	Version string `json:"version"`
+	Sha256  string `json:"sha256"`
+	Path    string `json:"path"`
+	Size    int64  `json:"size"`
+	// License is the SPDX expression the repository declares. Recorded here
+	// so an SBOM can report it without fetching the rpm, and so a licence
+	// change shows up as a lockfile diff in review.
+	License  string `json:"license,omitempty"`
 	Upstream string `json:"upstream,omitempty"`
 }
 
@@ -147,12 +155,12 @@ type lockfile struct {
 
 func main() {
 	var (
-		repoURL    = flag.String("repo-url", "", "base URL of the rpm repo (containing per-arch subdirs)")
-		gpgKey     = flag.String("gpg-key", "", "ascii-armored public key for repomd.xml.asc verification")
-		pkgs       = flag.String("packages", "", "comma-separated closed package manifest")
-		arches     = flag.String("architectures", "", "comma-separated declared arches (e.g. x86_64,aarch64)")
-		lockOut    = flag.String("lock-out", "", "workspace-relative path to lockfile output (e.g. //:hummingbird_install.json)")
-		sigPolicy  = flag.String("repomd-signature", string(repomdSigRequired), "policy when fetching repomd.xml.asc: 'required' (default — 404 or bad sig aborts) or 'optional' (404 degrades to TLS-only at lock time with a loud warning; bad sig still aborts)")
+		repoURL   = flag.String("repo-url", "", "base URL of the rpm repo (containing per-arch subdirs)")
+		gpgKey    = flag.String("gpg-key", "", "ascii-armored public key for repomd.xml.asc verification")
+		pkgs      = flag.String("packages", "", "comma-separated closed package manifest")
+		arches    = flag.String("architectures", "", "comma-separated declared arches (e.g. x86_64,aarch64)")
+		lockOut   = flag.String("lock-out", "", "workspace-relative path to lockfile output (e.g. //:hummingbird_install.json)")
+		sigPolicy = flag.String("repomd-signature", string(repomdSigRequired), "policy when fetching repomd.xml.asc: 'required' (default — 404 or bad sig aborts) or 'optional' (404 degrades to TLS-only at lock time with a loud warning; bad sig still aborts)")
 	)
 	flag.Parse()
 
@@ -243,6 +251,7 @@ type candidate struct {
 	path     string
 	size     int64
 	upstream string
+	license  string
 	requires []string
 	provides []string
 }
@@ -374,6 +383,7 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string, trustRoot op
 				path:     fmt.Sprintf("%s/%s", arch, pkg.Location.Href),
 				size:     pkg.Size.Package,
 				upstream: pkg.Format.SourceRpm,
+				license:  pkg.Format.License,
 				requires: depNames(pkg.Format.Requires.Entries),
 				provides: depNames(pkg.Format.Provides.Entries),
 			}
@@ -408,6 +418,7 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string, trustRoot op
 			Sha256:   c.sha256,
 			Path:     c.path,
 			Size:     c.size,
+			License:  c.license,
 			Upstream: c.upstream,
 		}
 	}

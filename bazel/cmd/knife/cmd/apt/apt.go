@@ -11,6 +11,7 @@ func NewCmdApt() *cobra.Command {
 	}
 
 	cmd.AddCommand(newCmdUpdate())
+	cmd.AddCommand(newCmdLicenses())
 	cmd.AddCommand(newCmdVersions())
 
 	return cmd

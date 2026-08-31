@@ -6,6 +6,14 @@ load("//images/common:variables.bzl", "NONROOT")
 load("//oci:oci_image.bzl", "oci_image")
 load("//oci:supply_chain.bzl", "image_sbom")
 
+# Where each Distro's licence data comes from. Hummingbird's rpm metadata
+# declares one per package, recorded in the lockfile by `rules_rpm`'s pin tool.
+# Debian's apt index declares none, so there is nothing to point at yet.
+_DISTRO_LICENSES = {
+    "hummingbird": ("//images:hummingbird.lock.json", "rpm"),
+    "debian": ("//images:debian.licenses.json", "deb"),
+}
+
 # The image families are the subpackages of //images, so a single subpackage
 # spec covers them and a new family needs no edit here.
 visibility(["//images/..."])
@@ -185,4 +193,9 @@ def distroless_matrix(
             # Index-level CycloneDX SBOM, used as the predicate for mirror_push's
             # SBOM attestation. Per-arch CVE testing already runs via oci_image;
             # this is just the unified-across-archs materials manifest.
-            image_sbom(image = ":" + index_name)
+            licenses, licenses_format = _DISTRO_LICENSES.get(distro, (None, None))
+            image_sbom(
+                image = ":" + index_name,
+                licenses = licenses,
+                licenses_format = licenses_format,
+            )

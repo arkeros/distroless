@@ -3,12 +3,14 @@ load("@rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_img//img:image.bzl", "image_from_binary")
 load("@rules_img//img:load.bzl", "image_load")
 load("@rules_img//img:push.bzl", "image_push")
-load("@terraform.bzl//:gcp.bzl", "google_provider", "service_account")
-load("@terraform.bzl", "output", "tf_root")
 load(
-    "//devtools/bifrost/modules:cloudrun.bzl",
-    "service_cloudrun",
+    "@terraform.bzl//:gcp.bzl",
+    "google_cloud_run_v2_service",
+    "google_cloud_run_v2_service_iam_member",
+    "google_provider",
+    "service_account",
 )
+load("@terraform.bzl", "output", "tf_root")
 load("//devtools/build/tools/tf:render.bzl", "image_uri", "registry_push")
 load("//infra/cloud/gcp/gar:defs.bzl", "REGISTRY")
 load(
@@ -154,54 +156,91 @@ sa = service_account(
     project = PROJECT,
 )
 
-# Cloud Run service per region. Resources are inlined directly via the
-# `service_cloudrun` Starlark macro — no Terraform `module` block, no
-# bifrost HCL files copied into the workdir. Each call produces both the
-# `google_cloud_run_v2_service.registry_<region>` and (because public=True)
-# its `google_cloud_run_v2_service_iam_member.registry_<region>_public`.
+# Cloud Run service per region, as plain Terraform resources. The
+# `google_cloud_run_v2_service` / `_iam_member` constructors from
+# `@terraform.bzl//:gcp.bzl` are 1:1 wrappers over the provider schema, so the
+# blocks below are what lands in `main.tf.json` — no module indirection.
 #
 # Ingress locked to LB-only. Org policy on senku-prod forbids
 # `INGRESS_TRAFFIC_ALL`, and architecturally the registry sits behind the
-# shared external HTTPS LB anyway. `public = True` stays because the LB's
-# Serverless NEG calls without injecting an OIDC identity, so the services
-# must accept anonymous invokes — the ingress filter is what keeps the
-# service off the open internet.
+# shared external HTTPS LB anyway. The `allUsers` invoker binding stays
+# because the LB's Serverless NEG calls without injecting an OIDC identity, so
+# the services must accept anonymous invokes — the ingress filter is what keeps
+# the service off the open internet.
+
+PORT = 8080
+
 services = [
-    service_cloudrun(
+    google_cloud_run_v2_service(
         name = "registry_" + region.replace("-", "_"),
-        args = [
-            "--upstream=" + UPSTREAM,
-            "--repository-prefix=" + REPOSITORY_PREFIX,
-        ] + [
-            "--repo=" + image
-            for image in CATALOG
-        ],
-        # A `ref` to the push node's digest export: resolved at build time,
-        # and it brings this root's deploy edge on the push along with it.
-        # No `var.image` round-trip.
-        image = image_uri(":image_push_gar"),
+        deletion_protection = False,
         ingress = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER",
-        probes = {
-            "startup_path": "/v2/",
-            "liveness_path": "/v2/",
-        },
+        labels = {"app": SERVICE_NAME},
+        location = region,
         project = PROJECT,
-        public = True,
-        region = region,
-        resources = {
-            "cpu": 1,
-            "memory": 512,
+        service_name = SERVICE_NAME,
+        template = {
+            "containers": [{
+                # A `ref` to the push node's digest export: resolved at build
+                # time, and it brings this root's deploy edge on the push along
+                # with it. No `var.image` round-trip.
+                "image": image_uri(":image_push_gar"),
+                "args": [
+                    "--upstream=" + UPSTREAM,
+                    "--repository-prefix=" + REPOSITORY_PREFIX,
+                ] + [
+                    "--repo=" + image
+                    for image in CATALOG
+                ],
+                "ports": [{"container_port": PORT}],
+                "resources": [{
+                    "limits": {
+                        "cpu": "1",
+                        "memory": "512Mi",
+                    },
+                    "cpu_idle": True,
+                    "startup_cpu_boost": True,
+                }],
+                "startup_probe": [{"http_get": [{
+                    "path": "/v2/",
+                    "port": PORT,
+                }]}],
+                "liveness_probe": [{"http_get": [{
+                    "path": "/v2/",
+                    "port": PORT,
+                }]}],
+            }],
+            "execution_environment": "EXECUTION_ENVIRONMENT_GEN2",
+            "max_instance_request_concurrency": 80,
+            "scaling": [{
+                "min_instance_count": 0,
+                "max_instance_count": 3,
+            }],
+            # Share one identity across regions: one principal in audit logs /
+            # IAM bindings, not three.
+            "service_account": sa.email,
+            "timeout": "300s",
         },
-        scaling = {
-            "min": 0,
-            "max": 3,
-        },
-        # Share one identity across regions: one principal in audit logs /
-        # IAM bindings, not three.
-        service_account_email = sa.email,
-        service_name = "registry",
+        traffic = [{
+            "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST",
+            "percent": 100,
+        }],
     )
     for region in REGIONS
+]
+
+# `location`/`service_name` are refs into the service blocks above rather than
+# literals — that is what gives Terraform the binding → service dependency edge.
+public_invokers = [
+    google_cloud_run_v2_service_iam_member(
+        name = "registry_%s_public" % REGIONS[i].replace("-", "_"),
+        location = services[i].location,
+        member = "allUsers",
+        project = PROJECT,
+        role = "roles/run.invoker",
+        service_name = services[i].name,
+    )
+    for i in range(len(REGIONS))
 ]
 
 # Output value: an HCL object literal mapping region → service uri,
@@ -225,7 +264,7 @@ tf_root(
     docs = [
         google_provider(project = PROJECT),
         sa,
-    ] + services + [
+    ] + services + public_invokers + [
         output(
             "lb_backends",
             description = "LB backends exposed for external (terraform-only) consumers. In-repo callers (//infra/cloud/gcp/lb) load `LB_BACKEND` from `:defs.bzl` directly — same content, no `terraform_remote_state` round-trip.",

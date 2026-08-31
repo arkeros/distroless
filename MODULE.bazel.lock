@@ -754,7 +754,7 @@
     "@@grype.bzl+//grype:extensions.bzl%grype_database": {
       "general": {
         "bzlTransitiveDigest": "wxwS3i2YCjHA0Xa4qWCYJJzDiiMwagPfhZttafK57o0=",
-        "usagesDigest": "6XIw2Kj//0kllzTUCxvwWG3k9a+acJHPOzEBOnYL0GM=",
+        "usagesDigest": "av3josBVZ1ajNV0HgxVHo8UGSAvVmYtIr03tSUaomDw=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "grype_database": {
@@ -902,7 +902,7 @@
     "@@rules_rpm+//rpm:extensions.bzl%rpm": {
       "general": {
         "bzlTransitiveDigest": "mlfnpI6GvLQ3uMmZfG7MWce/glf6Qm6p814SsHdPAeI=",
-        "usagesDigest": "Z8jkWld2AZyR7w4MQe3uygL0hDUN4DjAyFwHUwjDs08=",
+        "usagesDigest": "52qc4wAaUcWVXOfUI99oSdFNQJ91rx17n0cRFWewxMY=",
         "recordedInputs": [
           "FILE:@@//hummingbird.lock.json 7ea9548d54e2d55199b5f8eb6b2563a7e190efe76b6c13e5a1c8ced54720b1cc",
           "FILE:@@//oci/distroless/nginx/nginx-stable.hummingbird.lock.json 60a2affc847db0707f26440e367abf510a290f5e9d00c172cb585d666e2e58bc",
@@ -2548,7 +2548,7 @@
     "@@terraform.bzl+//terraform:extensions.bzl%terraform": {
       "general": {
         "bzlTransitiveDigest": "x5JUmURJ5HGu45MP6MQkMA5Xl6+62w5QDCCqFyl9KqA=",
-        "usagesDigest": "C2nCg0Dy+kbnNit9dU1NyoBwUz+ZviTHMdRYX5V0IG4=",
+        "usagesDigest": "WSITLQ3iqPdeao2w4kTaTFVrKieCmgGdL7DKTSBS6vc=",
         "recordedInputs": [
           "FILE:@@//.terraform.lock.hcl 7202babd8771b09e0e7f6f218e2c57e096bd73bd02a5ad4fa1737316305c4968"
         ],

@@ -2,7 +2,7 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
 # Package marker so `//bazel/toolchains:rbe.bzl` resolves as a label (loaded
 # from MODULE.bazel via use_repo_rule). Per-toolchain targets live in their
-# own subpackages (bifrost/, grype/, ...).
+# own subpackages (grype/, cosign/, ...).
 
 bzl_library(
     name = "rbe",

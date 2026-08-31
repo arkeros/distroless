@@ -32,8 +32,8 @@ Where type is one of:
 Do not use scopes like feat(ci) or fix(ci). Use the dedicated `ci:` and `build:` prefixes instead. Use scopes for other types if needed, like feat(api) or fix(ui).
 
 feat, fix, test, refactor, docs MUST include the scope, if applicable. For example, 
-* If you are adding a new feature to bifrost, the commit message should be `feat(bifrost): add new feature`. 
-* If you are fixing a bug in knife, the commit message should be `fix(knife): fix bug`.
+* If you are adding a new feature to knife, the commit message should be `feat(knife): add new feature`.
+* If you are fixing a bug in the registry, the commit message should be `fix(registry): fix bug`.
 * If you are adding a new test for a feature in resolve-secrets, the commit message should be `test(resolve-secrets): add new test`.
 
 

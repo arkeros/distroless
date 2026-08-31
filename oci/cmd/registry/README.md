@@ -77,7 +77,7 @@ Push is not supported; images are pushed directly to GHCR via CI.
 
 ## Deployment
 
-Deployed to Cloud Run in three regions — `us-central1`, `europe-west3`, `asia-northeast1` — by the co-located `tf_root` in [`BUILD`](./BUILD). Each region is a separate service (`registry_us_central1`, `registry_europe_west3`, `registry_asia_northeast1`) sharing one runtime GSA, all emitted by a Starlark loop over the `service_cloudrun` macro at [`//devtools/bifrost/modules:cloudrun.bzl`](../../../devtools/bifrost/modules/cloudrun.bzl).
+Deployed to Cloud Run in three regions — `us-central1`, `europe-west3`, `asia-northeast1` — by the co-located `tf_root` in [`BUILD`](./BUILD). Each region is a separate service (`registry_us_central1`, `registry_europe_west3`, `registry_asia_northeast1`) sharing one runtime GSA, all emitted by a Starlark loop over the plain `google_cloud_run_v2_service` / `google_cloud_run_v2_service_iam_member` constructors from `@terraform.bzl//:gcp.bzl`. Those are 1:1 wrappers over the provider schema, so the resource blocks in `BUILD` are what lands in `main.tf.json` — no Terraform `module` indirection.
 
 Image pull path is the shared multi-region `europe` GAR provisioned by [`//infra/cloud/gcp/gar`](../../../infra/cloud/gcp/gar). All three Cloud Run regions pull from the same `europe-docker.pkg.dev/senku-prod/containers/registry@<digest>` URL.
 

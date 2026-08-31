@@ -1,5 +1,5 @@
 module(
-    name = "senku",
+    name = "distroless.io",
     version = "0.0.0",
 )
 
@@ -110,11 +110,3 @@ single_version_override(
 
 jq_toolchains = use_extension("@jq.bzl//jq:extensions.bzl", "toolchains")
 use_repo(jq_toolchains, "jq_toolchains")
-
-register_toolchains(
-    # Register the source-built bifrost toolchain first so in-repo edits to
-    # //devtools/bifrost/cli apply to checked-in renders without needing a
-    # release. External consumers register the prebuilt variant via the
-    # bifrost module extension and fall through to that.
-    "//bazel/toolchains/bifrost:bifrost",
-)

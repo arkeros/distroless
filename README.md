@@ -23,4 +23,4 @@ direnv allow
 
 That authorizes this repo's `.envrc` so `direnv` can load it automatically when you enter the workspace.
 
-In this repo, `//tools:dev` already exposes commands through `lazy_bazel_env`. That includes [bifrost](./devtools/bifrost/cli), so after `direnv allow` you can run `bifrost ...` directly from the repo root without adding your own shell function.
+In this repo, `//tools:dev` already exposes commands through `lazy_bazel_env`. That includes [knife](./bazel/cmd/knife), so after `direnv allow` you can run `knife ...` directly from the repo root without adding your own shell function.

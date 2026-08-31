@@ -18,10 +18,6 @@ jobs:
         include:
           - tool: knife
             package: //bazel/cmd/knife
-          - tool: bifrost
-            package: //devtools/bifrost/cli
-          - tool: resolve-secrets
-            package: //platform/k8s/resolve-secrets
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7

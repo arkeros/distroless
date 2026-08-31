@@ -1,19 +1,22 @@
 "Terraform toolchain configuration"
 
-# `terraform.bzl` lives in `bazel/modules/terraform.bzl` and houses the
-# tf_root / tf_provider_target / toolchain Starlark layer. Wired via
-# local_path_override since it isn't published to BCR.
+# `terraform.bzl` (tf_root / provider hub / hermetic CLI toolchain) lives in
+# the senku repo under `bazel/modules/terraform.bzl`. It is not published to
+# BCR and `git_override` cannot address a subdirectory, so it is pinned via
+# `archive_override` + `strip_prefix`.
 bazel_dep(name = "terraform.bzl", version = "0.0.0")
-local_path_override(
+archive_override(
     module_name = "terraform.bzl",
-    path = "bazel/modules/terraform.bzl",
+    strip_prefix = "senku-3381c487017eb556ffc078d5d5022c658ca7689e/bazel/modules/terraform.bzl",
+    urls = ["https://github.com/arkeros/senku/archive/3381c487017eb556ffc078d5d5022c658ca7689e.tar.gz"],
 )
 
-# `versions.tf` declares the required providers + version constraints
-# (the canonical terraform shape, what Renovate's terraform manager
-# discovers automatically). `.terraform.lock.hcl` in the same dir is
-# terraform's own lockfile — written by `terraform providers lock` and
-# kept fresh by Renovate's `terraform-lockfile` manager.
+# For local iteration against a sibling senku checkout:
+# local_path_override(
+#     module_name = "terraform.bzl",
+#     path = "../senku/bazel/modules/terraform.bzl",
+# )
+
 terraform = use_extension("@terraform.bzl//terraform:extensions.bzl", "terraform")
 terraform.toolchain(version = "1.14.8")
 terraform.install(

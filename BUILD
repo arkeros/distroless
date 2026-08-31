@@ -1,15 +1,4 @@
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary", "gazelle_test")
-load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@rules_python_gazelle_plugin//:def.bzl", "GAZELLE_PYTHON_RUNTIME_DEPS")
-
-npm_link_all_packages(name = "node_modules")
-
-ts_config(
-    name = "tsconfig",
-    src = "tsconfig.json",
-    visibility = ["//visibility:public"],
-)
 
 exports_files([
     # Canonical terraform.required_providers + terraform-native lockfile.
@@ -18,7 +7,6 @@ exports_files([
     # MODULE evaluation. `bazel run @terraform_providers//:pin` from the
     # repo root re-runs `terraform providers lock` for all four platforms.
     ".terraform.lock.hcl",
-    "gazelle_python.yaml",
     # Consumed by rules_rpm via @hummingbird//... — see bazel/include/oci.MODULE.bazel.
     "hummingbird-release.pgp",
     "hummingbird.lock.json",
@@ -26,8 +14,6 @@ exports_files([
     "versions.tf",
 ])
 
-# Ignore the node_modules dir
-# gazelle:exclude node_modules
 # Ignore Claude Code worktrees
 # gazelle:exclude .claude
 # Prefer generated BUILD files to be called BUILD over BUILD.bazel
@@ -61,10 +47,6 @@ exports_files([
 # gazelle:resolve proto proto buf/validate/validate.proto @protovalidate//proto/protovalidate/buf/validate:validate_proto
 # gazelle:resolve proto go buf/validate/validate.proto @build_buf_gen_go_bufbuild_protovalidate_protocolbuffers_go//buf/validate
 # gazelle:resolve go google.golang.org/grpc/health/grpc_health_v1 @org_golang_google_grpc//health/grpc_health_v1
-# gazelle:map_kind py_library py_library @aspect_rules_py//py:defs.bzl
-# gazelle:map_kind py_binary py_binary @aspect_rules_py//py:defs.bzl
-# gazelle:map_kind py_test py_test @aspect_rules_py//py:defs.bzl
-# gazelle:resolve py python.runfiles @rules_python//python/runfiles
 #
 # Both `cyclonedx.bzl` and `sbom.bzl` ship under a single `sbom` bzl_library
 # upstream; map gazelle's per-file import lookup to the same combined label.
@@ -75,21 +57,18 @@ gazelle_binary(
     name = "gazelle_bin",
     languages = DEFAULT_LANGUAGES + [
         "@bazel_skylib_gazelle_plugin//bzl",
-        "@rules_python_gazelle_plugin//python",
         # "@rules_buf//gazelle/buf:buf",
     ],
 )
 
 gazelle(
     name = "gazelle",
-    data = GAZELLE_PYTHON_RUNTIME_DEPS,
     gazelle = ":gazelle_bin",
 )
 
 gazelle_test(
     name = "gazelle.check",
     size = "small",
-    data = GAZELLE_PYTHON_RUNTIME_DEPS,
     gazelle = ":gazelle_bin",
     workspace = "//:BUILD",
 )

@@ -314,11 +314,11 @@ filegroup(
                     },
                 ),
                 "25": (
-                    "25.0.4",
-                    "7",
+                    "25.0.4.1",
+                    "1",
                     {
-                        "amd64": "aed3915f8facc0c80733ab2448bb0df4b494a36a2c5759e9a6e1eb979720f2b3",
-                        "arm64": "1f2644427000316bc431df3389504551ed7464fe8486bf6b4f1130af9ffc8f55",
+                        "amd64": "1731a34baadec5479258ea0202e4d5d865d2efeee60cb0c7d7eb056fe96ca219",
+                        "arm64": "34828cbb93ed31c281c84ecb31ddab655d11a802f263c1fc019d42e9e0230fed",
                     },
                 ),
             },
@@ -343,11 +343,11 @@ filegroup(
                     },
                 ),
                 "25": (
-                    "25.0.4",
-                    "7",
+                    "25.0.4.1",
+                    "1",
                     {
-                        "amd64": "e58fcdcd637b25c03ca84cbbcefc70d11efb8f4b4cbd05decc9f661769d77f94",
-                        "arm64": "621f7196f0b682fb557da58bec89bd7dfe5419811fe1c0ba75c9cc8432f084c7",
+                        "amd64": "dbb698396d478e7fa2b1e50f4103324b2a99b90569ee27c33f2261f9215cf41e",
+                        "arm64": "69df11a02cfa3ef7d7ca645e03edce6778ec090e100f6ae2b42097865730ac52",
                     },
                 ),
             },
@@ -360,7 +360,7 @@ filegroup(
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(
     name = "grype_database",
-    sha256 = "9372153c84a72a3a8c69b3a8f233022441abb5f548a63486bb7c52f5e74b16aa",
-    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-08-16T00:16:07Z_1786860870.tar.zst",
+    sha256 = "5503e1612b2420368e609595fc35683dc2bb0dded1fba02cc454aef77d1f200e",
+    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-08-30T00:35:40Z_1788071272.tar.zst",
 )
 use_repo(grype_db, "grype_database")

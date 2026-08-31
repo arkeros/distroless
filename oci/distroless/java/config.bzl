@@ -22,7 +22,7 @@ JAVA_ARCHITECTURES = {
 JAVA_VERSIONS = {
     "17": ("17.0.20", "8"),
     "21": ("21.0.12", "8"),
-    "25": ("25.0.4", "7"),
+    "25": ("25.0.4.1", "1"),
 }
 
 JAVA_MAJOR_VERSIONS = list(JAVA_VERSIONS.keys())

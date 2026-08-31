@@ -1,6 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended"
+  ],
   "timezone": "Europe/Madrid",
   "branchConcurrentLimit": 10,
   "prHourlyLimit": 10,
@@ -15,14 +17,12 @@
   "ignorePaths": [
     ".github/renovate.json"
   ],
-  "pip_requirements": {
-    "managerFilePatterns": [
-      "/python/requirements.in/"
-    ]
-  },
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "automerge": true
     },
     {
@@ -72,28 +72,12 @@
       }
     },
     {
-      "matchManagers": [
-        "pip_requirements"
+      "matchDepNames": [
+        "go"
       ],
-      "rangeStrategy": "bump",
-      "postUpgradeTasks": {
-        "commands": [
-          "./tools/repin",
-          "bazel mod deps --lockfile_mode=update",
-          "bazel mod tidy"
-        ],
-        "fileFilters": [
-          "python/requirements_linux.txt",
-          "python/requirements_macos.txt",
-          "gazelle_python.yaml",
-          "MODULE.bazel.lock"
-        ],
-        "executionMode": "update"
-      }
-    },
-    {
-      "matchDepNames": ["go"],
-      "matchManagers": ["gomod"],
+      "matchManagers": [
+        "gomod"
+      ],
       "rangeStrategy": "bump"
     },
     {
@@ -138,36 +122,12 @@
       }
     },
     {
-      "matchDepNames": ["rules_img", "rules_img_tool"],
+      "matchDepNames": [
+        "rules_img",
+        "rules_img_tool"
+      ],
       "groupName": "rules_img",
       "groupSlug": "rules_img"
-    },
-    {
-      "matchPackageNames": ["@stylexjs/**"],
-      "groupName": "stylexjs",
-      "groupSlug": "stylexjs"
-    },
-    {
-      "matchPackageNames": ["@base-ui/**"],
-      "groupName": "base-ui",
-      "groupSlug": "base-ui"
-    },
-    {
-      "matchManagers": [
-        "npm"
-      ],
-      "postUpgradeTasks": {
-        "commands": [
-          "pnpm install --lockfile-only",
-          "bazel mod deps --lockfile_mode=update",
-          "bazel mod tidy"
-        ],
-        "fileFilters": [
-          "pnpm-lock.yaml",
-          "MODULE.bazel.lock"
-        ],
-        "executionMode": "update"
-      }
     }
   ]
 }

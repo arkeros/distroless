@@ -83,23 +83,19 @@ DEFAULT_DEBUG_ENV = {
 # one line.
 DEBIAN_WONTFIX_CVES = []
 
-# OpenSSL (libssl3t64 / openssl-provider-legacy 3.6.3-1) — unfixed in sid, so
-# it can't ride in on a lockfile bump like most Debian findings do. Kept out
-# of DEBIAN_WONTFIX_CVES because openssl is absent from the static and
-# registry images, which share that list; an entry there would never match
-# their scans and would fail their `_cve_test_stale_ignores`. Apply only to
-# images that link libssl: cc, bash, nginx, and the nginx-based frontend apps.
-# `_cve_test_stale_ignores` fires when an entry stops matching, forcing it to
-# be removed once Debian ships a fix.
-OPENSSL_WONTFIX_CVES = [
-    # OCSP-response memory leak reachable from a malicious TLS server, i.e.
-    # DoS only (CWE-401). Debian tracks it open in sid and forky at 3.6.3-1
-    # with urgency "not yet assigned"; only the older bookworm/trixie/bullseye
-    # branches are resolved, so there is nothing to pull forward. Upstream
-    # notes the affected path runs only when a client sets
-    # X509_V_FLAG_OCSP_RESP_CHECK[_ALL], which is off by default.
-    "CVE-2026-54876",
-]
+# OpenSSL (libssl3t64 / openssl-provider-legacy) CVEs that Debian Security has
+# triaged but not yet fixed in sid, so they can't ride in on a lockfile bump
+# like most Debian findings do. Kept out of DEBIAN_WONTFIX_CVES because openssl
+# is absent from the static and registry images, which share that list; an
+# entry there would never match their scans and would fail their
+# `_cve_test_stale_ignores`. Apply only to images that link libssl: cc, bash,
+# nginx, and the nginx-based frontend apps.
+#
+# Currently empty: the last entry, the OCSP-response memory leak
+# CVE-2026-54876, stopped matching once sid shipped openssl 3.6.4-1. The
+# threading stays in place (every image that links libssl passes this list to
+# `ignore_cves`), so the next unfixed openssl finding is one line.
+OPENSSL_WONTFIX_CVES = []
 
 # Busybox: only present in `*_debug_*` variants via `static_debug_layers`.
 # Apply via `distroless_matrix(debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro])`.

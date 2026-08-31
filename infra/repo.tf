@@ -148,3 +148,67 @@ resource "github_repository_ruleset" "main_review" {
     }
   }
 }
+
+# The repository itself, adopted for the sake of one setting: `allow_auto_merge`.
+#
+# Renovate's `platformAutomerge` in //.github/renovate.json is a no-op unless
+# GitHub's auto-merge is enabled, so the two have to agree — and until this
+# resource existed, the half that mattered lived only in a settings page. That
+# is the same drift the rulesets above were pulled into Terraform to kill.
+#
+# Adopting a whole `github_repository` to hold one boolean is a real cost: every
+# other attribute here is transcribed from the live repository, and any one this
+# omits would be reset to the provider's default on the next apply. They are
+# spelled out rather than left implicit for that reason. `prevent_destroy`
+# because destroying this resource deletes the repository.
+resource "github_repository" "this" {
+  name         = local.github_repo_name
+  description  = "Minimal, reproducible distroless OCI base images built with Bazel — signed, SBOM'd and CVE-scanned."
+  homepage_url = "distroless.io"
+  visibility   = "public"
+
+  has_issues   = true
+  has_projects = true
+  has_wiki     = true
+  is_template  = false
+  archived     = false
+  topics       = []
+
+  web_commit_signoff_required = false
+
+  # The one that is actually load-bearing. Everything else in this block is
+  # transcription.
+  allow_auto_merge = true
+
+  allow_squash_merge     = true
+  allow_merge_commit     = true
+  allow_rebase_merge     = true
+  allow_update_branch    = false
+  delete_branch_on_merge = false
+
+  squash_merge_commit_title   = "COMMIT_OR_PR_TITLE"
+  squash_merge_commit_message = "COMMIT_MESSAGES"
+  merge_commit_title          = "MERGE_MESSAGE"
+  merge_commit_message        = "PR_TITLE"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+import {
+  to = github_repository.this
+  id = local.github_repo_name
+}
+
+# Its own resource rather than the `vulnerability_alerts` attribute, which the
+# provider deprecates in favour of this.
+resource "github_repository_vulnerability_alerts" "this" {
+  repository = github_repository.this.name
+  enabled    = true
+}
+
+import {
+  to = github_repository_vulnerability_alerts.this
+  id = local.github_repo_name
+}

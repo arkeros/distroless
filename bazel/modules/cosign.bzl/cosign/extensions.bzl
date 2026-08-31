@@ -8,8 +8,9 @@ Usage in a consumer's MODULE.bazel:
     register_toolchains("@cosign_toolchains//:all")
 
 Source-compiling cosign from `github.com/sigstore/cosign/v3` instead is
-possible but the dep graph fights gazelle (see `bazel/patches/` in distroless
-for the in-progress workarounds). The prebuilt path is the default.
+possible, but it drags cosign's full dependency tree (cloud KMS SDKs,
+Kubernetes libs) into the consumer's go.mod to rebuild a binary upstream
+already publishes. The prebuilt path is the default.
 """
 
 load(":versions.bzl", "COSIGN_VERSIONS", "DEFAULT_VERSION", "get_cosign_url")

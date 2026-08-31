@@ -23,7 +23,7 @@ The tag is a *convention*, not a Bazel-enforceable security boundary — macros 
 | Pinned-tag confusion (consumer pulls `latest`, attacker substitutes a different `latest`) | **Yes** | Signatures are digest-bound. `cosign verify-attestation` resolves the tag, fetches the manifest, and verifies the resulting digest. |
 | Replay (older valid signature reused on a stale digest) | **Yes** | Signature binds to digest; stale digest means stale image content. Consumer policies that pin specific tags or digests reject staleness. |
 | In-tree code adds a raw `image_push` to the mirror prefix bypassing `mirror_push` | **Yes** (analysis-time) | `mirror_push_enforcement_aspect` fails Bazel analysis. See *Enforcement* above; the tag-vs-PR-review nuance applies — accidental bypass is blocked, deliberate bypass becomes a reviewable change. |
-| Compromised cosign binary download (`sigstore/cosign` GitHub release tarball substituted) | **Yes** | Per-platform SHA256 pinned in `bazel/modules/cosign.bzl/cosign/versions.bzl`. A substituted release fails the checksum and Bazel refuses to materialize the toolchain. |
+| Compromised cosign binary download (`sigstore/cosign` GitHub release tarball substituted) | **Yes** | Per-platform SHA256 pinned in `tools/tools.lock.json`. A substituted release fails the checksum and Bazel refuses to materialize the toolchain. |
 
 ## Trust root
 
@@ -73,12 +73,13 @@ A new `mirror_push` macro that wraps push + sign + attest + predicate.
 
 ## Cosign delivery
 
-Loaded as a prebuilt binary via a module extension (`cosign/extensions.bzl`), with per-platform URLs and SHA256 checksums pinned in `versions.bzl`.
+Loaded as a prebuilt release binary via the shared rules_multitool lockfile (`tools/tools.lock.json`), with per-platform URLs and SHA256 checksums pinned there; `//bazel/toolchains/cosign` wraps `@multitool//tools/cosign` in the cosign toolchain.
 
 | Option | Verdict |
 |---|---|
-| **Prebuilt extension** | **Chosen for now.** Hermetic given the checksum, runs on any runner, no system cosign required. |
-| Source-compiled from `github.com/sigstore/cosign/v3` via gazelle | **Deferred.** Goal: hermetic build-graph membership for the cosign binary. Blocker: the `pkg/providers/buildkite` package transitively pulls `github.com/buildkite/agent/v3`, which ships checked-in BUILD.bazel files referencing `@rules_go` from a context where it isn't visible. Patching cosign to drop the buildkite import leaves a phantom `@com_github_sigstore_cosign_v3//pkg/providers/buildkite` reference in the gazelle-generated `pkg/providers/all/BUILD.bazel` that doesn't yield to standard `gazelle_override` directives. Revisit when gazelle handles this case or when a deeper file-deletion patch is acceptable. |
+| **Prebuilt via multitool lockfile** | **Chosen.** Hermetic given the checksum, runs on any runner, no system cosign required, and shares the delivery mechanism every other prebuilt dev tool already uses. |
+| Source-compiled from `github.com/sigstore/cosign/v3` via gazelle | Tried, then reverted. It worked (with `build_file_generation = "clean"` overrides for buildkite-agent, jwx, certificate-transparency-go, in-toto/attestation, and rekor-tiles), but dragged cosign's full dependency tree — cloud KMS SDKs, Kubernetes libs — into `go.mod` (~780 lines of go.mod/go.sum) and cost CI a from-source build of all of it, for a binary upstream already ships signed and checksummed. |
+| Bespoke module extension (`cosign/extensions.bzl` + `versions.bzl`) | Not used by distroless. It stays as `cosign.bzl` module surface for external consumers who want the module to deliver the binary too; distroless already has a lockfile for prebuilt tools, so it uses that instead and pins the version in one place. |
 | System cosign (`which cosign`) | Rejected. No hermeticity; CI runners would need cosign installed. |
 
 ## Predicate origin
@@ -143,7 +144,7 @@ Three places per image, all keyed on the same registry digest (`<repo>@sha256:<h
 | `certificate verification failed: x509` | Fulcio cert chain doesn't validate, usually a clock skew or stale TUF root | `cosign initialize` to refresh the trust root; check system time |
 | `certificate identity for ... did not match any of the given identities` | The OIDC subject in the cert doesn't match the verify regex (drift between producer `BUILDER_ID` and consumer regex) | Inspect the cert: `cosign download attestation <ref> | cosign verify-blob-attestation --insecure-ignore-tlog ... --certificate-identity-regexp='.*'` to bypass identity check, then `jq` the cert's SAN |
 | `transparency log entry not found` | Signature wasn't uploaded to Rekor (signer ran with `--tlog-upload=false`) | Check `cosign sign` / `cosign attest` invocation flags; we always upload by default |
-| Verify succeeds locally, fails in CI | `cosign` version skew, or a runner without network access to Rekor | Pin `cosign` version in CI (we do, via the prebuilt extension); ensure runner egress to `rekor.sigstore.dev:443` |
+| Verify succeeds locally, fails in CI | `cosign` version skew, or a runner without network access to Rekor | Pin `cosign` version in CI (we do, via the multitool lockfile); ensure runner egress to `rekor.sigstore.dev:443` |
 
 **Where do signing operations show up in audit logs?**
 
@@ -179,7 +180,6 @@ No `referrers_mode` knob exists on the rules. Cosign 3.x dropped `--registry-ref
 
 Ordered by load-bearing-ness.
 
-- **Source-compile cosign.** Replace the prebuilt extension with a gazelle-resolved `@com_github_sigstore_cosign_v3//cmd/cosign`. Blocker is logged in the *Cosign delivery* section above. Either land a deeper patch that physically removes `pkg/providers/buildkite/buildkite.go` from the cosign source (so gazelle has nothing to generate a phantom reference to), or wait for upstream to drop the buildkite OIDC provider, or for gazelle's resolver to honor `gazelle:exclude` for absolute self-references.
 - **Phase 2 SLSA predicate.** Add `materials` (SLSA v1.0 `resolvedDependencies`) populated from the same `gather_metadata` aspect that drives SBOM generation. Makes the predicate self-contained: a verifier reading only the attestation gets a full materials manifest without chasing the SBOM sidecar.
 - **Externalize `bazel/modules/cosign.bzl/`.** When (if) there's a second consumer, `git subtree split` the module into `github.com/arkeros/cosign.bzl` and switch distroless from `local_path_override` to a versioned `bazel_dep`. Mechanical; the module's code is already module-boundary-clean.
 - **Multi-issuer verify tolerance.** Currently the verify policy pins one OIDC issuer (GitHub Actions). When the day comes to migrate to BuildBuddy / Tekton / Cloud Build / Codeberg, the consumer-facing verify command needs to accept multiple issuers (or the project needs to dual-sign during the transition). Design when the migration is on the table, not before.

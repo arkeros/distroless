@@ -121,8 +121,8 @@ jobs:
           # Build the binary and pull it down explicitly rather than relying on
           # a later `bazel run` to materialise it as a side effect.
           bazel build --remote_download_outputs=all \
-              //bazel/toolchains/cosign:compiled_cosign_toolchain
-          COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:compiled_cosign_toolchain --output=files)")
+              //bazel/toolchains/cosign:prebuilt_cosign_toolchain
+          COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")
           echo "COSIGN=${COSIGN}" >> "$GITHUB_ENV"
           TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
           for attempt in 1 2 3 4 5; do

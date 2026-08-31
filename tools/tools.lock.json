@@ -1,5 +1,73 @@
 {
   "$schema": "https://raw.githubusercontent.com/theoremlp/rules_multitool/main/lockfile.schema.json",
+  "cosign": {
+    "binaries": [
+      {
+        "kind": "file",
+        "url": "https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign-linux-amd64",
+        "sha256": "4629c757b7618056f8ddd7e2625ae9fdd94c0372a65049520bc7d9df9efc7f71",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign-linux-arm64",
+        "sha256": "c5d324e091826b0d7a78eb16fef316450b4eb9aaec045611c08ba06f5e73220a",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign-darwin-arm64",
+        "sha256": "5cf948c2f4dfe59687bdd0b8523709067383e03982cc543475c8a7dc70e92a76",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign-darwin-amd64",
+        "sha256": "2347488e5d5b25336644024dfeca5601b190e91197a71a917bda44744aff106c",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
+  },
+  "grype": {
+    "binaries": [
+      {
+        "kind": "archive",
+        "url": "https://github.com/anchore/grype/releases/download/v0.117.0/grype_0.117.0_linux_amd64.tar.gz",
+        "file": "grype",
+        "sha256": "38525dab1e06f162ebaa02f94d82d1f807076b011a44180cf2777edf1a7b9c26",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/anchore/grype/releases/download/v0.117.0/grype_0.117.0_linux_arm64.tar.gz",
+        "file": "grype",
+        "sha256": "935f628bdf9331ffdd946931ea5fdb50045d3970ba52670cbeb44a88f127291b",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/anchore/grype/releases/download/v0.117.0/grype_0.117.0_darwin_arm64.tar.gz",
+        "file": "grype",
+        "sha256": "bfcefa3f3b1690d9c77d847841b32ebd6106ab0e0e32f810924707e704d53584",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/anchore/grype/releases/download/v0.117.0/grype_0.117.0_darwin_amd64.tar.gz",
+        "file": "grype",
+        "sha256": "312ed375dcda6d8893b4ca5d517371fef1a50062ebb0b0dbe6bdb4ac2fb57c57",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
+  },
   "kubectl": {
     "binaries": [
       {

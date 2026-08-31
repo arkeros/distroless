@@ -77,7 +77,9 @@ Push is not supported; images are pushed directly to GHCR via CI.
 
 ## Deployment
 
-Deployed to Cloud Run in three regions — `us-central1`, `europe-west3`, `asia-northeast1` — by the `deploy` job in [`.github/workflows/ci.yaml`](../../../.github/workflows/ci.yaml). Each region is a separate service, all applied from the one Knative manifest at [`service.yaml`](./service.yaml) via `gcloud run services replace --region=<region>`, and all sharing one runtime GSA. Cloud Run service names are region-scoped, so `registry` in every region does not collide.
+Deployed to Cloud Run in the regions listed in [`regions.json`](./regions.json) by the `push-gar` and `deploy` jobs in [`.github/workflows/ci.yaml`](../../../.github/workflows/ci.yaml). Each region is a separate service, all applied from the one Knative manifest at [`service.yaml`](./service.yaml) via `gcloud run services replace --region=<region>`, and all sharing one runtime GSA. Cloud Run service names are region-scoped, so `registry` in every region does not collide.
+
+`push-gar` pushes the image and resolves its digest once, then publishes that digest and the region list as job outputs; `deploy` fans out over them with nothing but `gcloud`. Adding or removing a region is an edit to `regions.json` alone — the workflow matrix is generated from it.
 
 Region fan-out is for latency, not identity — the services are replicas of the same workload, so they share one service account (one row in audit logs and IAM bindings, not three). Fronting them behind a single anycast IP is the job of the external HTTPS load balancer.
 

@@ -193,16 +193,22 @@ jobs:
   #
   # The service is described by the Knative manifest at
   # //oci/cmd/registry:service.yaml and applied with `gcloud run services
-  # replace`, once per region. The manifest is the desired state; this job only
-  # supplies the image and the region.
+  # replace`, once per region. The manifest is the desired state; the deploy
+  # only supplies the image and the region.
+  #
+  # Split in two: `push-gar` does the Bazel work once and publishes what the
+  # regions need — the digest-pinned image and the region list — as job
+  # outputs. `deploy` fans out over those regions with nothing but gcloud, so
+  # the image is resolved exactly once and every region provably deploys the
+  # same bytes rather than each re-deriving them.
   #
   # Terraform is not in this path. `//infra` owns the durable substrate (the
   # Artifact Registry repo and the runtime GSA) and is applied out of band —
   # it changes on the order of never, whereas this deploys every push to main.
   # ---------------------------------------------------------------------------
 
-  deploy:
-    name: Deploy registry
+  push-gar:
+    name: Push image to Artifact Registry
     needs: publish
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -216,12 +222,9 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    strategy:
-      # Regions are independent replicas of one workload. Deploy them one at a
-      # time so a bad image stops at the first region instead of all three.
-      max-parallel: 1
-      matrix:
-        region: [us-central1, europe-west3, asia-northeast1]
+    outputs:
+      image: ${{ steps.digest.outputs.image }}
+      regions: ${{ steps.regions.outputs.regions }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -245,9 +248,6 @@ jobs:
           service_account: github-actions-senku-apply@senku-prod.iam.gserviceaccount.com
           token_format: access_token
 
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v3
-
       - name: Login to Artifact Registry
         uses: docker/login-action@v4
         with:
@@ -255,20 +255,16 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
-      # Pushing on every region is a no-op after the first: same digest, same
-      # tags. Kept in the matrix rather than hoisted so a re-run of one region
-      # is self-contained.
-      - name: Push image to Artifact Registry
+      - name: Push image
         run: bazel run //oci/cmd/registry:image_push_gar
 
       # The digest comes from the build, not from the registry. `image_push`
       # pushes the index the `digest` output group names, and OCI digests are
       # content addresses, so the two agree by construction. Asking the
       # registry to resolve `:latest` instead would be a race — a concurrent
-      # push can move that tag between this job's push and its read — and it
-      # would make the deployed bytes depend on registry state rather than on
-      # the commit being built.
+      # push can move that tag between this job's push and its read.
       - name: Resolve image digest
+        id: digest
         run: |
           set -euo pipefail
           # cquery only analyses — it prints a path without producing the file,
@@ -278,18 +274,53 @@ jobs:
           DIGEST=$(cat "$(bazel cquery //oci/cmd/registry:image \
               --output=files --output_groups=digest)")
           REPO=europe-docker.pkg.dev/senku-prod/containers/registry
-          echo "IMAGE=${REPO}@${DIGEST}" >> "$GITHUB_ENV"
+          echo "image=${REPO}@${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "Deploying ${REPO}@${DIGEST}"
 
-      - name: Deploy to Cloud Run (${{ matrix.region }})
+      # Regions live next to the service they deploy, not in this file, so the
+      # list and the manifest move together.
+      - name: Read deploy regions
+        id: regions
         run: |
           set -euo pipefail
-          MANIFEST=$(mktemp --suffix=.yaml)
+          echo "regions=$(jq -c . oci/cmd/registry/regions.json)" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy ${{ matrix.region }}
+    needs: push-gar
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      # Regions are independent replicas of one workload. Deploy them one at a
+      # time so a bad image stops at the first region instead of all three.
+      max-parallel: 1
+      matrix:
+        region: ${{ fromJSON(needs.push-gar.outputs.regions) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: github-actions-senku-apply@senku-prod.iam.gserviceaccount.com
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Deploy to Cloud Run
+        env:
+          IMAGE: ${{ needs.push-gar.outputs.image }}
+        run: |
+          set -euo pipefail
           # The placeholder is a fixed token, so a literal substitution is
           # enough — no YAML templating engine in the deploy path.
-          sed "s|IMAGE_PLACEHOLDER|${IMAGE}|" \
-              oci/cmd/registry/service.yaml > "${MANIFEST}"
-          gcloud run services replace "${MANIFEST}" --region="${{ matrix.region }}"
+          sed "s|IMAGE_PLACEHOLDER|${IMAGE}|" oci/cmd/registry/service.yaml \
+              | gcloud run services replace - --region="${{ matrix.region }}"
 
       # Not expressible in the Knative manifest: `run.invoker` for `allUsers`
       # is an IAM policy on the service, not part of its spec. The LB's

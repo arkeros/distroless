@@ -266,13 +266,16 @@ jobs:
     needs: publish
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    # `prod` is configured in repo settings with `main`-only deployment
-    # branches and required reviewers. GitHub validates both *before* minting
-    # the OIDC token, so the branch/reviewer gate lives in the identity layer —
-    # not in this YAML, which any committer can edit. The deploy SA's WIF
-    # binding is keyed on `attribute.environment/prod`, and the pool's provider
-    # condition pins `arkeros/distroless`, so neither another environment nor
-    # another repository can impersonate it. Both live in //infra.
+    # `prod`'s deployment branch policy names `main` and nothing else, and
+    # GitHub validates it *before* minting the OIDC token — so the branch gate
+    # lives in the identity layer, not in this YAML, which any committer can
+    # edit. The deploy SA's WIF binding is keyed on `attribute.environment/prod`,
+    # and the pool's provider condition pins `arkeros/distroless`, so neither
+    # another environment nor another repository can impersonate it.
+    #
+    # No human approves this. What makes `main` deployable is the `main-checks`
+    # ruleset, which requires the `Test` job below to pass and has no bypass
+    # actors. All of it — environment, policy, rulesets — lives in //infra.
     environment: prod
     permissions:
       contents: read

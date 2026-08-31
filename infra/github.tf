@@ -52,10 +52,11 @@ resource "google_service_account" "github_actions" {
 
 # Keyed on `attribute.environment/prod`, not on the repository: the provider
 # condition above already pins the repository, so what this adds is the
-# environment gate. `prod` is configured in repo settings with `main`-only
-# deployment branches and required reviewers, and GitHub validates both
-# *before* minting the OIDC token — so the branch/reviewer check lives in the
-# identity layer rather than in workflow YAML any committer can edit.
+# environment gate. `prod`'s deployment branch policy names `main` and nothing
+# else, and GitHub validates it *before* minting the OIDC token — so the branch
+# check lives in the identity layer rather than in workflow YAML any committer
+# can edit. That environment, and the rulesets that decide what may reach
+# `main` in the first place, are in repo.tf.
 resource "google_service_account_iam_member" "github_actions_wif" {
   service_account_id = google_service_account.github_actions.name
   role               = "roles/iam.workloadIdentityUser"

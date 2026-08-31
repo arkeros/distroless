@@ -5,7 +5,10 @@ go_library(
     testonly = True,
     srcs = ["fakeregistry.go"],
     importpath = "github.com/arkeros/distroless/oci/ocitest",
-    visibility = ["//oci:__subpackages__"],
+    visibility = [
+        "//oci:__subpackages__",
+        "//web:__subpackages__",
+    ],
     deps = [
         "@com_github_google_go_containerregistry//pkg/name",
         "@com_github_google_go_containerregistry//pkg/registry",

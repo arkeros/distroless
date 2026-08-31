@@ -364,3 +364,40 @@ grype_db.database(
     url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-08-30T00:35:40Z_1788071272.tar.zst",
 )
 use_repo(grype_db, "grype_database")
+
+# Sigstore's trusted root: the Fulcio CAs, Rekor logs and CT logs a mirror
+# signature is checked against. //web verifies attestations against this before
+# rendering them, so it ships inside that binary rather than being fetched at
+# runtime — a page whose subject is supply-chain evidence should not depend on
+# tuf-repo-cdn.sigstore.dev being up to render.
+#
+# The URL is the moving target on purpose. The TUF CDN also serves this file
+# under a content-addressed name (`<sha256>.trusted_root.json`), which is
+# tempting and wrong: a CAS URL can never fail its checksum, so it can never
+# tell us the root has moved on. Pinning a stable URL means Bazel's integrity
+# check *is* the drift detector — the day Sigstore publishes a new root this
+# fetch fails with expected-vs-actual instead of silently serving a root that
+# no longer covers current signatures.
+#
+# Trust comes from `sha256`, not from the host. When refreshing, take the hash
+# from TUF's *signed* targets.json (below) rather than from the file GitHub
+# serves, then confirm GitHub matches it. That keeps the chain rooted in TUF
+# even though the bytes arrive over plain HTTPS.
+#
+# Unlike TUF metadata this target has no expiry field — its CAs and logs carry
+# open-ended `validFor` windows. It changes only when Sigstore *adds* a log or
+# CA (twice since 2021: Fulcio's 2022 root, Rekor's 2025 log).
+#
+# To refresh:
+#   SNAP=$(curl -fsSL https://tuf-repo-cdn.sigstore.dev/timestamp.json \
+#     | jq -r '.signed.meta["snapshot.json"].version')
+#   TGT=$(curl -fsSL https://tuf-repo-cdn.sigstore.dev/$SNAP.snapshot.json \
+#     | jq -r '.signed.meta["targets.json"].version')
+#   curl -fsSL https://tuf-repo-cdn.sigstore.dev/$TGT.targets.json \
+#     | jq -r '.signed.targets["trusted_root.json"].hashes.sha256'
+http_file(
+    name = "sigstore_trusted_root",
+    downloaded_file_path = "trusted_root.json",
+    sha256 = "6494e21ea73fa7ee769f85f57d5a3e6a08725eae1e38c755fc3517c9e6bc0b66",
+    url = "https://raw.githubusercontent.com/sigstore/root-signing/main/targets/trusted_root.json",
+)

@@ -27,6 +27,11 @@ jobs:
       - name: Set up Bazelisk
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
+          # Shares a single Actions cache entry with every other workflow —
+          # the key is platform + a hash of MODULE.bazel, with no workflow
+          # component. See release-cli.yaml. `external-cache` is deliberately
+          # left off: that one is keyed per workflow/job.
+          repository-cache: true
           bazelrc: |
             common --config=ci
             common --config=gcs

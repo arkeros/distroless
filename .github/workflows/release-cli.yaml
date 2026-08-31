@@ -33,6 +33,17 @@ jobs:
       - name: Set up Bazelisk
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
+          # Download cache only, not `external-cache`. knife pulls ~300
+          # external repos (the anchore/syft stack, AWS SDK, the LLVM
+          # toolchain), and the GCS cache cannot cover any of them — fetching
+          # a repo is repository-rule work, not an action.
+          #
+          # Free to turn on everywhere: setup-bazel keys this on
+          # platform + a hash of MODULE.bazel with no workflow or job
+          # component, so all six workflows share one entry. `external-cache`
+          # is the opposite — keyed per workflow/job, one entry per repo —
+          # which is why only ci.yaml pays for that one.
+          repository-cache: true
           bazelrc: |
             common --config=ci
             common --config=gcs

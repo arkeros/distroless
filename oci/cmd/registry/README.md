@@ -113,7 +113,7 @@ The GHCR public-mirror push (`:image_push`) is separate so a release can gate th
 ## Testing
 
 ```sh
-bazel test //oci/pkg/proxy:proxy_test
+bazel test //oci/proxy:proxy_test
 ```
 
 ## TODO

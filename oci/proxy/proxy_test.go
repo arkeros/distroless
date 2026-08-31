@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/arkeros/distroless/oci/pkg/proxy"
+	"github.com/arkeros/distroless/oci/proxy"
 	"github.com/arkeros/distroless/oci/ocitest"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 )

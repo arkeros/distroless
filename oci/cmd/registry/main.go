@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/arkeros/distroless/oci/pkg/proxy"
+	"github.com/arkeros/distroless/oci/proxy"
 )
 
 // repeatedString collects a flag given more than once, e.g. `--repo=a --repo=b`.

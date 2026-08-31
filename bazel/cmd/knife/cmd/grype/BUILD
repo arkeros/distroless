@@ -9,8 +9,8 @@ go_library(
     importpath = "github.com/arkeros/distroless/bazel/cmd/knife/cmd/grype",
     visibility = ["//bazel/cmd/knife:__subpackages__"],
     deps = [
-        "//bazel/pkg/grypedb",
-        "//bazel/pkg/mod",
+        "//bazel/grypedb",
+        "//bazel/mod",
         "@com_github_anchore_grype//grype/db/v6/distribution",
         "@com_github_spf13_cobra//:cobra",
     ],

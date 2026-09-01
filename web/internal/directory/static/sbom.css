@@ -191,13 +191,17 @@ th button {
   cursor: pointer;
 }
 
+/* Held in reserve on every column, so sorting one cannot resize it, and tied
+   to the label with a non-breaking space: a plain space is a break
+   opportunity, and in a narrow column the arrow took a line of its own. */
 th button::after {
-  content: '';
+  content: '\00A0\25B2';
+  visibility: hidden;
   color: var(--muted);
 }
 
-th[aria-sort="ascending"] button::after { content: ' \25B2'; }
-th[aria-sort="descending"] button::after { content: ' \25BC'; }
+th[aria-sort="ascending"] button::after { visibility: visible; }
+th[aria-sort="descending"] button::after { content: '\00A0\25BC'; visibility: visible; }
 
 tbody tr:hover {
   background: color-mix(in srgb, currentColor 4%, transparent);

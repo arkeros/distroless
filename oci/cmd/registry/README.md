@@ -81,6 +81,8 @@ Deployed to Cloud Run in the regions listed in [`regions.json`](./regions.json) 
 
 `push-gar` pushes every deployed image and resolves its digest once, then publishes the rollout plan — image, manifest and region list, keyed by service — as a single job output; `deploy-registry` and `deploy-web` each matrix over their own entry with nothing but `gcloud`. Adding or removing a region is an edit to `regions.json` alone.
 
+`push-gar` runs alongside the mirror publish rather than after it — the two share a build but nothing else, since the GAR copy is trusted by IAM and not by signature. `deploy` waits on both, so the push is off the critical path while the invariant it used to carry still holds: nothing reaches production unless the mirror published, signed and attested cleanly.
+
 Region fan-out is for latency, not identity — the services are replicas of the same workload, so they share one service account (one row in audit logs and IAM bindings, not three). Fronting them behind a single anycast IP is the job of the external HTTPS load balancer.
 
 The manifest is the desired state and carries no image: the deploy job substitutes `IMAGE_PLACEHOLDER` with the digest it just pushed. Regions deploy sequentially (`max-parallel: 1`, `fail-fast: true`), so a bad image stops at the first one. Each service gets its own job so that containment works the same way sideways: a broken `web` rollout must not stop `registry` reaching its remaining regions, which one matrix over both services could not express.

@@ -269,7 +269,14 @@ jobs:
 
   push-gar:
     name: Push images to Artifact Registry
-    needs: publish
+    # Waits on `test`, not on `publish`, so the two run side by side. Nothing
+    # flows between them — same build, different registry, and ADR 0006 puts
+    # the GAR copy on an IAM perimeter rather than a signature one — so all
+    # `needs: publish` ever bought here was ordering, and `deploy` below still
+    # holds it. Neither job pays for the parallelism: `test` runs the CVE gates,
+    # which build every image, so both start against a cache `test` warmed
+    # rather than one of them warming the other.
+    needs: test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     # `prod`'s deployment branch policy names `main` and nothing else, and
@@ -404,7 +411,12 @@ jobs:
 
   deploy-registry:
     name: Deploy registry ${{ matrix.region }}
-    needs: push-gar
+    # `publish` is the gate `push-gar` no longer holds: nothing reaches
+    # production unless the mirror published, signed and attested cleanly and
+    # both verify tests passed. Nothing here reads any of it — it is a claim
+    # about what a release is, not a data dependency — which is why it belongs
+    # on the production mutation rather than on the GAR push that feeds it.
+    needs: [push-gar, publish]
     runs-on: ubuntu-latest
     environment: prod
     permissions:
@@ -476,7 +488,7 @@ jobs:
 
   deploy-web:
     name: Deploy web ${{ matrix.region }}
-    needs: push-gar
+    needs: [push-gar, publish]
     runs-on: ubuntu-latest
     environment: prod
     permissions:

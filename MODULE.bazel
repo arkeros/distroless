@@ -26,6 +26,29 @@ single_version_override(
 
 register_toolchains("@llvm//toolchain:all")
 
+# The hermetic macOS SDK ships a minimal framework set (CoreFoundation,
+# Foundation, Kernel, OSLog, Security, SystemConfiguration) to keep the sysroot
+# — and therefore every sandboxed macOS cc action — small. `ibazel`, the dev
+# watcher on `//tools:dev`'s PATH, is cgo and needs CoreServices for the
+# FSEvents API; CoreServices' umbrella header transitively pulls in
+# DiskArbitration (via CarbonCore/Files.h), IOKit (via DiskArbitration/DADisk.h)
+# and CFNetwork. Listing any framework replaces the default set, so the defaults
+# are repeated here. dev_dependency: only a dev tool needs these, so consumers
+# of @distroless keep the smaller sysroot.
+osx = use_extension("@llvm//extensions:osx.bzl", "osx", dev_dependency = True)
+osx.frameworks(names = [
+    "CFNetwork",
+    "CoreFoundation",
+    "CoreServices",
+    "DiskArbitration",
+    "Foundation",
+    "IOKit",
+    "Kernel",
+    "OSLog",
+    "Security",
+    "SystemConfiguration",
+])
+
 # Patched busybox built via //bazel/registry. Consumed lazily — no compile
 # happens unless something depends on @busybox//... — but the dep is not
 # dev-only because the cc toolchain that builds it (llvm) isn't either.

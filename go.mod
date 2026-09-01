@@ -7,7 +7,7 @@ require (
 	github.com/anchore/grype v0.117.0
 	github.com/bazelbuild/buildtools v0.0.0-20260826221324-7cca172268c7
 	github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb
-	github.com/google/go-containerregistry v0.21.9
+	github.com/google/go-containerregistry v0.22.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/klauspost/compress v1.19.2
 	github.com/sigstore/sigstore-go v1.3.0

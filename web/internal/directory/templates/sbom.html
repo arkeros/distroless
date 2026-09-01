@@ -23,26 +23,28 @@
     <a class="download" href="{{.Download}}" title="The signed CycloneDX document, covering every architecture">Download SBOM</a>
   </div>
 
-  <table id="sbom">
-    <thead>
-      <tr>
-        <th data-column="name" aria-sort="ascending"><button type="button">Component</button></th>
-        <th data-column="version"><button type="button">Version</button></th>
-        <th data-column="license"><button type="button">License</button></th>
-        <th data-column="type"><button type="button">Type</button></th>
-      </tr>
-    </thead>
-    <tbody>
-      {{range .Rows}}
-      <tr data-version-rank="{{.VersionRank}}">
-        <td>{{.Name}}</td>
-        <td>{{.Version}}</td>
-        <td class="license" title="{{.License}}">{{.License}}</td>
-        <td>{{.Type}}</td>
-      </tr>
-      {{end}}
-    </tbody>
-  </table>
+  <div class="scroller" tabindex="0" role="region" aria-label="Components">
+    <table id="sbom">
+      <thead>
+        <tr>
+          <th data-column="name" aria-sort="ascending"><button type="button">Component</button></th>
+          <th data-column="version"><button type="button">Version</button></th>
+          <th data-column="license"><button type="button">License</button></th>
+          <th data-column="type"><button type="button">Type</button></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr data-version-rank="{{.VersionRank}}">
+          <td>{{.Name}}</td>
+          <td>{{.Version}}</td>
+          <td class="license" title="{{.License}}">{{.License}}</td>
+          <td>{{.Type}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
 </main>
 <script src="/directory/static/sbom.js" defer></script>
 </body>

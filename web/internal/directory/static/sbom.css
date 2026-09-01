@@ -139,6 +139,14 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
+/* A phone is narrower than four columns of package metadata. Scrolling the
+   table inside its own box keeps the document still, so the heading, filter
+   and count stay put while the columns move under them. Focusable because a
+   region you can only reach by dragging is a region the keyboard cannot read. */
+.scroller {
+  overflow-x: auto;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

@@ -20,6 +20,7 @@
   <div class="controls">
     <input id="filter" type="search" placeholder="Filter components" autocomplete="off" spellcheck="false" aria-label="Filter components">
     <p id="count" aria-live="polite">{{len .Rows}} components</p>
+    <a class="download" href="{{.Download}}" title="The signed CycloneDX document, covering every architecture">Download SBOM</a>
   </div>
 
   <table id="sbom">

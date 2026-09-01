@@ -49,7 +49,12 @@ type Table struct {
 	Arch string
 	// Architectures is every architecture the Index carries, sorted.
 	Architectures []string
-	Rows          []Row
+	// Download is where the signed document behind this page can be had.
+	// Set by the handler, which knows the reader's own path and tag; the
+	// Table is built from an image name that has already been rewritten for
+	// display.
+	Download string
+	Rows     []Row
 }
 
 // defaultArch is what a reader gets when they express no preference.

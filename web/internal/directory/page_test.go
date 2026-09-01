@@ -1,6 +1,7 @@
 package directory_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"mime"
@@ -16,11 +17,16 @@ import (
 type fakeSource struct {
 	digest     string
 	components []directory.Component
+	document   []byte
 	err        error
 }
 
 func (f fakeSource) SBOM(_ context.Context, _ string) (string, []directory.Component, error) {
 	return f.digest, f.components, f.err
+}
+
+func (f fakeSource) Document(_ context.Context, _ string) (string, []byte, error) {
+	return f.digest, f.document, f.err
 }
 
 func get(t *testing.T, source directory.Source, target string, headers http.Header) *httptest.ResponseRecorder {
@@ -188,5 +194,94 @@ func TestStaticFontsAreServedAsWoff2(t *testing.T) {
 	}
 	if got := response.Header().Get("Content-Type"); got != "font/woff2" {
 		t.Errorf("Content-Type = %q, want %q", got, "font/woff2")
+	}
+}
+
+// The download is the attestation's own bytes. Re-serialising it — to drop the
+// architectures the page is not showing, say — would hand the reader a
+// document nobody signed.
+func TestDownloadServesTheDocumentUnaltered(t *testing.T) {
+	document := []byte(`{"bomFormat":"CycloneDX","specVersion":"1.5"}`)
+	source := fakeSource{digest: "sha256:abc", document: document}
+
+	response := get(t, source, "/directory/image/nginx/sbom.json", nil)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if got := response.Body.Bytes(); !bytes.Equal(got, document) {
+		t.Errorf("body = %s, want %s", got, document)
+	}
+	if got := response.Header().Get("Content-Type"); got != "application/vnd.cyclonedx+json" {
+		t.Errorf("Content-Type = %q, want the CycloneDX media type", got)
+	}
+}
+
+// A reader who clicks download should get a file named after what they were
+// looking at, not "sbom.json" among ten other sbom.json.
+func TestDownloadNamesTheFileAfterTheImage(t *testing.T) {
+	source := fakeSource{digest: "sha256:0da1844626f2a1628c878b60fdf8b491e", document: []byte("{}")}
+
+	disposition := get(t, source, "/directory/image/nginx/sbom.json?tag=1.27", nil).Header().Get("Content-Disposition")
+
+	for _, want := range []string{"attachment", "nginx", "1.27", "0da1844626f2", ".cdx.json"} {
+		if !strings.Contains(disposition, want) {
+			t.Errorf("Content-Disposition = %q, want it to contain %q", disposition, want)
+		}
+	}
+}
+
+// A tag is reader-supplied and lands in a response header, so it cannot be
+// allowed to carry quotes or newlines into one.
+func TestDownloadSanitisesTheFilename(t *testing.T) {
+	source := fakeSource{digest: "sha256:abc", document: []byte("{}")}
+
+	disposition := get(t, source, `/directory/image/nginx/sbom.json?tag=a"b%0d%0aX-Evil:+1`, nil).Header().Get("Content-Disposition")
+
+	const prefix = `attachment; filename="`
+	if !strings.HasPrefix(disposition, prefix) || !strings.HasSuffix(disposition, `"`) {
+		t.Fatalf("Content-Disposition = %q, want a quoted attachment filename", disposition)
+	}
+	// The quotes delimiting the filename are the header's own; what must not
+	// survive is any of that syntax arriving from the tag.
+	filename := strings.TrimSuffix(strings.TrimPrefix(disposition, prefix), `"`)
+	if strings.ContainsAny(filename, "\"\r\n;") {
+		t.Errorf("filename %q carries header syntax out of the tag", filename)
+	}
+}
+
+// The document is immutable for a Digest, so revalidation should cost no body.
+func TestDownloadRevalidatesOnDigest(t *testing.T) {
+	source := fakeSource{digest: "sha256:abc", document: []byte("{}")}
+
+	first := get(t, source, "/directory/image/nginx/sbom.json", nil)
+	etag := first.Header().Get("ETag")
+	if etag == "" {
+		t.Fatal("no ETag on the first response")
+	}
+
+	second := get(t, source, "/directory/image/nginx/sbom.json", http.Header{"If-None-Match": {etag}})
+	if second.Code != http.StatusNotModified {
+		t.Errorf("status = %d, want %d", second.Code, http.StatusNotModified)
+	}
+}
+
+func TestDownloadReportsUnknownImage(t *testing.T) {
+	source := fakeSource{err: errors.New("manifest unknown")}
+
+	if code := get(t, source, "/directory/image/nope/sbom.json", nil).Code; code == http.StatusOK {
+		t.Errorf("status = %d, want an error status", code)
+	}
+}
+
+// The page has to offer the download for it to exist as far as a reader is
+// concerned.
+func TestPageOffersTheDownload(t *testing.T) {
+	source := fakeSource{digest: "sha256:abc", components: []directory.Component{{Name: "libc6"}}}
+
+	body := get(t, source, "/directory/image/nginx/sbom?tag=1.27", nil).Body.String()
+
+	if !strings.Contains(body, "/directory/image/nginx/sbom.json?tag=1.27") {
+		t.Errorf("page does not link to the download:\n%s", body)
 	}
 }

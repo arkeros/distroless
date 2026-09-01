@@ -110,17 +110,10 @@ func New(registry, repositoryPrefix string, verifier Verifier, options ...Option
 // Attestations are bound to a Digest, never to a tag, so the digest is
 // returned alongside: it is what the page was actually rendered from.
 func (c *Client) SBOM(ctx context.Context, image string) (string, []directory.Component, error) {
-	reference, err := c.reference(image)
+	subject, digest, options, err := c.resolve(ctx, image)
 	if err != nil {
-		return "", nil, fmt.Errorf("parsing %q: %w", image, err)
+		return "", nil, err
 	}
-	options := append([]remote.Option{remote.WithContext(ctx)}, c.remoteOptions...)
-
-	descriptor, err := c.puller.Head(ctx, reference)
-	if err != nil {
-		return "", nil, fmt.Errorf("resolving %s: %w", reference, err)
-	}
-	digest := descriptor.Digest.String()
 
 	// The tag is re-resolved every time — tags move, and serving the wrong
 	// Digest would be worse than being slow. What is cached is keyed by the
@@ -129,22 +122,71 @@ func (c *Client) SBOM(ctx context.Context, image string) (string, []directory.Co
 		return digest, components, nil
 	}
 
-	subject := reference.Context().Digest(digest)
+	predicate, err := c.predicate(subject, digest, options)
+	if err != nil {
+		return "", nil, err
+	}
+	bom, err := decodeBOM(predicate)
+	if err != nil {
+		return "", nil, err
+	}
+	resolved := components(bom)
+	c.cache.Add(digest, resolved)
+	return digest, resolved, nil
+}
 
+// Document returns the verified CycloneDX attestation for image exactly as it
+// was signed.
+//
+// Deliberately not cached. The projection the page needs is small and worth
+// keeping for a hundred images; the documents it was projected from run to
+// several MB each, and a download is rare next to a page view.
+func (c *Client) Document(ctx context.Context, image string) (string, []byte, error) {
+	subject, digest, options, err := c.resolve(ctx, image)
+	if err != nil {
+		return "", nil, err
+	}
+	predicate, err := c.predicate(subject, digest, options)
+	if err != nil {
+		return "", nil, err
+	}
+	return digest, predicate, nil
+}
+
+// resolve turns an image reference into the Digest behind it and the registry
+// options to read it with.
+func (c *Client) resolve(ctx context.Context, image string) (name.Digest, string, []remote.Option, error) {
+	reference, err := c.reference(image)
+	if err != nil {
+		return name.Digest{}, "", nil, fmt.Errorf("parsing %q: %w", image, err)
+	}
+	options := append([]remote.Option{remote.WithContext(ctx)}, c.remoteOptions...)
+
+	descriptor, err := c.puller.Head(ctx, reference)
+	if err != nil {
+		return name.Digest{}, "", nil, fmt.Errorf("resolving %s: %w", reference, err)
+	}
+	digest := descriptor.Digest.String()
+	return reference.Context().Digest(digest), digest, options, nil
+}
+
+// predicate walks what is attached to a Digest and returns the CycloneDX
+// document from the first attestation that verifies.
+func (c *Client) predicate(subject name.Digest, digest string, options []remote.Option) (json.RawMessage, error) {
 	referrers, err := remote.Referrers(subject, options...)
 	if err != nil {
-		return "", nil, fmt.Errorf("listing referrers of %s: %w", subject, err)
+		return nil, fmt.Errorf("listing referrers of %s: %w", subject, err)
 	}
 	manifest, err := referrers.IndexManifest()
 	if err != nil {
-		return "", nil, fmt.Errorf("reading referrers of %s: %w", subject, err)
+		return nil, fmt.Errorf("reading referrers of %s: %w", subject, err)
 	}
 
 	// Cosign gives the SBOM and the SLSA provenance the same artifactType, so
 	// the only thing that tells them apart is the predicate type inside the
 	// signed envelope. Hence: verify each, keep the one that is an SBOM.
 	for _, referrer := range manifest.Manifests {
-		bom, err := c.sbom(reference.Context(), referrer, digest, options)
+		found, err := c.sbom(subject.Context(), referrer, digest, options)
 		switch {
 		case errors.Is(err, errNotSBOM):
 			continue
@@ -153,12 +195,10 @@ func (c *Client) SBOM(ctx context.Context, image string) (string, []directory.Co
 			slog.Warn("skipping referrer", "subject", subject, "referrer", referrer.Digest, "error", err)
 			continue
 		}
-		resolved := components(bom)
-		c.cache.Add(digest, resolved)
-		return digest, resolved, nil
+		return found, nil
 	}
 
-	return "", nil, fmt.Errorf("no verified CycloneDX attestation attached to %s", subject)
+	return nil, fmt.Errorf("no verified CycloneDX attestation attached to %s", subject)
 }
 
 func (c *Client) reference(image string) (name.Reference, error) {
@@ -170,8 +210,9 @@ func (c *Client) reference(image string) (name.Reference, error) {
 }
 
 // sbom pulls one referrer, verifies the attestation it carries, and returns
-// the CycloneDX document inside it.
-func (c *Client) sbom(repository name.Repository, referrer v1.Descriptor, subjectDigest string, options []remote.Option) (*cyclonedx.BOM, error) {
+// the CycloneDX predicate inside it — the bytes the signature covers, which is
+// what the download serves and what the page is projected from.
+func (c *Client) sbom(repository name.Repository, referrer v1.Descriptor, subjectDigest string, options []remote.Option) (json.RawMessage, error) {
 	image, err := remote.Image(repository.Digest(referrer.Digest.String()), options...)
 	if err != nil {
 		return nil, err
@@ -204,7 +245,7 @@ func (c *Client) sbom(repository name.Repository, referrer v1.Descriptor, subjec
 		if statement.Type != attestation.CycloneDX {
 			continue
 		}
-		return decodeBOM(statement.Predicate)
+		return statement.Predicate, nil
 	}
 	return nil, errNotSBOM
 }

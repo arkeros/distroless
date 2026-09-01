@@ -33,16 +33,25 @@ deploy targets cannot drift apart.
 
 ## Apply order
 
-The invoker bindings need their service to exist. A brand-new region therefore
-deploys first and applies second:
+None any more, and the reason is worth knowing because it used to bite.
 
-```sh
-# 1. add the region to oci/cmd/registry/regions.json, merge, let CI deploy it
-# 2. then:
-cd infra && terraform apply
-```
+An invoker binding names a Cloud Run service, and Terraform cannot
+`depends_on` a service another system creates. While the deploy alone made the
+services, a brand-new service or region needed an apply, a deploy, then a
+second apply — the first failing with a 404 on a service that did not exist
+yet.
 
-Every subsequent apply is a no-op. This only bites when adding a region.
+Both services' *shells* are Terraform's now, so the bindings reference a
+resource in the graph and adding a region is one apply. CI still owns every
+revision: `ignore_changes` on the template means an apply never reverts a
+deploy, and a deploy never fights an apply.
+
+The first apply after this change adopts the three existing `registry`
+services. Expect the plan to read **3 to import, 0 to add, 0 to change, 0 to
+destroy**. Anything else — a change, and above all a replacement — means a
+service-level field drifted from what `main.tf` declares, and wants
+reconciling before the apply rather than after: these three serve
+`distroless.io`.
 
 ## WIF
 

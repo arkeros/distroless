@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "toolversions",
     srcs = ["toolversions.go"],
-    importpath = "github.com/arkeros/distroless/bazel/pkg/toolversions",
+    importpath = "github.com/arkeros/distroless/bazel/toolversions",
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_bazelbuild_buildtools//build",

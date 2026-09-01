@@ -3,7 +3,7 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "proxy",
     srcs = ["proxy.go"],
-    importpath = "github.com/arkeros/distroless/oci/pkg/proxy",
+    importpath = "github.com/arkeros/distroless/oci/proxy",
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_google_go_containerregistry//pkg/authn",

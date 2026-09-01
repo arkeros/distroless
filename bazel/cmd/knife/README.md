@@ -67,7 +67,7 @@ Commands use a noun-based package structure:
 
 Shared libraries:
 
-- `bazel/pkg/grypedb` - grype database MODULE.bazel updater (via buildtools AST)
-- `bazel/pkg/mod` - `bazel mod tidy` helper
+- `bazel/grypedb` - grype database MODULE.bazel updater (via buildtools AST)
+- `bazel/mod` - `bazel mod tidy` helper
 - `oci/debian/lockfile` - apt lock file parsing
 - `oci/debian/snapshot` - manifest parsing and snapshot fetching

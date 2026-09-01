@@ -1,0 +1,168 @@
+{
+  "packages": {
+    "base-files": {
+      "spdx": "GPL-2.0-or-later",
+      "name": "GPL-2+"
+    },
+    "bash": {
+      "spdx": "GPL-3.0-or-later",
+      "name": "GPL-3+"
+    },
+    "busybox-static": {
+      "spdx": "GPL-2.0-only",
+      "name": "GPL-2"
+    },
+    "ca-certificates": {},
+    "debconf": {
+      "spdx": "BSD-2-Clause",
+      "name": "BSD-2-clause"
+    },
+    "debianutils": {
+      "spdx": "GPL-2.0-or-later",
+      "name": "GPL-2+"
+    },
+    "direnv": {
+      "spdx": "MIT",
+      "name": "MIT"
+    },
+    "gcc-16-base": {},
+    "grep": {
+      "spdx": "GPL-3.0-or-later",
+      "name": "GPL-3+"
+    },
+    "libacl1": {
+      "spdx": "GPL-2.0-or-later",
+      "name": "GPL-2+"
+    },
+    "libbz2-1.0": {
+      "name": "BSD-variant"
+    },
+    "libc-bin": {
+      "spdx": "LGPL-2.1-or-later",
+      "name": "LGPL-2.1+"
+    },
+    "libc-gconv-modules-extra": {
+      "spdx": "LGPL-2.1-or-later",
+      "name": "LGPL-2.1+"
+    },
+    "libc6": {
+      "spdx": "LGPL-2.1-or-later",
+      "name": "LGPL-2.1+"
+    },
+    "libcom-err2": {
+      "spdx": "GPL-2.0-only",
+      "name": "GPL-2"
+    },
+    "libcrypt1": {},
+    "libdb5.3t64": {
+      "name": "Sleepycat and BSD-3-clause"
+    },
+    "libexpat1": {
+      "spdx": "MIT",
+      "name": "MIT"
+    },
+    "libffi8": {
+      "spdx": "MIT",
+      "name": "Expat"
+    },
+    "libgcc-s1": {},
+    "libgssapi-krb5-2": {},
+    "libk5crypto3": {},
+    "libkeyutils1": {
+      "spdx": "GPL-2.0-or-later",
+      "name": "GPL-2+"
+    },
+    "libkrb5-3": {},
+    "libkrb5support0": {},
+    "liblzma5": {
+      "spdx": "0BSD",
+      "name": "0BSD"
+    },
+    "libncursesw6": {},
+    "libnsl2": {},
+    "libpcre2-8-0": {
+      "name": "BSD-3-clause-Cambridge with BINARY LIBRARY-LIKE PACKAGES exception"
+    },
+    "libreadline8t64": {
+      "spdx": "GPL-3.0-or-later",
+      "name": "GPL-3+"
+    },
+    "libselinux1": {
+      "name": "public-domain"
+    },
+    "libsqlite3-0": {
+      "name": "public-domain"
+    },
+    "libssl3t64": {
+      "spdx": "Apache-2.0",
+      "name": "Apache-2.0"
+    },
+    "libstdc++6": {},
+    "libtinfo6": {
+      "spdx": "MIT",
+      "name": "MIT/X11"
+    },
+    "libtirpc-common": {
+      "spdx": "BSD-3-Clause",
+      "name": "BSD-3-Clause"
+    },
+    "libtirpc3t64": {
+      "spdx": "BSD-3-Clause",
+      "name": "BSD-3-Clause"
+    },
+    "libuuid1": {
+      "spdx": "GPL-2.0-or-later",
+      "name": "GPL-2+"
+    },
+    "libzstd1": {
+      "name": "BSD-3-clause or GPL-2"
+    },
+    "lsb-base": {
+      "spdx": "GPL-2.0-only",
+      "name": "GPL-2"
+    },
+    "mawk": {
+      "spdx": "GPL-2.0-only",
+      "name": "GPL-2.0-only"
+    },
+    "media-types": {
+      "name": "ad-hoc"
+    },
+    "netbase": {
+      "spdx": "GPL-2.0-only",
+      "name": "GPL-2"
+    },
+    "nginx": {},
+    "openssl": {
+      "spdx": "Apache-2.0",
+      "name": "Apache-2.0"
+    },
+    "openssl-provider-legacy": {
+      "spdx": "Apache-2.0",
+      "name": "Apache-2.0"
+    },
+    "readline-common": {
+      "spdx": "GPL-3.0-or-later",
+      "name": "GPL-3+"
+    },
+    "rust-coreutils": {
+      "spdx": "MIT",
+      "name": "MIT"
+    },
+    "sed": {
+      "spdx": "GPL-3.0-or-later",
+      "name": "GPL-3+"
+    },
+    "sysvinit-utils": {
+      "spdx": "GPL-2.0-or-later",
+      "name": "GPL-2.0+"
+    },
+    "tzdata": {
+      "name": "public-domain"
+    },
+    "zlib1g": {
+      "spdx": "Zlib",
+      "name": "Zlib"
+    }
+  }
+}

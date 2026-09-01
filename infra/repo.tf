@@ -126,6 +126,11 @@ resource "github_repository_ruleset" "main_review" {
   target      = "branch"
   enforcement = "active"
 
+  # Inert today, and kept for when it is not. Repository roles are assigned to
+  # collaborators, and on a user-owned repository the owner holds implicit
+  # ownership rather than an assigned role — so there is nothing here for this
+  # to match, and GitHub reports `viewerCanMergeAsAdmin: false` for the owner.
+  # It starts working the moment a second admin collaborator exists.
   bypass_actors {
     actor_id    = 5 # base repository role: admin
     actor_type  = "RepositoryRole"
@@ -141,9 +146,28 @@ resource "github_repository_ruleset" "main_review" {
 
   rules {
     pull_request {
-      required_approving_review_count = 1
+      # `main-checks` requires linear history, so a merge commit is rejected
+      # after the fact. Naming the two that can succeed turns that into an
+      # option GitHub never offers, rather than a button that fails. The
+      # repository's own `allow_merge_commit` is false for the same reason —
+      # this enforces it, that hides it.
+      allowed_merge_methods = ["squash", "rebase"]
 
-      # Carried over from the classic branch protection this replaces.
+      # Zero, not one, while this repository has a single maintainer.
+      #
+      # One approval is unsatisfiable here: nobody else can give it, and the
+      # bypass above does not reach the owner for the reason noted on it. The
+      # rule would therefore be overridden on every merge, and a rule that is
+      # always overridden is worse than no rule — it trains the reflex that
+      # would one day skip `main-checks`, which deliberately has no bypass at
+      # all. `arkeros/senku` sits at zero for the same reason.
+      #
+      # Raise this to 1 when a second maintainer joins; nothing else has to
+      # change, since the bypass starts applying to admins at the same moment.
+      required_approving_review_count = 0
+
+      # Carried over from the classic branch protection this replaces. Still
+      # satisfiable by one person: you can resolve your own threads.
       required_review_thread_resolution = true
     }
   }
@@ -159,8 +183,16 @@ resource "github_repository_ruleset" "main_review" {
 # Adopting a whole `github_repository` to hold one boolean is a real cost: every
 # other attribute here is transcribed from the live repository, and any one this
 # omits would be reset to the provider's default on the next apply. They are
-# spelled out rather than left implicit for that reason. `prevent_destroy`
-# because destroying this resource deletes the repository.
+# spelled out rather than left implicit for that reason.
+#
+# Destroying this resource deletes the repository, so it carries two guards
+# that fail in different situations. `prevent_destroy` refuses a destroy while
+# the block is in the configuration — but it is part of that block, so it is
+# gone the moment the resource is not, which is exactly what a plan run from a
+# checkout predating this file does: it reports the repository as "not in
+# configuration" and proposes deleting it. `archive_on_destroy` lives in state
+# rather than in config, so it still applies then, and turns the irreversible
+# outcome into an archived repository that can be restored.
 resource "github_repository" "this" {
   name         = local.github_repo_name
   description  = "Minimal, reproducible distroless OCI base images built with Bazel — signed, SBOM'd and CVE-scanned."
@@ -180,16 +212,27 @@ resource "github_repository" "this" {
   # transcription.
   allow_auto_merge = true
 
-  allow_squash_merge     = true
-  allow_merge_commit     = true
-  allow_rebase_merge     = true
+  allow_squash_merge = true
+  allow_rebase_merge = true
+
+  # False because `main-checks` requires linear history: a merge commit cannot
+  # land on `main`, so offering the button only produces a failed merge.
+  allow_merge_commit = false
+
   allow_update_branch    = false
   delete_branch_on_merge = false
 
   squash_merge_commit_title   = "COMMIT_OR_PR_TITLE"
   squash_merge_commit_message = "COMMIT_MESSAGES"
-  merge_commit_title          = "MERGE_MESSAGE"
-  merge_commit_message        = "PR_TITLE"
+
+  # Inert while `allow_merge_commit` is false, and still transcribed: dropping
+  # them would reset them to the provider's defaults for no reason, and they
+  # are what GitHub would use if merge commits were ever re-enabled.
+  merge_commit_title   = "MERGE_MESSAGE"
+  merge_commit_message = "PR_TITLE"
+
+  # Survives the resource leaving the configuration; `prevent_destroy` does not.
+  archive_on_destroy = true
 
   lifecycle {
     prevent_destroy = true

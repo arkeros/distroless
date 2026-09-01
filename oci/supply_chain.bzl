@@ -39,7 +39,58 @@ _SILENT_ZERO_FILTER = """
 ) | map({purl, name})
 """.strip()
 
-def image_sbom(image):
+# Merges licences from a distro lockfile into the CycloneDX components.
+#
+# RPM repository metadata declares a licence per package, already as an SPDX
+# *expression* (`MIT AND GPL-2.0-or-later`), which is why this lands in
+# `licenses[].expression` rather than `license.id` — an id must be a single
+# identifier. `rules_rpm`'s pin tool records it in the lockfile, so the licence
+# is reviewable as a diff and no rpm has to be downloaded to learn it.
+#
+# Guarded on a `pkg:rpm/` purl: the lockfile is keyed by bare package name, and
+# a name collision with a component from another ecosystem would otherwise
+# attach the wrong licence.
+_RPM_LICENSE_FILTER = """
+. as [$sbom, $lock]
+| ($lock.packages | map_values([.[] | .license // ""] | map(select(. != "")) | (first // ""))) as $licenses
+| $sbom
+| .components |= map(
+    if ((.purl // "") | test("^pkg:rpm/")) and (($licenses[.name] // "") != "")
+    then . + {licenses: [{expression: $licenses[.name]}]}
+    else .
+    end
+  )
+""".strip()
+
+# apt publishes no licence field, so a Debian licence comes from each package's
+# `copyright` file, resolved once by `knife apt licenses` and checked in. Those
+# are single identifiers or free text, never expressions — hence `license.id`
+# and `license.name` rather than `expression`.
+#
+# An entry present but empty means the package was inspected and its licence
+# could not be determined, which is not the same as the package being absent.
+# Both end up with no licence on the component; only one of them is a gap in
+# the data rather than a gap in Debian.
+_DEB_LICENSE_FILTER = """
+. as [$sbom, $source]
+| $source.packages as $licenses
+| $sbom
+| .components |= map(
+    if ((.purl // "") | test("^pkg:deb/")) then
+      ($licenses[.name] // {}) as $l
+      | if ($l.spdx // "") != "" then . + {licenses: [{license: {id: $l.spdx}}]}
+        elif ($l.name // "") != "" then . + {licenses: [{license: {name: $l.name}}]}
+        else . end
+    else . end
+  )
+""".strip()
+
+_LICENSE_FILTERS = {
+    "rpm": _RPM_LICENSE_FILTER,
+    "deb": _DEB_LICENSE_FILTER,
+}
+
+def image_sbom(image, licenses = None, licenses_format = None):
     """Attach a CycloneDX SBOM to an OCI image, without CVE scanning or gating.
 
     Lighter-weight counterpart to `image_supply_chain` for cases where the SBOM
@@ -83,13 +134,31 @@ def image_sbom(image):
     # `gather_metadata` is taught to skip them via
     # //bazel/patches:supply_chain_tools_rule_filters_rpm.patch.
     jq(
-        name = base + "_sbom",
+        name = base + "_sbom_clean",
         srcs = [":" + base + "_sbom_predupe"],
-        out = base + "_sbom.json",
+        out = base + "_sbom_clean.json",
         filter = '.components |= (map(if (.purl // "") | test("^pkg:(rpm|deb)/") then .name |= sub("^[^/]+/"; "") else . end) | unique_by(.purl))',
     )
 
-def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database"):
+    if not licenses:
+        native.alias(
+            name = base + "_sbom",
+            actual = ":" + base + "_sbom_clean",
+        )
+        return
+
+    jq(
+        name = base + "_sbom",
+        srcs = [
+            ":" + base + "_sbom_clean",
+            licenses,
+        ],
+        out = base + "_sbom.json",
+        args = ["--slurp"],
+        filter = _LICENSE_FILTERS[licenses_format],
+    )
+
+def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database", licenses = None, licenses_format = None):
     """Attach SBOM + CVE scan + policy test to an OCI image.
 
     Generates the following targets, named after `image`'s base label:
@@ -119,7 +188,7 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
     """
     base = image.rsplit(":", 1)[-1]
 
-    image_sbom(image = image)
+    image_sbom(image = image, licenses = licenses, licenses_format = licenses_format)
     grype_scan(
         name = base + "_cve_scan",
         database = database,

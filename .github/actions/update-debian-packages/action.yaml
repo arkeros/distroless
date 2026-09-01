@@ -42,6 +42,11 @@ runs:
           echo "::endgroup::"
         }
 
+        # Lock paths mirror manifest paths, and `knife apt licenses` wants them
+        # all at once: a package declares the same license wherever it is
+        # pulled from, so one table serves every image.
+        locks=""
+
         for entry in ${{ inputs.manifests }}; do
           manifest="${entry%%:*}"
           if [ "$entry" = "$manifest" ]; then
@@ -54,6 +59,10 @@ runs:
           echo "Snapshot URLs in ${manifest}:"
           grep -nE 'snapshot(-cloudflare)?\.debian\.org/archive/(debian|debian-security)/[0-9]{8}T[0-9]{6}Z' "$manifest" || true
           bazel run "@${repo}//:lock"
+          lock="${manifest%.yaml}.lock.json"
+          if [ -f "$lock" ]; then
+            locks="$locks $PWD/$lock"
+          fi
           echo "::endgroup::"
         done
 
@@ -75,6 +84,19 @@ runs:
           exit 0
         fi
 
+        # Licenses are read out of each package's `copyright` file, so they
+        # change exactly when the packages do. Regenerating here keeps the
+        # table in step with the locks in a single commit: a stale table
+        # mislabels components, which is worse than labelling none.
+        #
+        # Deliberately after the snapshot-only check above — otherwise this
+        # would re-download every package for a change that gets discarded.
+        echo "::group::Refresh package licenses"
+        knife apt licenses --output "$PWD/images/debian.licenses.json" $locks
+        git diff --stat -- images/debian.licenses.json || true
+        git diff -- images/debian.licenses.json | sed -n '1,200p' || true
+        echo "::endgroup::"
+
         print_update_diff
         echo "update_needed=true" >> $GITHUB_OUTPUT
     - name: Create Pull Request
@@ -88,7 +110,9 @@ runs:
         delete-branch: true
         title: 'chore: update debian packages'
         body: |
-          This PR updates apt packages and lockfiles for all distroless manifests.
+          This PR updates apt packages and lockfiles for all distroless manifests,
+          and refreshes `images/debian.licenses.json` to match — the license table
+          is read from each package's `copyright` file, so it moves with the locks.
 
           ---
 

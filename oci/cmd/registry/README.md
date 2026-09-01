@@ -79,11 +79,11 @@ Push is not supported; images are pushed directly to GHCR via CI.
 
 Deployed to Cloud Run in the regions listed in [`regions.json`](./regions.json) by the `push-gar` and `deploy` jobs in [`.github/workflows/ci.yaml`](../../../.github/workflows/ci.yaml). Each region is a separate service, all applied from the one Knative manifest at [`service.yaml`](./service.yaml) via `gcloud run services replace --region=<region>`, and all sharing one runtime GSA. Cloud Run service names are region-scoped, so `registry` in every region does not collide.
 
-`push-gar` pushes the image and resolves its digest once, then publishes that digest and the region list as job outputs; `deploy` fans out over them with nothing but `gcloud`. Adding or removing a region is an edit to `regions.json` alone — the workflow matrix is generated from it.
+`push-gar` pushes every deployed image and resolves its digest once, then publishes the rollout plan — image, manifest and region list, keyed by service — as a single job output; `deploy-registry` and `deploy-web` each matrix over their own entry with nothing but `gcloud`. Adding or removing a region is an edit to `regions.json` alone.
 
 Region fan-out is for latency, not identity — the services are replicas of the same workload, so they share one service account (one row in audit logs and IAM bindings, not three). Fronting them behind a single anycast IP is the job of the external HTTPS load balancer.
 
-The manifest is the desired state and carries no image: the deploy job substitutes `IMAGE_PLACEHOLDER` with the digest it just pushed. Regions deploy sequentially (`max-parallel: 1`), so a bad image stops at the first one.
+The manifest is the desired state and carries no image: the deploy job substitutes `IMAGE_PLACEHOLDER` with the digest it just pushed. Regions deploy sequentially (`max-parallel: 1`, `fail-fast: true`), so a bad image stops at the first one. Each service gets its own job so that containment works the same way sideways: a broken `web` rollout must not stop `registry` reaching its remaining regions, which one matrix over both services could not express.
 
 Only the revision ships from CI. [`//infra`](../../../infra) owns everything durable — the Artifact Registry repo, the `svc-registry` runtime GSA, and the `allUsers` `run.invoker` bindings — and is applied out of band, because none of it changes when a new revision does. Those bindings can't live in the manifest anyway: IAM on a Cloud Run service is a policy, not part of its Knative spec. Terraform reads the same `regions.json` the deploy matrix does, so a new region gets its binding without a second edit.
 

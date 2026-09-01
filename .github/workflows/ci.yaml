@@ -244,16 +244,22 @@ jobs:
   # ---------------------------------------------------------------------------
   # Cloud Run deploy.
   #
-  # The service is described by the Knative manifest at
-  # //oci/cmd/registry:service.yaml and applied with `gcloud run services
-  # replace`, once per region. The manifest is the desired state; the deploy
-  # only supplies the image and the region.
+  # Each service is described by a Knative manifest sitting next to its binary
+  # — //oci/cmd/registry:service.yaml, //web/cmd/server:service.yaml — and
+  # applied with `gcloud run services replace`, once per region. The manifest
+  # is the desired state; the deploy only supplies the image and the region.
   #
-  # Split in two: `push-gar` does the Bazel work once and publishes what the
-  # regions need — the digest-pinned image and the region list — as job
-  # outputs. `deploy` fans out over those regions with nothing but gcloud, so
-  # the image is resolved exactly once and every region provably deploys the
-  # same bytes rather than each re-deriving them.
+  # Split in two: `push-gar` does the Bazel work once and publishes a rollout
+  # plan — digest-pinned image, manifest path, region — as a single job output.
+  # `deploy` walks that plan with nothing but gcloud, so each image is resolved
+  # exactly once and every region provably deploys the same bytes rather than
+  # each re-deriving them.
+  #
+  # One deploy job per service, each with its own matrix over that service's
+  # regions. They hold no lock over each other and share no failure: a broken
+  # `web` image must not stop `registry` reaching its remaining regions, which
+  # a single matrix over both could not express — one `fail-fast` cancels
+  # every leg in it, whichever service the failure came from.
   #
   # Only the revision ships from here. `//infra` owns everything durable — the
   # Artifact Registry repo, the runtime GSA, and the `allUsers` invoker
@@ -263,7 +269,14 @@ jobs:
 
   push-gar:
     name: Push images to Artifact Registry
-    needs: publish
+    # Waits on `test`, not on `publish`, so the two run side by side. Nothing
+    # flows between them — same build, different registry, and ADR 0006 puts
+    # the GAR copy on an IAM perimeter rather than a signature one — so all
+    # `needs: publish` ever bought here was ordering, and `deploy` below still
+    # holds it. Neither job pays for the parallelism: `test` runs the CVE gates,
+    # which build every image, so both start against a cache `test` warmed
+    # rather than one of them warming the other.
+    needs: test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     # `prod`'s deployment branch policy names `main` and nothing else, and
@@ -281,10 +294,20 @@ jobs:
       contents: read
       id-token: write
     outputs:
-      registry_image: ${{ steps.digest.outputs.registry_image }}
-      registry_regions: ${{ steps.regions.outputs.registry_regions }}
-      web_image: ${{ steps.digest.outputs.web_image }}
-      web_regions: ${{ steps.regions.outputs.web_regions }}
+      deploy_plan: ${{ steps.plan.outputs.deploy_plan }}
+    env:
+      # The one place a deployed service is named: `<name> <bazel package>`.
+      # Every other fact is derived from the package — the image URI from its
+      # `image_push_gar`, the manifest and the region list from the files
+      # beside it — so adding a service is this row and the files it points at,
+      # and adding a region is an edit to one regions.json.
+      #
+      # GHCR publish/sign/attest needs no entry: the `publish` job above
+      # discovers every mirror_push target by query. Only the GAR deploy
+      # substrate is enumerated, because only these services are deployed.
+      SERVICES: |
+        registry oci/cmd/registry
+        web web/cmd/server
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -319,49 +342,81 @@ jobs:
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
-      # GHCR publish/sign/attest needs no entry here — the `publish` job above
-      # discovers every mirror_push target by query. Only the GAR deploy
-      # substrate is enumerated, because only these services are deployed.
-      - name: Push images
-        run: |
-          set -euxo pipefail
-          bazel run //oci/cmd/registry:image_push_gar
-          bazel run //web/cmd/server:image_push_gar
-
-      # The digest comes from the build, not from the registry. `image_push`
-      # pushes the index the `digest` output group names, and OCI digests are
+      # The digest comes from the build, not from the registry. `image_push_gar`
+      # pushes the index its own deploy manifest names, and OCI digests are
       # content addresses, so the two agree by construction. Asking the
       # registry to resolve `:latest` instead would be a race — a concurrent
       # push can move that tag between this job's push and its read.
-      - name: Resolve image digests
-        id: digest
+      #
+      # That manifest also carries the registry host and the repository, so the
+      # GAR address is read back from the target that pushed it instead of
+      # being spelled out again here, where it could drift from the
+      # GAR_REGISTRY / GAR_REPOSITORY_PREFIX the push actually used.
+      #
+      # The table is read on fd 3, not on stdin: `bazel` inherits the loop's
+      # stdin, and a child that reads it consumes the rows for every service
+      # after the first — which would push and deploy `registry` alone, and
+      # pass green.
+      - name: Push images and resolve digests
         run: |
           set -euo pipefail
-          # cquery only analyses — it prints a path without producing the file,
-          # and --remote_download_outputs=minimal keeps build outputs remote.
-          resolve() {
-            local name=$1 target=$2 repo=$3 digest
-            bazel build --remote_download_outputs=all "$target" --output_groups=digest
-            digest=$(cat "$(bazel cquery "$target" --output=files --output_groups=digest)")
-            echo "${name}_image=${repo}@${digest}" >> "$GITHUB_OUTPUT"
-            echo "Deploying ${name}: ${repo}@${digest}"
-          }
-          BASE=europe-docker.pkg.dev/senku-prod/containers
-          resolve registry //oci/cmd/registry:image "${BASE}/registry"
-          resolve web //web/cmd/server:image "${BASE}/web"
+          : > "${RUNNER_TEMP}/services.jsonl"
+          while read -r NAME PKG <&3; do
+            [[ -n "${NAME}" ]] || continue
+            echo "::group::${NAME}"
+            bazel run "//${PKG}:image_push_gar"
+            # cquery only analyses — it prints a path without producing the
+            # file, and --remote_download_outputs=minimal keeps build outputs
+            # remote. Build the manifest and pull it down explicitly.
+            bazel build --remote_download_outputs=all \
+                --output_groups=deploy_manifest "//${PKG}:image_push_gar"
+            PUSHED=$(bazel cquery "//${PKG}:image_push_gar" \
+                --output=files --output_groups=deploy_manifest)
+            IMAGE=$(jq -r '.operations[0] | "\(.registry)/\(.repository)@\(.root.digest)"' "${PUSHED}")
+            echo "Deploying ${NAME}: ${IMAGE}"
+            jq -c -n --arg service "${NAME}" --arg image "${IMAGE}" \
+                --arg manifest "${PKG}/service.yaml" \
+                --slurpfile regions "${PKG}/regions.json" \
+                '{$service, $image, $manifest, regions: $regions[0]}' \
+                >> "${RUNNER_TEMP}/services.jsonl"
+            echo "::endgroup::"
+          done 3<<< "${SERVICES}"
 
-      # Regions live next to the service they deploy, not in this file, so the
-      # list and the manifest move together.
-      - name: Read deploy regions
-        id: regions
+      # One object keyed by service name, so a service is one key and not a
+      # pair of outputs that can be updated apart:
+      #
+      #   {"registry": {"image": …, "manifest": …, "regions": [ … ]}, "web": …}
+      #
+      # Regions come from each service's regions.json — the list next to the
+      # manifest, so the two move together — and each deploy job matrices over
+      # its own entry, in the order that file lists them.
+      - name: Plan the rollout
+        id: plan
         run: |
           set -euo pipefail
-          echo "registry_regions=$(jq -c . oci/cmd/registry/regions.json)" >> "$GITHUB_OUTPUT"
-          echo "web_regions=$(jq -c . web/cmd/server/regions.json)" >> "$GITHUB_OUTPUT"
+          PLAN=$(jq -c -s 'map({(.service): {image, manifest, regions}}) | add' \
+              "${RUNNER_TEMP}/services.jsonl")
+          # A service with no regions produces an empty matrix, which GitHub
+          # reports against the deploy job as a matrix error rather than
+          # against the step that built it. Fail here, where the cause is
+          # visible.
+          EMPTY=$(jq -r 'to_entries | map(select(.value.regions | length == 0))
+                         | map(.key) | join(", ")' <<< "${PLAN}")
+          if [[ -n "${EMPTY}" ]]; then
+            echo "ERROR: no regions to deploy for: ${EMPTY}" >&2
+            exit 1
+          fi
+          jq . <<< "${PLAN}"
+          echo "deploy_plan=${PLAN}" >> "$GITHUB_OUTPUT"
 
   deploy-registry:
     name: Deploy registry ${{ matrix.region }}
-    needs: push-gar
+    # `publish` is the gate `push-gar` no longer holds: nothing reaches
+    # production unless the mirror published, signed and attested cleanly and
+    # both verify tests passed. Nothing here reads any of it — it is a claim
+    # about what a release is, not a data dependency — which is why it belongs
+    # on the production mutation rather than on the GAR push that feeds it.
+    needs: [push-gar, publish]
     runs-on: ubuntu-latest
     environment: prod
     permissions:
@@ -388,10 +443,12 @@ jobs:
       cancel-in-progress: false
     strategy:
       # Regions are independent replicas of one workload. Deploy them one at a
-      # time so a bad image stops at the first region instead of all three.
+      # time, and let the first failure cancel the rest, so a bad image stops
+      # at the first region instead of all three.
+      fail-fast: true
       max-parallel: 1
       matrix:
-        region: ${{ fromJSON(needs.push-gar.outputs.registry_regions) }}
+        region: ${{ fromJSON(needs.push-gar.outputs.deploy_plan).registry.regions }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -405,19 +462,33 @@ jobs:
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v3
 
+      # The plan arrives as environment variables rather than as `${{ }}`
+      # inside the script, so nothing from it is ever spliced into the shell
+      # before it runs.
       - name: Deploy to Cloud Run
         env:
-          IMAGE: ${{ needs.push-gar.outputs.registry_image }}
+          IMAGE: ${{ fromJSON(needs.push-gar.outputs.deploy_plan).registry.image }}
+          MANIFEST: ${{ fromJSON(needs.push-gar.outputs.deploy_plan).registry.manifest }}
+          REGION: ${{ matrix.region }}
         run: |
           set -euo pipefail
+          # The key above is a service name from `push-gar`'s SERVICES table.
+          # A rename there that misses this job resolves to null, which would
+          # otherwise reach `sed` as an empty image and deploy a manifest with
+          # no container.
+          if [[ -z "${IMAGE}" || -z "${MANIFEST}" ]]; then
+            echo "ERROR: the deploy plan names no image for registry — check the SERVICES table in push-gar." >&2
+            exit 1
+          fi
+          echo "${IMAGE}"
           # The placeholder is a fixed token, so a literal substitution is
           # enough — no YAML templating engine in the deploy path.
-          sed "s|IMAGE_PLACEHOLDER|${IMAGE}|" oci/cmd/registry/service.yaml \
-              | gcloud run services replace - --region="${{ matrix.region }}"
+          sed "s|IMAGE_PLACEHOLDER|${IMAGE}|" "${MANIFEST}" \
+              | gcloud run services replace - --region="${REGION}"
 
   deploy-web:
     name: Deploy web ${{ matrix.region }}
-    needs: push-gar
+    needs: [push-gar, publish]
     runs-on: ubuntu-latest
     environment: prod
     permissions:
@@ -436,10 +507,12 @@ jobs:
       cancel-in-progress: false
     strategy:
       # Regions are independent replicas of one workload. Deploy them one at a
-      # time so a bad image stops at the first region instead of all three.
+      # time, and let the first failure cancel the rest, so a bad image stops
+      # at the first region instead of all three.
+      fail-fast: true
       max-parallel: 1
       matrix:
-        region: ${{ fromJSON(needs.push-gar.outputs.web_regions) }}
+        region: ${{ fromJSON(needs.push-gar.outputs.deploy_plan).web.regions }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -455,10 +528,17 @@ jobs:
 
       - name: Deploy to Cloud Run
         env:
-          IMAGE: ${{ needs.push-gar.outputs.web_image }}
+          IMAGE: ${{ fromJSON(needs.push-gar.outputs.deploy_plan).web.image }}
+          MANIFEST: ${{ fromJSON(needs.push-gar.outputs.deploy_plan).web.manifest }}
+          REGION: ${{ matrix.region }}
         run: |
           set -euo pipefail
+          if [[ -z "${IMAGE}" || -z "${MANIFEST}" ]]; then
+            echo "ERROR: the deploy plan names no image for web — check the SERVICES table in push-gar." >&2
+            exit 1
+          fi
+          echo "${IMAGE}"
           # The placeholder is a fixed token, so a literal substitution is
           # enough — no YAML templating engine in the deploy path.
-          sed "s|IMAGE_PLACEHOLDER|${IMAGE}|" web/cmd/server/service.yaml \
-              | gcloud run services replace - --region="${{ matrix.region }}"
+          sed "s|IMAGE_PLACEHOLDER|${IMAGE}|" "${MANIFEST}" \
+              | gcloud run services replace - --region="${REGION}"

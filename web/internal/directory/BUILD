@@ -20,6 +20,13 @@ go_library(
         "version.go",
     ],
     embedsrcs = [
+        "static/fonts/LICENSE.txt",
+        "static/fonts/fira-mono-400-latin-ext.woff2",
+        "static/fonts/fira-mono-400-latin.woff2",
+        "static/fonts/fira-sans-400-latin-ext.woff2",
+        "static/fonts/fira-sans-400-latin.woff2",
+        "static/fonts/fira-sans-600-latin-ext.woff2",
+        "static/fonts/fira-sans-600-latin.woff2",
         "static/sbom.css",
         "static/sbom.js",
         "templates/sbom.html",

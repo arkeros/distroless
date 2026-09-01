@@ -285,3 +285,19 @@ func TestPageOffersTheDownload(t *testing.T) {
 		t.Errorf("page does not link to the download:\n%s", body)
 	}
 }
+
+// Four columns of package metadata are wider than a phone. The table scrolls
+// inside its own box; without the wrapper the whole document scrolls sideways
+// and the heading, filter and count leave the screen. Only the structure is
+// checked here — that the box actually scrolls is a browser's judgement.
+func TestPageWrapsTheTableInAScrollContainer(t *testing.T) {
+	source := fakeSource{digest: "sha256:abc", components: []directory.Component{{Name: "libc6"}}}
+
+	body := get(t, source, "/directory/image/nginx/sbom", nil).Body.String()
+
+	scroller := strings.Index(body, `class="scroller"`)
+	table := strings.Index(body, `<table id="sbom"`)
+	if scroller < 0 || table < 0 || scroller > table {
+		t.Errorf("table is not inside a scroll container: scroller=%d table=%d", scroller, table)
+	}
+}

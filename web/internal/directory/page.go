@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-//go:embed templates/sbom.html static/sbom.css static/sbom.js
+//go:embed templates/sbom.html static/sbom.css static/sbom.js static/fonts
 var assets embed.FS
 
 // Parsed once at startup so a broken template fails the process rather than a
@@ -33,7 +33,7 @@ type Source interface {
 // itself.
 func NewHandler(source Source, mirror string) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("GET /directory/static/", http.StripPrefix("/directory", cacheStatic(http.FileServerFS(assets))))
+	mux.Handle("GET /directory/static/", http.StripPrefix("/directory", staticHeaders(http.FileServerFS(assets))))
 	mux.HandleFunc("GET /directory/image/{family}/sbom", func(w http.ResponseWriter, r *http.Request) {
 		serveSBOM(w, r, source, mirror)
 	})
@@ -86,10 +86,18 @@ func serveSBOM(w http.ResponseWriter, r *http.Request, source Source, mirror str
 	}
 }
 
-func cacheStatic(next http.Handler) http.Handler {
+func staticHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Short, because these are served under unversioned names.
 		w.Header().Set("Cache-Control", "public, max-age=3600")
+
+		// The file server would otherwise ask mime.TypeByExtension, which
+		// answers from the host's /etc/mime.types — a file the image we ship
+		// in does not have. Stating it keeps the type the same everywhere.
+		if strings.HasSuffix(r.URL.Path, ".woff2") {
+			w.Header().Set("Content-Type", "font/woff2")
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }

@@ -1,12 +1,74 @@
+/* Fira, served from this origin rather than a font CDN: a page whose subject
+   is where bytes came from should not go asking a third party for its own.
+   Latin and Latin Extended only — package names and SPDX expressions live
+   there, and anything outside the range falls back rather than downloading.
+   Swap, so the table is readable in the fallback face while the woff2 loads.
+   Fira Sans and Fira Mono are SIL OFL 1.1; see static/fonts/LICENSE.txt. */
+
+@font-face {
+  font-family: 'Fira Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/directory/static/fonts/fira-sans-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Fira Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/directory/static/fonts/fira-sans-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Fira Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/directory/static/fonts/fira-sans-600-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Fira Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/directory/static/fonts/fira-sans-600-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Fira Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/directory/static/fonts/fira-mono-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Fira Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/directory/static/fonts/fira-mono-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
   color-scheme: light dark;
   --line: color-mix(in srgb, currentColor 15%, transparent);
   --muted: color-mix(in srgb, currentColor 60%, transparent);
+  --mono: 'Fira Mono', ui-monospace, monospace;
 }
 
 body {
   margin: 0;
-  font: 15px/1.5 ui-sans-serif, system-ui, sans-serif;
+  font: 15px/1.5 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
 main {
@@ -24,6 +86,10 @@ h1 {
   margin: 0.25rem 0 1.5rem;
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.digest code {
+  font-family: var(--mono);
 }
 
 /* One Index carries every architecture; the page shows one at a time and
@@ -95,7 +161,7 @@ td.license {
 }
 
 td:nth-child(2) {
-  font-family: ui-monospace, monospace;
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
 

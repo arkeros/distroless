@@ -3,8 +3,10 @@ package directory_test
 import (
 	"context"
 	"errors"
+	"mime"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -146,5 +148,45 @@ func TestPageTitlesTheImageByItsMirrorName(t *testing.T) {
 
 	if !strings.Contains(body, "distroless.io/nginx:latest") {
 		t.Errorf("page does not name the image as distroless.io/nginx:latest")
+	}
+}
+
+// A font the stylesheet asks for but the binary does not embed is a 404 the
+// reader sees as the fallback face, so every url() must resolve.
+func TestStaticAssetsResolveEveryStylesheetReference(t *testing.T) {
+	source := fakeSource{digest: "sha256:abc"}
+
+	css := get(t, source, "/directory/static/sbom.css", nil)
+	if css.Code != http.StatusOK {
+		t.Fatalf("stylesheet status = %d, want %d", css.Code, http.StatusOK)
+	}
+
+	references := regexp.MustCompile(`url\(([^)]*)\)`).FindAllStringSubmatch(css.Body.String(), -1)
+	if len(references) == 0 {
+		t.Fatal("stylesheet references no assets")
+	}
+	for _, reference := range references {
+		asset := strings.Trim(reference[1], `'"`)
+		if code := get(t, source, asset, nil).Code; code != http.StatusOK {
+			t.Errorf("GET %s = %d, want %d", asset, code, http.StatusOK)
+		}
+	}
+}
+
+// A distroless image has no /etc/mime.types, and Go's built-in table has no
+// woff2 entry, so a handler that leaves the type to mime.TypeByExtension
+// serves the fonts as application/octet-stream there while looking correct on
+// a developer machine. Standing in a wrong answer is how that host-dependence
+// shows up as a failure here rather than only in production.
+func TestStaticFontsAreServedAsWoff2(t *testing.T) {
+	mime.AddExtensionType(".woff2", "application/x-not-a-font")
+
+	response := get(t, fakeSource{}, "/directory/static/fonts/fira-sans-400-latin.woff2", nil)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if got := response.Header().Get("Content-Type"); got != "font/woff2" {
+		t.Errorf("Content-Type = %q, want %q", got, "font/woff2")
 	}
 }

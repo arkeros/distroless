@@ -89,3 +89,21 @@ resource "google_service_account_iam_member" "github_actions_act_as_registry" {
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.github_actions.email}"
 }
+
+# The same for the directory's runtime identity, and the reason it is a second
+# resource rather than a wider grant: `roles/iam.serviceAccountUser` at the
+# project level would let this identity act as *every* account in senku-prod,
+# including the two it deploys nothing as.
+#
+# One binding per runtime account is a list that has to be extended whenever a
+# service is added, and it has already been missed once: `svc-web` was created
+# with its Artifact Registry reader binding, the deploy job was written, and
+# this grant was not — so every `Deploy web` run failed with
+# `iam.serviceaccounts.actAs` denied while `registry` deployed fine, and all
+# three web regions kept serving the placeholder image. Adding a third service
+# means adding a third binding here.
+resource "google_service_account_iam_member" "github_actions_act_as_web" {
+  service_account_id = google_service_account.web.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.github_actions.email}"
+}

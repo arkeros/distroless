@@ -1,10 +1,12 @@
 package mirror_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -206,6 +208,47 @@ func TestSBOMReturnsComponentsFromAttestation(t *testing.T) {
 	// CycloneDX licenses are a union of SPDX id, name and expression.
 	if node.License != "MIT AND Apache-2.0" {
 		t.Errorf("license = %q, want the SPDX expression", node.License)
+	}
+}
+
+// The download hands a reader evidence, so what comes back is the predicate
+// the signature covers — not the projection the page renders, and not a
+// re-marshalling of it.
+func TestDocumentReturnsTheAttestedPredicate(t *testing.T) {
+	server := ocitest.NewServer(t)
+	repository, subject := pushIndex(t, server, "node", "latest")
+	attest(t, repository, subject, attestation.CycloneDX, sbomPredicate)
+
+	digest, document, err := newClient(t, server).Document(context.Background(), "node:latest")
+	if err != nil {
+		t.Fatalf("Document: %v", err)
+	}
+	if digest != subject.Digest.String() {
+		t.Errorf("digest = %q, want the Index digest %q", digest, subject.Digest)
+	}
+
+	var got any
+	if err := json.Unmarshal(document, &got); err != nil {
+		t.Fatalf("document is not JSON: %v\n%s", err, document)
+	}
+	// Compared through JSON on both sides: what matters is that nothing was
+	// added, dropped or rewritten, not how Go happened to order the bytes.
+	encoded, err := json.Marshal(sbomPredicate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var want any
+	if err := json.Unmarshal(encoded, &want); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("document = %s,\nwant %s", document, encoded)
+	}
+
+	// The page drops the purl once it has read the ecosystem and arch off it.
+	// Its presence here is what says this is the document and not the table.
+	if !bytes.Contains(document, []byte("pkg:deb/debian/openssl")) {
+		t.Error("document does not carry the purl; this looks like the projection, not the evidence")
 	}
 }
 

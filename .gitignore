@@ -14,3 +14,10 @@ node_modules/
 *.tfplan
 
 .DS_Store
+
+# Workload identity credential config written into the workspace by
+# google-github-actions/auth. Untracked files here are not harmless: the
+# package-update workflows run `peter-evans/create-pull-request`, which
+# stages everything with `git add -A` and would otherwise commit this file
+# into the generated PR (it did, in #17).
+gha-creds-*.json

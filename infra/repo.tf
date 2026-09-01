@@ -126,6 +126,11 @@ resource "github_repository_ruleset" "main_review" {
   target      = "branch"
   enforcement = "active"
 
+  # Inert today, and kept for when it is not. Repository roles are assigned to
+  # collaborators, and on a user-owned repository the owner holds implicit
+  # ownership rather than an assigned role — so there is nothing here for this
+  # to match, and GitHub reports `viewerCanMergeAsAdmin: false` for the owner.
+  # It starts working the moment a second admin collaborator exists.
   bypass_actors {
     actor_id    = 5 # base repository role: admin
     actor_type  = "RepositoryRole"
@@ -141,9 +146,21 @@ resource "github_repository_ruleset" "main_review" {
 
   rules {
     pull_request {
-      required_approving_review_count = 1
+      # Zero, not one, while this repository has a single maintainer.
+      #
+      # One approval is unsatisfiable here: nobody else can give it, and the
+      # bypass above does not reach the owner for the reason noted on it. The
+      # rule would therefore be overridden on every merge, and a rule that is
+      # always overridden is worse than no rule — it trains the reflex that
+      # would one day skip `main-checks`, which deliberately has no bypass at
+      # all. `arkeros/senku` sits at zero for the same reason.
+      #
+      # Raise this to 1 when a second maintainer joins; nothing else has to
+      # change, since the bypass starts applying to admins at the same moment.
+      required_approving_review_count = 0
 
-      # Carried over from the classic branch protection this replaces.
+      # Carried over from the classic branch protection this replaces. Still
+      # satisfiable by one person: you can resolve your own threads.
       required_review_thread_resolution = true
     }
   }

@@ -3,7 +3,7 @@ module github.com/arkeros/distroless
 go 1.27.0
 
 require (
-	github.com/CycloneDX/cyclonedx-go v0.11.0
+	github.com/CycloneDX/cyclonedx-go v0.12.0
 	github.com/anchore/grype v0.117.0
 	github.com/bazelbuild/buildtools v0.0.0-20260826221324-7cca172268c7
 	github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb

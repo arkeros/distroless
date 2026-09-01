@@ -15,7 +15,10 @@ go_library(
 
 go_test(
     name = "snapshot_test",
-    srcs = ["snapshot_test.go"],
+    srcs = [
+        "fetch_test.go",
+        "snapshot_test.go",
+    ],
     data = glob(["testdata/**"]),
     embed = [":snapshot"],
 )

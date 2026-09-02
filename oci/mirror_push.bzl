@@ -22,7 +22,7 @@ def mirror_push(
         name,
         image,
         repository,
-        tag_list = [],
+        tag_list,
         sbom = None,
         registry = OCI_REGISTRY,
         repository_prefix = OCI_REPOSITORY_PREFIX,
@@ -52,7 +52,9 @@ def mirror_push(
         whose `digest` output group will be signed, attested and tagged.
       repository: Path under `<repository_prefix>/`, e.g. `"distroless/static"`.
         MUST NOT contain a tag or digest.
-      tag_list: Tags to apply in `_tag`. `{{.STABLE_*}}` placeholders (rules_img
+      tag_list: Tags to apply in `_tag`; at least one. A mirror image no tag
+        names is unreachable to consumers, and CI's `release` job runs `_tag`
+        for every published target. `{{.STABLE_*}}` placeholders (rules_img
         template syntax) are expanded from the workspace status at build time.
       sbom: Optional label of a CycloneDX SBOM file (typically the
         `<image>_sbom` target produced by `image_supply_chain`). When set,
@@ -72,6 +74,10 @@ def mirror_push(
     """
     if ":" in repository or "@" in repository:
         fail("`repository` must not contain a tag or digest, got: {}".format(repository))
+    if not tag_list:
+        fail(("mirror_push(name = {}): `tag_list` must name at least one tag. " +
+              "`_push` publishes by digest only, so without a tag nothing on the " +
+              "mirror would ever point at this image.").format(repr(name)))
 
     full_repository = "{}/{}".format(repository_prefix, repository)
     full_url = "{}/{}".format(registry, full_repository)

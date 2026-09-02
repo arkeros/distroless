@@ -488,20 +488,29 @@ jobs:
 
       # Tags exactly the targets `publish` reported and `verify` checked —
       # the same list, not a fresh `bazel query`, so an image the publish loop
-      # skipped can never be tagged unverified. `crane_tag` needs the image's
-      # digest file and nothing else from the build, so this is cheap: no
-      # layer leaves the cache.
+      # skipped can never be tagged unverified.
+      #
+      # One `bazel build` for every `_tag` target, then the built scripts are
+      # run straight from bazel-bin. Twenty `bazel run`s cost twenty analyses
+      # and twenty cache round trips for the same handful of files; one build
+      # costs one. `--remote_download_outputs=all` so the runfiles trees hold
+      # real files — the digest, the expanded tag list, crane — rather than
+      # remote placeholders. `crane_tag` needs nothing else from the build,
+      # so no layer leaves the cache.
       - name: Tag
         env:
           PUBLISHED: ${{ needs.publish.outputs.published }}
         run: |
           set -euo pipefail
-          while IFS= read -r TARGET <&3; do
-            [[ -n "${TARGET}" ]] || continue
-            echo "::group::${TARGET}_tag"
-            bazel run "${TARGET}_tag"
+          TAG_TARGETS=$(jq -r '.[].target + "_tag"' <<< "${PUBLISHED}" | tr '\n' ' ')
+          bazel build --remote_download_outputs=all ${TAG_TARGETS}
+          BIN=$(bazel info bazel-bin)
+          for TARGET in ${TAG_TARGETS}; do
+            PKG=${TARGET#//}; PKG=${PKG%%:*}; NAME=${TARGET##*:}
+            echo "::group::${TARGET}"
+            "${BIN}/${PKG}/${NAME}.sh"
             echo "::endgroup::"
-          done 3< <(jq -r '.[].target' <<< "${PUBLISHED}")
+          done
 
   # ---------------------------------------------------------------------------
   # Cloud Run deploy.

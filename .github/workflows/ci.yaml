@@ -149,6 +149,29 @@ jobs:
           echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
           echo "TRUSTED_ROOT=$(realpath "$(bazel cquery //oci:sigstore_trusted_root --output=files)")" >> "$GITHUB_ENV"
 
+      # One build for everything the loop below runs: every mirror image's
+      # push binary, sign and SBOM-attest scripts, and the deploy manifest
+      # that names the digest. Before this, the loop ran three Bazel commands
+      # per image — sixty analyses of the same graph, the first one cold at
+      # 30 s — for files one invocation produces. A separate step so its cost
+      # is visible in the job timeline.
+      #
+      # `--build_runfile_links` because bazel/defaults.bazelrc turns runfiles
+      # trees off and the executables are run from those trees rather than
+      # via `bazel run`; `--remote_download_outputs=all` so the trees hold real
+      # files. One cquery then maps each target to its executable and, for
+      # pushes, its manifest — no per-image Bazel from here on.
+      - name: Build every mirror image's push, sign and attest targets
+        run: |
+          set -euo pipefail
+          TARGETS=$(bazel query 'kind("cosign_sign rule", //...) + kind("cosign_attest rule", //...) + attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
+          bazel build --build_runfile_links --remote_download_outputs=all \
+              --output_groups=+deploy_manifest ${TARGETS}
+          # label <TAB> executable <TAB> deploy manifest (pushes only)
+          bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr='"%s\t%s\t%s" % (str(target.label).removeprefix("@@"), target.files_to_run.executable.path, (getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None).to_list()[0].path if getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None) else ""))' \
+              > "${RUNNER_TEMP}/mirror_targets.tsv"
+          echo "$(wc -l < "${RUNNER_TEMP}/mirror_targets.tsv") targets built"
+
       # Hand `verify` its inputs as job outputs, so that job needs neither
       # Bazel nor a checkout. The versions come from the lockfile, the root
       # hash from the file this job verifies with, the policy from the env
@@ -169,8 +192,9 @@ jobs:
           } | tee -a "$GITHUB_OUTPUT"
 
       # `mirror_push` macros emit <name>_push, <name>_sign, <name>_attest_sbom
-      # and <name>_tag. Discover via `cosign_sign rule`: every mirror image has
-      # exactly one. `_tag` is deliberately not run here — see `release`.
+      # and <name>_tag. Every mirror image has exactly one `_sign`, so the
+      # `_sign` rows of the table built above enumerate the images. `_tag` is
+      # deliberately not run here — see `release`.
       #
       # Every artifact is added at most once per digest. After the push, each
       # of the three is *verified* under the production policy and classified:
@@ -220,19 +244,29 @@ jobs:
             exit 1
           }
 
-          SIGN_TARGETS=$(bazel query 'kind("cosign_sign rule", //...)' --output=label)
+          # Runs a built executable the way `bazel run` would: from inside
+          # its runfiles tree, with RUNFILES_DIR set. cosign's scripts resolve
+          # their inputs relative to that directory; rules_img's pusher reads
+          # the variable.
+          run_built() {
+            local exe=$1; shift
+            local rf; rf=$(realpath "${exe}.runfiles")
+            ( cd "${rf}/_main" && RUNFILES_DIR="${rf}" "./${exe#bazel-out/*/bin/}" "$@" )
+          }
+          exe_of() { awk -F'\t' -v l="$1" '$1==l{print $2}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
+          manifest_of() { awk -F'\t' -v l="$1" '$1==l{print $3}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
+
           : > "${RUNNER_TEMP}/published.jsonl"
           : > "${RUNNER_TEMP}/pending.jsonl"
-          for SIGN_TARGET in $SIGN_TARGETS; do
+          for SIGN_TARGET in $(awk -F'\t' '$1 ~ /_sign$/{print $1}' "${RUNNER_TEMP}/mirror_targets.tsv"); do
             BASE=${SIGN_TARGET%_sign}
             echo "::group::${BASE}"
-            bazel run "${BASE}_push"
+            run_built "$(exe_of "${BASE}_push")"
 
             # The digest comes from the build, not from the registry: the push
             # target's deploy manifest names what it pushed, and OCI digests
             # are content addresses, so the two agree by construction.
-            bazel build --output_groups=deploy_manifest --remote_download_outputs=all "${BASE}_push"
-            MANIFEST=$(bazel cquery "${BASE}_push" --output=files --output_groups=deploy_manifest)
+            MANIFEST=$(manifest_of "${BASE}_push")
             IMAGE=$(jq -r '.operations[0] | "\(.registry)/\(.repository)"' "$MANIFEST")
             DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
             REF="${IMAGE}@${DIGEST}"
@@ -245,10 +279,10 @@ jobs:
                   --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
                   --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
                   "${REF}"; then
-              bazel run "${BASE}_sign"
+              run_built "$(exe_of "${BASE}_sign")"
             fi
 
-            if bazel query "${BASE}_attest_sbom" 2>/dev/null | grep -q .; then
+            if [[ -n "$(exe_of "${BASE}_attest_sbom")" ]]; then
               if ! needs_artifact "SBOM attestation" "${REF}" \
                   "${COSIGN}" verify-attestation \
                     --trusted-root="${TRUSTED_ROOT}" \
@@ -256,7 +290,7 @@ jobs:
                     --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
                     --type=cyclonedx \
                     "${REF}"; then
-                bazel run "${BASE}_attest_sbom"
+                run_built "$(exe_of "${BASE}_attest_sbom")"
               fi
             fi
 

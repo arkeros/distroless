@@ -12,6 +12,15 @@ common --@rules_img//img/settings:compress=zstd
 # See https://github.com/bazel-contrib/tar.bzl/blob/main/README.md#remote-cache-and-rbe
 common --modify_execution_info=Tar=+no-remote-cache
 
+# Because of the line above every machine builds every tar itself, so a tar
+# whose bytes depend on the machine gives every CI job a different image digest.
+# That happened: a hand-written mtree entry without `time=` made bsdtar record
+# the checkout mtime, and the `release` job built an nginx digest `publish` had
+# never pushed (run 33618108072). This validation action fails the build on any
+# `type=file` mtree entry missing uid, gid, time or mode, naming the line.
+# Wired here, not as a `--config=`, so it holds for local builds too.
+common --@tar.bzl//tar:validate_reproducibility
+
 build --sandbox_add_mount_pair=/tmp
 
 build --workspace_status_command=bazel/workspace_status.sh

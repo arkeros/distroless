@@ -172,14 +172,17 @@ jobs:
               echo "${WHAT} already present: ${REF}"
               return 0
             fi
-            # cosign: nothing signed / signed by someone else / no or foreign
-            # attestation. slsa-verifier: no provenance. Anything else — DNS,
-            # TLS, Rekor, TUF — is not a statement about the registry and is
-            # not treated as one. (cosign also says "no signatures found" for
-            # a repository that does not exist; harmless here, since the push
-            # just above is what creates it, and a sign against a missing
-            # digest fails loudly on its own.)
-            if grep -qE "no signatures found|no matching signatures|no matching attestations" "${STDERR}"; then
+            # cosign: nothing signed / signed by someone else / no attestation
+            # at all / a foreign one / attestations present but none of the
+            # requested type (a freshly signed digest has a signature referrer
+            # and nothing else — run 33616446771 failed on exactly that).
+            # slsa-verifier: no provenance. Anything else — DNS, TLS, Rekor,
+            # TUF — is not a statement about the registry and is not treated
+            # as one. (cosign also says "no signatures found" for a repository
+            # that does not exist; harmless here, since the push just above is
+            # what creates it, and a sign against a missing digest fails loudly
+            # on its own.)
+            if grep -qE "no signatures found|no matching signatures|no matching attestations|none of the attestations matched the predicate type" "${STDERR}"; then
               echo "${WHAT} absent: ${REF}"
               return 1
             fi

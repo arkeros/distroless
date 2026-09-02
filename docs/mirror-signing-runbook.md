@@ -81,7 +81,7 @@ finds the digest pending and attests it. Nothing has to be repaired by hand.
 
 | Symptom | Likely cause | First check |
 |---|---|---|
-| `cosign`: `no matching attestations` | The SBOM attest step did not run for this digest | Re-run `bazel run <base>_attest_sbom` |
+| `cosign`: `no matching attestations`, or `none of the attestations matched the predicate type: cyclonedx` | The SBOM attest step did not run for this digest (the second wording appears when a signature referrer exists but no SBOM) | Re-run `bazel run <base>_attest_sbom`; in `publish` both are classified as absent and trigger it |
 | `slsa-verifier`: `no matching attestations` | The `provenance` job has not reached this digest, or the matrix leg failed | Look at the `provenance` job in the same run; if it failed, the next push to `main` retries |
 | `slsa-verifier`: `source used to generate the binary does not match provenance` | Provenance on this digest was produced for another repository | This is what the negative test asserts on `ghcr.io/kyverno/kyverno`. On one of our digests it means someone attached foreign provenance; start at Rekor. |
 | `slsa-verifier`: `the image is mutable` | A tag was passed instead of a digest | `slsa-verifier` refuses tag references; resolve first with `crane digest` |

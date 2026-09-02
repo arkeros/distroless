@@ -74,7 +74,10 @@ jobs:
       id-token: write   # for cosign keyless OIDC (Fulcio + Rekor) and the cache
       packages: write   # for GHCR push + cosign sig/attest artifacts
     outputs:
-      # JSON list of `<registry>/<repository>@<digest>` for everything pushed.
+      # JSON list of `{target, ref}` for everything pushed: the mirror_push
+      # base label, and `<registry>/<repository>@<digest>`. `verify` checks
+      # the refs and `release` tags the targets, so the two work from one
+      # list and the tagged set is the verified set by construction.
       published: ${{ steps.publish.outputs.published }}
       # JSON list of `{image, digest}` for the digests with no provenance yet.
       pending: ${{ steps.publish.outputs.pending }}
@@ -140,7 +143,7 @@ jobs:
         run: |
           set -euo pipefail
           SIGN_TARGETS=$(bazel query 'kind("cosign_sign rule", //...)' --output=label)
-          : > "${RUNNER_TEMP}/published.txt"
+          : > "${RUNNER_TEMP}/published.jsonl"
           : > "${RUNNER_TEMP}/pending.jsonl"
           for SIGN_TARGET in $SIGN_TARGETS; do
             BASE=${SIGN_TARGET%_sign}
@@ -159,7 +162,8 @@ jobs:
             IMAGE=$(jq -r '.operations[0] | "\(.registry)/\(.repository)"' "$MANIFEST")
             DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
             REF="${IMAGE}@${DIGEST}"
-            echo "${REF}" >> "${RUNNER_TEMP}/published.txt"
+            jq -c -n --arg target "${BASE}" --arg ref "${REF}" '{$target, $ref}' \
+              >> "${RUNNER_TEMP}/published.jsonl"
 
             STDERR=$(mktemp)
             if "${SLSA_VERIFIER}" verify-image "${REF}" \
@@ -178,7 +182,7 @@ jobs:
             echo "::endgroup::"
           done
           {
-            echo "published=$(jq -c -R . "${RUNNER_TEMP}/published.txt" | jq -c -s .)"
+            echo "published=$(jq -c -s . "${RUNNER_TEMP}/published.jsonl")"
             echo "pending=$(jq -c -s . "${RUNNER_TEMP}/pending.jsonl")"
           } | tee -a "$GITHUB_OUTPUT"
 
@@ -291,12 +295,27 @@ jobs:
       # its source. Catches a mis-run attest step, a failed matrix leg that
       # `provenance` reported anyway, signer drift between producer and
       # policy, and provenance minted for the wrong source.
+      #
+      # An empty list is refused first. Zero verifications passing is not
+      # evidence of anything — it is the Silent zero this project's gates
+      # exist to catch — and `release` would then tag nothing while this job
+      # reported green.
+      #
+      # The list is read on fd 3, as `push-gar` does: the verifiers inherit
+      # the loop's stdin, and a child that read it would consume the rows for
+      # every image after the first.
       - name: Verify just-published images (positive test)
         env:
           PUBLISHED: ${{ needs.publish.outputs.published }}
         run: |
           set -euo pipefail
-          while IFS= read -r REF; do
+          COUNT=$(jq 'length' <<< "${PUBLISHED}")
+          if [[ "${COUNT}" -eq 0 ]]; then
+            echo "ERROR: publish reported no images; nothing to verify is not a pass." >&2
+            exit 1
+          fi
+          echo "verifying ${COUNT} image(s)"
+          while IFS= read -r REF <&3; do
             [[ -n "$REF" ]] || continue
             echo "::group::verify ${REF}"
             "${COSIGN}" verify \
@@ -315,7 +334,7 @@ jobs:
                 --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}"
             echo "OK: ${REF}"
             echo "::endgroup::"
-          done < <(jq -r '.[]' <<< "${PUBLISHED}")
+          done 3< <(jq -r '.[].ref' <<< "${PUBLISHED}")
 
       # Negative tests. Each must fail for the *specific* reason the policy
       # exists to produce; cosign or slsa-verifier failing for any other
@@ -415,16 +434,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # `crane_tag` needs the image's digest file and nothing else from the
-      # build, so this is cheap: no layer leaves the cache.
+      # Tags exactly the targets `publish` reported and `verify` checked —
+      # the same list, not a fresh `bazel query`, so an image the publish loop
+      # skipped can never be tagged unverified. `crane_tag` needs the image's
+      # digest file and nothing else from the build, so this is cheap: no
+      # layer leaves the cache.
       - name: Tag
+        env:
+          PUBLISHED: ${{ needs.publish.outputs.published }}
         run: |
           set -euo pipefail
-          for TAG_TARGET in $(bazel query 'kind("crane_tag rule", //...) except //oci/crane_tag_test/...' --output=label); do
-            echo "::group::${TAG_TARGET}"
-            bazel run "${TAG_TARGET}"
+          while IFS= read -r TARGET <&3; do
+            [[ -n "${TARGET}" ]] || continue
+            echo "::group::${TARGET}_tag"
+            bazel run "${TARGET}_tag"
             echo "::endgroup::"
-          done
+          done 3< <(jq -r '.[].target' <<< "${PUBLISHED}")
 
   # ---------------------------------------------------------------------------
   # Cloud Run deploy.

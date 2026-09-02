@@ -66,8 +66,8 @@ look there. Deleting a `.att` tag deletes the provenance.
 |---|---|---|
 | `publish` | yes: push by digest, sign, attest SBOM | Emits the pending digest list. A digest is pending when `slsa-verifier` says `no matching attestations`; any other verify error fails the job. |
 | `provenance` | yes: attaches provenance | One generator call per pending digest. Skipped entirely when nothing is pending. |
-| `verify` | **no** | `packages: read` only. Positive tests on every published digest, negative tests on two foreign images. |
-| `release` | yes: tags | Runs every `_tag` target. Nothing here runs unless `verify` passed for every digest. |
+| `verify` | **no** | `packages: read` only. Refuses an empty list, then positive tests on every published digest and negative tests on two foreign images. |
+| `release` | yes: tags | Runs `_tag` for exactly the targets `publish` reported and `verify` checked. Nothing here runs unless `verify` passed for every digest. |
 
 A digest with no provenance is therefore always one of: the `provenance` job
 has not run yet in this push, or it failed. Either way the next push to `main`

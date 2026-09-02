@@ -120,8 +120,8 @@ means something: a push that touches only `web/` re-attests nothing.
 
 `mirror_push`'s `_push` now pushes by digest only. A new `_tag` target applies
 the tag list with `crane tag` against the digest the build produced, and the
-`release` job runs every `_tag` only after `verify` has proven all three
-artifacts on every published digest. Tags are therefore all-or-nothing per run:
+`release` job runs `_tag` for each published target only after `verify` has
+proven all three artifacts on every published digest. Tags are therefore all-or-nothing per run:
 a release is the run, and a partial release is not a release. Before this, a
 tag could point at a digest for the minutes between push and attestation, and a
 consumer verifying at admission in that window was refused.
@@ -136,15 +136,18 @@ consumer verifying at admission in that window was refused.
 
 | Job | Holds | Does |
 |---|---|---|
-| `publish` | `packages: write`, `id-token: write`, `environment: prod` | Push by digest, sign, attest SBOM; emit the pending `{image, digest}` list and the full published list |
+| `publish` | `packages: write`, `id-token: write`, `environment: prod` | Push by digest, sign, attest SBOM; emit the pending `{image, digest}` list and the published `{target, ref}` list |
 | `provenance` | `actions: read`, `id-token: write`, `packages: write` | Matrix over pending digests, one generator call each |
-| `verify` | `packages: read` | `cosign verify`, `cosign verify-attestation --type=cyclonedx`, `slsa-verifier verify-image` per published digest; both negative tests |
-| `release` | `packages: write`, `environment: prod` | Run every `_tag` |
+| `verify` | `packages: read` | Refuse an empty list; `cosign verify`, `cosign verify-attestation --type=cyclonedx`, `slsa-verifier verify-image` per published digest; both negative tests |
+| `release` | `packages: write`, `environment: prod` | Run `_tag` for exactly the published targets |
 
 `verify` is deliberately read-only: neither cosign nor slsa-verifier needs a
 token to verify public artifacts, so the job that holds the policy cannot
-mutate the registry. `deploy-*` gates on `release`, so production only runs
-what the mirror publicly names.
+mutate the registry. `release` tags from the same `{target, ref}` list `verify`
+checked rather than from a fresh query, so the tagged set is the verified set
+by construction, and an empty list fails `verify` rather than passing
+vacuously. `deploy-*` gates on `release`, so production only runs what the
+mirror publicly names.
 
 The cost 0006 counted against `actions/attest` applies here too: one fresh
 runner per digest. A Debian lockfile bump changes most of the 20 mirror images

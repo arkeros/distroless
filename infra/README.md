@@ -106,10 +106,13 @@ ruleset rather than per rule:
 | `main-review` | pull request with 1 approval, threads resolved | repository admins |
 
 Both are bypassable by admins today, because a solo maintainer needs a way to
-land an emergency fix that cannot wait for `Test`. They stay separate so that
-`main-checks` can lose its bypass the day a second maintainer exists without
-the review rule following. A bypass is an explicit, audited act in GitHub's
-log; it is not the silent path a disabled ruleset would be.
+land an emergency fix that cannot wait for the pull-request check. That does
+not let untested code deploy: `ci.yaml` reruns `bazel test //...` on every push
+to `main`, and `publish` and the deploy both need it, so a bypass only moves
+where a red test is caught — on `main` after the merge instead of on the pull
+request before it. The two rulesets stay separate so that `main-checks` can
+lose its bypass the day a second maintainer exists without the review rule
+following.
 
 The deploy's own gate is unchanged and does not depend on either ruleset: a job
 declaring `environment: prod` on any branch but `main` never starts, so no

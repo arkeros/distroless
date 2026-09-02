@@ -62,10 +62,16 @@ resource "github_repository_environment_deployment_policy" "prod_main" {
 
 # Repository admins may bypass. This was set on the live ruleset and is kept:
 # with a single maintainer, an emergency push to `main` that cannot wait for
-# a green `Test` has to be possible, and the alternative is disabling the
-# ruleset. The deploy therefore rests on the environment's branch policy plus
-# the fact that a bypass is an explicit, audited act, not on this rule being
-# unbypassable. Drop the block when a second maintainer exists.
+# a green pull-request check has to be possible, and the alternative is
+# disabling the ruleset.
+#
+# That is safe because this rule is not what keeps untested code out of
+# production. ci.yaml runs on every push to `main` and its `test` job reruns
+# `bazel test //...` there; `publish` needs it, and the deploy needs `publish`.
+# A bypass skips the *pre-merge* check on the pull request, and the push-to-
+# `main` run then fails on the same red test before anything is published.
+# What the bypass costs is that `main` can be red until the next commit, not
+# that a red commit ships. Drop the block when a second maintainer exists.
 resource "github_repository_ruleset" "main_checks" {
   name        = "main-checks"
   repository  = local.github_repo_name

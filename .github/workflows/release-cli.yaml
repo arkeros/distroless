@@ -13,6 +13,10 @@ jobs:
   release:
     name: Release ${{ matrix.tool }}
     runs-on: ubuntu-latest
+    # The cache-write identity below is bound to `attribute.environment/prod`,
+    # whose branch policy names `main` (ADR 0014, infra/cache.tf). A
+    # `workflow_dispatch` from any other branch never starts.
+    environment: prod
     strategy:
       matrix:
         include:

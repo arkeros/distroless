@@ -1,9 +1,19 @@
 ---
+# Push to `main`, and only that. Pull requests run pr.yaml, which can only read.
+#
+# Every job here that touches Bazel declares `environment: prod`. The
+# environment's deployment branch policy names `main` and GitHub checks it
+# before minting the OIDC token, so the cache-write and deploy identities are
+# unreachable from any other ref regardless of what this file says (ADR 0014,
+# infra/cache.tf).
+#
+# The mirror publishes in four steps — publish, provenance, verify, release —
+# because provenance is written by the build platform rather than by us, tags
+# must not move until every artifact on a digest has been proven, and the job
+# that does the proving must not be able to mutate the registry.
 name: CI
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
 
 # Both values come from `terraform output` in //infra. The cache account is
@@ -18,6 +28,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    environment: prod
     permissions:
       contents: read
       id-token: write   # for the remote cache's workload identity federation
@@ -25,14 +36,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # A pull request opened from a fork is not granted `id-token: write`, so
-      # it cannot mint the cache credential. Skip the step for those rather
-      # than fail on it — the build below then runs without a remote cache,
-      # which is slow but correct. `steps.auth.outcome` is what the bazelrc
-      # keys off, and it reads `skipped` here.
       - name: Authenticate to Google Cloud
-        id: auth
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
@@ -44,23 +48,36 @@ jobs:
           bazelisk-version: v1.27.0
           repository-cache: true
           external-cache: true
-          cache-save: ${{ github.event_name != 'pull_request' }}
+          cache-save: true
           bazelrc: |
             common --config=ci
-            ${{ steps.auth.outcome == 'success' && 'common --config=gcs' || '' }}
+            common --config=gcs
 
       - name: Test
         run: bazel test //...
 
+  # ---------------------------------------------------------------------------
+  # Mirror publish.
+  #
+  # `publish` pushes every mirror image *by digest* — no tag names it yet —
+  # then signs it and attests its SBOM, both under this workflow's identity.
+  # It then asks the registry which of those digests already carry platform
+  # provenance and hands the rest to `provenance` as a matrix.
+  # ---------------------------------------------------------------------------
   publish:
     name: Publish mirror images
     needs: test
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    environment: prod
     permissions:
       contents: read
-      id-token: write   # for cosign keyless OIDC (Fulcio + Rekor)
+      id-token: write   # for cosign keyless OIDC (Fulcio + Rekor) and the cache
       packages: write   # for GHCR push + cosign sig/attest artifacts
+    outputs:
+      # JSON list of `<registry>/<repository>@<digest>` for everything pushed.
+      published: ${{ steps.publish.outputs.published }}
+      # JSON list of `{image, digest}` for the digests with no provenance yet.
+      pending: ${{ steps.publish.outputs.pending }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -81,7 +98,7 @@ jobs:
           bazelisk-version: v1.27.0
           repository-cache: true
           external-cache: true
-          cache-save: ${{ github.event_name != 'pull_request' }}
+          cache-save: true
           bazelrc: |
             common --config=ci
             common --config=gcs
@@ -94,18 +111,155 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Load consumer-side cosign policy (regex + issuer) from the same
-      # Starlark source that mirror_push uses for the predicate's BUILDER_ID.
-      # See //oci:cosign_policy.bzl. Renames to the workflow file or branch
-      # only need to be done in that one Starlark file.
-      - name: Load cosign policy
+      # Both signers' identity pins come from one Starlark file, //oci:cosign_policy.bzl.
+      - name: Load verification policy
         run: |
           set -euxo pipefail
           bazel build //oci:cosign_policy_env
           cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
 
+      # Prebuilt, checksum-pinned in tools/tools.lock.json like cosign.
+      - name: Fetch slsa-verifier
+        run: |
+          set -euo pipefail
+          bazel build --remote_download_outputs=all @multitool//tools/slsa-verifier
+          echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
+
+      # `mirror_push` macros emit <name>_push, <name>_sign, <name>_attest_sbom
+      # and <name>_tag. Discover via `cosign_sign rule`: every mirror image has
+      # exactly one. `_tag` is deliberately not run here — see `release`.
+      #
+      # After pushing, each digest is classified by *verifying* its provenance:
+      #   verified              → already attested by an earlier run; skip.
+      #   no matching attestations → pending; the matrix below attests it.
+      #   anything else         → fail. A Rekor or TUF outage must not read as
+      #                           "unattested" and be answered with a second
+      #                           provenance statement (ADR 0014: one per digest).
+      - name: Push, sign, and attest mirror images
+        id: publish
+        run: |
+          set -euo pipefail
+          SIGN_TARGETS=$(bazel query 'kind("cosign_sign rule", //...)' --output=label)
+          : > "${RUNNER_TEMP}/published.txt"
+          : > "${RUNNER_TEMP}/pending.jsonl"
+          for SIGN_TARGET in $SIGN_TARGETS; do
+            BASE=${SIGN_TARGET%_sign}
+            echo "::group::${BASE}"
+            bazel run "${BASE}_push"
+            bazel run "${BASE}_sign"
+            if bazel query "${BASE}_attest_sbom" 2>/dev/null | grep -q .; then
+              bazel run "${BASE}_attest_sbom"
+            fi
+
+            # The digest comes from the build, not from the registry: the push
+            # target's deploy manifest names what it pushed, and OCI digests
+            # are content addresses, so the two agree by construction.
+            bazel build --output_groups=deploy_manifest --remote_download_outputs=all "${BASE}_push"
+            MANIFEST=$(bazel cquery "${BASE}_push" --output=files --output_groups=deploy_manifest)
+            IMAGE=$(jq -r '.operations[0] | "\(.registry)/\(.repository)"' "$MANIFEST")
+            DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
+            REF="${IMAGE}@${DIGEST}"
+            echo "${REF}" >> "${RUNNER_TEMP}/published.txt"
+
+            STDERR=$(mktemp)
+            if "${SLSA_VERIFIER}" verify-image "${REF}" \
+                --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
+                --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}" 2> "${STDERR}"; then
+              echo "provenance already attached: ${REF}"
+            elif grep -q "no matching attestations" "${STDERR}"; then
+              echo "provenance pending: ${REF}"
+              jq -c -n --arg image "${IMAGE}" --arg digest "${DIGEST}" '{$image, $digest}' \
+                >> "${RUNNER_TEMP}/pending.jsonl"
+            else
+              echo "ERROR: could not tell whether ${REF} has provenance; refusing to guess." >&2
+              cat "${STDERR}" >&2
+              exit 1
+            fi
+            echo "::endgroup::"
+          done
+          {
+            echo "published=$(jq -c -R . "${RUNNER_TEMP}/published.txt" | jq -c -s .)"
+            echo "pending=$(jq -c -s . "${RUNNER_TEMP}/pending.jsonl")"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  # The build platform writes provenance, not us: the generator is a reusable
+  # workflow that runs in its own VM under its own OIDC identity, after our
+  # build has finished and with nothing of ours in reach. That separation is
+  # what makes the statement SLSA Build L3 rather than something our own
+  # build job could have forged. One call per pending digest.
+  #
+  # The generator MUST be referenced by a full `vX.Y.Z` tag; it refuses
+  # shorter tags and SHA pins. Renovate bumps it but does not auto-merge it
+  # (//.github/renovate.json) — this line is the trust root of the L3 claim.
+  provenance:
+    name: Attest provenance
+    needs: publish
+    if: needs.publish.outputs.pending != '[]'
+    permissions:
+      actions: read     # the generator reads the run that called it
+      id-token: write   # the generator's own keyless signing
+      packages: write   # to attach the attestation to ghcr.io
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.publish.outputs.pending) }}
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
+    with:
+      image: ${{ matrix.image }}
+      digest: ${{ matrix.digest }}
+      registry-username: ${{ github.actor }}
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+  # Read-only on purpose. Neither cosign nor slsa-verifier needs a token to
+  # verify public artifacts, so the job that holds the policy cannot mutate
+  # the registry, and it holds no cloud identity either — the two tools it
+  # runs are prebuilt binaries, so it does not need a warm cache.
+  #
+  # `always()` because `provenance` is skipped when nothing was pending, and
+  # a skipped dependency would otherwise skip this too.
+  verify:
+    name: Verify mirror images
+    needs: [publish, provenance]
+    if: >-
+      always()
+      && needs.publish.result == 'success'
+      && (needs.provenance.result == 'success' || needs.provenance.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          repository-cache: true
+          external-cache: true
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+
+      - name: Load verification policy
+        run: |
+          set -euxo pipefail
+          bazel build //oci:cosign_policy_env
+          cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
+
+      - name: Fetch cosign and slsa-verifier
+        run: |
+          set -euo pipefail
+          bazel build --remote_download_outputs=all \
+              //bazel/toolchains/cosign:prebuilt_cosign_toolchain \
+              @multitool//tools/slsa-verifier
+          echo "COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")" >> "$GITHUB_ENV"
+          echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
+
       # Fetch the Sigstore trusted root once, up front, and hand it to every
-      # verify below via --trusted-root. Without it each cosign invocation
+      # cosign verify below via --trusted-root. Without it each invocation
       # re-refreshes TUF metadata from tuf-repo-cdn.sigstore.dev, so a single
       # CDN hiccup somewhere in a few dozen verifies fails the whole job on
       # signatures that are perfectly good — see run 31056638456, which died on
@@ -116,14 +270,6 @@ jobs:
       - name: Fetch Sigstore trusted root
         run: |
           set -euo pipefail
-          # cquery only analyses — it prints a path without producing the file,
-          # and --remote_download_outputs=minimal keeps build outputs remote.
-          # Build the binary and pull it down explicitly rather than relying on
-          # a later `bazel run` to materialise it as a side effect.
-          bazel build --remote_download_outputs=all \
-              //bazel/toolchains/cosign:prebuilt_cosign_toolchain
-          COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")
-          echo "COSIGN=${COSIGN}" >> "$GITHUB_ENV"
           TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
           for attempt in 1 2 3 4 5; do
             if "${COSIGN}" trusted-root create \
@@ -139,107 +285,146 @@ jobs:
           echo "ERROR: could not create the Sigstore trusted root after 5 attempts." >&2
           exit 1
 
-      # Bazel-native cosign signing per ADR 0006. `mirror_push` macros emit
-      # <name>_push, <name>_sign, <name>_attest, optional <name>_attest_sbom.
-      # Discover via `cosign_sign rule` since that's unambiguous: every mirror
-      # image has exactly one. The matching push/attest targets follow naming.
-      # We collect (BASE, registry, repository, digest) tuples for the
-      # post-publish positive verify step.
-      - name: Push, sign, and attest mirror images
-        id: publish
-        run: |
-          set -euxo pipefail
-          SIGN_TARGETS=$(bazel query 'kind("cosign_sign rule", //...)' --output=label)
-          PUBLISHED=""
-          for SIGN_TARGET in $SIGN_TARGETS; do
-            BASE=${SIGN_TARGET%_sign}
-            echo "::group::${BASE}"
-            bazel run "${BASE}_push"
-            bazel run "${BASE}_sign"
-            bazel run "${BASE}_attest"
-            HAS_SBOM=0
-            if bazel query "${BASE}_attest_sbom" 2>/dev/null | grep -q .; then
-              bazel run "${BASE}_attest_sbom"
-              HAS_SBOM=1
-            fi
-
-            # Capture the just-pushed digest for the positive verify step.
-            bazel build --output_groups=deploy_manifest --remote_download_outputs=all "${BASE}_push"
-            MANIFEST=$(bazel cquery "${BASE}_push" --output=files --output_groups=deploy_manifest)
-            REGISTRY=$(jq -r '.operations[0].registry' "$MANIFEST")
-            REPOSITORY=$(jq -r '.operations[0].repository' "$MANIFEST")
-            DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
-            PUBLISHED+="${REGISTRY}/${REPOSITORY}@${DIGEST} ${HAS_SBOM}"$'\n'
-            echo "::endgroup::"
-          done
-          # Persist for the next step. EOF-delimited heredoc handles newlines.
-          {
-            echo 'PUBLISHED<<EOF'
-            printf '%s' "$PUBLISHED"
-            echo 'EOF'
-          } >> "$GITHUB_ENV"
-
-      # Positive test: every just-published image must verify under the
-      # production policy with both predicate types. Catches mis-attested
-      # predicates, wrong type strings, Rekor-upload misconfig, and OIDC
-      # subject drift between producer (BUILDER_ID) and consumer (regex).
+      # Positive test: every digest `publish` pushed must carry all three
+      # artifacts under the production policy — our signature, our SBOM
+      # attestation, and platform provenance that names *this* repository as
+      # its source. Catches a mis-run attest step, a failed matrix leg that
+      # `provenance` reported anyway, signer drift between producer and
+      # policy, and provenance minted for the wrong source.
       - name: Verify just-published images (positive test)
+        env:
+          PUBLISHED: ${{ needs.publish.outputs.published }}
         run: |
           set -euo pipefail
-          while IFS=' ' read -r REF HAS_SBOM; do
-            [[ -z "$REF" ]] && continue
+          while IFS= read -r REF; do
+            [[ -n "$REF" ]] || continue
             echo "::group::verify ${REF}"
+            "${COSIGN}" verify \
+                --trusted-root="${TRUSTED_ROOT}" \
+                --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
+                --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
+                "${REF}" > /dev/null
             "${COSIGN}" verify-attestation \
                 --trusted-root="${TRUSTED_ROOT}" \
                 --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
                 --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
-                --type=slsaprovenance \
+                --type=cyclonedx \
                 "${REF}" > /dev/null
-            if [[ "${HAS_SBOM}" == "1" ]]; then
-              "${COSIGN}" verify-attestation \
-                  --trusted-root="${TRUSTED_ROOT}" \
-                  --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
-                  --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
-                  --type=cyclonedx \
-                  "${REF}" > /dev/null
-            fi
+            "${SLSA_VERIFIER}" verify-image "${REF}" \
+                --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
+                --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}"
             echo "OK: ${REF}"
             echo "::endgroup::"
-          done <<< "${PUBLISHED}"
+          done < <(jq -r '.[]' <<< "${PUBLISHED}")
 
-      # Negative test: production verify policy must REJECT a real-but-wrong-
-      # identity image (Google's distroless, signed by their workflow). If a
-      # future PR widens the verify regex, this assertion starts failing-when-
-      # it-should-fail and CI catches it. Per ADR 0006.
-      - name: Verify policy is strict (negative test)
+      # Negative tests. Each must fail for the *specific* reason the policy
+      # exists to produce; cosign or slsa-verifier failing for any other
+      # reason — a Sigstore outage, a deleted fixture — is not evidence of a
+      # strict policy, so it fails the job instead of passing vacuously.
+      #
+      # 1. Our signer regexp must reject a real image signed by someone else.
+      #    Google's distroless is signed keyless by Google's workflow: right
+      #    issuer, wrong subject. If a future PR widens the regexp, this
+      #    starts failing-when-it-should-fail and CI catches it.
+      #
+      # 2. Our source URI must reject real generator provenance produced for
+      #    another repository. The provenance signer is the generator's, the
+      #    same for every project that uses it, so this is the check that
+      #    stands between us and accepting anyone's provenance on our digest.
+      #    kyverno publishes with the same generator; the digest is pinned
+      #    because slsa-verifier refuses tag references. If kyverno ever
+      #    deletes it, the failure reason changes and this test fails loudly.
+      - name: Verify policy is strict (negative tests)
         run: |
           set -euo pipefail
           STDERR=$(mktemp)
-          # Negative case: rejects a correctly-signed-but-wrong-identity image.
-          if "${COSIGN}" verify-attestation \
+
+          if "${COSIGN}" verify \
               --trusted-root="${TRUSTED_ROOT}" \
               --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
               --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
-              --type=slsaprovenance \
-              gcr.io/distroless/static-debian12:nonroot 2> "${STDERR}"; then
-            echo "ERROR: verify policy is too permissive — accepted gcr.io/distroless/static-debian12:nonroot, which was signed by Google's distroless workflow, not ours." >&2
-            echo "--- cosign stderr ---" >&2
+              gcr.io/distroless/static-debian12:nonroot 2> "${STDERR}" > /dev/null; then
+            echo "ERROR: signer policy is too permissive — accepted gcr.io/distroless/static-debian12:nonroot, which was signed by Google's workflow, not ours." >&2
             cat "${STDERR}" >&2
             exit 1
           fi
-          # cosign failing is not on its own evidence of a strict policy — a
-          # Sigstore CDN outage fails the same way. Require the rejection to be
-          # the identity mismatch we are actually asserting, so infrastructure
-          # trouble surfaces as a failure instead of a vacuous pass.
           if ! grep -q "none of the expected identities matched" "${STDERR}"; then
             echo "ERROR: cosign rejected the reference, but not because the identity mismatched — this assertion proves nothing about the policy." >&2
-            echo "--- cosign stderr ---" >&2
             cat "${STDERR}" >&2
             exit 1
           fi
-          echo "OK: verify policy correctly rejects the signed-by-Google reference."
-          echo "--- cosign rejection reason (for the record) ---"
-          cat "${STDERR}"
+          echo "OK: signer policy rejects the signed-by-Google reference."
+
+          FOREIGN=ghcr.io/kyverno/kyverno@sha256:fc3db61bb81c7c8283b9bbab5d92ceb375f1ac35c26027485f7f13605e75ef97
+          if "${SLSA_VERIFIER}" verify-image "${FOREIGN}" \
+              --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
+              --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}" 2> "${STDERR}"; then
+            echo "ERROR: provenance policy is too permissive — accepted ${FOREIGN}, whose provenance names kyverno/kyverno as its source." >&2
+            cat "${STDERR}" >&2
+            exit 1
+          fi
+          if ! grep -q "source used to generate the binary does not match provenance" "${STDERR}"; then
+            echo "ERROR: slsa-verifier rejected the reference, but not for a source mismatch — this assertion proves nothing about the policy." >&2
+            cat "${STDERR}" >&2
+            exit 1
+          fi
+          echo "OK: provenance policy rejects generator provenance produced for another repository."
+
+  # Tags move last, and all or nothing. Until here every pushed image is
+  # reachable only by digest; `release` names them. A consumer following
+  # `latest` therefore never resolves to a digest that has not passed the
+  # full policy, and a run in which any image fails verification releases
+  # nothing — a partial release is not a release.
+  release:
+    name: Release mirror tags
+    needs: [publish, verify]
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write   # for the cache
+      packages: write   # for `crane tag`
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          repository-cache: true
+          external-cache: true
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+            common --config=gcs
+            build --stamp
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # `crane_tag` needs the image's digest file and nothing else from the
+      # build, so this is cheap: no layer leaves the cache.
+      - name: Tag
+        run: |
+          set -euo pipefail
+          for TAG_TARGET in $(bazel query 'kind("crane_tag rule", //...) except //oci/crane_tag_test/...' --output=label); do
+            echo "::group::${TAG_TARGET}"
+            bazel run "${TAG_TARGET}"
+            echo "::endgroup::"
+          done
 
   # ---------------------------------------------------------------------------
   # Cloud Run deploy.
@@ -269,15 +454,14 @@ jobs:
 
   push-gar:
     name: Push images to Artifact Registry
-    # Waits on `test`, not on `publish`, so the two run side by side. Nothing
-    # flows between them — same build, different registry, and ADR 0006 puts
-    # the GAR copy on an IAM perimeter rather than a signature one — so all
-    # `needs: publish` ever bought here was ordering, and `deploy` below still
-    # holds it. Neither job pays for the parallelism: `test` runs the CVE gates,
-    # which build every image, so both start against a cache `test` warmed
-    # rather than one of them warming the other.
+    # Waits on `test`, not on the mirror jobs, so the two run side by side.
+    # Nothing flows between them — same build, different registry, and ADR 0006
+    # puts the GAR copy on an IAM perimeter rather than a signature one — so
+    # ordering here would buy nothing; `deploy` below still holds it. Neither
+    # job pays for the parallelism: `test` runs the CVE gates, which build
+    # every image, so both start against a cache `test` warmed rather than one
+    # of them warming the other.
     needs: test
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     # `prod`'s deployment branch policy names `main` and nothing else, and
     # GitHub validates it *before* minting the OIDC token — so the branch gate
@@ -287,8 +471,8 @@ jobs:
     # another environment nor another repository can impersonate it.
     #
     # No human approves this. What makes `main` deployable is the `main-checks`
-    # ruleset, which requires the `Test` job below to pass and has no bypass
-    # actors. All of it — environment, policy, rulesets — lives in //infra.
+    # ruleset, which requires the `Test` job in pr.yaml to pass and has no
+    # bypass actors. All of it — environment, policy, rulesets — lives in //infra.
     environment: prod
     permissions:
       contents: read
@@ -411,12 +595,13 @@ jobs:
 
   deploy-registry:
     name: Deploy registry ${{ matrix.region }}
-    # `publish` is the gate `push-gar` no longer holds: nothing reaches
-    # production unless the mirror published, signed and attested cleanly and
-    # both verify tests passed. Nothing here reads any of it — it is a claim
-    # about what a release is, not a data dependency — which is why it belongs
-    # on the production mutation rather than on the GAR push that feeds it.
-    needs: [push-gar, publish]
+    # `release` is the gate `push-gar` does not hold: nothing reaches
+    # production unless the mirror published, was attested by the platform,
+    # passed every verify test and is publicly tagged. Nothing here reads any
+    # of it — it is a claim about what a release is, not a data dependency —
+    # which is why it belongs on the production mutation rather than on the
+    # GAR push that feeds it.
+    needs: [push-gar, release]
     runs-on: ubuntu-latest
     environment: prod
     permissions:
@@ -488,7 +673,7 @@ jobs:
 
   deploy-web:
     name: Deploy web ${{ matrix.region }}
-    needs: [push-gar, publish]
+    needs: [push-gar, release]
     runs-on: ubuntu-latest
     environment: prod
     permissions:

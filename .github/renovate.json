@@ -26,6 +26,17 @@
       "automerge": true
     },
     {
+      "description": "The slsa-github-generator is the trust root of the L3 provenance claim (ADR 0014); it only accepts vX.Y.Z tags, so a human sees every bump.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "slsa-framework/slsa-github-generator"
+      ],
+      "automerge": false,
+      "pinDigests": false
+    },
+    {
       "matchManagers": [
         "bazel"
       ],

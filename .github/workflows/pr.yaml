@@ -1,0 +1,62 @@
+---
+# Pull requests: test, and nothing else.
+#
+# Split from ci.yaml (ADR 0014) so that the two run under different identities
+# with nothing conditional between them. Everything here can only *read* the
+# Bazel cache; ci.yaml runs on `main` alone, under the `prod` environment, and
+# is the only thing that can write it, publish, or deploy. A branch that could
+# write an action result `main` later reads could have the platform sign an
+# image it never built — which is the whole thing platform provenance is for.
+name: PR
+on:
+  pull_request:
+    branches: [main]
+
+# Both values come from `terraform output` in //infra. The read-only cache
+# account (`infra/cache.tf`) is bound to the repository, so any branch of it can
+# mint this credential; it holds `objectViewer` on one bucket and nothing else.
+env:
+  WIF_PROVIDER: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
+  CACHE_READONLY_SERVICE_ACCOUNT: github-actions-cache-ro@senku-prod.iam.gserviceaccount.com
+
+jobs:
+  test:
+    # `Test` is the check the `main-checks` ruleset in //infra requires.
+    # Renaming this job silently disables that rule.
+    name: Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # for the read-only cache's workload identity federation
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # A pull request opened from a fork is not granted `id-token: write`, so
+      # it cannot mint even the read-only credential. Skip the step for those
+      # rather than fail on it — the build below then runs without a remote
+      # cache, which is slow but correct. `steps.auth.outcome` reads `skipped`
+      # there, and the bazelrc line keys off it.
+      - name: Authenticate to Google Cloud
+        id: auth
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.CACHE_READONLY_SERVICE_ACCOUNT }}
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          repository-cache: true
+          external-cache: true
+          # The runner-local caches are not saved either: only `main` warms
+          # anything another run reads.
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+            ${{ steps.auth.outcome == 'success' && 'common --config=gcs-readonly' || '' }}
+
+      - name: Test
+        run: bazel test //...

@@ -21,11 +21,13 @@ jobs:
         uses: actions/checkout@v7
       # Bazel's remote cache is a GCS bucket read through workload identity
       # federation; see //infra. Must precede setup-bazel's first invocation.
+      # The read-only identity: this workflow may be dispatched from any
+      # branch, and only `main` may write the cache (ADR 0014).
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
-          service_account: github-actions-cache@senku-prod.iam.gserviceaccount.com
+          service_account: github-actions-cache-ro@senku-prod.iam.gserviceaccount.com
       - name: Set up Bazelisk
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
@@ -36,7 +38,7 @@ jobs:
           repository-cache: true
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=gcs-readonly
       - name: Update RPM packages
         uses: ./.github/actions/update-rpm-packages
         with:

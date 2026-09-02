@@ -1,5 +1,11 @@
-# https://www.buildbuddy.io/blog/how-bazel-7-0-makes-your-builds-faster/
-startup --digest_function=BLAKE3
+# sha256, Bazel's default, on purpose. BLAKE3 was used until 2026-09 for
+# hashing speed, but the whole output tree is ~5 GB and hashes in seconds
+# either way, while sha256 is what everything downstream of the build speaks:
+# OCI blob digests, cosign, slsa-verifier, Rekor. Matching them lets a layer's
+# key in the remote cache be its digest in the registry, which is what
+# rules_img's lazy push and bazel-remote both require (neither supports
+# BLAKE3). Changing the digest function changes every cache key, so this line
+# is a cold cache the day it moves.
 
 import %workspace%/bazel/defaults.bazelrc
 

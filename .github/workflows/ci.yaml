@@ -520,10 +520,9 @@ jobs:
     # Waits on `test`, not on the mirror jobs, so the two run side by side.
     # Nothing flows between them — same build, different registry, and ADR 0006
     # puts the GAR copy on an IAM perimeter rather than a signature one — so
-    # ordering here would buy nothing; `deploy` below still holds it. Neither
-    # job pays for the parallelism: `test` runs the CVE gates, which build
-    # every image, so both start against a cache `test` warmed rather than one
-    # of them warming the other.
+    # ordering here would buy nothing. Neither job pays for the parallelism:
+    # `test` runs the CVE gates, which build every image, so both start
+    # against a cache `test` warmed rather than one of them warming the other.
     needs: test
     runs-on: ubuntu-latest
     # `prod`'s deployment branch policy names `main` and nothing else, and
@@ -660,13 +659,15 @@ jobs:
 
   deploy-registry:
     name: Deploy registry ${{ matrix.region }}
-    # `release` is the gate `push-gar` does not hold: nothing reaches
-    # production unless the mirror published, was attested by the platform,
-    # passed every verify test and is publicly tagged. Nothing here reads any
-    # of it — it is a claim about what a release is, not a data dependency —
-    # which is why it belongs on the production mutation rather than on the
-    # GAR push that feeds it.
-    needs: [push-gar, release]
+    # Gated on `test` (through `push-gar`) and on nothing from the mirror
+    # pipeline. The deploy and the mirror are independent by design (ADR
+    # 0014): the GAR copy is trusted by IAM, not by signature, and a mirror
+    # failure that has nothing to do with these services — a Rekor outage, a
+    # base-image verify failure, a deleted negative-test fixture — must not
+    # block a Registry or Directory fix from reaching production. What it
+    # gives up is the guarantee that production never runs a digest whose
+    # mirror copy failed verification; `test` is what stands in for that.
+    needs: push-gar
     runs-on: ubuntu-latest
     environment: prod
     permissions:
@@ -738,7 +739,8 @@ jobs:
 
   deploy-web:
     name: Deploy web ${{ matrix.region }}
-    needs: [push-gar, release]
+    # Same gate as `deploy-registry`, for the same reasons.
+    needs: push-gar
     runs-on: ubuntu-latest
     environment: prod
     permissions:

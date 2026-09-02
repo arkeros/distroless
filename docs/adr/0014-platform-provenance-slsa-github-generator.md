@@ -146,8 +146,18 @@ token to verify public artifacts, so the job that holds the policy cannot
 mutate the registry. `release` tags from the same `{target, ref}` list `verify`
 checked rather than from a fresh query, so the tagged set is the verified set
 by construction, and an empty list fails `verify` rather than passing
-vacuously. `deploy-*` gates on `release`, so production only runs what the
-mirror publicly names.
+vacuously.
+
+The Cloud Run deploys gate on `test` alone, through `push-gar`, and not on any
+mirror job. Before this ADR they waited on `publish`, on the argument that
+production should never run a digest the mirror refused to name. That coupling
+was dropped deliberately: the deployed copies travel the **Deploy path** and
+are trusted by IAM rather than by signature, and a mirror failure unrelated to
+the two services — a Rekor outage, a base-image verify failure, a deleted
+negative-test fixture — would otherwise block a Registry or Directory fix from
+shipping. The cost is that production can run a digest whose mirror copy
+failed verification; `test`, which every push to `main` reruns, is the gate
+that stands in for it.
 
 The cost 0006 counted against `actions/attest` applies here too: one fresh
 runner per digest. A Debian lockfile bump changes most of the 20 mirror images

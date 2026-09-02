@@ -56,7 +56,16 @@ _attrs = {
         default = "//oci:crane_tag.sh.tpl",
         allow_single_file = True,
     ),
+    "_runfiles_lib": attr.label(
+        default = "@bazel_tools//tools/bash/runfiles",
+    ),
 }
+
+def _rlocation_path(ctx, file):
+    """The path `rlocation` resolves, for a file in this or an external repo."""
+    if file.short_path.startswith("../"):
+        return file.short_path[len("../"):]
+    return ctx.workspace_name + "/" + file.short_path
 
 def _crane_tag_impl(ctx):
     repository = ctx.attr.repository
@@ -109,15 +118,19 @@ mv "${OUTPUT}.work" "${OUTPUT}"
         output = executable,
         is_executable = True,
         substitutions = {
-            "{{crane_path}}": ctx.executable._crane.short_path,
-            "{{digest_file}}": digest_file.short_path,
+            "{{crane_rlocation}}": _rlocation_path(ctx, ctx.executable._crane),
+            "{{digest_rlocation}}": _rlocation_path(ctx, digest_file),
             "{{repository}}": repository,
-            "{{tags_file}}": ctx.outputs.tags.short_path,
+            "{{tags_rlocation}}": _rlocation_path(ctx, ctx.outputs.tags),
         },
     )
 
-    runfiles = ctx.runfiles(files = [digest_file, ctx.outputs.tags, ctx.executable._crane])
+    runfiles = ctx.runfiles(
+        files = [digest_file, ctx.outputs.tags, ctx.executable._crane],
+        transitive_files = ctx.attr._runfiles_lib[DefaultInfo].files,
+    )
     runfiles = runfiles.merge(ctx.attr._crane[DefaultInfo].default_runfiles)
+    runfiles = runfiles.merge(ctx.attr._runfiles_lib[DefaultInfo].default_runfiles)
 
     return [
         DefaultInfo(

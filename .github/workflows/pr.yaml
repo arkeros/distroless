@@ -1,12 +1,7 @@
 ---
-# Pull requests: test, and nothing else.
-#
-# Split from ci.yaml (ADR 0014) so that the two run under different identities
-# with nothing conditional between them. Everything here can only *read* the
-# Bazel cache; ci.yaml runs on `main` alone, under the `prod` environment, and
-# is the only thing that can write it, publish, or deploy. A branch that could
-# write an action result `main` later reads could have the platform sign an
-# image it never built — which is the whole thing platform provenance is for.
+# Pull requests: test, and nothing else. Everything here can only read the
+# Bazel cache; ci.yaml, on `main` alone, is what writes, publishes and deploys.
+# Why the split: docs/adr/0014-platform-provenance-slsa-github-generator.md.
 name: PR
 on:
   pull_request:

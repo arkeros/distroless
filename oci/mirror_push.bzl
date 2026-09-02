@@ -43,8 +43,10 @@ def mirror_push(
     CI runs them in two phases. `publish`: push, sign, attest_sbom. Then the
     platform attaches provenance and `verify` checks every artifact. Only then
     does `release` run `_tag`, so a tag never names a digest that is not fully
-    attested. Each target is independently re-runnable (cosign and crane are
-    idempotent on `<repo>@<digest>`).
+    attested. Each target is independently re-runnable. `_push` and `_tag` are
+    idempotent on `<repo>@<digest>`; `_sign` and `_attest_sbom` are not — every
+    run appends another signature or attestation to the digest, which
+    verification tolerates but `cosign tree` shows.
 
     Args:
       name: Base name. Sub-targets are derived as `<name>_<step>`.

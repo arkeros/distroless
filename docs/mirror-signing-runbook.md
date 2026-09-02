@@ -33,12 +33,15 @@ look there. Deleting a `.att` tag deletes the provenance.
 ## Where a signature event is recorded
 
 1. **The registry.** `cosign tree <ref>` enumerates signature, SBOM and
-   provenance together (it walks both referrers and legacy tags); `oras
-   discover --format tree <ref>` shows only the two referrers. Every referrer's
-   `artifactType` reads `application/vnd.oci.empty.v1+json`; the predicate
-   type that tells an SBOM from provenance is inside the DSSE envelope, and
-   only `cosign verify-attestation --type=…` and `slsa-verifier` read that
-   deep.
+   provenance together: it walks OCI referrers and legacy `.att`/`.sig` tags
+   alike, and labels each referrer with the predicate type it found inside
+   the bundle (checked with cosign 3.1.3 against both layouts). `oras
+   discover --format tree <ref>` shows only the referrers, all with
+   `artifactType` `application/vnd.oci.empty.v1+json`, because it does not
+   open the bundle. Expect duplicates: `cosign attest` appends a new referrer
+   on every run for the same digest rather than replacing the last one, so a
+   digest published by several pushes to `main` carries one signature and
+   SBOM per push. Verification accepts any of them.
 2. **Rekor**, the public transparency log. Every keyless signature lands there.
    Search by digest at <https://search.sigstore.dev/> or:
 

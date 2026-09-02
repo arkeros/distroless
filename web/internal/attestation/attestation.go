@@ -37,8 +37,10 @@ const (
 	// CycloneDX is the SBOM `mirror_push` attaches via `cosign attest
 	// --type=cyclonedx`.
 	CycloneDX PredicateType = "https://cyclonedx.org/bom"
-	// SLSAProvenance is the build provenance attached to the same Digest.
-	SLSAProvenance PredicateType = "https://slsa.dev/provenance/v1"
+	// SLSAProvenance is the platform provenance attached to the same Digest.
+	// The generator emits SLSA v0.2, which is also what `cosign
+	// --type=slsaprovenance` names; the Directory does not render it yet.
+	SLSAProvenance PredicateType = "https://slsa.dev/provenance/v0.2"
 )
 
 // Statement is a verified in-toto statement.

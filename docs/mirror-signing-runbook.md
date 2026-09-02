@@ -88,7 +88,8 @@ finds the digest pending and attests it. Nothing has to be repaired by hand.
 | `cosign`: `certificate verification failed: x509` | Stale TUF root or clock skew | `cosign initialize`; check system time |
 | `cosign`: `none of the expected identities matched` | Signer subject does not match the regexp in `oci/cosign_policy.bzl` | Inspect the certificate SAN; if a workflow was renamed, the policy file is the one place to change |
 | `transparency log entry not found` | Signed with `--tlog-upload=false` | We never do; check the invocation |
-| Verify succeeds locally, fails in CI | Runner has no egress to `rekor.sigstore.dev` or `tuf-repo-cdn.sigstore.dev` | The `verify` job fetches the trusted root once with retries; look at that step |
+| Verify succeeds locally, fails in CI | Runner has no egress to `rekor.sigstore.dev`, or (slsa-verifier only) to `tuf-repo-cdn.sigstore.dev` | cosign in CI uses the pinned root from `//oci:sigstore_trusted_root` and makes no TUF request; slsa-verifier still does |
+| `http_file` checksum mismatch for `sigstore_trusted_root` in CI | Sigstore published a new trusted root | Bump the pin in `bazel/include/oci.MODULE.bazel` per its comment; this fixes CI and the Directory together |
 
 ## When something looks wrong
 

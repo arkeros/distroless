@@ -1,4 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load(":cosign_policy.bzl", "CERTIFICATE_IDENTITY_REGEXP", "CERTIFICATE_OIDC_ISSUER", "PROVENANCE_BUILDER_ID", "PROVENANCE_SOURCE_URI")
 
@@ -22,6 +23,24 @@ write_file(
         "COSIGN_POLICY_PROVENANCE_SOURCE_URI=" + PROVENANCE_SOURCE_URI,
         "",
     ],
+    visibility = ["//visibility:public"],
+)
+
+# The Sigstore trusted root CI's `publish` and `verify` jobs hand to cosign via
+# --trusted-root. The same pinned file //web embeds and verifies with, so the
+# two can never disagree: the day Sigstore publishes a new root, the http_file
+# checksum fails in CI, and the one bump that fixes CI fixes the Directory.
+# Fetching the root live over TUF in CI — the previous design — would have kept
+# CI green while the Directory went dark. See bazel/include/oci.MODULE.bazel.
+#
+# A copy rather than an alias so the file is a regular output under
+# `bazel-out/`, which `bazel cquery --output=files` reports as a path that
+# resolves from the workspace like the other tools CI picks up; the http_file's
+# own path is execroot-relative (`external/...`) and does not.
+copy_file(
+    name = "sigstore_trusted_root",
+    src = "@sigstore_trusted_root//file",
+    out = "sigstore_trusted_root.json",
     visibility = ["//visibility:public"],
 )
 

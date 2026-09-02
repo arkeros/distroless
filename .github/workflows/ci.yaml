@@ -121,37 +121,23 @@ jobs:
           bazel build //oci:cosign_policy_env
           cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
 
-      # Both prebuilt and checksum-pinned in tools/tools.lock.json. cosign is
-      # needed here to *verify*, not only to sign: publish decides per digest
-      # whether a signature and an SBOM attestation of ours already exist.
-      - name: Fetch cosign and slsa-verifier
+      # All three are Bazel outputs: cosign and slsa-verifier are prebuilt and
+      # checksum-pinned in tools/tools.lock.json; the Sigstore trusted root is
+      # the pinned file //web embeds, handed to every cosign verify below via
+      # --trusted-root so no TUF metadata is fetched at publish time (see
+      # //oci:sigstore_trusted_root). cosign is needed here to *verify*, not
+      # only to sign: publish decides per digest whether a signature and an
+      # SBOM attestation of ours already exist.
+      - name: Fetch cosign, slsa-verifier and the Sigstore trusted root
         run: |
           set -euo pipefail
           bazel build --remote_download_outputs=all \
               //bazel/toolchains/cosign:prebuilt_cosign_toolchain \
-              @multitool//tools/slsa-verifier
+              @multitool//tools/slsa-verifier \
+              //oci:sigstore_trusted_root
           echo "COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")" >> "$GITHUB_ENV"
           echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
-
-      # One TUF fetch with retries, handed to every cosign verify below via
-      # --trusted-root. Same reasoning as the identical step in `verify`.
-      - name: Fetch Sigstore trusted root
-        run: |
-          set -euo pipefail
-          TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
-          for attempt in 1 2 3 4 5; do
-            if "${COSIGN}" trusted-root create \
-                --with-default-services \
-                --out "${TRUSTED_ROOT}"; then
-              echo "TRUSTED_ROOT=${TRUSTED_ROOT}" >> "$GITHUB_ENV"
-              exit 0
-            fi
-            delay=$((attempt * 15))
-            echo "trusted-root create failed (see cosign's error above); retrying in ${delay}s (attempt ${attempt}/5)" >&2
-            sleep "${delay}"
-          done
-          echo "ERROR: could not create the Sigstore trusted root after 5 attempts." >&2
-          exit 1
+          echo "TRUSTED_ROOT=$(realpath "$(bazel cquery //oci:sigstore_trusted_root --output=files)")" >> "$GITHUB_ENV"
 
       # `mirror_push` macros emit <name>_push, <name>_sign, <name>_attest_sbom
       # and <name>_tag. Discover via `cosign_sign rule`: every mirror image has
@@ -323,41 +309,23 @@ jobs:
           bazel build //oci:cosign_policy_env
           cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
 
-      - name: Fetch cosign and slsa-verifier
+      # The trusted root is the pinned file //web embeds, not a live TUF fetch.
+      # Every cosign verify below takes it via --trusted-root, so cosign makes
+      # no TUF request in this job at all. (Fetching it live used to be the one
+      # network call worth retrying — run 31056638456 died on a CDN 503 for a
+      # root file — and it kept CI and the Directory on roots that could drift
+      # apart. See //oci:sigstore_trusted_root.) slsa-verifier has no such
+      # flag and still refreshes TUF metadata itself.
+      - name: Fetch cosign, slsa-verifier and the Sigstore trusted root
         run: |
           set -euo pipefail
           bazel build --remote_download_outputs=all \
               //bazel/toolchains/cosign:prebuilt_cosign_toolchain \
-              @multitool//tools/slsa-verifier
+              @multitool//tools/slsa-verifier \
+              //oci:sigstore_trusted_root
           echo "COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")" >> "$GITHUB_ENV"
           echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
-
-      # Fetch the Sigstore trusted root once, up front, and hand it to every
-      # cosign verify below via --trusted-root. Without it each invocation
-      # re-refreshes TUF metadata from tuf-repo-cdn.sigstore.dev, so a single
-      # CDN hiccup somewhere in a few dozen verifies fails the whole job on
-      # signatures that are perfectly good — see run 31056638456, which died on
-      # a 503 for 16.root.json. `trusted-root create --with-default-services`
-      # goes through the same TUF client and the same signature checks the
-      # verifies would have done individually; this is one fetch, not a weaker
-      # one. That leaves exactly one network call to protect, so retry it.
-      - name: Fetch Sigstore trusted root
-        run: |
-          set -euo pipefail
-          TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
-          for attempt in 1 2 3 4 5; do
-            if "${COSIGN}" trusted-root create \
-                --with-default-services \
-                --out "${TRUSTED_ROOT}"; then
-              echo "TRUSTED_ROOT=${TRUSTED_ROOT}" >> "$GITHUB_ENV"
-              exit 0
-            fi
-            delay=$((attempt * 15))
-            echo "trusted-root create failed (see cosign's error above); retrying in ${delay}s (attempt ${attempt}/5)" >&2
-            sleep "${delay}"
-          done
-          echo "ERROR: could not create the Sigstore trusted root after 5 attempts." >&2
-          exit 1
+          echo "TRUSTED_ROOT=$(realpath "$(bazel cquery //oci:sigstore_trusted_root --output=files)")" >> "$GITHUB_ENV"
 
       # Positive test: every digest `publish` pushed must carry all three
       # artifacts under the production policy — our signature, our SBOM

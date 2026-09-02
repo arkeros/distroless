@@ -369,7 +369,10 @@ use_repo(grype_db, "grype_database")
 # signature is checked against. //web verifies attestations against this before
 # rendering them, so it ships inside that binary rather than being fetched at
 # runtime — a page whose subject is supply-chain evidence should not depend on
-# tuf-repo-cdn.sigstore.dev being up to render.
+# tuf-repo-cdn.sigstore.dev being up to render. CI's `publish` and `verify`
+# jobs verify against the same file (via //oci:sigstore_trusted_root), so the
+# root the mirror is checked with at publish time is the root the Directory
+# renders with.
 #
 # The URL is the moving target on purpose. The TUF CDN also serves this file
 # under a content-addressed name (`<sha256>.trusted_root.json`), which is

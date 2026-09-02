@@ -42,6 +42,14 @@ jobs:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
 
+      # gRPC cache proxy on this runner, in front of the same bucket; must
+      # follow the Google Cloud auth step (it uses those credentials) and
+      # precede Bazel's first invocation.
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
@@ -51,7 +59,7 @@ jobs:
           cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=bazel-remote
 
       - name: Test
         run: bazel test //...
@@ -105,6 +113,14 @@ jobs:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
 
+      # gRPC cache proxy on this runner, in front of the same bucket; must
+      # follow the Google Cloud auth step (it uses those credentials) and
+      # precede Bazel's first invocation.
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
@@ -114,7 +130,7 @@ jobs:
           cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=bazel-remote
             build --stamp
 
       - name: Login to GHCR
@@ -555,6 +571,14 @@ jobs:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
 
+      # gRPC cache proxy on this runner, in front of the same bucket; must
+      # follow the Google Cloud auth step (it uses those credentials) and
+      # precede Bazel's first invocation.
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
@@ -564,7 +588,7 @@ jobs:
           cache-save: false
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=bazel-remote
             build --stamp
 
       - name: Login to GHCR
@@ -685,13 +709,21 @@ jobs:
           service_account: github-actions-distroless@senku-prod.iam.gserviceaccount.com
           token_format: access_token
 
+      # gRPC cache proxy on this runner, in front of the same bucket; must
+      # follow the Google Cloud auth step (it uses those credentials) and
+      # precede Bazel's first invocation.
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=bazel-remote
             build --stamp
 
       - name: Login to Artifact Registry

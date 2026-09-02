@@ -1,0 +1,68 @@
+name: Set up bazel-remote
+description: >-
+  Start bazel-remote on this runner as a proxy in front of the Bazel cache
+  bucket, so Bazel and rules_img reach the cache over gRPC on localhost.
+# Why a proxy on the runner rather than Bazel's plain HTTPS to GCS: rules_img's
+# lazy push, which lets `publish` stream only missing layers instead of
+# downloading every layer to prove the registry has them, only speaks gRPC to a
+# remote-execution-API cache. bazel-remote is that API in front of the same
+# bucket, storing objects under the same `ac/<hash>` and `cas/<hash>` keys
+# Bazel's HTTP cache writes, so CI through the proxy and developers through
+# `--config=gcs` share one cache. Same pattern as GoogleContainerTools/distroless'
+# release pipeline. The disk it uses is the runner's, empty on every job: the
+# gain is protocol, not locality.
+#
+# Authenticates to GCS with the runner's application-default credentials, i.e.
+# whatever google-github-actions/auth minted before this step. With the
+# read-only identity, uploads to the bucket fail in the proxy's log and nothing
+# else; pair it with `--config=bazel-remote-readonly` so Bazel never uploads.
+inputs:
+  bucket:
+    description: GCS bucket of the Bazel remote cache.
+    required: true
+  max-size-gib:
+    description: Size cap of the proxy's on-runner disk cache, in GiB.
+    required: false
+    default: "10"
+runs:
+  using: composite
+  steps:
+    - name: Download and start bazel-remote
+      shell: bash
+      env:
+        VERSION: 2.6.2
+        # sha256 of bazel-remote-2.6.2-linux-amd64 from the GitHub release.
+        SHA256: 62e236bf8396e69396928e0d0c32062fbd5575f20fe55dc10a82eb791297e1a0
+        BUCKET: ${{ inputs.bucket }}
+        MAX_SIZE: ${{ inputs.max-size-gib }}
+      run: |
+        set -euo pipefail
+        BIN="${RUNNER_TEMP}/bazel-remote"
+        curl -fsSL --retry 5 --retry-delay 5 -o "${BIN}" \
+          "https://github.com/buchgr/bazel-remote/releases/download/v${VERSION}/bazel-remote-${VERSION}-linux-amd64"
+        echo "${SHA256}  ${BIN}" | sha256sum -c -
+        chmod +x "${BIN}"
+        mkdir -p "${RUNNER_TEMP}/bazel-remote-cache"
+        LOG="${RUNNER_TEMP}/bazel-remote.log"
+        # `uncompressed`, not the zstd default: zstd would store CAS blobs under
+        # `cas.v2/`, a namespace Bazel's HTTP cache does not read.
+        nohup "${BIN}" \
+          --dir "${RUNNER_TEMP}/bazel-remote-cache" \
+          --max_size "${MAX_SIZE}" \
+          --storage_mode uncompressed \
+          --gcs_proxy.bucket "${BUCKET}" \
+          --gcs_proxy.use_default_credentials \
+          --grpc_address 127.0.0.1:9092 \
+          --http_address 127.0.0.1:8080 \
+          > "${LOG}" 2>&1 &
+        for attempt in $(seq 1 40); do
+          if curl -fsS http://127.0.0.1:8080/status > /dev/null 2>&1; then
+            echo "bazel-remote v${VERSION} up on grpc://127.0.0.1:9092, backed by gs://${BUCKET}"
+            echo "BAZEL_REMOTE_LOG=${LOG}" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          sleep 0.5
+        done
+        echo "ERROR: bazel-remote did not come up; its log:" >&2
+        cat "${LOG}" >&2
+        exit 1

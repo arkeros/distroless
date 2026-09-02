@@ -155,7 +155,10 @@ bazel_remote_cache_url` prints what the bazelrc should say.
 Cache only — there is no remote execution, so every action still runs on the
 machine that invoked Bazel. Entries expire after 30 days, which bounds growth
 without anyone having to prune; a still-warm entry that ages out costs one
-rebuild. To use it locally:
+rebuild. CI reaches the bucket through bazel-remote started on each runner
+(`.github/actions/setup-bazel-remote`), which speaks gRPC to Bazel and stores
+under the same `ac/` and `cas/` keys, so it is one cache either way. To use it
+locally:
 
 ```sh
 gcloud auth application-default login

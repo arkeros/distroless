@@ -89,6 +89,19 @@ common:gcs --remote_cache_async
 common:gcs-readonly --config=gcs
 common:gcs-readonly --remote_upload_local_results=false
 
+# The same cache through bazel-remote running on the CI runner
+# (.github/actions/setup-bazel-remote): same bucket, same `ac/` and `cas/`
+# keys, reached over gRPC on localhost instead of HTTPS to GCS. This is what
+# rules_img's lazy push needs, and gRPC to a local proxy is one connection
+# with batched lookups where the HTTP config is ~22k independent round trips.
+# No credentials flag: the proxy holds the GCS identity, Bazel talks to
+# localhost. Developers keep `gcs`; nothing here applies without the proxy.
+common:bazel-remote --remote_cache=grpc://127.0.0.1:9092
+
+# Pull requests: read through the proxy, never upload (see `gcs-readonly`).
+common:bazel-remote-readonly --config=bazel-remote
+common:bazel-remote-readonly --remote_upload_local_results=false
+
 # Allow many actions in flight at once, rather than the default of one per
 # CPU core. CI builds are dominated by remote cache round trips (~22k actions
 # against the GCS HTTP cache with a critical path under 20s), and the 4-vCPU

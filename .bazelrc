@@ -41,7 +41,7 @@ common --@rules_go//go/config:linkmode=pie
 # build" path, regardless of host environment.
 common --repo_env=ANDROID_HOME=
 
-# Enforce ADR 0006 at analysis time: any `image_push` to the public mirror
+# Enforce ADR 0006/0014 at analysis time: any `image_push` to the public mirror
 # surface (`ghcr.io/arkeros/distroless/*`) without the `mirror_push_managed` tag
 # fails the build. Wired here (not as a `--config=`) so the policy is
 # unrepresentable in local dev too — there's no `bazel build` invocation
@@ -65,6 +65,14 @@ common:gcs --remote_cache=https://storage.googleapis.com/senku-prod-bazel-cache
 common:gcs --google_default_credentials
 common:gcs --remote_cache_compression
 common:gcs --remote_cache_async
+
+# Read-only view of the same cache, for pull requests. Cache writes are
+# `main`-only (ADR 0014): a branch that could write an action result that
+# `main` later reads could have the platform sign an image it never built.
+# The identity pull requests hold is a viewer, so an upload would 403 anyway;
+# this keeps Bazel from attempting it.
+common:gcs-readonly --config=gcs
+common:gcs-readonly --remote_upload_local_results=false
 
 # Allow many actions in flight at once, rather than the default of one per
 # CPU core. CI builds are dominated by remote cache round trips (~22k actions

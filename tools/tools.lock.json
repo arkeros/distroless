@@ -220,5 +220,37 @@
         "cpu": "x86_64"
       }
     ]
+  },
+  "slsa-verifier": {
+    "binaries": [
+      {
+        "kind": "file",
+        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-linux-amd64",
+        "sha256": "946dbec729094195e88ef78e1734324a27869f03e2c6bd2f61cbc06bd5350339",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-linux-arm64",
+        "sha256": "5d3b2349ede7bfec19e7a21569f18b9f7410145ad12e9584b175370669e14061",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-darwin-arm64",
+        "sha256": "39abfcf5f1d690c3e889ce3d2d6a8b87711424d83368511868d414e8f8bcb05c",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-darwin-amd64",
+        "sha256": "4baf25415727821f847a38bccedc86c3e5b17cbfc2eb534cd554feb6c856d6f1",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
   }
 }

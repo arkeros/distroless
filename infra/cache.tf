@@ -52,30 +52,38 @@ resource "google_storage_bucket" "bazel_cache" {
   }
 }
 
-# A second CI identity, distinct from `github_actions` in github.tf.
+# Two cache identities, split by what they may do to the bucket, because the
+# cache is on the path to a signed image.
 #
-# The deploy identity is deliberately reachable only from the `prod`
-# environment, which GitHub gates on `main` + reviewers. Cache access has to be
-# available to every push and pull request or it buys nothing, so it cannot
-# hang off that binding — and widening the deploy account to match would hand
-# every branch the ability to ship a Cloud Run revision. Two accounts, two
-# blast radii.
+# The mirror's provenance is written by the build platform, not by the build
+# (ADR 0014). What that proves is "this digest came out of run N of ci.yaml on
+# `main`" — it says nothing about what run N *read*. If any branch could write
+# an action result that `main` later takes as a cache hit, a pull request could
+# put bytes into an image the platform then vouches for. So writes are
+# `main`-only, and everything else is a viewer.
+
+# The writer. Distinct from `github_actions` in github.tf, which can also ship
+# a Cloud Run revision; this one reaches the bucket and nothing else, so the
+# jobs that only need a warm cache — `test`, `publish`, `release` — never hold
+# the deploy identity.
 resource "google_service_account" "github_actions_cache" {
   project      = local.project
   account_id   = "github-actions-cache"
-  display_name = "GitHub Actions Bazel cache identity for ${local.github_repository}"
+  display_name = "GitHub Actions Bazel cache writer for ${local.github_repository}"
 }
 
-# Keyed on the repository, so any branch or pull request in it can mint this
-# credential. That is a wider gate than the deploy account's, and intentionally
-# so: the pool provider still pins `assertion.repository`, and GitHub withholds
-# `id-token: write` from pull requests opened off a fork. Whoever can write to
-# the cache is therefore whoever can push a branch here — the same set of people
-# who can already land code on `main`.
+# Bound to `attribute.environment/prod`, exactly like the deploy account. The
+# `prod` environment's deployment branch policy (repo.tf) names `main` and
+# nothing else, and GitHub validates it *before* minting the token, so no job
+# off `main` can hold this identity no matter what its YAML says. A ref binding
+# (`attribute.ref/refs/heads/main`) would be equally strong against this
+# threat; the environment is used because it is the pattern the deploy account
+# already established, it is Terraform-managed, and every write-capable run
+# shows up in the repository's deployments log.
 resource "google_service_account_iam_member" "github_actions_cache_wif" {
   service_account_id = google_service_account.github_actions_cache.name
   role               = "roles/iam.workloadIdentityUser"
-  member             = "principalSet://iam.googleapis.com/projects/${data.google_project.this.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github.workload_identity_pool_id}/attribute.repository/${local.github_repository}"
+  member             = "principalSet://iam.googleapis.com/projects/${data.google_project.this.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github.workload_identity_pool_id}/attribute.environment/prod"
 }
 
 # `objectUser` rather than creator+viewer: Bazel PUTs action-cache entries
@@ -88,9 +96,36 @@ resource "google_storage_bucket_iam_member" "github_actions_cache_rw" {
   member = "serviceAccount:${google_service_account.github_actions_cache.email}"
 }
 
+# The reader, for pull requests (pr.yaml). Keyed on the repository, so any
+# branch in it can mint this credential — the pool provider still pins
+# `assertion.repository`, and GitHub withholds `id-token: write` from pull
+# requests opened off a fork, which then run cacheless. What it can do with the
+# credential is read: a viewer cannot poison anything `main` will trust.
+resource "google_service_account" "github_actions_cache_ro" {
+  project      = local.project
+  account_id   = "github-actions-cache-ro"
+  display_name = "GitHub Actions Bazel cache reader for ${local.github_repository}"
+}
+
+resource "google_service_account_iam_member" "github_actions_cache_ro_wif" {
+  service_account_id = google_service_account.github_actions_cache_ro.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/projects/${data.google_project.this.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github.workload_identity_pool_id}/attribute.repository/${local.github_repository}"
+}
+
+# `--config=gcs-readonly` in //.bazelrc pairs with this: Bazel is told not to
+# upload, so the 403 this role would answer an upload with is never provoked.
+resource "google_storage_bucket_iam_member" "github_actions_cache_ro" {
+  bucket = google_storage_bucket.bazel_cache.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.github_actions_cache_ro.email}"
+}
+
 # The deploy job authenticates as `github_actions` for Artifact Registry and
 # Cloud Run, and one job gets one set of application-default credentials — so
-# that account needs cache access too, or the deploy build runs cold.
+# that account needs cache access too, or the deploy build runs cold. It is
+# only reachable behind the same `prod` environment as the writer above, so
+# this widens nothing.
 resource "google_storage_bucket_iam_member" "github_actions_cache_rw_deploy" {
   bucket = google_storage_bucket.bazel_cache.name
   role   = "roles/storage.objectUser"

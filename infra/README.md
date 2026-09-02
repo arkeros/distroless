@@ -60,22 +60,25 @@ own `github-distroless` pool so that repo's infra cannot widen or revoke access
 here. The provider's `attribute_condition` pins `assertion.repository`, so no
 other repository can mint a credential in this pool at all.
 
-Inside that gate are two accounts, because the two things CI does need very
+Inside that gate are three accounts, because the things CI does need
 different reach:
 
 | Account | Bound to | Can |
 | --- | --- | --- |
 | `github-actions-distroless` (`github.tf`) | `attribute.environment/prod` | Push to Artifact Registry, deploy Cloud Run, act as `svc-registry` |
-| `github-actions-cache` (`cache.tf`) | `attribute.repository` | Read and write the Bazel cache bucket, and nothing else |
+| `github-actions-cache` (`cache.tf`) | `attribute.environment/prod` | Read and write the Bazel cache bucket, and nothing else |
+| `github-actions-cache-ro` (`cache.tf`) | `attribute.repository` | Read the Bazel cache bucket |
 
-The deploy binding is the narrow one: GitHub issues an `environment` claim only
-after validating `prod`'s deployment branch policy, which names `main` and
-nothing else, so that gate lives in the identity layer rather than in workflow
-YAML any committer can edit. The cache binding is deliberately wider — a cache
-only `main` can reach is worth very little — which is why it hangs off an
-account that can do nothing else. Pull requests opened from a fork get no OIDC
-token at all, so cache writers are exactly the people who can already push a
-branch here.
+The two `prod` bindings are the narrow ones: GitHub issues an `environment`
+claim only after validating `prod`'s deployment branch policy, which names
+`main` and nothing else, so that gate lives in the identity layer rather than
+in workflow YAML any committer can edit. Cache *writes* sit behind it because
+the cache is on the path to a signed image: the mirror's provenance says which
+run of `main` produced a digest, not what that run read, so a branch that could
+write an action result `main` later trusts could get the platform to vouch for
+bytes it never built (ADR 0014). Pull requests hold the reader, which is bound
+to the repository — any branch can mint it, forks get no OIDC token at all —
+and can poison nothing.
 
 After `apply`, confirm the workflow's inputs match:
 
@@ -83,6 +86,7 @@ After `apply`, confirm the workflow's inputs match:
 terraform output github_workload_identity_provider
 terraform output github_service_account
 terraform output github_cache_service_account
+terraform output github_cache_readonly_service_account
 ```
 
 ## Why the deploy has no manual approval
@@ -98,7 +102,7 @@ ruleset rather than per rule:
 
 | Ruleset | Rules | Bypass |
 | --- | --- | --- |
-| `main-checks` | `Test` must pass on a branch current with `main`; linear history; no force-push; no deletion | **nobody**, admins included |
+| `main-checks` | `Test` (pr.yaml) must pass on a branch current with `main`; linear history; no force-push; no deletion | **nobody**, admins included |
 | `main-review` | pull request with 1 approval, threads resolved | repository admins |
 
 Folding these into one would mean the bypass that keeps a solo maintainer able

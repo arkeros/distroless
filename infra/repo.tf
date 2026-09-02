@@ -87,8 +87,8 @@ resource "github_repository_ruleset" "main_checks" {
     required_linear_history = true
 
     required_status_checks {
-      # `Test` is the `name:` of the only ci.yaml job that runs on
-      # `pull_request`; the rest are `if: github.event_name == 'push'`.
+      # `Test` is the `name:` of the one job in pr.yaml, the only workflow
+      # that runs on `pull_request`; ci.yaml runs on push to `main` alone.
       # Renaming that job silently disables this rule, so the two names have
       # to move together.
       required_check {

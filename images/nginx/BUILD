@@ -155,10 +155,15 @@ tar(
         "default.conf",
         "nginx.conf",
     ],
+    # `time=0.0` on every file entry, or bsdtar records the source file's mtime
+    # — the checkout time, different on every CI runner — and the layer, the
+    # image config and the index digest all change per machine. Directories
+    # get the epoch without it; files do not. Found when the `release` job
+    # built a digest the `publish` job had never pushed (run 33618108072).
     mtree = [
-        "./etc/nginx/nginx.conf uid=0 gid=0 mode=0644 type=file content=$(execpath nginx.conf)",
+        "./etc/nginx/nginx.conf uid=0 gid=0 mode=0644 time=0.0 type=file content=$(execpath nginx.conf)",
         "./etc/nginx/conf.d type=dir uid=0 gid=0 mode=0755",
-        "./etc/nginx/conf.d/default.conf uid=0 gid=0 mode=0644 type=file content=$(execpath default.conf)",
+        "./etc/nginx/conf.d/default.conf uid=0 gid=0 mode=0644 time=0.0 type=file content=$(execpath default.conf)",
         "./var/www/html type=dir uid=0 gid=0 mode=0755",
     ],
 )

@@ -1,6 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
-load(":cosign_policy.bzl", "BUILDER_ID", "CERTIFICATE_IDENTITY_REGEXP", "CERTIFICATE_OIDC_ISSUER")
+load(":cosign_policy.bzl", "CERTIFICATE_IDENTITY_REGEXP", "CERTIFICATE_OIDC_ISSUER", "PROVENANCE_BUILDER_ID", "PROVENANCE_SOURCE_URI")
 
 bzl_library(
     name = "aspects",
@@ -10,15 +10,16 @@ bzl_library(
 )
 
 # Sourceable shell file mirroring `cosign_policy.bzl`'s consumer-side
-# constants. CI's verify steps `cat` this into `$GITHUB_ENV` so the regex /
-# issuer pinning come from the same source as the producer's BUILDER_ID.
+# constants. CI's verify steps `cat` this into `$GITHUB_ENV` so the identity
+# pins for both signers come from the one place the docs also derive from.
 write_file(
     name = "cosign_policy_env",
     out = "cosign_policy.env",
     content = [
-        "COSIGN_POLICY_BUILDER_ID=" + BUILDER_ID,
         "COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP=" + CERTIFICATE_IDENTITY_REGEXP,
         "COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER=" + CERTIFICATE_OIDC_ISSUER,
+        "COSIGN_POLICY_PROVENANCE_BUILDER_ID=" + PROVENANCE_BUILDER_ID,
+        "COSIGN_POLICY_PROVENANCE_SOURCE_URI=" + PROVENANCE_SOURCE_URI,
         "",
     ],
     visibility = ["//visibility:public"],
@@ -65,11 +66,13 @@ bzl_library(
     visibility = ["//visibility:public"],
     deps = [
         ":config",
-        ":cosign_policy",
+        ":crane_tag",
         "@cosign.bzl//:cosign",
         "@rules_img//img:push",
     ],
 )
+
+exports_files(["crane_tag.sh.tpl"])
 
 bzl_library(
     name = "created_timestamp",
@@ -87,6 +90,12 @@ bzl_library(
 bzl_library(
     name = "cosign_policy",
     srcs = ["cosign_policy.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "crane_tag",
+    srcs = ["crane_tag.bzl"],
     visibility = ["//visibility:public"],
 )
 

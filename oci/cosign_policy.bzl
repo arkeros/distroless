@@ -1,59 +1,57 @@
-"""Single source of truth for the cosign signing policy.
+"""Single source of truth for the mirror's verification policy.
 
-Producer side (`mirror_push`) bakes `BUILDER_ID` into the SLSA predicate's
-`runDetails.builder.id`. Consumer side (CI verify steps + external
-`cosign verify-attestation` invocations) pin `CERTIFICATE_IDENTITY_REGEXP`
-to validate the signature's OIDC subject. Both must agree, which is why
-they're derived from the same constants here. See ADR 0006.
+Two signers put artifacts on a mirror digest, and consumers must pin both:
 
-Renaming the workflow file or migrating the signing branch only requires
-editing this file; the producer rule, the consumer regex, the CI policy
-env file (`:cosign_policy_env`), and the consumer-facing docs all derive
-from the values below.
+  * Signature and SBOM attestation — signed by *our* workflow. Consumers pin
+    `CERTIFICATE_IDENTITY_REGEXP` + `CERTIFICATE_OIDC_ISSUER`.
+  * Platform provenance — signed by slsa-github-generator's reusable workflow,
+    whose certificate is the same for every project using it. Consumers pin
+    `PROVENANCE_BUILDER_ID` and check `PROVENANCE_SOURCE_URI` *inside* the
+    predicate with `slsa-verifier verify-image`. See ADR 0014.
+
+CI's verify steps, the negative tests and the consumer-facing docs all derive
+from the values below; renaming the workflow file or migrating the signing
+branch is an edit to this file (and to `web/internal/policy`, which the
+Directory duplicates because Go cannot load Starlark).
 """
 
 # Source repo. The "github.com" host is implied; change-control this only
-# if the project moves runners (Codeberg, etc.) — see ADR 0006's note on
-# verify-policy lock-in for runner migration.
+# if the project moves runners (Codeberg, etc.).
 SOURCE_REPO = "github.com/arkeros/distroless"
 
 # The single workflow file authorized to sign mirror images. CODEOWNERS
 # on this file is the human-review gate; the OIDC subject is the
-# Bazel-built / cosign-verifier perimeter.
+# cosign-verifier perimeter.
 WORKFLOW_PATH = ".github/workflows/ci.yaml"
 
-# Git ref pinned in OIDC certificate `subject` claims. `main`-only —
-# tags here are calendar checkpoints, not release events (ADR 0006).
+# Git ref pinned in OIDC certificate `subject` claims. `main`-only — the
+# mirror publishes on every push to main; tags here are calendar
+# checkpoints, not release events (ADR 0006, kept by ADR 0014).
 WORKFLOW_REF = "refs/heads/main"
 
-# OIDC issuer. Today only GitHub Actions; if migrating runners
-# (BuildBuddy, Tekton, Cloud Build, Codeberg) this would gain alternates
-# and consumer policies would need updating in coordination.
+# OIDC issuer. GitHub Actions for both signers.
 CERTIFICATE_OIDC_ISSUER = "https://token.actions.githubusercontent.com"
 
+# The reusable workflow that writes platform provenance. `slsa-verifier
+# --builder-id` takes it without the `@ref`; the tag is checked separately
+# against the `v[0-9]+.[0-9]+.[0-9]+` shape the generator requires.
+PROVENANCE_BUILDER_ID = "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml"
+
+# What `slsa-verifier --source-uri` must find in the predicate. The
+# generator's certificate names the generator, not us; this is the only
+# thing that binds a provenance statement to *this* repository.
+PROVENANCE_SOURCE_URI = SOURCE_REPO
+
 # --- Derived ---
-
-# Producer side: baked into the SLSA predicate's `runDetails.builder.id`.
-BUILDER_ID = "https://{repo}/{path}@{ref}".format(
-    repo = SOURCE_REPO,
-    path = WORKFLOW_PATH,
-    ref = WORKFLOW_REF,
-)
-
-# Stable URI describing the schema of the SLSA predicate's `buildType`.
-# Consumers treat it as opaque, but it MUST be stable across releases —
-# changing it breaks consumer policies that pin on `predicateType`.
-BUILD_TYPE_URI = "https://{repo}/cosign.bzl/v1/bazel-mirror".format(
-    repo = SOURCE_REPO,
-)
 
 def _regex_escape(s):
     return s.replace(".", "\\.")
 
-# Consumer side: regex consumers pin via `cosign verify-attestation
-# --certificate-identity-regexp=...`. Workflow-bound (matches only the
-# specific WORKFLOW_PATH on WORKFLOW_REF), not repo-bound — adding a
-# new workflow file is not enough to mint a valid mirror signature.
+# Consumer side: regex consumers pin via `cosign verify` /
+# `cosign verify-attestation --certificate-identity-regexp=...`.
+# Workflow-bound (matches only the specific WORKFLOW_PATH on WORKFLOW_REF),
+# not repo-bound — adding a new workflow file is not enough to mint a valid
+# mirror signature.
 CERTIFICATE_IDENTITY_REGEXP = "^https://{repo}/{path}@{ref}$".format(
     repo = _regex_escape(SOURCE_REPO),
     path = _regex_escape(WORKFLOW_PATH),

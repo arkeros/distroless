@@ -1,0 +1,3 @@
+tag ghcr.io/example/mirror/app@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef latest
+tag ghcr.io/example/mirror/app@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef 2026.36.0-deadbeef
+tag ghcr.io/example/mirror/app@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef 2026.36.0-deadbeef-debug

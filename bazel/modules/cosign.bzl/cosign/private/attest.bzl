@@ -5,26 +5,20 @@ image at a remote registry.
 
 ```starlark
 load("@rules_img//img:image.bzl", "image_index")
-load("@cosign.bzl//cosign:defs.bzl", "cosign_attest", "slsa_predicate")
+load("@cosign.bzl//cosign:defs.bzl", "cosign_attest")
 
 image_index(name = "image", ...)
 
-slsa_predicate(
-    name = "image_predicate",
-    image = ":image",
-    ...
-)
-
 cosign_attest(
-    name = "image_attest_provenance",
+    name = "image_attest_sbom",
     image = ":image",
     repository = "ghcr.io/arkeros/distroless/distroless/static",
-    type = "slsaprovenance",
-    predicate = ":image_predicate",
+    type = "cyclonedx",
+    predicate = ":image_sbom",
 )
 ```
 
-Run with `bazel run :image_attest_provenance`. Same key-mode rules as
+Run with `bazel run :image_attest_sbom`. Same key-mode rules as
 `cosign_sign`: keyless by default, KMS / file-key via `COSIGN_KEY`.
 """
 

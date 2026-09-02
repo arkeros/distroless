@@ -14,11 +14,6 @@ bzl_library(
     deps = ["//cosign/toolchain"],
 )
 
-bzl_library(
-    name = "predicate",
-    srcs = ["predicate.bzl"],
-)
-
 exports_files([
     "sign.sh.tpl",
     "attest.sh.tpl",

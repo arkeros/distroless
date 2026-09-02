@@ -33,7 +33,6 @@ bzl_library(
     srcs = ["defs.bzl"],
     deps = [
         "//cosign/private:attest",
-        "//cosign/private:predicate",
         "//cosign/private:sign",
     ],
 )

@@ -121,27 +121,87 @@ jobs:
           bazel build //oci:cosign_policy_env
           cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
 
-      # Prebuilt, checksum-pinned in tools/tools.lock.json like cosign.
-      - name: Fetch slsa-verifier
+      # Both prebuilt and checksum-pinned in tools/tools.lock.json. cosign is
+      # needed here to *verify*, not only to sign: publish decides per digest
+      # whether a signature and an SBOM attestation of ours already exist.
+      - name: Fetch cosign and slsa-verifier
         run: |
           set -euo pipefail
-          bazel build --remote_download_outputs=all @multitool//tools/slsa-verifier
+          bazel build --remote_download_outputs=all \
+              //bazel/toolchains/cosign:prebuilt_cosign_toolchain \
+              @multitool//tools/slsa-verifier
+          echo "COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")" >> "$GITHUB_ENV"
           echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
+
+      # One TUF fetch with retries, handed to every cosign verify below via
+      # --trusted-root. Same reasoning as the identical step in `verify`.
+      - name: Fetch Sigstore trusted root
+        run: |
+          set -euo pipefail
+          TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
+          for attempt in 1 2 3 4 5; do
+            if "${COSIGN}" trusted-root create \
+                --with-default-services \
+                --out "${TRUSTED_ROOT}"; then
+              echo "TRUSTED_ROOT=${TRUSTED_ROOT}" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            delay=$((attempt * 15))
+            echo "trusted-root create failed (see cosign's error above); retrying in ${delay}s (attempt ${attempt}/5)" >&2
+            sleep "${delay}"
+          done
+          echo "ERROR: could not create the Sigstore trusted root after 5 attempts." >&2
+          exit 1
 
       # `mirror_push` macros emit <name>_push, <name>_sign, <name>_attest_sbom
       # and <name>_tag. Discover via `cosign_sign rule`: every mirror image has
       # exactly one. `_tag` is deliberately not run here — see `release`.
       #
-      # After pushing, each digest is classified by *verifying* its provenance:
-      #   verified              → already attested by an earlier run; skip.
-      #   no matching attestations → pending; the matrix below attests it.
-      #   anything else         → fail. A Rekor or TUF outage must not read as
-      #                           "unattested" and be answered with a second
-      #                           provenance statement (ADR 0014: one per digest).
+      # Every artifact is added at most once per digest. After the push, each
+      # of the three is *verified* under the production policy and classified:
+      #   verified      → already there from an earlier run; skip.
+      #   absent        → add it: run `_sign` / `_attest_sbom`, or hand the
+      #                   digest to the `provenance` matrix.
+      #   anything else → fail. A Rekor or TUF outage must not read as
+      #                   "absent" and be answered with a duplicate
+      #                   (ADR 0014: one of each per digest).
+      #
+      # "Absent" for the two we sign includes "signed, but not by us": a
+      # workflow rename heals itself on the next push, and a foreign signature
+      # on our digest cannot block a release. Digests are stable across
+      # commits when their content is, so a push that changes nothing adds
+      # nothing.
       - name: Push, sign, and attest mirror images
         id: publish
         run: |
           set -euo pipefail
+
+          # needs_artifact WHAT REF VERIFIER...: runs VERIFIER; returns 0 when
+          # the artifact is present and ours (skip), 1 when it is absent or
+          # someone else's (add), and aborts the job on any other failure.
+          needs_artifact() {
+            local WHAT=$1 REF=$2; shift 2
+            local STDERR; STDERR=$(mktemp)
+            if "$@" > /dev/null 2> "${STDERR}"; then
+              echo "${WHAT} already present: ${REF}"
+              return 0
+            fi
+            # cosign: nothing signed / signed by someone else / no or foreign
+            # attestation. slsa-verifier: no provenance. Anything else — DNS,
+            # TLS, Rekor, TUF — is not a statement about the registry and is
+            # not treated as one. (cosign also says "no signatures found" for
+            # a repository that does not exist; harmless here, since the push
+            # just above is what creates it, and a sign against a missing
+            # digest fails loudly on its own.)
+            if grep -qE "no signatures found|no matching signatures|no matching attestations" "${STDERR}"; then
+              echo "${WHAT} absent: ${REF}"
+              return 1
+            fi
+            echo "ERROR: could not tell whether ${REF} has a ${WHAT}; refusing to guess." >&2
+            cat "${STDERR}" >&2
+            exit 1
+          }
+
           SIGN_TARGETS=$(bazel query 'kind("cosign_sign rule", //...)' --output=label)
           : > "${RUNNER_TEMP}/published.jsonl"
           : > "${RUNNER_TEMP}/pending.jsonl"
@@ -149,10 +209,6 @@ jobs:
             BASE=${SIGN_TARGET%_sign}
             echo "::group::${BASE}"
             bazel run "${BASE}_push"
-            bazel run "${BASE}_sign"
-            if bazel query "${BASE}_attest_sbom" 2>/dev/null | grep -q .; then
-              bazel run "${BASE}_attest_sbom"
-            fi
 
             # The digest comes from the build, not from the registry: the push
             # target's deploy manifest names what it pushed, and OCI digests
@@ -165,19 +221,33 @@ jobs:
             jq -c -n --arg target "${BASE}" --arg ref "${REF}" '{$target, $ref}' \
               >> "${RUNNER_TEMP}/published.jsonl"
 
-            STDERR=$(mktemp)
-            if "${SLSA_VERIFIER}" verify-image "${REF}" \
-                --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
-                --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}" 2> "${STDERR}"; then
-              echo "provenance already attached: ${REF}"
-            elif grep -q "no matching attestations" "${STDERR}"; then
-              echo "provenance pending: ${REF}"
+            if ! needs_artifact signature "${REF}" \
+                "${COSIGN}" verify \
+                  --trusted-root="${TRUSTED_ROOT}" \
+                  --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
+                  --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
+                  "${REF}"; then
+              bazel run "${BASE}_sign"
+            fi
+
+            if bazel query "${BASE}_attest_sbom" 2>/dev/null | grep -q .; then
+              if ! needs_artifact "SBOM attestation" "${REF}" \
+                  "${COSIGN}" verify-attestation \
+                    --trusted-root="${TRUSTED_ROOT}" \
+                    --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
+                    --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
+                    --type=cyclonedx \
+                    "${REF}"; then
+                bazel run "${BASE}_attest_sbom"
+              fi
+            fi
+
+            if ! needs_artifact provenance "${REF}" \
+                "${SLSA_VERIFIER}" verify-image "${REF}" \
+                  --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
+                  --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}"; then
               jq -c -n --arg image "${IMAGE}" --arg digest "${DIGEST}" '{$image, $digest}' \
                 >> "${RUNNER_TEMP}/pending.jsonl"
-            else
-              echo "ERROR: could not tell whether ${REF} has provenance; refusing to guess." >&2
-              cat "${STDERR}" >&2
-              exit 1
             fi
             echo "::endgroup::"
           done

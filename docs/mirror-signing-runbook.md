@@ -38,10 +38,11 @@ look there. Deleting a `.att` tag deletes the provenance.
    the bundle (checked with cosign 3.1.3 against both layouts). `oras
    discover --format tree <ref>` shows only the referrers, all with
    `artifactType` `application/vnd.oci.empty.v1+json`, because it does not
-   open the bundle. Expect duplicates: `cosign attest` appends a new referrer
-   on every run for the same digest rather than replacing the last one, so a
-   digest published by several pushes to `main` carries one signature and
-   SBOM per push. Verification accepts any of them.
+   open the bundle. Digests first published before September 2026 carry
+   duplicates: `cosign attest` appends a new referrer on every run rather
+   than replacing the last one, and `publish` used to re-sign every digest on
+   every push. It now signs and attests only where ours is missing.
+   Verification accepts any of the duplicates.
 2. **Rekor**, the public transparency log. Every keyless signature lands there.
    Search by digest at <https://search.sigstore.dev/> or:
 
@@ -67,7 +68,7 @@ look there. Deleting a `.att` tag deletes the provenance.
 
 | Job | Mutates the registry? | Notes |
 |---|---|---|
-| `publish` | yes: push by digest, sign, attest SBOM | Emits the pending digest list. A digest is pending when `slsa-verifier` says `no matching attestations`; any other verify error fails the job. |
+| `publish` | yes: push by digest, then sign and attest the SBOM **only where ours is missing** | Verifies each of the three artifacts per digest first. Absent or someone else's → add (or, for provenance, list as pending); present and ours → skip; any other verify error fails the job. |
 | `provenance` | yes: attaches provenance | One generator call per pending digest. Skipped entirely when nothing is pending. |
 | `verify` | **no** | `packages: read` only. Refuses an empty list, then positive tests on every published digest and negative tests on two foreign images. |
 | `release` | yes: tags | Runs `_tag` for exactly the targets `publish` reported and `verify` checked. Nothing here runs unless `verify` passed for every digest. |

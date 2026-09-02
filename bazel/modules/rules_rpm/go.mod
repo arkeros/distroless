@@ -1,6 +1,6 @@
 module github.com/arkeros/distroless/bazel/modules/rules_rpm
 
-go 1.27.0
+go 1.27.1
 
 require (
 	github.com/ProtonMail/go-crypto v1.4.1

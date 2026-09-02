@@ -1,3 +1,4 @@
 STABLE_GIT_COMMIT deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
 STABLE_TEST_VERSION 2026.36.0-deadbeef
+STABLE_TEST_SPECIALS a&b\c#d/e
 BUILD_TIMESTAMP 1700000000

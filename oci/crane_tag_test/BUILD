@@ -22,6 +22,9 @@ crane_tag(
         "latest",
         "{{.STABLE_TEST_VERSION}}",
         "{{.STABLE_TEST_VERSION}}-debug",
+        # Every character a sed replacement would mangle. Not a valid OCI
+        # tag; the assertion is that expansion is literal.
+        "{{.STABLE_TEST_SPECIALS}}",
     ],
     workspace_status = ":status.txt",
 )

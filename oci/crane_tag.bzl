@@ -41,7 +41,7 @@ _attrs = {
     "tag_list": attr.string_list(
         mandatory = True,
         allow_empty = False,
-        doc = "Tags to apply. `{{.STABLE_KEY}}` placeholders are expanded from the workspace status file.",
+        doc = "Tags to apply. `{{.STABLE_KEY}}` placeholders are expanded from the workspace status file, literally: a value is inserted as is, whatever characters it contains.",
     ),
     "workspace_status": attr.label(
         allow_single_file = True,
@@ -86,6 +86,12 @@ def _crane_tag_impl(ctx):
     # placeholder left unexpanded is a typo or a key the status command does
     # not emit; either way a tag literally named `{{.X}}` must never reach a
     # registry, so fail the action instead.
+    #
+    # Bash substitution rather than sed: a sed replacement rewrites `&`, `\`
+    # and its own delimiter, and the status file is user-extensible, so a
+    # value with one of those would have produced a wrong tag silently. With
+    # both pattern and replacement quoted, bash inserts the value as is on
+    # every version, including 5.2's `patsub_replacement`.
     tags_template = ctx.actions.declare_file(ctx.label.name + ".tags.tpl")
     ctx.actions.write(tags_template, "\n".join(ctx.attr.tag_list) + "\n")
     ctx.actions.run_shell(
@@ -94,18 +100,18 @@ def _crane_tag_impl(ctx):
         command = """
 set -euo pipefail
 TEMPLATE="$1"; STATUS="$2"; OUTPUT="$3"
-cp "${TEMPLATE}" "${OUTPUT}.work"
+CONTENT=$(cat "${TEMPLATE}")
 while IFS=' ' read -r KEY VALUE; do
   [[ -n "${KEY}" ]] || continue
-  # `#` delimiter: values are versions and commits, never contain it.
-  sed "s#{{\\.${KEY}}}#${VALUE}#g" "${OUTPUT}.work" > "${OUTPUT}.work.tmp"
-  mv "${OUTPUT}.work.tmp" "${OUTPUT}.work"
+  # Unquoted assignment on purpose: an assignment never word-splits, and
+  # quoting the whole expansion would make the inner quotes literal.
+  CONTENT=${CONTENT//"{{.${KEY}}}"/"${VALUE}"}
 done < "${STATUS}"
-if grep -n '{{' "${OUTPUT}.work"; then
+if grep -n '{{' <<< "${CONTENT}"; then
   echo "ERROR: unexpanded placeholder in tag list (see above); the workspace status file has no such key." >&2
   exit 1
 fi
-mv "${OUTPUT}.work" "${OUTPUT}"
+printf '%s\\n' "${CONTENT}" > "${OUTPUT}"
 """,
         arguments = [tags_template.path, status_file.path, ctx.outputs.tags.path],
         mnemonic = "CraneTagList",

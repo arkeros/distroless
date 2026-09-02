@@ -123,16 +123,18 @@ scan. Failed on, because a suppression outliving its finding is how an
 unrelated future CVE gets silenced by accident.
 _Avoid_: unused ignore, dead entry
 
-**SLSA provenance**:
-The Bazel-built predicate attached to a **Digest** describing what was built
-and from what source. Complements the signing certificate: the certificate
-carries runtime fidelity (which workflow ran), the predicate carries
-build-graph fidelity (what it built).
-_Avoid_: GHA provenance (it is build-derived, not CI-derived), build info
+**Platform provenance**:
+The signed statement that a **Digest** was produced by a given run of a given
+workflow at a given commit, written by the build platform's control plane and
+not by any step of ours. Deliberately CI-derived: a build cannot forge a claim
+it did not write. It says who built and when; the **SBOM** says what.
+_Avoid_: SLSA provenance (any provenance at all, including the build-written
+kind this replaced), build provenance (the retired Bazel-written predicate —
+see Flagged ambiguities), GHA provenance (names the vendor, not the property)
 
 **Attestation**:
-A signed predicate bound to a **Digest** — **SLSA provenance** or **SBOM** —
-attached over the OCI 1.1 referrers API.
+A signed predicate bound to a **Digest** — **Platform provenance** or
+**SBOM** — attached over the OCI 1.1 referrers API.
 _Avoid_: metadata, annotation (those are unsigned and live in the manifest)
 
 ### Distribution
@@ -145,10 +147,12 @@ _Avoid_: registry (that is the **Registry** below), public images (too broad —
 not everything public is on the mirror)
 
 **Mirror push**:
-The macro that publishes to the **Mirror**, wrapping push, sign and attest into
-one unit. It is the *only* path onto that surface, which puts the "everything
-published is signed and attested" policy in the build graph instead of in CI
-script discipline.
+The macro that publishes to the **Mirror**, wrapping push, sign and the
+**SBOM** attestation into one unit. It is the *only* path onto that surface,
+which puts the "everything published is signed and has an SBOM" policy in the
+build graph instead of in CI script discipline. **Platform provenance** is the
+one thing it cannot bind, by definition — the platform attaches that after the
+push.
 _Avoid_: image_push to GHCR (that is the primitive underneath), publish step
 
 **Deploy path**:
@@ -166,9 +170,9 @@ implements the OCI distribution pull API)
 **Directory**:
 The human-readable view of the **Mirror**, served at everything on
 `distroless.io` that is not `/v2/`: what is inside a published image, read from
-the **Attestation**s bound to its **Digest**. It verifies every attestation
-against the same identity **Mirror push** signs with, and renders nothing it
-could not verify — an unverified attestation is a document that looks like
+the **Attestation**s bound to its **Digest**. It verifies the **SBOM**
+attestation against the same identity **Mirror push** signs with, and renders
+nothing it could not verify — an unverified attestation is a document that looks like
 evidence, which is the **Silent zero** mistake wearing different clothes.
 _Avoid_: website (it renders evidence, not prose), UI, docs; and note the Cloud
 Run service is deployed under the name `web`, which is the deployment's name,
@@ -194,8 +198,12 @@ _Avoid_: CI verification (that guards this repo, not a consumer)
   **Silent zero** — the last one is why an empty report is not evidence
 - A **VEX statement** silences a finding until its **Expiry**; after that the
   gate fails again and the claim must be remade
-- **Mirror push** binds the signature, the **SLSA provenance** and the **SBOM**
-  to a **Digest**, and is the only way onto the **Mirror**
+- **Mirror push** binds the signature and the **SBOM** to a **Digest**, and is
+  the only way onto the **Mirror**
+- **Platform provenance** is bound to a **Digest** by the platform after the
+  push, exactly once per digest, and under an identity that is the platform's
+  rather than ours — so verifying it means checking the statement names this
+  source, not just that the signer is known
 - The **Deploy path** shares the digest but not the trust model, so it uses a
   plain push
 - The **Registry** serves the **Mirror**; it is itself published to the mirror,
@@ -278,3 +286,9 @@ _Avoid_: CI verification (that guards this repo, not a consumer)
 - "license" was used for what a package declares and for what an audit would
   conclude — resolved: only the first exists here, and it is a **Declared
   license**. A blank one means undeterminable, never unlicensed.
+- "provenance" meant a predicate the Bazel build wrote about itself (build
+  provenance), and the glossary once told people to avoid the CI-derived kind
+  — resolved the other way: only **Platform provenance** exists now. A build
+  that writes its own claim can forge it, so the claim moved to something the
+  build cannot reach. What the old predicate carried — target, lockfile,
+  version — is the **SBOM**'s and the tag's job.

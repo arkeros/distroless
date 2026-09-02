@@ -1,8 +1,12 @@
 # distroless
 
 Minimal container base images, built from source with Bazel. Every published
-image carries a signature, a SLSA provenance attestation and a CycloneDX SBOM,
-all bound to its digest and attached over the OCI 1.1 referrers API.
+image carries a signature and a CycloneDX SBOM signed by this repository's
+workflow, and SLSA Build L3 provenance written by
+[slsa-github-generator](https://github.com/slsa-framework/slsa-github-generator)
+— a build platform component our own build cannot forge. All three are bound
+to the image digest. The L3 claim is self-assessed against the SLSA
+requirements; there is no third-party assessment of the build platform.
 
 An image holds your application and its runtime dependencies and nothing else —
 no shell, no package manager, no init system. The `_debug` variants add busybox
@@ -32,8 +36,9 @@ cosign verify \
     distroless.io/<image>:<tag>
 ```
 
-The exact regexp, and the same treatment for the SLSA and SBOM attestations,
-are in [the image reference](./docs/images.md).
+The exact regexp, the SBOM attestation, and the `slsa-verifier` command for
+provenance — which is signed by the generator, not by us, and is bound to this
+repository by its `--source-uri` — are in [the image reference](./docs/images.md).
 
 ## Images
 

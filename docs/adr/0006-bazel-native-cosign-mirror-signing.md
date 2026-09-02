@@ -1,5 +1,7 @@
 # Bazel-native cosign signing for the distroless.io public mirror
 
+**Status:** Superseded by [ADR 0014](./0014-platform-provenance-slsa-github-generator.md) on 2026-09-02. The SLSA level decision, the Bazel-built predicate and the single-job publish shape below are no longer how the mirror publishes; the trust root, the `mirror_push` policy unit, the enforcement aspect, cosign delivery and the module location stand and are not restated there. The operational sections moved to [`docs/mirror-signing-runbook.md`](../mirror-signing-runbook.md). Kept as written for the record.
+
 Mirror images — anything published under the `distroless.io` brand, GHCR-hosted at `ghcr.io/arkeros/distroless/*` — are signed and SLSA-provenance-attested by Bazel-native rules. Composition is via a `mirror_push` macro (`oci/mirror_push.bzl`) that bundles `image_push` + `cosign_sign` + `cosign_attest` + `slsa_predicate` into one policy unit, so no public-mirror push is reachable without its sign+attest siblings — the build graph encodes the policy.
 
 ## Enforcement

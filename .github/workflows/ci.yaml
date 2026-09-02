@@ -174,14 +174,18 @@ jobs:
       #
       # `--build_runfile_links` because bazel/defaults.bazelrc turns runfiles
       # trees off and the executables are run from those trees rather than
-      # via `bazel run`; `--remote_download_outputs=all` so the trees hold real
-      # files. One cquery then maps each target to its executable and, for
-      # pushes, its manifest — no per-image Bazel from here on.
+      # via `bazel run`. `--remote_download_outputs=toplevel`, not `all`: under
+      # lazy push (.bazelrc) the push binaries carry no layers, and `all` would
+      # download every layer of every image as an intermediate output anyway —
+      # the very thing lazy push exists to avoid. `toplevel` fetches the
+      # executables, their runfiles and the deploy manifests: kilobytes. One
+      # cquery then maps each target to its executable and, for pushes, its
+      # manifest — no per-image Bazel from here on.
       - name: Build every mirror image's push, sign and attest targets
         run: |
           set -euo pipefail
           TARGETS=$(bazel query 'kind("cosign_sign rule", //...) + kind("cosign_attest rule", //...) + attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
-          bazel build --build_runfile_links --remote_download_outputs=all \
+          bazel build --build_runfile_links --remote_download_outputs=toplevel \
               --output_groups=+deploy_manifest ${TARGETS}
           # label <TAB> executable <TAB> deploy manifest (pushes only)
           bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr='"%s\t%s\t%s" % (str(target.label).removeprefix("@@"), target.files_to_run.executable.path, (getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None).to_list()[0].path if getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None) else ""))' \
@@ -263,11 +267,13 @@ jobs:
           # Runs a built executable the way `bazel run` would: from inside
           # its runfiles tree, with RUNFILES_DIR set. cosign's scripts resolve
           # their inputs relative to that directory; rules_img's pusher reads
-          # the variable.
+          # the variable, and under lazy push streams missing layers from the
+          # CAS named by IMG_REAPI_ENDPOINT — which `bazel run` would have set
+          # from the .bazelrc setting and a direct execution must set itself.
           run_built() {
             local exe=$1; shift
             local rf; rf=$(realpath "${exe}.runfiles")
-            ( cd "${rf}/_main" && RUNFILES_DIR="${rf}" "./${exe#bazel-out/*/bin/}" "$@" )
+            ( cd "${rf}/_main" && RUNFILES_DIR="${rf}" IMG_REAPI_ENDPOINT=grpc://127.0.0.1:9092 "./${exe#bazel-out/*/bin/}" "$@" )
           }
           exe_of() { awk -F'\t' -v l="$1" '$1==l{print $2}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
           manifest_of() { awk -F'\t' -v l="$1" '$1==l{print $3}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
@@ -605,17 +611,17 @@ jobs:
       # One `bazel build` for every `_tag` target, then the built scripts are
       # run straight from bazel-bin. Twenty `bazel run`s cost twenty analyses
       # and twenty cache round trips for the same handful of files; one build
-      # costs one. `--remote_download_outputs=all` so the runfiles trees hold
-      # real files — the digest, the expanded tag list, crane — rather than
-      # remote placeholders. `crane_tag` needs nothing else from the build,
-      # so no layer leaves the cache.
+      # costs one. `crane_tag` needs the digest file, the expanded tag list and
+      # crane, and nothing else from the build.
       - name: Tag
         env:
           PUBLISHED: ${{ needs.publish.outputs.published }}
         run: |
           set -euo pipefail
           TAG_TARGETS=$(jq -r '.[].target + "_tag"' <<< "${PUBLISHED}" | tr '\n' ' ')
-          bazel build --remote_download_outputs=all ${TAG_TARGETS}
+          # `toplevel`, not `all`: the tag script needs only the digest file and
+          # the tag list, and `all` would pull every layer behind the digest.
+          bazel build --build_runfile_links --remote_download_outputs=toplevel ${TAG_TARGETS}
           BIN=$(bazel info bazel-bin)
           for TARGET in ${TAG_TARGETS}; do
             PKG=${TARGET#//}; PKG=${PKG%%:*}; NAME=${TARGET##*:}

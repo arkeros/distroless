@@ -132,6 +132,11 @@ jobs:
             common --config=ci
             common --config=bazel-remote
             build --stamp
+            # bazel/defaults.bazelrc turns runfiles trees off; this job runs
+            # built executables from their trees. Set here for every Bazel
+            # command in the job, not on one `build`, or each query and cquery
+            # in between flips the option and discards the analysis cache.
+            common --build_runfile_links
 
       - name: Login to GHCR
         uses: docker/login-action@v4
@@ -172,9 +177,9 @@ jobs:
       # 30 s — for files one invocation produces. A separate step so its cost
       # is visible in the job timeline.
       #
-      # `--build_runfile_links` because bazel/defaults.bazelrc turns runfiles
-      # trees off and the executables are run from those trees rather than
-      # via `bazel run`. `--remote_download_outputs=toplevel`, not `all`: under
+      # Runfiles trees are on for this whole job (see the bazelrc above), so
+      # the executables can run from them rather than via `bazel run`.
+      # `--remote_download_outputs=toplevel`, not `all`: under
       # lazy push (.bazelrc) the push binaries carry no layers, and `all` would
       # download every layer of every image as an intermediate output anyway —
       # the very thing lazy push exists to avoid. `toplevel` fetches the
@@ -185,7 +190,7 @@ jobs:
         run: |
           set -euo pipefail
           TARGETS=$(bazel query 'kind("cosign_sign rule", //...) + kind("cosign_attest rule", //...) + attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
-          bazel build --build_runfile_links --remote_download_outputs=toplevel \
+          bazel build --remote_download_outputs=toplevel \
               --output_groups=+deploy_manifest ${TARGETS}
           # label <TAB> executable <TAB> deploy manifest (pushes only)
           bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr='"%s\t%s\t%s" % (str(target.label).removeprefix("@@"), target.files_to_run.executable.path, (getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None).to_list()[0].path if getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None) else ""))' \
@@ -596,6 +601,9 @@ jobs:
             common --config=ci
             common --config=bazel-remote
             build --stamp
+            # Same reason as in `publish`: the tag scripts run from their
+            # runfiles trees, and the flag must not flip between commands.
+            common --build_runfile_links
 
       - name: Login to GHCR
         uses: docker/login-action@v4
@@ -621,7 +629,7 @@ jobs:
           TAG_TARGETS=$(jq -r '.[].target + "_tag"' <<< "${PUBLISHED}" | tr '\n' ' ')
           # `toplevel`, not `all`: the tag script needs only the digest file and
           # the tag list, and `all` would pull every layer behind the digest.
-          bazel build --build_runfile_links --remote_download_outputs=toplevel ${TAG_TARGETS}
+          bazel build --remote_download_outputs=toplevel ${TAG_TARGETS}
           BIN=$(bazel info bazel-bin)
           for TARGET in ${TAG_TARGETS}; do
             PKG=${TARGET#//}; PKG=${PKG%%:*}; NAME=${TARGET##*:}

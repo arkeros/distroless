@@ -435,9 +435,20 @@ jobs:
   # `latest` therefore never resolves to a digest that has not passed the
   # full policy, and a run in which any image fails verification releases
   # nothing — a partial release is not a release.
+  #
+  # `always()` for the same reason as `verify`: GitHub skips a job whose
+  # transitive `needs` chain contains a skipped job unless the job carries its
+  # own status expression, and `provenance` is skipped on every run in which
+  # no digest changed. Without this, such a run never tags — which is harmless
+  # while every tag already points where it should, and wrong the moment a
+  # previous `release` failed part-way (run 33630771831, rerun, was skipped).
   release:
     name: Release mirror tags
     needs: [publish, verify]
+    if: >-
+      always()
+      && needs.publish.result == 'success'
+      && needs.verify.result == 'success'
     runs-on: ubuntu-latest
     environment: prod
     permissions:

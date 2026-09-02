@@ -81,6 +81,16 @@ jobs:
       published: ${{ steps.publish.outputs.published }}
       # JSON list of `{image, digest}` for the digests with no provenance yet.
       pending: ${{ steps.publish.outputs.pending }}
+      # Everything `verify` needs to run without Bazel or a checkout: the tool
+      # versions tools/tools.lock.json pins, the sha256 of the trusted root
+      # this job verified with, and the policy strings. See `verify`.
+      cosign_version: ${{ steps.inputs.outputs.cosign_version }}
+      slsa_verifier_version: ${{ steps.inputs.outputs.slsa_verifier_version }}
+      trusted_root_sha256: ${{ steps.inputs.outputs.trusted_root_sha256 }}
+      certificate_identity_regexp: ${{ steps.inputs.outputs.certificate_identity_regexp }}
+      certificate_oidc_issuer: ${{ steps.inputs.outputs.certificate_oidc_issuer }}
+      provenance_builder_id: ${{ steps.inputs.outputs.provenance_builder_id }}
+      provenance_source_uri: ${{ steps.inputs.outputs.provenance_source_uri }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -138,6 +148,25 @@ jobs:
           echo "COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")" >> "$GITHUB_ENV"
           echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
           echo "TRUSTED_ROOT=$(realpath "$(bazel cquery //oci:sigstore_trusted_root --output=files)")" >> "$GITHUB_ENV"
+
+      # Hand `verify` its inputs as job outputs, so that job needs neither
+      # Bazel nor a checkout. The versions come from the lockfile, the root
+      # hash from the file this job verifies with, the policy from the env
+      # file loaded above — one source for each, read here and checked there.
+      - name: Export verification inputs
+        id: inputs
+        run: |
+          set -euo pipefail
+          version_of() { jq -r --arg t "$1" '.[$t].binaries[0].url | capture("/download/(?<v>v[0-9.]+)/").v' tools/tools.lock.json; }
+          {
+            echo "cosign_version=$(version_of cosign)"
+            echo "slsa_verifier_version=$(version_of slsa-verifier)"
+            echo "trusted_root_sha256=$(sha256sum "${TRUSTED_ROOT}" | cut -d' ' -f1)"
+            echo "certificate_identity_regexp=${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}"
+            echo "certificate_oidc_issuer=${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}"
+            echo "provenance_builder_id=${COSIGN_POLICY_PROVENANCE_BUILDER_ID}"
+            echo "provenance_source_uri=${COSIGN_POLICY_PROVENANCE_SOURCE_URI}"
+          } | tee -a "$GITHUB_OUTPUT"
 
       # `mirror_push` macros emit <name>_push, <name>_sign, <name>_attest_sbom
       # and <name>_tag. Discover via `cosign_sign rule`: every mirror image has
@@ -274,10 +303,13 @@ jobs:
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
 
-  # Read-only on purpose. Neither cosign nor slsa-verifier needs a token to
-  # verify public artifacts, so the job that holds the policy cannot mutate
-  # the registry, and it holds no cloud identity either — the two tools it
-  # runs are prebuilt binaries, so it does not need a warm cache.
+  # Read-only on purpose, and self-contained. Neither cosign nor
+  # slsa-verifier needs a token to verify public artifacts, so the job that
+  # holds the policy cannot mutate the registry, and it holds no cloud
+  # identity either. It does not check out the repository or run Bazel: the
+  # tools come from their projects' own installers, at the versions
+  # tools/tools.lock.json pins (asserted below), and the policy strings and the
+  # trusted root's hash come from `publish`, which computed them with Bazel.
   #
   # `always()` because `provenance` is skipped when nothing was pending, and
   # a skipped dependency would otherwise skip this too.
@@ -290,45 +322,67 @@ jobs:
       && (needs.provenance.result == 'success' || needs.provenance.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       packages: read
+    env:
+      COSIGN: cosign
+      SLSA_VERIFIER: slsa-verifier
+      COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP: ${{ needs.publish.outputs.certificate_identity_regexp }}
+      COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER: ${{ needs.publish.outputs.certificate_oidc_issuer }}
+      COSIGN_POLICY_PROVENANCE_BUILDER_ID: ${{ needs.publish.outputs.provenance_builder_id }}
+      COSIGN_POLICY_PROVENANCE_SOURCE_URI: ${{ needs.publish.outputs.provenance_source_uri }}
+      # The same URL as the `sigstore_trusted_root` http_file in
+      # bazel/include/oci.MODULE.bazel. What makes it the same *file* is the
+      # hash `publish` reports, checked below.
+      TRUSTED_ROOT_URL: https://raw.githubusercontent.com/sigstore/root-signing/main/targets/trusted_root.json
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
+      # cosign-installer verifies the binary's signature with a bootstrapped
+      # cosign; the version is the lockfile's, passed through `publish`.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.2
         with:
-          bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
-          cache-save: false
-          bazelrc: |
-            common --config=ci
+          cosign-release: ${{ needs.publish.outputs.cosign_version }}
 
-      - name: Load verification policy
-        run: |
-          set -euxo pipefail
-          bazel build //oci:cosign_policy_env
-          cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
+      # The installer verifies slsa-verifier's own SLSA provenance. Its version
+      # is this `uses:` ref, which cannot take an expression — hence the check
+      # below against the lockfile.
+      - name: Install slsa-verifier
+        uses: slsa-framework/slsa-verifier/actions/installer@v2.7.1
 
-      # The trusted root is the pinned file //web embeds, not a live TUF fetch.
-      # Every cosign verify below takes it via --trusted-root, so cosign makes
-      # no TUF request in this job at all. (Fetching it live used to be the one
-      # network call worth retrying — run 31056638456 died on a CDN 503 for a
-      # root file — and it kept CI and the Directory on roots that could drift
-      # apart. See //oci:sigstore_trusted_root.) slsa-verifier has no such
-      # flag and still refreshes TUF metadata itself.
-      - name: Fetch cosign, slsa-verifier and the Sigstore trusted root
+      # `publish` classifies with the lockfile's versions; a `verify` running a
+      # different one could read an edge case differently. Renovate bumps the
+      # lockfile and the installer ref independently, so a half-merged pair
+      # fails here, naming both places, rather than silently disagreeing.
+      - name: Check the installed tools are the lockfile's versions
+        env:
+          WANT_COSIGN: ${{ needs.publish.outputs.cosign_version }}
+          WANT_SLSA_VERIFIER: ${{ needs.publish.outputs.slsa_verifier_version }}
         run: |
           set -euo pipefail
-          bazel build --remote_download_outputs=all \
-              //bazel/toolchains/cosign:prebuilt_cosign_toolchain \
-              @multitool//tools/slsa-verifier \
-              //oci:sigstore_trusted_root
-          echo "COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")" >> "$GITHUB_ENV"
-          echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
-          echo "TRUSTED_ROOT=$(realpath "$(bazel cquery //oci:sigstore_trusted_root --output=files)")" >> "$GITHUB_ENV"
+          have=$(cosign version 2>&1 | awk '/GitVersion/{print $2}')
+          if [[ "${have#v}" != "${WANT_COSIGN#v}" ]]; then
+            echo "ERROR: cosign ${have} installed, but tools/tools.lock.json pins ${WANT_COSIGN}." >&2
+            exit 1
+          fi
+          have=$(slsa-verifier version 2>&1 | awk '/GitVersion/{print $2}')
+          if [[ "${have#v}" != "${WANT_SLSA_VERIFIER#v}" ]]; then
+            echo "ERROR: slsa-verifier ${have} installed via the installer's uses: ref in ci.yaml, but tools/tools.lock.json pins ${WANT_SLSA_VERIFIER}. Bump both together." >&2
+            exit 1
+          fi
+          echo "cosign ${have#v}: ok; slsa-verifier ${WANT_SLSA_VERIFIER#v}: ok"
+
+      # The same pinned root `publish` and the Directory verify with. The
+      # download is the one network call here that is not a verification, so
+      # it retries; the hash check is what makes it the pinned file and not
+      # whatever the URL serves today.
+      - name: Fetch the pinned Sigstore trusted root
+        env:
+          EXPECTED_SHA256: ${{ needs.publish.outputs.trusted_root_sha256 }}
+        run: |
+          set -euo pipefail
+          TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
+          curl -fsSL --retry 5 --retry-delay 5 -o "${TRUSTED_ROOT}" "${TRUSTED_ROOT_URL}"
+          echo "${EXPECTED_SHA256}  ${TRUSTED_ROOT}" | sha256sum -c -
+          echo "TRUSTED_ROOT=${TRUSTED_ROOT}" >> "$GITHUB_ENV"
 
       # Positive test: every digest `publish` pushed must carry all three
       # artifacts under the production policy — our signature, our SBOM

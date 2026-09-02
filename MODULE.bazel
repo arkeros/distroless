@@ -59,7 +59,7 @@ bazel_dep(name = "busybox", version = "1.37.0.distroless.1")
 bazel_dep(name = "bazel_skylib_gazelle_plugin", version = "1.9.2")
 
 bazel_dep(name = "lazy_bazel_env.bzl", version = "0.0.0", dev_dependency = True)
-bazel_dep(name = "yq.bzl", version = "0.3.6", dev_dependency = True)
+bazel_dep(name = "yq.bzl", version = "0.4.0", dev_dependency = True)
 bazel_dep(name = "package_metadata", version = "0.0.10", dev_dependency = True)
 
 bazel_dep(name = "supply_chain_tools", version = "0.0.1")

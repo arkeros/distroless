@@ -102,13 +102,14 @@ ruleset rather than per rule:
 
 | Ruleset | Rules | Bypass |
 | --- | --- | --- |
-| `main-checks` | `Test` (pr.yaml) must pass on a branch current with `main`; linear history; no force-push; no deletion | **nobody**, admins included |
+| `main-checks` | `Test` (pr.yaml) must pass on a branch current with `main`; linear history; no force-push; no deletion | repository admins |
 | `main-review` | pull request with 1 approval, threads resolved | repository admins |
 
-Folding these into one would mean the bypass that keeps a solo maintainer able
-to merge also switched off the status check — and the status check is the
-reason the deploy can run unattended. The review requirement is there for when
-this repo has more than one maintainer; the check is there for the deploy.
+Both are bypassable by admins today, because a solo maintainer needs a way to
+land an emergency fix that cannot wait for `Test`. They stay separate so that
+`main-checks` can lose its bypass the day a second maintainer exists without
+the review rule following. A bypass is an explicit, audited act in GitHub's
+log; it is not the silent path a disabled ruleset would be.
 
 The deploy's own gate is unchanged and does not depend on either ruleset: a job
 declaring `environment: prod` on any branch but `main` never starts, so no
@@ -120,9 +121,9 @@ stays unreachable.
 `repo.tf` adopts the pre-existing `prod` environment through an `import` block,
 so a rebuilt state file adopts it rather than colliding with it. The classic
 branch protection that used to guard `main` was deleted when the rulesets
-replaced it — they cover the same ground more strictly, since classic
-protection had `enforce_admins = false` while `main-checks` has no bypass at
-all. `main` reports `protected: true` on the strength of the rulesets alone.
+replaced it — they cover the same ground, and unlike classic protection an
+admin bypass is recorded per event. `main` reports `protected: true` on the
+strength of the rulesets alone.
 
 To confirm the gate is what this README claims:
 
@@ -134,8 +135,9 @@ gh api repos/arkeros/distroless/environments/prod \
 # the rules actually in force on main, rulesets merged
 gh api repos/arkeros/distroless/rules/branches/main --jq '[.[].type]'
 
-# and that nothing can bypass the status check. The list endpoint omits
-# bypass_actors, so this resolves the id and reads the ruleset itself.
+# and who can bypass the status check (repository admins, actor_id 5). The
+# list endpoint omits bypass_actors, so this resolves the id and reads the
+# ruleset itself.
 gh api repos/arkeros/distroless/rulesets \
   --jq '.[] | select(.name == "main-checks") | .id' \
   | xargs -I{} gh api repos/arkeros/distroless/rulesets/{} --jq '.bypass_actors'

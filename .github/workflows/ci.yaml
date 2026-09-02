@@ -471,8 +471,9 @@ jobs:
     # another environment nor another repository can impersonate it.
     #
     # No human approves this. What makes `main` deployable is the `main-checks`
-    # ruleset, which requires the `Test` job in pr.yaml to pass and has no
-    # bypass actors. All of it — environment, policy, rulesets — lives in //infra.
+    # ruleset, which requires the `Test` job in pr.yaml to pass; admins can
+    # bypass it, and a bypass is an audited event. All of it — environment,
+    # policy, rulesets — lives in //infra.
     environment: prod
     permissions:
       contents: read

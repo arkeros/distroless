@@ -57,20 +57,26 @@ resource "github_repository_environment_deployment_policy" "prod_main" {
   branch_pattern = "main"
 }
 
-# Two rulesets, because bypass in GitHub is per-ruleset and not per-rule.
-#
-# Folding these into one would mean the admin bypass that exists for the review
-# requirement also switched off the status check — and the status check is the
-# entire reason the deploy can run unattended. Splitting them keeps the human
-# step optional for an admin while leaving "what is on `main` compiled and
-# passed its tests" true for everyone, admins included.
+# Two rulesets, because bypass in GitHub is per-ruleset and not per-rule, so
+# each can be relaxed for admins without the other following.
 
-# No bypass_actors. This is the invariant the deploy rests on.
+# Repository admins may bypass. This was set on the live ruleset and is kept:
+# with a single maintainer, an emergency push to `main` that cannot wait for
+# a green `Test` has to be possible, and the alternative is disabling the
+# ruleset. The deploy therefore rests on the environment's branch policy plus
+# the fact that a bypass is an explicit, audited act, not on this rule being
+# unbypassable. Drop the block when a second maintainer exists.
 resource "github_repository_ruleset" "main_checks" {
   name        = "main-checks"
   repository  = local.github_repo_name
   target      = "branch"
   enforcement = "active"
+
+  bypass_actors {
+    actor_id    = 5 # base repository role: admin
+    actor_type  = "RepositoryRole"
+    bypass_mode = "always"
+  }
 
   conditions {
     ref_name {
@@ -219,8 +225,11 @@ resource "github_repository" "this" {
   # land on `main`, so offering the button only produces a failed merge.
   allow_merge_commit = false
 
-  allow_update_branch    = false
-  delete_branch_on_merge = false
+  allow_update_branch = false
+
+  # Set in the repository settings and kept: the branch a squash-merged pull
+  # request came from has nothing left to say once it lands.
+  delete_branch_on_merge = true
 
   squash_merge_commit_title   = "COMMIT_OR_PR_TITLE"
   squash_merge_commit_message = "COMMIT_MESSAGES"

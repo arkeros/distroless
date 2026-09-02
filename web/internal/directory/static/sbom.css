@@ -64,6 +64,7 @@
   --line: color-mix(in srgb, currentColor 15%, transparent);
   --muted: color-mix(in srgb, currentColor 60%, transparent);
   --mono: 'Fira Mono', ui-monospace, monospace;
+  --edge: color-mix(in srgb, currentColor 25%, transparent);
 }
 
 body {
@@ -145,6 +146,21 @@ h1 {
    region you can only reach by dragging is a region the keyboard cannot read. */
 .scroller {
   overflow-x: auto;
+
+  /* The scrollbar sits at the bottom of this box, and on a phone the table is
+     taller than the screen — so the one affordance saying the table scrolls is
+     below the fold, and iOS only draws it mid-gesture anyway. These are scroll
+     shadows: the two Canvas gradients travel with the content and park over a
+     shadow when that edge is reached, so a shadow shows only where there is
+     still table to reach. */
+  background:
+    linear-gradient(to right, Canvas 40%, transparent) 0 0,
+    linear-gradient(to left, Canvas 40%, transparent) 100% 0,
+    radial-gradient(farthest-side at 0 50%, var(--edge), transparent) 0 0,
+    radial-gradient(farthest-side at 100% 50%, var(--edge), transparent) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 2rem 100%, 2rem 100%, 0.75rem 100%, 0.75rem 100%;
+  background-attachment: local, local, scroll, scroll;
 }
 
 table {

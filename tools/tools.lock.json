@@ -36,15 +36,7 @@
     "binaries": [
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.117.0/grype_0.117.0_linux_amd64.tar.gz",
-        "file": "grype",
-        "sha256": "38525dab1e06f162ebaa02f94d82d1f807076b011a44180cf2777edf1a7b9c26",
-        "os": "linux",
-        "cpu": "x86_64"
-      },
-      {
-        "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.117.0/grype_0.117.0_linux_arm64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.117.0_linux_arm64.tar.gz",
         "file": "grype",
         "sha256": "935f628bdf9331ffdd946931ea5fdb50045d3970ba52670cbeb44a88f127291b",
         "os": "linux",
@@ -52,7 +44,15 @@
       },
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.117.0/grype_0.117.0_darwin_arm64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.117.0_linux_amd64.tar.gz",
+        "file": "grype",
+        "sha256": "38525dab1e06f162ebaa02f94d82d1f807076b011a44180cf2777edf1a7b9c26",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.117.0_darwin_arm64.tar.gz",
         "file": "grype",
         "sha256": "bfcefa3f3b1690d9c77d847841b32ebd6106ab0e0e32f810924707e704d53584",
         "os": "macos",
@@ -60,7 +60,7 @@
       },
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.117.0/grype_0.117.0_darwin_amd64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.117.0_darwin_amd64.tar.gz",
         "file": "grype",
         "sha256": "312ed375dcda6d8893b4ca5d517371fef1a50062ebb0b0dbe6bdb4ac2fb57c57",
         "os": "macos",
@@ -157,6 +157,38 @@
       }
     ]
   },
+  "slsa-verifier": {
+    "binaries": [
+      {
+        "kind": "file",
+        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-linux-amd64",
+        "sha256": "946dbec729094195e88ef78e1734324a27869f03e2c6bd2f61cbc06bd5350339",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-linux-arm64",
+        "sha256": "5d3b2349ede7bfec19e7a21569f18b9f7410145ad12e9584b175370669e14061",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-darwin-arm64",
+        "sha256": "39abfcf5f1d690c3e889ce3d2d6a8b87711424d83368511868d414e8f8bcb05c",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "file",
+        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-darwin-amd64",
+        "sha256": "4baf25415727821f847a38bccedc86c3e5b17cbfc2eb534cd554feb6c856d6f1",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
+  },
   "starpls": {
     "binaries": [
       {
@@ -216,38 +248,6 @@
         "url": "https://releases.hashicorp.com/terraform/1.16.0/terraform_1.16.0_darwin_amd64.zip",
         "file": "terraform",
         "sha256": "2b2b7d37f6893474fa3622fa96053e54949c4ddfca4aba105380718157936465",
-        "os": "macos",
-        "cpu": "x86_64"
-      }
-    ]
-  },
-  "slsa-verifier": {
-    "binaries": [
-      {
-        "kind": "file",
-        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-linux-amd64",
-        "sha256": "946dbec729094195e88ef78e1734324a27869f03e2c6bd2f61cbc06bd5350339",
-        "os": "linux",
-        "cpu": "x86_64"
-      },
-      {
-        "kind": "file",
-        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-linux-arm64",
-        "sha256": "5d3b2349ede7bfec19e7a21569f18b9f7410145ad12e9584b175370669e14061",
-        "os": "linux",
-        "cpu": "arm64"
-      },
-      {
-        "kind": "file",
-        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-darwin-arm64",
-        "sha256": "39abfcf5f1d690c3e889ce3d2d6a8b87711424d83368511868d414e8f8bcb05c",
-        "os": "macos",
-        "cpu": "arm64"
-      },
-      {
-        "kind": "file",
-        "url": "https://github.com/slsa-framework/slsa-verifier/releases/download/v2.7.1/slsa-verifier-darwin-amd64",
-        "sha256": "4baf25415727821f847a38bccedc86c3e5b17cbfc2eb534cd554feb6c856d6f1",
         "os": "macos",
         "cpu": "x86_64"
       }

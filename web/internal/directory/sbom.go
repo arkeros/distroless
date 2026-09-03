@@ -58,7 +58,16 @@ type Table struct {
 	// the reader arrived on — the URL that will still show this exact build
 	// after the tag has moved. Empty when the reader is already at it.
 	Permalink string
-	Rows      []Row
+	// Showing names the reference this page was reached by, for the tag
+	// switcher to label itself with: the tag, or a short digest when no tag
+	// was asked for.
+	Showing string
+	// Siblings is every other tag the family publishes, so a reader can move
+	// between them without going back to the versions list. Empty when the
+	// registry would not say, or when there is nothing to switch to — the
+	// SBOM is what the page is for, and a missing switcher is not an error.
+	Siblings []Tag
+	Rows     []Row
 }
 
 // defaultArch is what a reader gets when they express no preference.

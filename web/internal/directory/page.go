@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -43,6 +44,10 @@ type Source interface {
 	// Versions lists every tag published for a family and the build each one
 	// names. Unverified by nature — see the package comment.
 	Versions(ctx context.Context, family string) ([]Version, error)
+	// Tags lists the tags a family publishes, and nothing else about them.
+	// Separate from Versions because a page that only needs the names should
+	// not pay for a digest lookup per tag: this is one registry call.
+	Tags(ctx context.Context, family string) ([]string, error)
 }
 
 // defaultRef is what a reader gets when they name no reference. It is only
@@ -220,6 +225,12 @@ func serveSBOM(w http.ResponseWriter, r *http.Request, source Source, mirror str
 		}
 	}
 
+	table.Showing = ref
+	if isDigest(ref) {
+		table.Showing = shortDigest(ref)
+	}
+	table.Siblings = siblings(r, source, family, ref, arch)
+
 	// An SBOM is immutable for a Digest, so the digest is the validator: a tag
 	// that has not moved costs a request but no body. The architecture is part
 	// of it because two architectures are two documents — sharing a validator
@@ -294,6 +305,38 @@ func serveDocument(w http.ResponseWriter, r *http.Request, source Source) {
 	if _, err := w.Write(document); err != nil {
 		slog.Warn("writing sbom document failed", "family", family, "ref", ref, "error", err)
 	}
+}
+
+// siblings lists the family's other tags as links to this same page.
+//
+// A failure here is deliberately swallowed: the reader came for the SBOM, and
+// losing the ability to jump between tags is not worth turning a rendered page
+// into an error. Nothing is returned for a single tag, which is not a choice.
+func siblings(r *http.Request, source Source, family, ref, arch string) []Tag {
+	tags, err := source.Tags(r.Context(), family)
+	if err != nil {
+		slog.Warn("tag listing failed", "family", family, "error", err)
+		return nil
+	}
+	if len(tags) < 2 {
+		return nil
+	}
+
+	query := ""
+	if arch != "" {
+		// Switching tag should not silently switch architecture too.
+		query = "?arch=" + url.QueryEscape(arch)
+	}
+	// A registry lists tags alphabetically, which puts 17 above 25. Ordered
+	// by the same rules as the versions page, so the two agree about what
+	// "first" means.
+	slices.SortFunc(tags, compareTag)
+
+	siblings := make([]Tag, 0, len(tags))
+	for _, tag := range tags {
+		siblings = append(siblings, Tag{Name: tag, SBOM: resourceURL(family, tag, "sbom") + query})
+	}
+	return siblings
 }
 
 // pullName is the image as a reader would pull it. A tag joins with a colon

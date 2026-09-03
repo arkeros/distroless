@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -616,5 +617,30 @@ func TestVersionsReadsEachBuildHorizonOnce(t *testing.T) {
 		if len(version.Sizes) == 0 {
 			t.Errorf("tag %q reports no size", version.Tag)
 		}
+	}
+}
+
+// The names alone, for a page that only needs somewhere to link to. One
+// registry call: no digest lookup per tag, which is what Versions is for.
+func TestTagsListsNamesWithoutResolvingThem(t *testing.T) {
+	server := ocitest.NewServer(t)
+	subject := tagIndex(t, server, "node", "latest", time.Time{})
+	tagIndex(t, server, "node", "22.1.0", time.Time{})
+	tagIndex(t, server, "node", strings.Replace(subject, ":", "-", 1), time.Time{})
+
+	requests := &counting{next: server.Config.Handler}
+	server.Config.Handler = requests
+
+	tags, err := newClient(t, server).Tags(context.Background(), "node")
+	if err != nil {
+		t.Fatalf("Tags: %v", err)
+	}
+
+	slices.Sort(tags)
+	if want := []string{"22.1.0", "latest"}; !slices.Equal(tags, want) {
+		t.Errorf("tags = %v, want %v — cosign's attachments are not versions", tags, want)
+	}
+	if requests.requested("/manifests/") {
+		t.Error("resolved a tag to a digest, which is Versions' job and its cost")
 	}
 }

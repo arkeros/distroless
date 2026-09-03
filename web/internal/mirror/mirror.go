@@ -177,6 +177,33 @@ func (c *Client) Document(ctx context.Context, family, ref string) (string, []by
 	return digest, predicate, nil
 }
 
+// Tags lists what a family publishes, and nothing else about it.
+//
+// One registry call. Versions answers a richer question and pays a lookup per
+// tag for it; a page that only needs the names should not.
+func (c *Client) Tags(ctx context.Context, family string) ([]string, error) {
+	repository, err := c.repository(family)
+	if err != nil {
+		return nil, fmt.Errorf("parsing %q: %w", family, err)
+	}
+	return c.published(repository, append([]remote.Option{remote.WithContext(ctx)}, c.remoteOptions...))
+}
+
+// published lists a repository's tags with cosign's attachments removed.
+func (c *Client) published(repository name.Repository, options []remote.Option) ([]string, error) {
+	tags, err := remote.List(repository, options...)
+	if err != nil {
+		return nil, fmt.Errorf("listing tags of %s: %w", repository, err)
+	}
+	published := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		if !cosignFallbackTag.MatchString(tag) {
+			published = append(published, tag)
+		}
+	}
+	return published, nil
+}
+
 // Versions lists the tags published for a family and the build each one names.
 //
 // Nothing here is verified, and nothing here can be: which build a tag points
@@ -189,16 +216,9 @@ func (c *Client) Versions(ctx context.Context, family string) ([]directory.Versi
 	}
 	options := append([]remote.Option{remote.WithContext(ctx)}, c.remoteOptions...)
 
-	tags, err := remote.List(repository, options...)
+	published, err := c.published(repository, options)
 	if err != nil {
-		return nil, fmt.Errorf("listing tags of %s: %w", repository, err)
-	}
-
-	published := make([]string, 0, len(tags))
-	for _, tag := range tags {
-		if !cosignFallbackTag.MatchString(tag) {
-			published = append(published, tag)
-		}
+		return nil, err
 	}
 
 	// One Head per tag, in parallel: they are independent, they share an

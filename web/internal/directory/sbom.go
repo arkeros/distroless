@@ -50,11 +50,15 @@ type Table struct {
 	// Architectures is every architecture the Index carries, sorted.
 	Architectures []string
 	// Download is where the signed document behind this page can be had.
-	// Set by the handler, which knows the reader's own path and tag; the
-	// Table is built from an image name that has already been rewritten for
-	// display.
+	// Set by the handler, which knows the reader's own path and reference;
+	// the Table is built from an image name that has already been rewritten
+	// for display.
 	Download string
-	Rows     []Row
+	// Permalink is this same page addressed by Digest rather than by the tag
+	// the reader arrived on — the URL that will still show this exact build
+	// after the tag has moved. Empty when the reader is already at it.
+	Permalink string
+	Rows      []Row
 }
 
 // defaultArch is what a reader gets when they express no preference.

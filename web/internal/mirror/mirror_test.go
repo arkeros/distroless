@@ -6,8 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"reflect"
+	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -170,7 +174,7 @@ func TestSBOMReturnsComponentsFromAttestation(t *testing.T) {
 	repository, subject := pushIndex(t, server, "node", "latest")
 	attest(t, repository, subject, attestation.CycloneDX, sbomPredicate)
 
-	digest, components, err := newClient(t, server).SBOM(context.Background(), "node:latest")
+	digest, components, err := newClient(t, server).SBOM(context.Background(), "node", "latest")
 	if err != nil {
 		t.Fatalf("SBOM: %v", err)
 	}
@@ -219,7 +223,7 @@ func TestDocumentReturnsTheAttestedPredicate(t *testing.T) {
 	repository, subject := pushIndex(t, server, "node", "latest")
 	attest(t, repository, subject, attestation.CycloneDX, sbomPredicate)
 
-	digest, document, err := newClient(t, server).Document(context.Background(), "node:latest")
+	digest, document, err := newClient(t, server).Document(context.Background(), "node", "latest")
 	if err != nil {
 		t.Fatalf("Document: %v", err)
 	}
@@ -260,7 +264,7 @@ func TestSBOMIgnoresOtherAttestationTypes(t *testing.T) {
 	attest(t, repository, subject, attestation.SLSAProvenance, map[string]any{"buildDefinition": map[string]any{}})
 	attest(t, repository, subject, attestation.CycloneDX, sbomPredicate)
 
-	_, components, err := newClient(t, server).SBOM(context.Background(), "node:latest")
+	_, components, err := newClient(t, server).SBOM(context.Background(), "node", "latest")
 	if err != nil {
 		t.Fatalf("SBOM: %v", err)
 	}
@@ -273,7 +277,7 @@ func TestSBOMErrorsWhenNothingIsAttested(t *testing.T) {
 	server := ocitest.NewServer(t)
 	pushIndex(t, server, "node", "latest")
 
-	if _, _, err := newClient(t, server).SBOM(context.Background(), "node:latest"); err == nil {
+	if _, _, err := newClient(t, server).SBOM(context.Background(), "node", "latest"); err == nil {
 		t.Error("SBOM succeeded on an Index with no attestations, want an error")
 	}
 }
@@ -281,7 +285,7 @@ func TestSBOMErrorsWhenNothingIsAttested(t *testing.T) {
 func TestSBOMErrorsOnUnknownRepository(t *testing.T) {
 	server := ocitest.NewServer(t)
 
-	if _, _, err := newClient(t, server).SBOM(context.Background(), "nope:latest"); err == nil {
+	if _, _, err := newClient(t, server).SBOM(context.Background(), "nope", "latest"); err == nil {
 		t.Error("SBOM succeeded on an unpublished repository, want an error")
 	}
 }
@@ -303,11 +307,314 @@ func TestSBOMRefusesAnAttestationThatDoesNotVerify(t *testing.T) {
 
 	client := mirror.New(server.Listener.Addr().String(), "", rejecting{}, mirror.Insecure())
 
-	_, components, err := client.SBOM(context.Background(), "node:latest")
+	_, components, err := client.SBOM(context.Background(), "node", "latest")
 	if err == nil {
 		t.Error("served an SBOM whose attestation failed verification")
 	}
 	if components != nil {
 		t.Errorf("returned %d components from an unverified attestation", len(components))
+	}
+}
+
+// counting wraps a registry and records the request paths that reach it.
+type counting struct {
+	next  http.Handler
+	mu    sync.Mutex
+	paths []string
+}
+
+func (c *counting) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c.mu.Lock()
+	c.paths = append(c.paths, r.URL.Path)
+	c.mu.Unlock()
+	c.next.ServeHTTP(w, r)
+}
+
+func (c *counting) requested(substring string) bool { return c.count(substring) > 0 }
+
+func (c *counting) count(substring string) int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	seen := 0
+	for _, path := range c.paths {
+		if strings.Contains(path, substring) {
+			seen++
+		}
+	}
+	return seen
+}
+
+// A digest reference already names what a tag lookup would return, and the
+// component cache is keyed by that digest — so resolving one should cost no
+// manifest lookup at all. These are exactly the URLs served with a long
+// max-age, and the ones a permalink sends readers to.
+func TestSBOMResolvesADigestWithoutAManifestLookup(t *testing.T) {
+	server := ocitest.NewServer(t)
+	repository, subject := pushIndex(t, server, "node", "latest")
+	attest(t, repository, subject, attestation.CycloneDX, sbomPredicate)
+
+	requests := &counting{next: server.Config.Handler}
+	server.Config.Handler = requests
+
+	digest, _, err := newClient(t, server).SBOM(context.Background(), "node", subject.Digest.String())
+	if err != nil {
+		t.Fatalf("SBOM: %v", err)
+	}
+	if digest != subject.Digest.String() {
+		t.Errorf("digest = %q, want %q", digest, subject.Digest)
+	}
+	// Without this the assertions below would hold just as well if the counter
+	// never saw a request at all.
+	if !requests.requested("/referrers/") {
+		t.Fatal("no request reached the counting registry, so it observed nothing")
+	}
+	if requests.requested("/manifests/" + subject.Digest.String()) {
+		t.Error("resolved a digest reference by asking the registry for the manifest it already names")
+	}
+	if requests.requested("/manifests/latest") {
+		t.Error("resolved a digest reference by looking up a tag")
+	}
+}
+
+// tagIndex publishes an Index at a tag with a `created` on every child config,
+// the way //oci:created_timestamp.bzl sets it, and returns the Index digest.
+func tagIndex(t *testing.T, server *ocitest.Server, repository, tag string, created time.Time) string {
+	t.Helper()
+	ref, err := name.ParseReference(server.Listener.Addr().String()+"/"+repository+":"+tag, name.Insecure)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, err := random.Index(256, 1, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !created.IsZero() {
+		index = withCreated(t, index, created)
+	}
+	if err := remote.WriteIndex(ref, index); err != nil {
+		t.Fatal(err)
+	}
+	digest, err := index.Digest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return digest.String()
+}
+
+// withCreated stamps every child image of an Index with a config `created`.
+func withCreated(t *testing.T, index v1.ImageIndex, created time.Time) v1.ImageIndex {
+	t.Helper()
+	manifest, err := index.IndexManifest()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stamped v1.ImageIndex = empty.Index
+	for _, descriptor := range manifest.Manifests {
+		image, err := index.Image(descriptor.Digest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		config, err := image.ConfigFile()
+		if err != nil {
+			t.Fatal(err)
+		}
+		config.Created = v1.Time{Time: created}
+		image, err = mutate.ConfigFile(image, config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		stamped = mutate.AppendManifests(stamped, mutate.IndexAddendum{Add: image})
+	}
+	return stamped
+}
+
+// publishArches publishes an Index whose children differ in size, arm64 named
+// first so that picking "the first child" is visibly not the same as picking
+// amd64. Returns the compressed size of each.
+func publishArches(t *testing.T, server *ocitest.Server, repository, tag string) map[string]int64 {
+	t.Helper()
+	ref, err := name.ParseReference(server.Listener.Addr().String()+"/"+repository+":"+tag, name.Insecure)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sizes := map[string]int64{}
+	var index v1.ImageIndex = empty.Index
+	// arm64 first, and with more layers, so a wrong pick reports a wrong size.
+	for _, arch := range []struct {
+		name   string
+		layers int
+	}{{"arm64", 3}, {"amd64", 1}} {
+		image, err := random.Image(1024, int64(arch.layers))
+		if err != nil {
+			t.Fatal(err)
+		}
+		config, err := image.ConfigFile()
+		if err != nil {
+			t.Fatal(err)
+		}
+		config.Architecture, config.OS = arch.name, "linux"
+		if image, err = mutate.ConfigFile(image, config); err != nil {
+			t.Fatal(err)
+		}
+		manifest, err := image.Manifest()
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, layer := range manifest.Layers {
+			sizes[arch.name] += layer.Size
+		}
+		index = mutate.AppendManifests(index, mutate.IndexAddendum{
+			Add:        image,
+			Descriptor: v1.Descriptor{Platform: &v1.Platform{Architecture: arch.name, OS: "linux"}},
+		})
+	}
+	if err := remote.WriteIndex(ref, index); err != nil {
+		t.Fatal(err)
+	}
+	if sizes["amd64"] == sizes["arm64"] {
+		t.Fatalf("both architectures are %d bytes; the test cannot tell them apart", sizes["amd64"])
+	}
+	return sizes
+}
+
+// Every architecture, not a chosen one: they are different bytes, and
+// reporting a single number would drop the rest silently.
+func TestVersionsReportsASizePerArchitecture(t *testing.T) {
+	server := ocitest.NewServer(t)
+	sizes := publishArches(t, server, "node", "latest")
+
+	versions, err := newClient(t, server).Versions(context.Background(), "node")
+	if err != nil {
+		t.Fatalf("Versions: %v", err)
+	}
+
+	if len(versions) != 1 {
+		t.Fatalf("listed %d versions, want 1", len(versions))
+	}
+	got := versions[0].Sizes
+	if len(got) != 2 {
+		t.Fatalf("reported %d architectures, want 2: %v", len(got), got)
+	}
+	for architecture, want := range sizes {
+		if got[architecture].Bytes() != want {
+			t.Errorf("%s = %d, want %d", architecture, got[architecture].Bytes(), want)
+		}
+	}
+}
+
+// The tags a family publishes are what the versions page is for.
+func TestVersionsListsPublishedTags(t *testing.T) {
+	server := ocitest.NewServer(t)
+	shared := tagIndex(t, server, "node", "latest", time.Time{})
+	tagIndex(t, server, "node", "22.1.0", time.Time{})
+
+	versions, err := newClient(t, server).Versions(context.Background(), "node")
+	if err != nil {
+		t.Fatalf("Versions: %v", err)
+	}
+
+	found := map[string]string{}
+	for _, version := range versions {
+		found[version.Tag] = version.Digest
+	}
+	if len(found) != 2 {
+		t.Fatalf("listed %d tags, want 2: %+v", len(found), versions)
+	}
+	if found["latest"] != shared {
+		t.Errorf("latest names %q, want %q", found["latest"], shared)
+	}
+}
+
+// cosign pushes `sha256-<hex>` fallback tags for attachments. They are not
+// versions, and unfiltered they bury the tags that are.
+func TestVersionsSkipsCosignFallbackTags(t *testing.T) {
+	server := ocitest.NewServer(t)
+	subject := tagIndex(t, server, "node", "latest", time.Time{})
+	fallback := strings.Replace(subject, ":", "-", 1)
+	tagIndex(t, server, "node", fallback, time.Time{})
+	tagIndex(t, server, "node", fallback+".sig", time.Time{})
+
+	versions, err := newClient(t, server).Versions(context.Background(), "node")
+	if err != nil {
+		t.Fatalf("Versions: %v", err)
+	}
+
+	for _, version := range versions {
+		if strings.HasPrefix(version.Tag, "sha256-") {
+			t.Errorf("listed cosign fallback tag %q as a version", version.Tag)
+		}
+	}
+	if len(versions) != 1 {
+		t.Errorf("listed %d versions, want 1: %+v", len(versions), versions)
+	}
+}
+
+// Not a push date: //oci:created_timestamp.bzl sets `created` to the
+// upstream-snapshot anchor, which is what a build-horizon policy measures.
+func TestVersionsReadsTheBuildHorizonFromTheConfig(t *testing.T) {
+	server := ocitest.NewServer(t)
+	snapshot := time.Date(2026, 8, 14, 0, 0, 0, 0, time.UTC)
+	tagIndex(t, server, "node", "latest", snapshot)
+
+	versions, err := newClient(t, server).Versions(context.Background(), "node")
+	if err != nil {
+		t.Fatalf("Versions: %v", err)
+	}
+
+	if len(versions) != 1 {
+		t.Fatalf("listed %d versions, want 1", len(versions))
+	}
+	if got := versions[0].Created; !got.Equal(snapshot) {
+		t.Errorf("created = %s, want %s", got, snapshot)
+	}
+}
+
+// Several tags on one digest is the normal case — a whole tag_list lands on a
+// single build — and the config behind it should be read once, not once per
+// tag naming it.
+func TestVersionsReadsEachBuildHorizonOnce(t *testing.T) {
+	server := ocitest.NewServer(t)
+	snapshot := time.Date(2026, 8, 14, 0, 0, 0, 0, time.UTC)
+	shared := tagIndex(t, server, "node", "latest", snapshot)
+	alias, err := name.ParseReference(server.Listener.Addr().String()+"/node:22.1.0", name.Insecure)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := name.ParseReference(server.Listener.Addr().String()+"/node@"+shared, name.Insecure)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, err := remote.Index(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := remote.WriteIndex(alias, index); err != nil {
+		t.Fatal(err)
+	}
+
+	requests := &counting{next: server.Config.Handler}
+	server.Config.Handler = requests
+
+	versions, err := newClient(t, server).Versions(context.Background(), "node")
+	if err != nil {
+		t.Fatalf("Versions: %v", err)
+	}
+
+	if len(versions) != 2 {
+		t.Fatalf("listed %d versions, want 2: %+v", len(versions), versions)
+	}
+	for _, version := range versions {
+		if version.Digest != shared || !version.Created.Equal(snapshot) {
+			t.Errorf("version %+v does not name the shared build at %s", version, snapshot)
+		}
+	}
+	if got := requests.count("/manifests/" + shared); got != 1 {
+		t.Errorf("read the shared build's manifest %d times, want once", got)
+	}
+	for _, version := range versions {
+		if len(version.Sizes) == 0 {
+			t.Errorf("tag %q reports no size", version.Tag)
+		}
 	}
 }

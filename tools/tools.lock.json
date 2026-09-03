@@ -36,33 +36,33 @@
     "binaries": [
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.117.0_linux_arm64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_linux_arm64.tar.gz",
         "file": "grype",
-        "sha256": "935f628bdf9331ffdd946931ea5fdb50045d3970ba52670cbeb44a88f127291b",
+        "sha256": "32aceeb8ee837244775fcb522372c8b3a47914986385f3148f4ee2c930482a84",
         "os": "linux",
         "cpu": "arm64"
       },
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.117.0_linux_amd64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_linux_amd64.tar.gz",
         "file": "grype",
-        "sha256": "38525dab1e06f162ebaa02f94d82d1f807076b011a44180cf2777edf1a7b9c26",
+        "sha256": "1d444c5e7360471815f7158f71935fcecc68a3c417d85c7344f770854300bba2",
         "os": "linux",
         "cpu": "x86_64"
       },
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.117.0_darwin_arm64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_darwin_arm64.tar.gz",
         "file": "grype",
-        "sha256": "bfcefa3f3b1690d9c77d847841b32ebd6106ab0e0e32f810924707e704d53584",
+        "sha256": "938f050bb5076c8aa761867b39843abad2414dfe4cc82b7d36886e634f49c640",
         "os": "macos",
         "cpu": "arm64"
       },
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.117.0_darwin_amd64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_darwin_amd64.tar.gz",
         "file": "grype",
-        "sha256": "312ed375dcda6d8893b4ca5d517371fef1a50062ebb0b0dbe6bdb4ac2fb57c57",
+        "sha256": "cfeecf3462321c37ec4bd37dcd8a7f6630cc6c0c9997a07ff34002c5d7ef9bb3",
         "os": "macos",
         "cpu": "x86_64"
       }

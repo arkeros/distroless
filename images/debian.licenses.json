@@ -98,6 +98,10 @@
       "name": "Apache-2.0"
     },
     "libstdc++6": {},
+    "libsystemd0": {
+      "spdx": "LGPL-2.1-or-later",
+      "name": "LGPL-2.1+"
+    },
     "libtinfo6": {
       "spdx": "MIT",
       "name": "MIT/X11"

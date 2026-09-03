@@ -71,11 +71,17 @@ look there. Deleting a `.att` tag deletes the provenance.
 | `publish` | yes: push by digest, then sign and attest the SBOM **only where ours is missing** | Verifies each of the three artifacts per digest first. Absent or someone else's → add (or, for provenance, list as pending); present and ours → skip; any other verify error fails the job. |
 | `provenance` | yes: attaches provenance | One generator call per pending digest. Skipped entirely when nothing is pending. |
 | `verify` | **no** | `packages: read` only. Refuses an empty list, then positive tests on every published digest and negative tests on two foreign images. |
-| `release` | yes: tags | Runs `_tag` for exactly the targets `publish` reported and `verify` checked. Nothing here runs unless `verify` passed for every digest. |
+| `release` | yes: tags | `crane tag` over the refs and tags `publish` reported and `verify` checked; no Bazel. Nothing here runs unless `verify` passed for every digest. |
 
 A digest with no provenance is therefore always one of: the `provenance` job
 has not run yet in this push, or it failed. Either way the next push to `main`
 finds the digest pending and attests it. Nothing has to be repaired by hand.
+
+`test` records every image's digest as it built it, and `publish` refuses to
+push an image whose digest differs on its own runner. That failure names the
+image and both digests; it means some input to the image varies per machine.
+The last case was an mtree entry without `time=`, which the tar.bzl
+reproducibility validator in `.bazelrc` now rejects at build time.
 
 ## Debugging a failed verify
 

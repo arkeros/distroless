@@ -1,6 +1,6 @@
 module github.com/arkeros/distroless
 
-go 1.27.0
+go 1.27.1
 
 require (
 	github.com/CycloneDX/cyclonedx-go v0.12.0
@@ -9,7 +9,7 @@ require (
 	github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb
 	github.com/google/go-containerregistry v0.22.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/klauspost/compress v1.19.2
+	github.com/klauspost/compress v1.20.0
 	github.com/sigstore/sigstore-go v1.3.0
 	github.com/spf13/cobra v1.10.2
 	github.com/ulikunitz/xz v0.5.16

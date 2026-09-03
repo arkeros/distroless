@@ -40,18 +40,30 @@ jobs:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.CACHE_READONLY_SERVICE_ACCOUNT }}
 
+      # gRPC cache proxy on this runner, read-only through the viewer identity
+      # minted above. Skipped with the auth step for forks, which then build
+      # without a remote cache.
+      - name: Set up bazel-remote
+        if: steps.auth.outcome == 'success'
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
+          # No repository cache when the proxy is up (same-repo PRs): downloads
+          # come from the bucket through its asset API. Forks have no proxy and
+          # no cache; they download from upstream, which is slower but correct.
+          repository-cache: false
           external-cache: true
           # The runner-local caches are not saved either: only `main` warms
           # anything another run reads.
           cache-save: false
           bazelrc: |
             common --config=ci
-            ${{ steps.auth.outcome == 'success' && 'common --config=gcs-readonly' || '' }}
+            ${{ steps.auth.outcome == 'success' && 'common --config=bazel-remote-readonly' || '' }}
 
       - name: Test
         run: bazel test //...

@@ -32,6 +32,14 @@ jobs:
     permissions:
       contents: read
       id-token: write   # for the remote cache's workload identity federation
+    outputs:
+      # `{target: digest}` for every mirror image, as built on this runner.
+      # `publish` builds them again on its own runner and pushes nothing if
+      # the two disagree: a digest that depends on the machine is not a
+      # digest, and the mirror must never learn one. The last such case was
+      # an mtree entry without `time=` (run 33618108072), caught then by the
+      # release job rebuilding; this catches it before anything is pushed.
+      digests: ${{ steps.digests.outputs.digests }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -42,19 +50,45 @@ jobs:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
 
+      # gRPC cache proxy on this runner, in front of the same bucket; must
+      # follow the Google Cloud auth step (it uses those credentials) and
+      # precede Bazel's first invocation.
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
+          # No repository cache: external downloads come through bazel-remote's
+          # asset API from the bucket (see .bazelrc). The external cache stays;
+          # it holds extracted repositories, which is work, not downloads.
+          repository-cache: false
           external-cache: true
           cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=bazel-remote
 
       - name: Test
         run: bazel test //...
+
+      # The deploy manifests name each image's index digest; everything behind
+      # them is a cache hit after the tests above, and `toplevel` keeps the
+      # layers where they are.
+      - name: Record every mirror image's digest
+        id: digests
+        run: |
+          set -euo pipefail
+          PUSH_TARGETS=$(bazel query 'attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
+          bazel build --remote_download_outputs=toplevel --output_groups=deploy_manifest ${PUSH_TARGETS}
+          bazel cquery "set(${PUSH_TARGETS})" --output=starlark --starlark:expr='"%s\t%s" % (str(target.label).removeprefix("@@"), providers(target)["OutputGroupInfo"].deploy_manifest.to_list()[0].path)' \
+            | while IFS=$'\t' read -r LABEL MANIFEST; do
+                jq -c -n --arg t "${LABEL%_push}" --arg d "$(jq -r '.operations[0].root.digest' "${MANIFEST}")" '{($t): $d}'
+              done | jq -c -s 'add' > "${RUNNER_TEMP}/digests.json"
+          echo "digests=$(cat "${RUNNER_TEMP}/digests.json")" | tee -a "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
   # Mirror publish.
@@ -74,13 +108,26 @@ jobs:
       id-token: write   # for cosign keyless OIDC (Fulcio + Rekor) and the cache
       packages: write   # for GHCR push + cosign sig/attest artifacts
     outputs:
-      # JSON list of `{target, ref}` for everything pushed: the mirror_push
-      # base label, and `<registry>/<repository>@<digest>`. `verify` checks
-      # the refs and `release` tags the targets, so the two work from one
-      # list and the tagged set is the verified set by construction.
+      # JSON list of `{target, ref, tags}` for everything pushed: the
+      # mirror_push base label, `<registry>/<repository>@<digest>`, and the
+      # expanded tag list. `verify` checks the refs and `release` applies the
+      # tags, so both work from one list and the tagged set is the verified
+      # set by construction.
       published: ${{ steps.publish.outputs.published }}
       # JSON list of `{image, digest}` for the digests with no provenance yet.
       pending: ${{ steps.publish.outputs.pending }}
+      # Everything `verify` needs to run without Bazel or a checkout: the tool
+      # versions tools/tools.lock.json pins, the sha256 of the trusted root
+      # this job verified with, and the policy strings. See `verify`.
+      cosign_version: ${{ steps.inputs.outputs.cosign_version }}
+      slsa_verifier_version: ${{ steps.inputs.outputs.slsa_verifier_version }}
+      # go.mod's go-containerregistry version; `release` installs that crane.
+      crane_version: ${{ steps.inputs.outputs.crane_version }}
+      trusted_root_sha256: ${{ steps.inputs.outputs.trusted_root_sha256 }}
+      certificate_identity_regexp: ${{ steps.inputs.outputs.certificate_identity_regexp }}
+      certificate_oidc_issuer: ${{ steps.inputs.outputs.certificate_oidc_issuer }}
+      provenance_builder_id: ${{ steps.inputs.outputs.provenance_builder_id }}
+      provenance_source_uri: ${{ steps.inputs.outputs.provenance_source_uri }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -95,17 +142,33 @@ jobs:
           workload_identity_provider: ${{ env.WIF_PROVIDER }}
           service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
 
+      # gRPC cache proxy on this runner, in front of the same bucket; must
+      # follow the Google Cloud auth step (it uses those credentials) and
+      # precede Bazel's first invocation.
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
+          # No repository cache: external downloads come through bazel-remote's
+          # asset API from the bucket (see .bazelrc). The external cache stays;
+          # it holds extracted repositories, which is work, not downloads.
+          repository-cache: false
           external-cache: true
           cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=bazel-remote
             build --stamp
+            # bazel/defaults.bazelrc turns runfiles trees off; this job runs
+            # built executables from their trees. Set here for every Bazel
+            # command in the job, not on one `build`, or each query and cquery
+            # in between flips the option and discards the analysis cache.
+            common --build_runfile_links
 
       - name: Login to GHCR
         uses: docker/login-action@v4
@@ -139,9 +202,57 @@ jobs:
           echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
           echo "TRUSTED_ROOT=$(realpath "$(bazel cquery //oci:sigstore_trusted_root --output=files)")" >> "$GITHUB_ENV"
 
+      # One build for everything the loop below runs: every mirror image's
+      # push binary, sign and SBOM-attest scripts, and the deploy manifest
+      # that names the digest. Before this, the loop ran three Bazel commands
+      # per image — sixty analyses of the same graph, the first one cold at
+      # 30 s — for files one invocation produces. A separate step so its cost
+      # is visible in the job timeline.
+      #
+      # Runfiles trees are on for this whole job (see the bazelrc above), so
+      # the executables can run from them rather than via `bazel run`.
+      # `--remote_download_outputs=toplevel`, not `all`: under
+      # lazy push (.bazelrc) the push binaries carry no layers, and `all` would
+      # download every layer of every image as an intermediate output anyway —
+      # the very thing lazy push exists to avoid. `toplevel` fetches the
+      # executables, their runfiles and the deploy manifests: kilobytes. One
+      # cquery then maps each target to its executable and, for pushes, its
+      # manifest — no per-image Bazel from here on.
+      - name: Build every mirror image's push, sign and attest targets
+        run: |
+          set -euo pipefail
+          TARGETS=$(bazel query 'kind("cosign_sign rule", //...) + kind("cosign_attest rule", //...) + kind("crane_tag rule", //...) + attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
+          bazel build --remote_download_outputs=toplevel \
+              --output_groups=+deploy_manifest,+tags ${TARGETS}
+          # label <TAB> executable <TAB> deploy manifest (pushes) <TAB> expanded tag list (tags)
+          bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr='"%s\t%s\t%s\t%s" % (str(target.label).removeprefix("@@"), target.files_to_run.executable.path, (getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None).to_list()[0].path if getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None) else ""), (getattr(providers(target)["OutputGroupInfo"], "tags", None).to_list()[0].path if getattr(providers(target)["OutputGroupInfo"], "tags", None) else ""))' \
+              > "${RUNNER_TEMP}/mirror_targets.tsv"
+          echo "$(wc -l < "${RUNNER_TEMP}/mirror_targets.tsv") targets built"
+
+      # Hand `verify` its inputs as job outputs, so that job needs neither
+      # Bazel nor a checkout. The versions come from the lockfile, the root
+      # hash from the file this job verifies with, the policy from the env
+      # file loaded above — one source for each, read here and checked there.
+      - name: Export verification inputs
+        id: inputs
+        run: |
+          set -euo pipefail
+          version_of() { jq -r --arg t "$1" '.[$t].binaries[0].url | capture("/download/(?<v>v[0-9.]+)/").v' tools/tools.lock.json; }
+          {
+            echo "cosign_version=$(version_of cosign)"
+            echo "slsa_verifier_version=$(version_of slsa-verifier)"
+            echo "crane_version=$(awk '$1 == "github.com/google/go-containerregistry" {print $2}' go.mod)"
+            echo "trusted_root_sha256=$(sha256sum "${TRUSTED_ROOT}" | cut -d' ' -f1)"
+            echo "certificate_identity_regexp=${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}"
+            echo "certificate_oidc_issuer=${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}"
+            echo "provenance_builder_id=${COSIGN_POLICY_PROVENANCE_BUILDER_ID}"
+            echo "provenance_source_uri=${COSIGN_POLICY_PROVENANCE_SOURCE_URI}"
+          } | tee -a "$GITHUB_OUTPUT"
+
       # `mirror_push` macros emit <name>_push, <name>_sign, <name>_attest_sbom
-      # and <name>_tag. Discover via `cosign_sign rule`: every mirror image has
-      # exactly one. `_tag` is deliberately not run here — see `release`.
+      # and <name>_tag. Every mirror image has exactly one `_sign`, so the
+      # `_sign` rows of the table built above enumerate the images. `_tag` is
+      # deliberately not run here — see `release`.
       #
       # Every artifact is added at most once per digest. After the push, each
       # of the three is *verified* under the production policy and classified:
@@ -159,6 +270,8 @@ jobs:
       # nothing.
       - name: Push, sign, and attest mirror images
         id: publish
+        env:
+          TEST_DIGESTS: ${{ needs.test.outputs.digests }}
         run: |
           set -euo pipefail
 
@@ -191,23 +304,51 @@ jobs:
             exit 1
           }
 
-          SIGN_TARGETS=$(bazel query 'kind("cosign_sign rule", //...)' --output=label)
+          # Runs a built executable the way `bazel run` would: from inside
+          # its runfiles tree, with RUNFILES_DIR set. cosign's scripts resolve
+          # their inputs relative to that directory; rules_img's pusher reads
+          # the variable, and under lazy push streams missing layers from the
+          # CAS named by IMG_REAPI_ENDPOINT — which `bazel run` would have set
+          # from the .bazelrc setting and a direct execution must set itself.
+          run_built() {
+            local exe=$1; shift
+            local rf; rf=$(realpath "${exe}.runfiles")
+            ( cd "${rf}/_main" && RUNFILES_DIR="${rf}" IMG_REAPI_ENDPOINT=grpc://127.0.0.1:9092 "./${exe#bazel-out/*/bin/}" "$@" )
+          }
+          exe_of() { awk -F'\t' -v l="$1" '$1==l{print $2}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
+          manifest_of() { awk -F'\t' -v l="$1" '$1==l{print $3}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
+          tags_of() { awk -F'\t' -v l="$1" '$1==l{print $4}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
+
+          # Cross-runner check: the same target built on the `test` runner
+          # must have produced the same digest, or nothing about this image
+          # is pushed. A digest that differs per machine is not a digest.
+          same_digest_as_test() {
+            local base=$1 digest=$2
+            local expected; expected=$(jq -r --arg t "${base}" '.[$t] // ""' <<< "${TEST_DIGESTS}")
+            if [[ "${expected}" != "${digest}" ]]; then
+              echo "ERROR: ${base} built as ${digest} on this runner but as ${expected:-<not built>} on the test runner. The image depends on the machine that built it — look for an input that varies per runner (an mtime, a path, a tool version); the last case was an mtree entry without time= (run 33618108072). Nothing was pushed for it." >&2
+              return 1
+            fi
+          }
+
           : > "${RUNNER_TEMP}/published.jsonl"
           : > "${RUNNER_TEMP}/pending.jsonl"
-          for SIGN_TARGET in $SIGN_TARGETS; do
+          for SIGN_TARGET in $(awk -F'\t' '$1 ~ /_sign$/{print $1}' "${RUNNER_TEMP}/mirror_targets.tsv"); do
             BASE=${SIGN_TARGET%_sign}
             echo "::group::${BASE}"
-            bazel run "${BASE}_push"
 
             # The digest comes from the build, not from the registry: the push
-            # target's deploy manifest names what it pushed, and OCI digests
-            # are content addresses, so the two agree by construction.
-            bazel build --output_groups=deploy_manifest --remote_download_outputs=all "${BASE}_push"
-            MANIFEST=$(bazel cquery "${BASE}_push" --output=files --output_groups=deploy_manifest)
+            # target's deploy manifest names what it will push, and OCI
+            # digests are content addresses, so the two agree by construction.
+            MANIFEST=$(manifest_of "${BASE}_push")
             IMAGE=$(jq -r '.operations[0] | "\(.registry)/\(.repository)"' "$MANIFEST")
             DIGEST=$(jq -r '.operations[0].root.digest' "$MANIFEST")
             REF="${IMAGE}@${DIGEST}"
-            jq -c -n --arg target "${BASE}" --arg ref "${REF}" '{$target, $ref}' \
+            same_digest_as_test "${BASE}" "${DIGEST}"
+
+            run_built "$(exe_of "${BASE}_push")"
+            TAGS=$(jq -R . "$(tags_of "${BASE}_tag")" | jq -c -s .)
+            jq -c -n --arg target "${BASE}" --arg ref "${REF}" --argjson tags "${TAGS}" '{$target, $ref, $tags}' \
               >> "${RUNNER_TEMP}/published.jsonl"
 
             if ! needs_artifact signature "${REF}" \
@@ -216,10 +357,10 @@ jobs:
                   --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
                   --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
                   "${REF}"; then
-              bazel run "${BASE}_sign"
+              run_built "$(exe_of "${BASE}_sign")"
             fi
 
-            if bazel query "${BASE}_attest_sbom" 2>/dev/null | grep -q .; then
+            if [[ -n "$(exe_of "${BASE}_attest_sbom")" ]]; then
               if ! needs_artifact "SBOM attestation" "${REF}" \
                   "${COSIGN}" verify-attestation \
                     --trusted-root="${TRUSTED_ROOT}" \
@@ -227,7 +368,7 @@ jobs:
                     --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
                     --type=cyclonedx \
                     "${REF}"; then
-                bazel run "${BASE}_attest_sbom"
+                run_built "$(exe_of "${BASE}_attest_sbom")"
               fi
             fi
 
@@ -274,10 +415,13 @@ jobs:
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
 
-  # Read-only on purpose. Neither cosign nor slsa-verifier needs a token to
-  # verify public artifacts, so the job that holds the policy cannot mutate
-  # the registry, and it holds no cloud identity either — the two tools it
-  # runs are prebuilt binaries, so it does not need a warm cache.
+  # Read-only on purpose, and self-contained. Neither cosign nor
+  # slsa-verifier needs a token to verify public artifacts, so the job that
+  # holds the policy cannot mutate the registry, and it holds no cloud
+  # identity either. It does not check out the repository or run Bazel: the
+  # tools come from their projects' own installers, at the versions
+  # tools/tools.lock.json pins (asserted below), and the policy strings and the
+  # trusted root's hash come from `publish`, which computed them with Bazel.
   #
   # `always()` because `provenance` is skipped when nothing was pending, and
   # a skipped dependency would otherwise skip this too.
@@ -290,45 +434,67 @@ jobs:
       && (needs.provenance.result == 'success' || needs.provenance.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       packages: read
+    env:
+      COSIGN: cosign
+      SLSA_VERIFIER: slsa-verifier
+      COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP: ${{ needs.publish.outputs.certificate_identity_regexp }}
+      COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER: ${{ needs.publish.outputs.certificate_oidc_issuer }}
+      COSIGN_POLICY_PROVENANCE_BUILDER_ID: ${{ needs.publish.outputs.provenance_builder_id }}
+      COSIGN_POLICY_PROVENANCE_SOURCE_URI: ${{ needs.publish.outputs.provenance_source_uri }}
+      # The same URL as the `sigstore_trusted_root` http_file in
+      # bazel/include/oci.MODULE.bazel. What makes it the same *file* is the
+      # hash `publish` reports, checked below.
+      TRUSTED_ROOT_URL: https://raw.githubusercontent.com/sigstore/root-signing/main/targets/trusted_root.json
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
+      # cosign-installer verifies the binary's signature with a bootstrapped
+      # cosign; the version is the lockfile's, passed through `publish`.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.2
         with:
-          bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
-          cache-save: false
-          bazelrc: |
-            common --config=ci
+          cosign-release: ${{ needs.publish.outputs.cosign_version }}
 
-      - name: Load verification policy
-        run: |
-          set -euxo pipefail
-          bazel build //oci:cosign_policy_env
-          cat "$(bazel cquery //oci:cosign_policy_env --output=files)" >> "$GITHUB_ENV"
+      # The installer verifies slsa-verifier's own SLSA provenance. Its version
+      # is this `uses:` ref, which cannot take an expression — hence the check
+      # below against the lockfile.
+      - name: Install slsa-verifier
+        uses: slsa-framework/slsa-verifier/actions/installer@v2.7.1
 
-      # The trusted root is the pinned file //web embeds, not a live TUF fetch.
-      # Every cosign verify below takes it via --trusted-root, so cosign makes
-      # no TUF request in this job at all. (Fetching it live used to be the one
-      # network call worth retrying — run 31056638456 died on a CDN 503 for a
-      # root file — and it kept CI and the Directory on roots that could drift
-      # apart. See //oci:sigstore_trusted_root.) slsa-verifier has no such
-      # flag and still refreshes TUF metadata itself.
-      - name: Fetch cosign, slsa-verifier and the Sigstore trusted root
+      # `publish` classifies with the lockfile's versions; a `verify` running a
+      # different one could read an edge case differently. Renovate bumps the
+      # lockfile and the installer ref independently, so a half-merged pair
+      # fails here, naming both places, rather than silently disagreeing.
+      - name: Check the installed tools are the lockfile's versions
+        env:
+          WANT_COSIGN: ${{ needs.publish.outputs.cosign_version }}
+          WANT_SLSA_VERIFIER: ${{ needs.publish.outputs.slsa_verifier_version }}
         run: |
           set -euo pipefail
-          bazel build --remote_download_outputs=all \
-              //bazel/toolchains/cosign:prebuilt_cosign_toolchain \
-              @multitool//tools/slsa-verifier \
-              //oci:sigstore_trusted_root
-          echo "COSIGN=$(realpath "$(bazel cquery //bazel/toolchains/cosign:prebuilt_cosign_toolchain --output=files)")" >> "$GITHUB_ENV"
-          echo "SLSA_VERIFIER=$(realpath "$(bazel cquery @multitool//tools/slsa-verifier --output=files)")" >> "$GITHUB_ENV"
-          echo "TRUSTED_ROOT=$(realpath "$(bazel cquery //oci:sigstore_trusted_root --output=files)")" >> "$GITHUB_ENV"
+          have=$(cosign version 2>&1 | awk '/GitVersion/{print $2}')
+          if [[ "${have#v}" != "${WANT_COSIGN#v}" ]]; then
+            echo "ERROR: cosign ${have} installed, but tools/tools.lock.json pins ${WANT_COSIGN}." >&2
+            exit 1
+          fi
+          have=$(slsa-verifier version 2>&1 | awk '/GitVersion/{print $2}')
+          if [[ "${have#v}" != "${WANT_SLSA_VERIFIER#v}" ]]; then
+            echo "ERROR: slsa-verifier ${have} installed via the installer's uses: ref in ci.yaml, but tools/tools.lock.json pins ${WANT_SLSA_VERIFIER}. Bump both together." >&2
+            exit 1
+          fi
+          echo "cosign ${have#v}: ok; slsa-verifier ${WANT_SLSA_VERIFIER#v}: ok"
+
+      # The same pinned root `publish` and the Directory verify with. The
+      # download is the one network call here that is not a verification, so
+      # it retries; the hash check is what makes it the pinned file and not
+      # whatever the URL serves today.
+      - name: Fetch the pinned Sigstore trusted root
+        env:
+          EXPECTED_SHA256: ${{ needs.publish.outputs.trusted_root_sha256 }}
+        run: |
+          set -euo pipefail
+          TRUSTED_ROOT="${RUNNER_TEMP}/trusted_root.json"
+          curl -fsSL --retry 5 --retry-delay 5 -o "${TRUSTED_ROOT}" "${TRUSTED_ROOT_URL}"
+          echo "${EXPECTED_SHA256}  ${TRUSTED_ROOT}" | sha256sum -c -
+          echo "TRUSTED_ROOT=${TRUSTED_ROOT}" >> "$GITHUB_ENV"
 
       # Positive test: every digest `publish` pushed must carry all three
       # artifacts under the production policy — our signature, our SBOM
@@ -430,18 +596,21 @@ jobs:
           fi
           echo "OK: provenance policy rejects generator provenance produced for another repository."
 
-  # Tags move last, and all or nothing. Until here every pushed image is
-  # reachable only by digest; `release` names them. A consumer following
-  # `latest` therefore never resolves to a digest that has not passed the
-  # full policy, and a run in which any image fails verification releases
-  # nothing — a partial release is not a release.
+  # Tags move last. Until here every pushed image is reachable only by
+  # digest; `release` names them, with the tags `publish` expanded from the
+  # build and `verify` saw beside each ref. A consumer following `latest`
+  # therefore never resolves to a digest that has not passed the full policy.
+  #
+  # No Bazel, no checkout, no cloud identity: everything this job needs is in
+  # `publish`'s output, and `crane tag` is one request per tag. The
+  # cross-runner digest check that used to live here — release rebuilding the
+  # image and refusing to tag a digest publish had not pushed — moved to
+  # `test` and `publish`, where it stops the push itself.
   #
   # `always()` for the same reason as `verify`: GitHub skips a job whose
   # transitive `needs` chain contains a skipped job unless the job carries its
   # own status expression, and `provenance` is skipped on every run in which
-  # no digest changed. Without this, such a run never tags — which is harmless
-  # while every tag already points where it should, and wrong the moment a
-  # previous `release` failed part-way (run 33630771831, rerun, was skipped).
+  # no digest changed.
   release:
     name: Release mirror tags
     needs: [publish, verify]
@@ -450,35 +619,11 @@ jobs:
       && needs.publish.result == 'success'
       && needs.verify.result == 'success'
     runs-on: ubuntu-latest
-    environment: prod
     permissions:
-      contents: read
-      id-token: write   # for the cache
       packages: write   # for `crane tag`
+    env:
+      PUBLISHED: ${{ needs.publish.outputs.published }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
-
-      - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
-          cache-save: false
-          bazelrc: |
-            common --config=ci
-            common --config=gcs
-            build --stamp
-
       - name: Login to GHCR
         uses: docker/login-action@v4
         with:
@@ -486,22 +631,40 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Tags exactly the targets `publish` reported and `verify` checked —
-      # the same list, not a fresh `bazel query`, so an image the publish loop
-      # skipped can never be tagged unverified. `crane_tag` needs the image's
-      # digest file and nothing else from the build, so this is cheap: no
-      # layer leaves the cache.
+      # The crane that matches go.mod's go-containerregistry, passed through
+      # `publish`, so the tool here is the one the repository builds from.
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.7
+        with:
+          version: ${{ needs.publish.outputs.crane_version }}
+
+      # Every (ref, tag) pair, eight at a time. Failures are collected rather
+      # than stopping the loop — a stopped loop leaves the earlier images
+      # tagged anyway — and the job fails at the end if any tag did not land,
+      # naming each one.
       - name: Tag
-        env:
-          PUBLISHED: ${{ needs.publish.outputs.published }}
         run: |
           set -euo pipefail
-          while IFS= read -r TARGET <&3; do
-            [[ -n "${TARGET}" ]] || continue
-            echo "::group::${TARGET}_tag"
-            bazel run "${TARGET}_tag"
-            echo "::endgroup::"
-          done 3< <(jq -r '.[].target' <<< "${PUBLISHED}")
+          COUNT=$(jq 'length' <<< "${PUBLISHED}")
+          if [[ "${COUNT}" -eq 0 ]]; then
+            echo "ERROR: publish reported no images; nothing to tag is not a release." >&2
+            exit 1
+          fi
+          jq -r '.[] | .ref as $ref | .tags[] | "\($ref) \(.)"' <<< "${PUBLISHED}" > "${RUNNER_TEMP}/tags.txt"
+          echo "$(wc -l < "${RUNNER_TEMP}/tags.txt" | tr -d ' ') tags over ${COUNT} images"
+          : > "${RUNNER_TEMP}/failed.txt"
+          xargs -P 8 -L 1 bash -c '
+            if crane tag "$0" "$1" > /dev/null 2> "${RUNNER_TEMP}/err.$$"; then
+              echo "ok    $0 $1"
+            else
+              echo "FAIL  $0 $1: $(tr "\n" " " < "${RUNNER_TEMP}/err.$$")" | tee -a "${RUNNER_TEMP}/failed.txt"
+            fi
+            rm -f "${RUNNER_TEMP}/err.$$"' < "${RUNNER_TEMP}/tags.txt"
+          if [[ -s "${RUNNER_TEMP}/failed.txt" ]]; then
+            echo "ERROR: $(wc -l < "${RUNNER_TEMP}/failed.txt" | tr -d ' ') tag(s) failed:" >&2
+            cat "${RUNNER_TEMP}/failed.txt" >&2
+            exit 1
+          fi
 
   # ---------------------------------------------------------------------------
   # Cloud Run deploy.
@@ -588,13 +751,26 @@ jobs:
           service_account: github-actions-distroless@senku-prod.iam.gserviceaccount.com
           token_format: access_token
 
+      # gRPC cache proxy on this runner, in front of the same bucket; must
+      # follow the Google Cloud auth step (it uses those credentials) and
+      # precede Bazel's first invocation.
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
+
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
+          # Same as the other jobs: archives from the bucket via the proxy,
+          # extracted repositories kept between runs.
+          repository-cache: false
+          external-cache: true
+          cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=bazel-remote
             build --stamp
 
       - name: Login to Artifact Registry

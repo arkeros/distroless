@@ -1,5 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@jq.bzl//jq:jq.bzl", "jq_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("//images:matrix.bzl", "distroless_matrix")
@@ -8,7 +10,7 @@ load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GL
 load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
-load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "bash_layers")
+load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "BASH_TAGS", "BASH_VERSION", "bash_layers")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -194,13 +196,43 @@ _VEX = {
         sbom = ":bash" + mode + "_nonroot_debian_sbom",
         tag_list = [
             "debug" if mode else "latest",
-            "{{.STABLE_MONOREPO_IMAGE_TAG_VERSION}}" + mode.replace("_", "-"),
-            "{{.STABLE_MONOREPO_SHORT_VERSION}}" + mode.replace("_", "-"),
-        ],
+        ] + [version + mode.replace("_", "-") for version in BASH_TAGS],
         tags = ["manual"],
     )
     for mode in DEBUG_MODE
 ]
+
+# BASH_TAGS names a version, so it has to be the version the image actually
+# ships. Deliberately red on a lockfile bump: a tag that lies about what is
+# inside is worse than a build that stops.
+write_file(
+    name = "bash_expected_version",
+    out = "bash_expected_version.json",
+    content = ['{"versions":["%s"]}' % BASH_VERSION],
+)
+
+# The hyphen cut is not decoration: Debian's bash is `5.3-3+b1`, only two
+# dot-separated parts, so unlike nginx's three-part version a bare
+# `split(".")[0:2]` keeps the whole revision and compares `5.3` against
+# `5.3-3+b1`.
+jq_test(
+    name = "bash_lock_version_test",
+    file1 = ":bash_expected_version",
+    file2 = "//images:debian.lock.json",
+    filter2 = """{
+  versions: (
+    [
+      .packages[]
+      | select(.name == "bash")
+      | .version
+      | split("-")[0]
+      | split(".")[0:2]
+      | join(".")
+    ]
+    | unique
+  ),
+}""",
+)
 
 container_structure_test(
     name = "bash_test",

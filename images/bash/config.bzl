@@ -1,3 +1,16 @@
+# The upstream bash release the images ship, verified against
+# //images:debian.lock.json by `bash_lock_version_test` — a lockfile bump that
+# moves bash turns that test red rather than silently mistagging an image.
+#
+# Upstream only: Debian's revision (`-3+b1` at the time of writing) is
+# packaging churn that a rebuild bumps without changing bash, and `+` is not
+# a legal character in an OCI tag anyway.
+BASH_VERSION = "5.3"
+
+# What `latest` also answers to. Two levels, as nginx publishes: the release
+# for pinning to it, the major for floating across it.
+BASH_TAGS = [BASH_VERSION.split(".")[0], BASH_VERSION]
+
 BASH_DISTROS = ["debian", "hummingbird"]
 
 BASH_ARCHITECTURES = {

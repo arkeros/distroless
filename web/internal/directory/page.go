@@ -22,7 +22,7 @@ import (
 	"strings"
 )
 
-//go:embed templates static/directory.css static/directory.js static/fonts
+//go:embed templates static/directory.css static/directory.mjs static/main.mjs static/fonts
 var assets embed.FS
 
 // Parsed once at startup so a broken template fails the process rather than a
@@ -409,8 +409,13 @@ func staticHeaders(next http.Handler) http.Handler {
 		// The file server would otherwise ask mime.TypeByExtension, which
 		// answers from the host's /etc/mime.types — a file the image we ship
 		// in does not have. Stating it keeps the type the same everywhere.
-		if strings.HasSuffix(r.URL.Path, ".woff2") {
+		switch {
+		case strings.HasSuffix(r.URL.Path, ".woff2"):
 			w.Header().Set("Content-Type", "font/woff2")
+		case strings.HasSuffix(r.URL.Path, ".mjs"):
+			// A browser will not execute a module served as anything else,
+			// and Go's built-in table has no .mjs entry at all.
+			w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 		}
 
 		next.ServeHTTP(w, r)

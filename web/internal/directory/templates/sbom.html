@@ -4,12 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Image}} — SBOM</title>
-<link rel="stylesheet" href="/directory/static/sbom.css">
+<link rel="stylesheet" href="/directory/static/directory.css">
 </head>
 <body>
 <main>
   <h1>{{.Image}}</h1>
-  <p class="digest"><code>{{.Digest}}</code></p>
+  <p class="digest">{{if .Permalink}}<a href="{{.Permalink}}" title="Permanent link to this exact build, which this tag will stop naming when it moves"><code>{{.Digest}}</code></a>{{else}}<code>{{.Digest}}</code>{{end}}</p>
+  <section class="install">
+    <p class="label">Install from the command line</p>
+    <p class="command"><span class="prompt" aria-hidden="true">$</span> <code data-copyable tabindex="0">docker pull {{.Image}}</code></p>
+    <p class="label">Use as a base image in a Dockerfile</p>
+    <p class="command"><code data-copyable tabindex="0">FROM {{.Image}}</code></p>
+  </section>
 
   {{if gt (len .Architectures) 1}}
   <nav class="arches" aria-label="Architecture">
@@ -24,7 +30,7 @@
   </div>
 
   <div class="scroller" tabindex="0" role="region" aria-label="Components">
-    <table id="sbom">
+    <table data-sortable id="sbom">
       <thead>
         <tr>
           <th data-column="name" aria-sort="ascending"><button type="button">Component</button></th>
@@ -35,9 +41,9 @@
       </thead>
       <tbody>
         {{range .Rows}}
-        <tr data-version-rank="{{.VersionRank}}">
+        <tr>
           <td>{{.Name}}</td>
-          <td>{{.Version}}</td>
+          <td data-sort-key="{{.VersionRank}}">{{.Version}}</td>
           <td class="license" title="{{.License}}">{{.License}}</td>
           <td>{{.Type}}</td>
         </tr>
@@ -46,6 +52,6 @@
     </table>
   </div>
 </main>
-<script src="/directory/static/sbom.js" defer></script>
+<script src="/directory/static/directory.js" defer></script>
 </body>
 </html>

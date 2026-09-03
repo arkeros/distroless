@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Image}} — versions</title>
+<link rel="stylesheet" href="/directory/static/directory.css">
+</head>
+<body>
+<main>
+  <h1>{{.Image}}</h1>
+  <p class="digest">{{len .Releases}} published build{{if ne (len .Releases) 1}}s{{end}}</p>
+  <section class="install">
+    <p class="label">Install from the command line</p>
+    <p class="command"><span class="prompt" aria-hidden="true">$</span> <code data-copyable tabindex="0">docker pull {{.Image}}</code></p>
+  </section>
+
+  <div class="scroller" tabindex="0" role="region" aria-label="Versions">
+    <table data-sortable id="versions">
+      <thead>
+        <tr>
+          <th data-column="tags"><button type="button">Tags</button></th>
+          <th data-column="created" title="The upstream package snapshot this build was assembled from, which is what a build-horizon policy measures"><button type="button">Packages from</button></th>
+          {{range .Architectures}}<th data-column="size-{{.}}" title="Compressed size for {{.}}: what a pull transfers. Not the size on disk, which is the uncompressed rootfs."><button type="button">Compressed size<br>{{.}}</button></th>{{end}}
+          <th data-column="digest"><button type="button">Build</button></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Releases}}
+        <tr>
+          <td class="tags">{{range .Tags}}<a href="{{.SBOM}}" title="What is inside whatever this tag names today"><code>{{.Name}}</code></a> {{end}}</td>
+          <td>{{if .Created.IsZero}}<span class="unknown">unknown</span>{{else}}{{.Created.Format "2006-01-02"}}{{end}}</td>
+          {{range .Sizes}}<td data-sort-key="{{.Bytes}}">{{if .Bytes}}{{.}}{{else}}<span class="unknown">unknown</span>{{end}}</td>{{end}}
+          <td><a href="{{.SBOM}}" title="What is inside this exact build, at a URL that will always name it"><code>{{.Digest}}</code></a></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <p class="footnote">Tags are registry metadata: they say which build a name points at today, and nothing is signed to that effect. The evidence starts at each build's SBOM.</p>
+</main>
+<script src="/directory/static/directory.js" defer></script>
+</body>
+</html>

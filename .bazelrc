@@ -104,6 +104,16 @@ common:gcs-readonly --remote_upload_local_results=false
 # localhost. Developers keep `gcs`; nothing here applies without the proxy.
 common:bazel-remote --remote_cache=grpc://127.0.0.1:9092
 
+# External downloads go through the proxy's remote asset API: Bazel sends the
+# URL and the expected sha256, the proxy fetches it once and keeps it in the
+# bucket under that hash, and every later job on any runner gets it from
+# there. This is what lets CI drop setup-bazel's repository cache — a 6 GB
+# Actions-cache restore and unpack in every job, mostly JDK, Node and LLVM
+# tarballs no quiet run reads. Local fallback so a URL the proxy cannot fetch
+# is downloaded by Bazel itself rather than failing the build.
+common:bazel-remote --experimental_remote_downloader=grpc://127.0.0.1:9092
+common:bazel-remote --experimental_remote_downloader_local_fallback
+
 # Lazy push: a push binary carries no layers in its runfiles. It asks the
 # registry which blobs are missing and, for those only, reads the blob from
 # the CAS over the proxy and pipes it into the registry upload — GCS to

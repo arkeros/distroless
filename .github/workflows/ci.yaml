@@ -54,7 +54,10 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
+          # No repository cache: external downloads come through bazel-remote's
+          # asset API from the bucket (see .bazelrc). The external cache stays;
+          # it holds extracted repositories, which is work, not downloads.
+          repository-cache: false
           external-cache: true
           cache-save: true
           bazelrc: |
@@ -125,7 +128,10 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
+          # No repository cache: external downloads come through bazel-remote's
+          # asset API from the bucket (see .bazelrc). The external cache stays;
+          # it holds extracted repositories, which is work, not downloads.
+          repository-cache: false
           external-cache: true
           cache-save: true
           bazelrc: |
@@ -594,7 +600,10 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
+          # No repository cache: external downloads come through bazel-remote's
+          # asset API from the bucket (see .bazelrc). The external cache stays;
+          # it holds extracted repositories, which is work, not downloads.
+          repository-cache: false
           external-cache: true
           cache-save: false
           bazelrc: |

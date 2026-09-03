@@ -12,6 +12,13 @@ description: >-
 # release pipeline. The disk it uses is the runner's, empty on every job: the
 # gain is protocol, not locality.
 #
+# It also serves Bazel's remote asset API: Bazel hands it the URL and expected
+# sha256 of every external download (http_archive, http_file, the apt and rpm
+# packages), and the proxy fetches it once and keeps it in the bucket under
+# that hash. That replaces the 6 GB repository-cache restore-and-unpack that
+# setup-bazel used to do in every job; a job now fetches only the archives it
+# actually needs, and after the first time from the bucket.
+#
 # Authenticates to GCS with the runner's application-default credentials, i.e.
 # whatever google-github-actions/auth minted before this step. With the
 # read-only identity, uploads to the bucket fail in the proxy's log and nothing
@@ -54,6 +61,7 @@ runs:
           --gcs_proxy.use_default_credentials \
           --grpc_address 127.0.0.1:9092 \
           --http_address 127.0.0.1:8080 \
+          --experimental_remote_asset_api \
           > "${LOG}" 2>&1 &
         for attempt in $(seq 1 40); do
           if curl -fsS http://127.0.0.1:8080/status > /dev/null 2>&1; then

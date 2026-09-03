@@ -80,8 +80,11 @@ common --aspects=//oci:aspects.bzl%mirror_push_enforcement_aspect
 # application-default login`, in CI the `google-github-actions/auth` step that
 # populates GOOGLE_APPLICATION_CREDENTIALS. `--config=ci` deliberately does
 # *not* imply this — a pull request opened from a fork gets no OIDC token, and
-# such a build should run cacheless rather than fail. Each workflow adds
-# `--config=gcs` for itself.
+# such a build should run cacheless rather than fail.
+#
+# Since 2026-09 no workflow uses this directly: CI goes through bazel-remote
+# (`bazel-remote` below), which reads and writes the same bucket under the
+# same keys. `gcs` and `gcs-readonly` are the developer path.
 common:gcs --remote_cache=https://storage.googleapis.com/senku-prod-bazel-cache
 common:gcs --google_default_credentials
 common:gcs --remote_cache_compression

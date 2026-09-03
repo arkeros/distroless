@@ -26,17 +26,27 @@ jobs:
         with:
           workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
           service_account: github-actions-cache-ro@senku-prod.iam.gserviceaccount.com
+      # gRPC cache proxy on this runner, read-only through the viewer identity
+      # above: it serves action results and external archives from the bucket
+      # and cannot store new ones. An archive only this job needs and `main`
+      # never fetched is downloaded from upstream each run; the pinned
+      # versions here are the ones `main` builds, so that is rare.
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
       - name: Set up Bazelisk
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
-          # Shares a single Actions cache entry with every other workflow —
-          # the key is platform + a hash of MODULE.bazel, with no workflow
-          # component. See release-cli.yaml. `external-cache` is deliberately
-          # left off: that one is keyed per workflow/job.
-          repository-cache: true
+          # No repository cache: downloads come from the bucket through the
+          # proxy. The external cache keeps extracted repositories between
+          # runs of this job.
+          repository-cache: false
+          external-cache: true
+          cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=gcs-readonly
+            common --config=bazel-remote-readonly
       - name: Install knife
         uses: ./.github/actions/setup-knife
         with:

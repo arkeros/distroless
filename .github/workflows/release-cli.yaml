@@ -34,23 +34,27 @@ jobs:
         with:
           workload_identity_provider: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
           service_account: github-actions-cache@senku-prod.iam.gserviceaccount.com
+      # gRPC cache proxy on this runner, in front of the same bucket; must
+      # follow the Google Cloud auth step and precede Bazel's first invocation.
+      # It also serves external downloads from the bucket (see .bazelrc).
+      - name: Set up bazel-remote
+        uses: ./.github/actions/setup-bazel-remote
+        with:
+          bucket: senku-prod-bazel-cache
       - name: Set up Bazelisk
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
-          # Download cache only, not `external-cache`. knife pulls ~300
-          # external repos (the anchore/syft stack, AWS SDK, the LLVM
-          # toolchain), and the GCS cache cannot cover any of them — fetching
-          # a repo is repository-rule work, not an action.
-          #
-          # Free to turn on everywhere: setup-bazel keys this on
-          # platform + a hash of MODULE.bazel with no workflow or job
-          # component, so all six workflows share one entry. `external-cache`
-          # is the opposite — keyed per workflow/job, one entry per repo —
-          # which is why only ci.yaml pays for that one.
-          repository-cache: true
+          # No repository cache: the ~300 external repos knife pulls (the
+          # anchore/syft stack, AWS SDK, the LLVM toolchain) are downloaded
+          # through the proxy from the bucket, where `main` already put them.
+          # The external cache keeps their extracted form between runs; it is
+          # keyed per job, so this job has its own entry.
+          repository-cache: false
+          external-cache: true
+          cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=gcs
+            common --config=bazel-remote
       # NOTE: When x_defs are added to go_binary targets for --version
       # stamping, add --stamp here and compare unstamped SHAs instead, or
       # drop change detection entirely and release on every push.

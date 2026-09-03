@@ -1,6 +1,13 @@
 // Everything a directory page does in the browser. Nothing here talks to the
 // server: the tables arrive complete and the pull command is already on the
 // page.
+//
+// Behaviour only — importing this runs nothing. Each function is handed the
+// element it acts on and reaches everything else through it: a node's
+// ownerDocument is the document it belongs to, so none of this needs a global
+// to find its way around. main.mjs does the finding; this file does the work.
+// That is what lets the test call these directly, with a fake element as an
+// argument, rather than re-evaluating the file against a fabricated window.
 
 // Drawn here rather than pulled from an icon set, because two rectangles are
 // not worth a dependency or its licence. Constant markup, so innerHTML
@@ -16,17 +23,21 @@ const copyIcon = `<svg viewBox="0 0 16 16" width="14" height="14" fill="none" st
 // is on screen are the same string.
 const copiedLabel = 'Copied!';
 
-// The copy button is created here rather than shipped in the template, so a
-// reader without JavaScript sees a plain command to select instead of a button
-// that does nothing. Same reason it is skipped where the Clipboard API is
-// absent, as it is on a plain-http origin.
-if (navigator.clipboard !== undefined) {
-  for (const target of document.querySelectorAll('[data-copyable]')) {
-    copyable(target);
-  }
-}
+// How long the button says so before the icon returns.
+const acknowledgement = 1500;
 
-function copyable(target) {
+/**
+ * Gives a copyable command a copy button.
+ *
+ * The button is built here rather than shipped in the template, so a reader
+ * without JavaScript sees a plain command to select instead of a button that
+ * does nothing.
+ *
+ * @param {Element} target element whose text is copied.
+ * @param {Clipboard} clipboard where to write it.
+ */
+export function copyable(target, clipboard) {
+  const document = target.ownerDocument;
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'copy';
@@ -53,10 +64,10 @@ function copyable(target) {
     // saying they want this part rather than the whole line. The click that
     // ends that drag must not overrule them — this is also what keeps
     // dragging the box sideways to scroll it from copying.
-    if (!window.getSelection().isCollapsed) return;
+    if (!document.getSelection().isCollapsed) return;
 
     try {
-      await navigator.clipboard.writeText(target.textContent);
+      await clipboard.writeText(target.textContent);
     } catch {
       // A refused clipboard is the browser's decision to explain, not a page
       // error to shout about. The command is still there to select.
@@ -72,42 +83,50 @@ function copyable(target) {
       button.innerHTML = copyIcon;
       button.setAttribute('aria-label', `Copy: ${target.textContent}`);
       button.setAttribute('title', 'Copy');
-    }, 1500);
+    }, acknowledgement);
   });
 }
 
-// A <details> stays open until its own summary is clicked again, which is not
-// how anything shaped like a dropdown behaves: the next click elsewhere, or
-// Escape, should dismiss it. Without JavaScript it still opens and closes on
-// the summary, which is why the markup is a disclosure rather than a menu.
-document.addEventListener('click', (event) => {
-  for (const open of document.querySelectorAll('details.switcher[open]')) {
-    if (!open.contains(event.target)) open.open = false;
-  }
-});
+/**
+ * Makes open switchers dismiss the way a dropdown does.
+ *
+ * A <details> stays open until its own summary is clicked again, which is not
+ * how anything shaped like a dropdown behaves: the next click elsewhere, or
+ * Escape, should dismiss it. Without JavaScript it still opens and closes on
+ * the summary, which is why the markup is a disclosure rather than a menu.
+ *
+ * @param {Document} document document to listen on.
+ */
+export function dismissSwitchers(document) {
+  const open = () => document.querySelectorAll('details.switcher[open]');
 
-document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
-  for (const open of document.querySelectorAll('details.switcher[open]')) {
-    open.open = false;
-    // Escape dismisses, so focus goes back to what was dismissed rather than
-    // to the top of the document.
-    open.querySelector('summary')?.focus();
-  }
-});
+  document.addEventListener('click', (event) => {
+    for (const switcher of open()) {
+      if (!switcher.contains(event.target)) switcher.open = false;
+    }
+  });
 
-// A directory table arrives complete in the document, so sorting and filtering
-// are local operations on rows that already exist.
-//
-// Found by marker rather than by id, because two pages share this file and
-// neither should have to be named in it — and guarded, because a page may have
-// a pull command and no table.
-const table = document.querySelector('table[data-sortable]');
-if (table !== null) {
-  sortable(table);
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    for (const switcher of open()) {
+      switcher.open = false;
+      // Escape dismisses, so focus goes back to what was dismissed rather
+      // than to the top of the document.
+      switcher.querySelector('summary')?.focus();
+    }
+  });
 }
 
-function sortable(table) {
+/**
+ * Sorts a table's columns on click, and wires the filter if the page has one.
+ *
+ * A directory table arrives complete in the document, so both are local
+ * operations on rows that already exist.
+ *
+ * @param {HTMLTableElement} table table to sort.
+ */
+export function sortable(table) {
+  const document = table.ownerDocument;
   const body = table.tBodies[0];
 
   // Read each row once; textContent is what the filter searches.

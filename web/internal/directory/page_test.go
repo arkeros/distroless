@@ -687,8 +687,8 @@ func TestBothTablesOptIntoSharedSorting(t *testing.T) {
 		if !strings.Contains(body, "<table data-sortable") {
 			t.Errorf("%s table does not opt into sorting:\n%s", page.name, body)
 		}
-		if !strings.Contains(body, `<script src="/directory/static/directory.js" defer></script>`) {
-			t.Errorf("%s page does not load the shared script", page.name)
+		if !strings.Contains(body, `<script src="/directory/static/main.mjs" type="module"></script>`) {
+			t.Errorf("%s page does not load the shared entry point", page.name)
 		}
 		for _, column := range page.columns {
 			if !strings.Contains(body, `data-column="`+column+`"`) {
@@ -1149,5 +1149,30 @@ func TestTagSwitcherOrdersTagsLikeTheVersionsPage(t *testing.T) {
 	want := []string{"latest", "25", "25-debug", "21", "21-debug", "17", "17-debug"}
 	if !equal(order, want) {
 		t.Errorf("tag order = %v, want %v", order, want)
+	}
+}
+
+// A browser refuses to execute a module served as anything but a JavaScript
+// type — no fallback, no sniffing. Go's built-in table has no .mjs entry, and
+// the distroless image we ship in has no /etc/mime.types to fall back on, so
+// mime.TypeByExtension answers differently here than in production unless the
+// handler states the type itself. Standing in a wrong answer is how that
+// host-dependence shows up as a failure here rather than only in a reader's
+// browser.
+func TestModulesAreServedAsJavaScript(t *testing.T) {
+	mime.AddExtensionType(".mjs", "application/x-not-javascript")
+
+	for _, asset := range []string{
+		"/directory/static/main.mjs",
+		"/directory/static/directory.mjs",
+	} {
+		response := get(t, &fakeSource{}, asset, nil)
+
+		if response.Code != http.StatusOK {
+			t.Fatalf("GET %s = %d, want %d", asset, response.Code, http.StatusOK)
+		}
+		if got := response.Header().Get("Content-Type"); got != "text/javascript; charset=utf-8" {
+			t.Errorf("GET %s Content-Type = %q, want a JavaScript type", asset, got)
+		}
 	}
 }

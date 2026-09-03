@@ -1,3 +1,4 @@
+load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 package(default_visibility = ["//web:__subpackages__"])
@@ -11,6 +12,15 @@ go_test(
         "versions_test.go",
     ],
     deps = [":directory"],
+)
+
+# The Go tests render the templates but never run the script they reference,
+# so this is the only thing that would notice directory.mjs breaking.
+js_test(
+    name = "directory_js_test",
+    size = "small",
+    data = ["static/directory.mjs"],
+    entry_point = "directory_test.mjs",
 )
 
 go_library(

@@ -76,6 +76,26 @@ function copyable(target) {
   });
 }
 
+// A <details> stays open until its own summary is clicked again, which is not
+// how anything shaped like a dropdown behaves: the next click elsewhere, or
+// Escape, should dismiss it. Without JavaScript it still opens and closes on
+// the summary, which is why the markup is a disclosure rather than a menu.
+document.addEventListener('click', (event) => {
+  for (const open of document.querySelectorAll('details.switcher[open]')) {
+    if (!open.contains(event.target)) open.open = false;
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  for (const open of document.querySelectorAll('details.switcher[open]')) {
+    open.open = false;
+    // Escape dismisses, so focus goes back to what was dismissed rather than
+    // to the top of the document.
+    open.querySelector('summary')?.focus();
+  }
+});
+
 // A directory table arrives complete in the document, so sorting and filtering
 // are local operations on rows that already exist.
 //

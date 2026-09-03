@@ -17,13 +17,25 @@
     <p class="command"><code data-copyable tabindex="0">FROM {{.Image}}</code></p>
   </section>
 
-  {{if gt (len .Architectures) 1}}
-  <nav class="arches" aria-label="Architecture">
-    {{range .Architectures}}<a href="?arch={{.}}"{{if eq . $.Arch}} aria-current="page"{{end}}>{{.}}</a>{{end}}
-  </nav>
-  {{end}}
-
   <div class="controls">
+    {{if .Siblings}}
+    <details class="switcher">
+      <summary><span class="key">Tag:</span><span class="value">{{.Showing}}</span></summary>
+      <ul>
+        {{range .Siblings}}<li><a href="{{.SBOM}}">{{.Name}}</a></li>{{end}}
+      </ul>
+    </details>
+    {{end}}
+
+    {{if gt (len .Architectures) 1}}
+    <details class="switcher">
+      <summary><span class="key">Arch:</span><span class="value">{{.Arch}}</span></summary>
+      <ul>
+        {{range .Architectures}}<li><a href="?arch={{.}}"{{if eq . $.Arch}} aria-current="page"{{end}}>{{.}}</a></li>{{end}}
+      </ul>
+    </details>
+    {{end}}
+
     <input id="filter" type="search" placeholder="Filter components" autocomplete="off" spellcheck="false" aria-label="Filter components">
     <p id="count" aria-live="polite">{{len .Rows}} components</p>
     <a class="download" href="{{.Download}}" title="The signed CycloneDX document, covering every architecture">Download SBOM</a>

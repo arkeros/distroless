@@ -28,6 +28,8 @@ type fakeSource struct {
 	components []directory.Component
 	document   []byte
 	versions   []directory.Version
+	tags       []string
+	tagsErr    error
 	err        error
 
 	// family and ref record what the handler asked for, so a test can check
@@ -48,6 +50,11 @@ func (f *fakeSource) Document(_ context.Context, family, ref string) (string, []
 func (f *fakeSource) Versions(_ context.Context, family string) ([]directory.Version, error) {
 	f.family = family
 	return f.versions, f.err
+}
+
+func (f *fakeSource) Tags(_ context.Context, family string) ([]string, error) {
+	f.family = family
+	return f.tags, f.tagsErr
 }
 
 func get(t *testing.T, source directory.Source, target string, headers http.Header) *httptest.ResponseRecorder {
@@ -976,5 +983,171 @@ func TestScrollableCommandsAreFocusable(t *testing.T) {
 		if !strings.Contains(body, `<code data-copyable tabindex="0">`) {
 			t.Errorf("GET %s does not make its command focusable", target)
 		}
+	}
+}
+
+// From a build's own page there was no way to reach a sibling tag without
+// going back to the versions list.
+func TestSBOMPageSwitchesBetweenTags(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		tags:       []string{"latest", "5", "5.3"},
+	}
+
+	body := get(t, source, "/directory/image/bash/5.3/sbom", nil).Body.String()
+
+	for _, tag := range []string{"latest", "5", "5.3"} {
+		if want := `href="/directory/image/bash/` + tag + `/sbom"`; !strings.Contains(body, want) {
+			t.Errorf("no way to reach tag %q (%s):\n%s", tag, want, body)
+		}
+	}
+	// Real links in a disclosure, not a <select>: a select cannot navigate
+	// without JavaScript, and a control that does nothing is worse than none.
+	if !strings.Contains(body, "<details") || strings.Contains(body, "<select") {
+		t.Error("the switcher is not a disclosure of links")
+	}
+	if !strings.Contains(body, `<span class="value">5.3</span></summary>`) {
+		t.Errorf("the switcher does not name the tag being shown:\n%s", body)
+	}
+}
+
+// Switching tag should not silently switch architecture as well.
+func TestTagSwitcherKeepsTheArchitecture(t *testing.T) {
+	source := &fakeSource{
+		digest: testDigest,
+		components: []directory.Component{
+			{Name: "libc6", Arch: "amd64"},
+			{Name: "libc6", Arch: "arm64"},
+		},
+		tags: []string{"latest", "5.3"},
+	}
+
+	body := get(t, source, "/directory/image/bash/5.3/sbom?arch=arm64", nil).Body.String()
+
+	if want := `href="/directory/image/bash/latest/sbom?arch=arm64"`; !strings.Contains(body, want) {
+		t.Errorf("the switcher drops the architecture:\n%s", body)
+	}
+}
+
+// The SBOM is what the page is for. A registry that will not list tags costs
+// the switcher, not the page.
+func TestSBOMPageSurvivesATagListingFailure(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		tagsErr:    errors.New("tags/list refused"),
+	}
+
+	response := get(t, source, "/directory/image/bash/5.3/sbom", nil)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if !strings.Contains(response.Body.String(), "libc6") {
+		t.Error("the table is missing")
+	}
+	if strings.Contains(response.Body.String(), "<details") {
+		t.Error("an empty switcher was rendered anyway")
+	}
+}
+
+// One tag is not a choice.
+func TestSBOMPageOmitsASwitcherForASingleTag(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		tags:       []string{"latest"},
+	}
+
+	body := get(t, source, "/directory/image/bash/latest/sbom", nil).Body.String()
+
+	if strings.Contains(body, "<details") {
+		t.Errorf("rendered a switcher offering nothing to switch to:\n%s", body)
+	}
+}
+
+// A digest names a build, not a name — the switcher still offers the family's
+// tags, but none of them is what the reader is looking at.
+func TestDigestPageSwitcherNamesTheDigest(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		tags:       []string{"latest", "5.3"},
+	}
+
+	body := get(t, source, "/directory/image/bash/"+testDigest+"/sbom", nil).Body.String()
+
+	if !strings.Contains(body, `<span class="value">0da1844626f2</span></summary>`) {
+		t.Errorf("the switcher does not name the digest being shown:\n%s", body)
+	}
+}
+
+// Tag and architecture answer the same shape of question — "show me a
+// different one of these" — so they look alike and sit together with the
+// other controls over the table.
+func TestSwitchersSitTogetherInTheControls(t *testing.T) {
+	source := &fakeSource{
+		digest: testDigest,
+		components: []directory.Component{
+			{Name: "libc6", Arch: "amd64"},
+			{Name: "libc6", Arch: "arm64"},
+		},
+		tags: []string{"latest", "5.3"},
+	}
+
+	body := get(t, source, "/directory/image/bash/5.3/sbom?arch=arm64", nil).Body.String()
+
+	controls := strings.Index(body, `<div class="controls">`)
+	table := strings.Index(body, "<table")
+	if controls < 0 {
+		t.Fatal("no controls")
+	}
+	// Both switchers live inside the controls, which come before the table.
+	block := body[controls:table]
+	if got := strings.Count(block, `<details class="switcher">`); got != 2 {
+		t.Errorf("controls hold %d switchers, want 2 (tag and architecture):\n%s", got, block)
+	}
+	if strings.Contains(body, `class="arches"`) {
+		t.Error("the architecture nav survived alongside its replacement")
+	}
+
+	// Each has to say which question it answers; alone, "arm64" and "5.3" are
+	// two unlabelled boxes.
+	for _, want := range []string{
+		`<span class="key">Tag:</span><span class="value">5.3</span>`,
+		`<span class="key">Arch:</span><span class="value">arm64</span>`,
+	} {
+		if !strings.Contains(block, want) {
+			t.Errorf("no switcher labelled %s:\n%s", want, block)
+		}
+	}
+	if !strings.Contains(block, `href="?arch=amd64"`) {
+		t.Error("the architecture switcher does not link the other architecture")
+	}
+}
+
+// A registry lists tags alphabetically, which puts 17 above 25 and a -debug
+// variant above the release it varies. The switcher orders them the way the
+// versions page does, by the same rules.
+func TestTagSwitcherOrdersTagsLikeTheVersionsPage(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		// As the registry hands them over.
+		tags: []string{"17", "17-debug", "21", "21-debug", "25", "25-debug", "latest"},
+	}
+
+	body := get(t, source, "/directory/image/java/21/sbom", nil).Body.String()
+
+	block := regexp.MustCompile(`(?s)<details class="switcher">.*?</details>`).FindString(body)
+	var order []string
+	for _, m := range regexp.MustCompile(`<a href="[^"]*">([^<]+)</a>`).FindAllStringSubmatch(block, -1) {
+		order = append(order, m[1])
+	}
+
+	want := []string{"latest", "25", "25-debug", "21", "21-debug", "17", "17-debug"}
+	if !equal(order, want) {
+		t.Errorf("tag order = %v, want %v", order, want)
 	}
 }

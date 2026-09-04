@@ -28,6 +28,7 @@ js_test(
 go_library(
     name = "directory",
     srcs = [
+        "catalog.go",
         "page.go",
         "sbom.go",
         "scan.go",
@@ -44,7 +45,13 @@ go_library(
         "static/fonts/fira-sans-600-latin.woff2",
         "static/directory.css",
         "static/directory.mjs",
+        "static/logos/LICENSE.txt",
+        "static/logos/bash.svg",
+        "static/logos/java.svg",
+        "static/logos/nginx.svg",
+        "static/logos/node.svg",
         "static/main.mjs",
+        "templates/index.html",
         "templates/sbom.html",
         "templates/versions.html",
         "templates/vulnerabilities.html",

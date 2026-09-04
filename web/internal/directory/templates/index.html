@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Mirror}} — images</title>
+<link rel="stylesheet" href="/directory/static/directory.css">
+</head>
+<body>
+<main>
+  <h1>{{.Mirror}}</h1>
+  <p class="digest">{{len .Cards}} base image{{if ne (len .Cards) 1}}s{{end}}, each published with a signed SBOM and vulnerability scan</p>
+
+  <ul class="families">
+    {{range .Cards}}
+    <li>
+      <a href="{{.URL}}" title="The tags {{.Name}} publishes, and the evidence behind each build">
+        <span class="logo">{{.Logo}}</span>
+        <span class="name"><code>{{.Name}}</code></span>
+        <span class="summary">{{.Summary}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ul>
+
+  <p class="footnote">An image holds a runtime and its dependencies and nothing else: no shell, no package manager, no init system. Each family lists the tags it publishes, and every build behind them has its SBOM and vulnerability scan attached as signed attestations.</p>
+</main>
+</body>
+</html>

@@ -1200,3 +1200,148 @@ func TestModulesAreServedAsJavaScript(t *testing.T) {
 		}
 	}
 }
+
+// The directory's front page: every family the Mirror publishes, each leading
+// to its versions page. Static by nature — GHCR has no catalogue API, so what
+// is published is declared here rather than discovered.
+func TestIndexListsEveryPublishedFamily(t *testing.T) {
+	response := get(t, &fakeSource{}, "/directory", nil)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	body := response.Body.String()
+	for _, family := range []string{"bash", "java", "node", "nginx"} {
+		if !strings.Contains(body, `href="/directory/image/`+family+`/versions"`) {
+			t.Errorf("index does not link %s to its versions page:\n%s", family, body)
+		}
+		// The host is said once, in the heading; a card names the family
+		// alone rather than repeating it four times.
+		if !strings.Contains(body, "<code>"+family+"</code>") {
+			t.Errorf("index does not name the %s family on its card", family)
+		}
+		if strings.Contains(body, "distroless.io/"+family) {
+			t.Errorf("index repeats the mirror host on the %s card", family)
+		}
+	}
+	if strings.Count(body, "distroless.io") != 2 {
+		t.Errorf("index names the mirror host %d times, want once in the title and once in the heading:\n%s", strings.Count(body, "distroless.io"), body)
+	}
+}
+
+// A logo is decoration next to a name that already says what it is. It is
+// inlined rather than linked so it is drawn in the page's own colour, and a
+// family whose file is missing must fail the render rather than show a blank
+// — which is what a 200 here, with one mark per card, establishes.
+func TestIndexDrawsALogoForEveryFamily(t *testing.T) {
+	response := get(t, &fakeSource{}, "/directory", nil)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	body := response.Body.String()
+	cards := strings.Count(body, `<span class="logo">`)
+	marks := strings.Count(body, `<svg role="img" aria-hidden="true" fill="currentColor"`)
+	if cards == 0 || marks != cards {
+		t.Errorf("index draws %d logos for %d cards:\n%s", marks, cards, body)
+	}
+}
+
+// One canonical URL for the front page, as for every other.
+func TestIndexWithATrailingSlashRedirects(t *testing.T) {
+	response := get(t, &fakeSource{}, "/directory/", nil)
+
+	if response.Code != http.StatusMovedPermanently {
+		t.Errorf("status = %d, want %d", response.Code, http.StatusMovedPermanently)
+	}
+	if got, want := response.Header().Get("Location"), "/directory"; got != want {
+		t.Errorf("Location = %q, want %q", got, want)
+	}
+}
+
+// The family's mark sits with its name on every page of the family, the same
+// one the front page drew for it, so arriving from a card lands on something
+// that looks like where the card led.
+func TestPagesShowTheFamilyLogo(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		scan:       &directory.Scan{},
+		versions:   []directory.Version{{Tag: "latest", Digest: testDigest}},
+	}
+
+	for _, target := range []string{
+		"/directory/image/bash/versions",
+		"/directory/image/bash/latest/sbom",
+		"/directory/image/bash/latest/vulnerabilities",
+	} {
+		body := get(t, source, target, nil).Body.String()
+
+		logo := strings.Index(body, `<span class="logo">`)
+		heading := strings.Index(body, "<h1>")
+		if logo < 0 || !strings.Contains(body, "<title>GNU Bash</title>") {
+			t.Errorf("GET %s does not draw the bash logo:\n%s", target, body)
+			continue
+		}
+		if logo > heading {
+			t.Errorf("GET %s puts the logo at %d after the heading at %d, want it beside the name", target, logo, heading)
+		}
+	}
+}
+
+// Not every published family is on the front page — the server's own image
+// is pushed the same way — and a page must not fail for lack of decoration.
+func TestPagesTolerateAFamilyWithoutALogo(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		scan:       &directory.Scan{},
+		versions:   []directory.Version{{Tag: "latest", Digest: testDigest}},
+	}
+
+	for _, target := range []string{
+		"/directory/image/web/versions",
+		"/directory/image/web/latest/sbom",
+		"/directory/image/web/latest/vulnerabilities",
+	} {
+		response := get(t, source, target, nil)
+
+		if response.Code != http.StatusOK {
+			t.Errorf("GET %s = %d, want %d", target, response.Code, http.StatusOK)
+		}
+		if strings.Contains(response.Body.String(), `<span class="logo">`) {
+			t.Errorf("GET %s draws an empty logo for a family that has none", target)
+		}
+	}
+}
+
+// Every family page says where it sits: a crumb back to the directory,
+// above the name. Deliberately not the logo or the host in the heading —
+// those are what a site links to its root, and the root is reserved for a
+// landing page.
+func TestPagesLeadBackToTheDirectory(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		scan:       &directory.Scan{},
+		versions:   []directory.Version{{Tag: "latest", Digest: testDigest}},
+	}
+
+	for _, target := range []string{
+		"/directory/image/node/versions",
+		"/directory/image/node/latest/sbom",
+		"/directory/image/node/latest/vulnerabilities",
+	} {
+		body := get(t, source, target, nil).Body.String()
+
+		crumb := strings.Index(body, `<a class="crumb" href="/directory">`)
+		heading := strings.Index(body, "<h1>")
+		if crumb < 0 {
+			t.Errorf("GET %s has no way back to the directory:\n%s", target, body)
+			continue
+		}
+		if crumb > heading {
+			t.Errorf("GET %s puts the crumb at %d after the heading at %d, want it above", target, crumb, heading)
+		}
+	}
+}

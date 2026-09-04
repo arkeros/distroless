@@ -65,6 +65,12 @@
   --muted: color-mix(in srgb, currentColor 60%, transparent);
   --mono: 'Fira Mono', ui-monospace, monospace;
   --edge: color-mix(in srgb, currentColor 25%, transparent);
+  /* The one colour on the page that is not a severity: links, focus, and
+     the current tab. A green with a darker cut for light mode, since the
+     phosphor shade only reads on dark; both clear 4.5:1 on their scheme's
+     Canvas. It stays off the severity badges, where green would read as a
+     verdict this page is not giving. */
+  --accent: light-dark(#1a7f37, #3fb950);
   /* One height for everything in the controls row. */
   --control: 2.25rem;
 }
@@ -72,6 +78,21 @@
 body {
   margin: 0;
   font: 15px/1.5 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* One colour for a link whether or not it has been followed: a directory is
+   a reference, not a reading list, and the browser's visited purple made a
+   table of tags look half-read. Links that are really controls — the tabs,
+   the cards, the switcher — set their own colour below. */
+a {
+  color: var(--accent);
+}
+
+/* A keyboard reader's cursor, in the same colour, and only for the keyboard:
+   a click already knows where it landed. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 main {
@@ -83,6 +104,50 @@ main {
 h1 {
   margin: 0;
   font-size: 1.5rem;
+}
+
+/* The way back up: a crumb above the name rather than a link on the logo or
+   the host, which are what a site hangs its root on, and the root is kept
+   for a landing page. Muted until hovered, so it does not compete with the
+   name it sits over. */
+.crumb {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.crumb::before {
+  content: '\2190\00A0';
+}
+
+.crumb:hover,
+.crumb:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* The name and the mark, side by side. The block keeps the digest line's
+   bottom margin as its own, so the panel below sits where it did without
+   one. */
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.identity .digest {
+  margin-bottom: 0;
+}
+
+/* A family's mark, wherever it appears: inline SVG drawn in currentColor, so
+   it is whatever colour the text is, in either scheme. */
+.logo svg {
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .digest {
@@ -116,6 +181,16 @@ h1 {
 .switcher summary {
   box-sizing: border-box;
   height: var(--control);
+}
+
+/* The row answers a hover in the page's link colour, as one thing: a control
+   that lit up alone would read as the primary action, and none of these is.
+   The keyboard gets the shared focus ring instead, so a focused filter does
+   not wear both. */
+#filter:hover,
+.download:hover,
+.switcher summary:hover {
+  border-color: var(--accent);
 }
 
 /* Baseline alignment does not survive a <details> in the row, so these are
@@ -432,10 +507,6 @@ tbody tr:hover {
   font-family: var(--mono);
 }
 
-.switcher summary:hover {
-  border-color: var(--edge);
-}
-
 .switcher ul {
   position: absolute;
   left: 0;
@@ -493,7 +564,8 @@ tbody tr:hover {
   .switcher summary,
   .switcher summary::after,
   .switcher ul,
-  .copy {
+  .copy,
+  .families a {
     transition: none;
     animation: none;
   }
@@ -524,7 +596,7 @@ tbody tr:hover {
 .views a[aria-current="page"] {
   color: inherit;
   font-weight: 600;
-  border-bottom-color: currentColor;
+  border-bottom-color: var(--accent);
 }
 
 /* Particular to the vulnerabilities page. The verdict is the sentence a
@@ -577,6 +649,65 @@ tr.suppressed .severity {
   border-color: var(--line);
 }
 
-#vulnerabilities td.id a {
+/* A link whose text is an identifier — a digest, a tag, a CVE — is set in
+   mono and coloured already, and a 64-character underline made the digest
+   column the loudest thing on a page whose tags are the point. The underline
+   comes back on hover and for the keyboard, where it says "this one". */
+a:has(> code),
+td.id a {
+  text-decoration: none;
+}
+
+a:has(> code):hover,
+a:has(> code):focus-visible,
+td.id a:hover,
+td.id a:focus-visible {
+  text-decoration: underline;
+}
+
+/* Particular to the front page: one card per family. The whole card is the
+   link, so there is one target to hit rather than a name to aim at. A grid
+   rather than flex, so the cards on one row share a width and wrap into a
+   single column on a phone. */
+.families {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.families a {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.9rem;
+  align-items: center;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 0.9rem 1rem;
   color: inherit;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  transition: border-color 150ms ease;
+}
+
+.families a:hover {
+  border-color: var(--edge);
+}
+
+/* The mark spans both lines of text beside it. */
+.families .logo {
+  grid-row: span 2;
+}
+
+.families .name code {
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.families .summary {
+  color: var(--muted);
+  font-size: 0.875rem;
 }

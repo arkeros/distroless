@@ -2,6 +2,7 @@ package directory
 
 import (
 	"cmp"
+	"html/template"
 	"slices"
 )
 
@@ -78,6 +79,9 @@ type Table struct {
 	Arch string
 	// Architectures is every architecture the Index carries, sorted.
 	Architectures []string
+	// Logo is the family's mark, the same one the front page draws, or
+	// empty for a family that has none. Set by the handler.
+	Logo template.HTML
 	Links
 	Rows []Row
 }

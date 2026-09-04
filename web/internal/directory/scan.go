@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"crypto/sha256"
 	"encoding/hex"
+	"html/template"
 	"slices"
 	"strings"
 	"time"
@@ -218,6 +219,9 @@ type Report struct {
 	ScannerURL    string
 	Database      time.Time
 	Finished      time.Time
+	// Logo is the family's mark, the same one the front page draws, or
+	// empty for a family that has none. Set by the handler.
+	Logo template.HTML
 	Links
 	Rows []FindingRow
 	// Open counts the Rows that stand; Suppressed the ones a VEX statement

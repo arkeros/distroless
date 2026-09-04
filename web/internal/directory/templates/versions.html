@@ -8,8 +8,14 @@
 </head>
 <body>
 <main>
-  <h1>{{.Image}}</h1>
-  <p class="digest">{{len .Releases}} published build{{if ne (len .Releases) 1}}s{{end}}</p>
+  <nav aria-label="Breadcrumb"><a class="crumb" href="/directory">All images</a></nav>
+  <header class="identity">
+    {{if .Logo}}<span class="logo">{{.Logo}}</span>{{end}}
+    <div>
+      <h1>{{.Image}}</h1>
+      <p class="digest">{{len .Releases}} published build{{if ne (len .Releases) 1}}s{{end}}</p>
+    </div>
+  </header>
   <section class="install">
     <p class="label">Install from the command line</p>
     <p class="command"><span class="prompt" aria-hidden="true">$</span> <code data-copyable tabindex="0">docker pull {{.Image}}</code></p>

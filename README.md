@@ -48,7 +48,7 @@ Publicly mirrored:
 | Image | Contents |
 | --- | --- |
 | `bash` | A shell, for entrypoint scripts and build steps |
-| `java` | JDK 17, 21 and 25 |
+| `java` | Temurin JRE 17, 21 and 25, with the JDK on `-debug` tags |
 | `node` | Node 20, 24 and 26 |
 | `nginx` | nginx stable and mainline, serving a webroot as nonroot |
 

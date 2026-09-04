@@ -25,7 +25,7 @@ type Family struct {
 // way but is nobody's base, so it is not here.
 var families = []Family{
 	{Name: "bash", Summary: "A shell, for entrypoint scripts and build steps"},
-	{Name: "java", Summary: "OpenJDK, one tag per LTS line"},
+	{Name: "java", Summary: "Temurin JRE, one tag per LTS line, with the JDK on debug tags"},
 	{Name: "node", Summary: "Node.js, one tag per release line"},
 	{Name: "nginx", Summary: "nginx stable and mainline, serving a webroot as nonroot"},
 }

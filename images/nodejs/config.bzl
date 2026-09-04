@@ -22,6 +22,11 @@ NODEJS_VERSIONS = {
 
 NODEJS_MAJOR_VERSIONS = list(NODEJS_VERSIONS.keys())
 
+# What `latest` answers to: the newest line listed, so a roll that appends
+# the next one moves the tag with it. A bare `docker pull distroless.io/node`
+# gets this build.
+NODEJS_LATEST = NODEJS_MAJOR_VERSIONS[-1]
+
 def nodejs_layers(major_version):
     """Composition: static + (busybox if debug) + cc + nodejs + one rpmdb.
 

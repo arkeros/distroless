@@ -12,6 +12,7 @@
   "automergeStrategy": "squash",
   "platformAutomerge": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
+  "osvVulnerabilityAlerts": true,
   "commitMessagePrefix": "chore(deps):",
   "recreateWhen": "always",
   "ignorePaths": [
@@ -90,31 +91,6 @@
         "gomod"
       ],
       "rangeStrategy": "bump"
-    },
-    {
-      "description": "Indirect Go deps are linked into the binaries we ship, so their CVEs fail the cve_tests (e.g. golang.org/x/crypto GO-2026-6354). Renovate disables indirect deps by default; grouped into one PR because go.mod carries hundreds of them.",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "enabled": true,
-      "groupName": "indirect Go dependencies",
-      "groupSlug": "gomod-indirect"
-    },
-    {
-      "description": "Digest bumps on pseudo-versions like v0.6.3-0.<date>-<hash> make Renovate write a bare commit hash where gazelle expects a semver, which breaks every post-upgrade bazel command. go mod tidy manages indirect pseudo-versions anyway.",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "matchUpdateTypes": [
-        "digest"
-      ],
-      "enabled": false
     },
     {
       "matchManagers": [

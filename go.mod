@@ -200,7 +200,7 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/certificate-transparency-go v1.3.3 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-containerregistry/cmd/krane v0.0.0-20260831202016-7673ae25baf2 // indirect
+	github.com/google/go-containerregistry/cmd/krane v0.0.0-20260904000721-8a72a424fdec // indirect
 	github.com/google/licensecheck v0.3.1 // indirect
 	github.com/google/pprof v0.0.0-20260802141513-ef3492d7dac3 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect

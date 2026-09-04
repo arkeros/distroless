@@ -213,6 +213,20 @@ func TestVulnerabilitiesETagChangesWithTheScan(t *testing.T) {
 	}
 }
 
+// So can the VEX document: a statement withdrawn or added changes what the page
+// says about a finding, with the digest and the scan untouched.
+func TestVulnerabilitiesETagChangesWithTheSuppressions(t *testing.T) {
+	source := scanned(directory.Finding{ID: "CVE-2013-0337", Severity: "Medium"})
+	first := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Header().Get("ETag")
+
+	source.scan.Findings[0].Suppressed = &directory.Suppression{Status: "not_affected", Justification: "vulnerable_code_not_in_execute_path"}
+	second := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Header().Get("ETag")
+
+	if first == second {
+		t.Errorf("ETag %s unchanged by a VEX statement covering a finding", first)
+	}
+}
+
 func TestVulnerabilitiesCacheControlLengthensAtADigest(t *testing.T) {
 	source := scanned(directory.Finding{ID: "a"})
 	source.scanDocument = []byte("{}")

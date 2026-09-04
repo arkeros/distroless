@@ -2,6 +2,8 @@ package directory
 
 import (
 	"cmp"
+	"crypto/sha256"
+	"encoding/hex"
 	"slices"
 	"strings"
 	"time"
@@ -25,6 +27,27 @@ type Scan struct {
 	// Finished is when the scan ran.
 	Finished time.Time
 	Findings []Finding
+}
+
+// Fingerprint summarises everything on a page that can change while the
+// Digest stays the same: the scan, and what the VEX document says about each
+// finding. Two attestations are re-issued under one digest — a scan when the
+// database moves, a VEX document when a statement does — so the digest cannot
+// be a page's cache validator on its own, and neither can the scan time,
+// which a new VEX document leaves untouched. Hashing what is rendered rather
+// than naming each source is what keeps a third source from reopening the
+// hole.
+func (s *Scan) Fingerprint() string {
+	sum := sha256.New()
+	sum.Write([]byte(s.Scanner + "\n" + s.Database.UTC().Format(time.RFC3339Nano) + "\n" + s.Finished.UTC().Format(time.RFC3339Nano) + "\n"))
+	for _, finding := range s.Findings {
+		sum.Write([]byte(finding.ID + "\x1f" + finding.PURL + "\x1f" + finding.Severity + "\x1f" + finding.FixState + "\x1f" + strings.Join(finding.FixedIn, ",")))
+		if finding.Suppressed != nil {
+			sum.Write([]byte("\x1f" + finding.Suppressed.Status + "\x1f" + finding.Suppressed.Justification + "\x1f" + finding.Suppressed.Impact))
+		}
+		sum.Write([]byte("\n"))
+	}
+	return hex.EncodeToString(sum.Sum(nil))[:16]
 }
 
 // Finding is one vulnerability matched to one Component.

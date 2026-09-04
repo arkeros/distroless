@@ -5,7 +5,7 @@ go 1.27.1
 require (
 	github.com/CycloneDX/cyclonedx-go v0.12.0
 	github.com/anchore/grype v0.118.0
-	github.com/bazelbuild/buildtools v0.0.0-20260903103648-d171d550ae01
+	github.com/bazelbuild/buildtools v0.0.0-20260904073137-eaa4d125b423
 	github.com/blakesmith/ar v0.0.0-20190502131153-809d4375e1fb
 	github.com/google/go-containerregistry v0.22.1
 	github.com/hashicorp/golang-lru/v2 v2.0.7

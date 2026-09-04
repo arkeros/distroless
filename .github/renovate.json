@@ -92,6 +92,18 @@
       "rangeStrategy": "bump"
     },
     {
+      "description": "Indirect Go deps are linked into the binaries we ship, so their CVEs fail the cve_tests (e.g. golang.org/x/crypto GO-2026-6354). Renovate disables indirect deps by default; grouped into one PR because go.mod carries hundreds of them.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "enabled": true,
+      "groupName": "indirect Go dependencies",
+      "groupSlug": "gomod-indirect"
+    },
+    {
       "matchManagers": [
         "gomod"
       ],

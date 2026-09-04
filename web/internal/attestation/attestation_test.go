@@ -83,6 +83,12 @@ func TestStatementAcceptsAttestationFromTheSigningWorkflow(t *testing.T) {
 	if !strings.Contains(string(statement.Predicate), "openssl") {
 		t.Errorf("predicate did not survive verification: %s", statement.Predicate)
 	}
+	// The log's word on when this was signed, which is what orders two
+	// attestations of the same kind on one digest. A statement carries no
+	// date of its own that anyone but its author vouches for.
+	if statement.SignedAt.IsZero() {
+		t.Error("SignedAt is zero; the verified timestamp was not carried over")
+	}
 }
 
 // The signature being valid is not enough — it has to be *this project's* CI.

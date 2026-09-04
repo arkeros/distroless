@@ -61,9 +61,10 @@ type Version struct {
 // the reason a row offers both.
 type Tag struct {
 	Name string
-	// SBOM is where this name currently leads. Set by the handler, which
-	// knows the reader's own path.
-	SBOM string
+	// URL is where this name currently leads: the same view, for the build
+	// the tag names today. Set by the handler, which knows the reader's own
+	// path and which view they are on.
+	URL string
 }
 
 // Release is one build and every tag that names it. A tag_list in
@@ -78,10 +79,11 @@ type Release struct {
 	// row and the header carry the same shape: cell i is always column i.
 	// A build that does not publish an architecture has a zero there.
 	Sizes []Size
-	// SBOM is where this build's evidence is, at its permanent URL rather
-	// than through a tag that may since have moved. Set by the handler,
-	// which knows the reader's own path.
-	SBOM string
+	// SBOM and Vulnerabilities are where this build's evidence is, at its
+	// permanent URL rather than through a tag that may since have moved. Set
+	// by the handler, which knows the reader's own path.
+	SBOM            string
+	Vulnerabilities string
 }
 
 // Versions is the list of what a family currently publishes, ready to render.

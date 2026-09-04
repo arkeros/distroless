@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sigstore/sigstore-go/pkg/bundle"
 	"github.com/sigstore/sigstore-go/pkg/root"
@@ -41,6 +42,15 @@ const (
 	// The generator emits SLSA v0.2, which is also what `cosign
 	// --type=slsaprovenance` names; the Directory does not render it yet.
 	SLSAProvenance PredicateType = "https://slsa.dev/provenance/v0.2"
+	// Vuln is the vulnerability scan record `mirror_push` attaches via
+	// `cosign attest --type=vuln`: cosign's own predicate, which wraps a
+	// scanner's report in who ran it, with what database, and when.
+	Vuln PredicateType = "https://cosign.sigstore.dev/attestation/vuln/v1"
+	// OpenVEX is the VEX document attached via `cosign attest --type=openvex`
+	// — this project's statements about which findings do not affect the
+	// image. Cosign names the predicate by the OpenVEX namespace, without a
+	// version; the document's own `@context` carries that.
+	OpenVEX PredicateType = "https://openvex.dev/ns"
 )
 
 // Statement is a verified in-toto statement.
@@ -52,6 +62,13 @@ const (
 type Statement struct {
 	Type      PredicateType
 	Predicate json.RawMessage
+	// SignedAt is when the signature was observed — the earliest verified
+	// timestamp, from the transparency log or a timestamp authority. It is
+	// the one date about an attestation that its author did not write, which
+	// makes it the way to order two attestations of the same kind on one
+	// digest: the newer VEX document supersedes the older. Zero when the
+	// verifier was configured to require no timestamp at all.
+	SignedAt time.Time
 }
 
 // Verifier checks Sigstore bundles against the Mirror's signing policy.
@@ -147,8 +164,15 @@ func (v *Verifier) VerifyEntity(entity verify.SignedEntity, subjectDigest string
 	if err != nil {
 		return nil, fmt.Errorf("re-encoding predicate of %s: %w", subjectDigest, err)
 	}
+	var signedAt time.Time
+	for _, verified := range result.VerifiedTimestamps {
+		if signedAt.IsZero() || verified.Timestamp.Before(signedAt) {
+			signedAt = verified.Timestamp
+		}
+	}
 	return &Statement{
 		Type:      PredicateType(result.Statement.PredicateType),
 		Predicate: predicate,
+		SignedAt:  signedAt,
 	}, nil
 }

@@ -8,8 +8,10 @@ go_test(
     srcs = [
         "page_test.go",
         "sbom_test.go",
+        "scan_test.go",
         "version_test.go",
         "versions_test.go",
+        "vulnerabilities_test.go",
     ],
     deps = [":directory"],
 )
@@ -28,6 +30,7 @@ go_library(
     srcs = [
         "page.go",
         "sbom.go",
+        "scan.go",
         "version.go",
         "versions.go",
     ],
@@ -44,6 +47,7 @@ go_library(
         "static/main.mjs",
         "templates/sbom.html",
         "templates/versions.html",
+        "templates/vulnerabilities.html",
     ],
     importpath = "github.com/arkeros/distroless/web/internal/directory",
 )

@@ -27,6 +27,11 @@ JAVA_VERSIONS = {
 
 JAVA_MAJOR_VERSIONS = list(JAVA_VERSIONS.keys())
 
+# What `latest` answers to: the newest LTS listed, so a roll that appends
+# the next one moves the tag with it. A bare `docker pull distroless.io/java`
+# gets this build.
+JAVA_LATEST = JAVA_MAJOR_VERSIONS[-1]
+
 def java_layers(major_version):
     """Composition: static + (busybox if debug) + cc + temurin + one rpmdb.
 

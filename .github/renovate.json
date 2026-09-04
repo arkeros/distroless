@@ -104,6 +104,19 @@
       "groupSlug": "gomod-indirect"
     },
     {
+      "description": "Digest bumps on pseudo-versions like v0.6.3-0.<date>-<hash> make Renovate write a bare commit hash where gazelle expects a semver, which breaks every post-upgrade bazel command. go mod tidy manages indirect pseudo-versions anyway.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "enabled": false
+    },
+    {
       "matchManagers": [
         "gomod"
       ],
@@ -121,7 +134,7 @@
           "bazel/modules/*/MODULE.bazel",
           "bazel/modules/*/MODULE.bazel.lock"
         ],
-        "executionMode": "update"
+        "executionMode": "branch"
       },
       "postUpdateOptions": [
         "goModTidy"

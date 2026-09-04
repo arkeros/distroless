@@ -766,7 +766,7 @@ func TestScanReturnsFindingsFromAttestation(t *testing.T) {
 	}
 
 	openssl := scan.Findings[0]
-	if openssl.ID != "CVE-2026-0001" || openssl.Severity != "High" {
+	if openssl.ID != "CVE-2026-0001" || openssl.Severity != directory.High {
 		t.Errorf("finding = %+v, want CVE-2026-0001 High", openssl)
 	}
 	if openssl.Package != "openssl" || openssl.Version != "3.0.11-1~deb12u2" {

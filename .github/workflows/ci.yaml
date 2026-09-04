@@ -359,27 +359,22 @@ jobs:
           }
 
           # stale TYPE REF PREDICATE: returns 0 when the attestation built
-          # here should be added even though REF already carries one of TYPE.
-          #   vuln    → no scan on the registry names a database at least as
-          #             new as the one this scan ran against.
-          #   openvex → no document on the registry carries exactly these
-          #             statements.
-          #   others  → never; one per digest.
+          # here supersedes every one REF already carries of TYPE, 1 when one
+          # of them is as good. The rule itself is the jq module
+          # //oci/publish:stale.jq, with its test; this only feeds it what the
+          # registry has. A rule that fails — a predicate that is not what its
+          # type says, a type with no rule — aborts the job: see the module
+          # for why neither guess is safe.
           stale() {
             local TYPE=$1 REF=$2 PREDICATE=$3
-            case "${TYPE}" in
-              vuln)
-                local LOCAL; LOCAL=$(jq -r '.scanner.db.version' "${PREDICATE}")
-                attested vuln "${REF}" | jq -e -s --arg local "${LOCAL}" 'map(.scanner.db.version) | all(. < $local)' > /dev/null
-                ;;
-              openvex)
-                local LOCAL; LOCAL=$(jq -c -S '.statements | sort_by(.vulnerability.name, .status)' "${PREDICATE}")
-                attested openvex "${REF}" | jq -e -s --argjson local "${LOCAL}" 'map(.statements | sort_by(.vulnerability.name, .status)) | all(. != $local)' > /dev/null
-                ;;
-              *)
-                return 1
-                ;;
-            esac
+            local VERDICT
+            VERDICT=$(attested "${TYPE}" "${REF}" \
+              | jq -r -s -L oci/publish --arg type "${TYPE}" --slurpfile local "${PREDICATE}" \
+                  'include "stale"; stale($type; $local[0])') || {
+              echo "ERROR: could not decide whether the ${TYPE} attestation on ${REF} is stale; refusing to guess." >&2
+              exit 1
+            }
+            [[ "${VERDICT}" == "stale" ]]
           }
 
           # Cross-runner check: the same target built on the `test` runner

@@ -1,0 +1,855 @@
+[
+  {
+    "name": "vuln: nothing attached is stale",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [],
+    "want": "stale"
+  },
+  {
+    "name": "vuln: older database is stale",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.118.0",
+          "version": "0.118.0",
+          "db": {
+            "uri": "",
+            "version": "2026-09-03T06:30:55Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      }
+    ],
+    "want": "stale"
+  },
+  {
+    "name": "vuln: same database and scanner is fresh",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.118.0",
+          "version": "0.118.0",
+          "db": {
+            "uri": "",
+            "version": "2026-09-04T06:00:00Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      }
+    ],
+    "want": "fresh"
+  },
+  {
+    "name": "vuln: same database, older scanner is stale",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.117.9",
+          "version": "0.117.9",
+          "db": {
+            "uri": "",
+            "version": "2026-09-04T06:00:00Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      }
+    ],
+    "want": "stale"
+  },
+  {
+    "name": "vuln: same database, newer scanner attached is fresh",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.120.0",
+          "version": "0.120.0",
+          "db": {
+            "uri": "",
+            "version": "2026-09-04T06:00:00Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      }
+    ],
+    "want": "fresh"
+  },
+  {
+    "name": "vuln: newer database attached is fresh",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.118.0",
+          "version": "0.118.0",
+          "db": {
+            "uri": "",
+            "version": "2026-09-05T06:00:00Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      }
+    ],
+    "want": "fresh"
+  },
+  {
+    "name": "vuln: one of several is as good, so fresh",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.118.0",
+          "version": "0.118.0",
+          "db": {
+            "uri": "",
+            "version": "2026-09-01T00:00:00Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      },
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.118.0",
+          "version": "0.118.0",
+          "db": {
+            "uri": "",
+            "version": "2026-09-04T06:00:00Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      }
+    ],
+    "want": "fresh"
+  },
+  {
+    "name": "vuln: an attached record that will not rank does not block",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [
+      {
+        "scanner": {
+          "db": {}
+        }
+      },
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.118.0",
+          "version": "0.118.0",
+          "db": {
+            "uri": "",
+            "version": "2026-09-03T06:30:55Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      }
+    ],
+    "want": "stale"
+  },
+  {
+    "name": "vuln: a local record that will not rank is an error, not a guess",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "version": "0.118.0",
+        "db": {
+          "version": "2026-09-04T06:00:00+00:00"
+        }
+      }
+    },
+    "attached": [
+      {
+        "scanner": {
+          "uri": "pkg:github/anchore/grype@v0.118.0",
+          "version": "0.118.0",
+          "db": {
+            "uri": "",
+            "version": "2026-09-03T06:30:55Z"
+          },
+          "result": {}
+        },
+        "metadata": {
+          "scanFinishedOn": "2026-09-04T07:00:00Z"
+        }
+      }
+    ],
+    "want": "error"
+  },
+  {
+    "name": "vuln: a scanner version that is not a dotted number is an error",
+    "type": "vuln",
+    "local": {
+      "scanner": {
+        "version": "0.118.0-rc1",
+        "db": {
+          "version": "2026-09-04T06:00:00Z"
+        }
+      }
+    },
+    "attached": [],
+    "want": "error"
+  },
+  {
+    "name": "vuln: an SBOM handed in as a scan is an error",
+    "type": "vuln",
+    "local": {
+      "bomFormat": "CycloneDX"
+    },
+    "attached": [],
+    "want": "error"
+  },
+  {
+    "name": "openvex: same statements in another order is fresh",
+    "type": "openvex",
+    "local": {
+      "@context": "https://openvex.dev/ns/v0.2.0",
+      "@id": "x",
+      "statements": [
+        {
+          "vulnerability": {
+            "name": "CVE-2013-0337"
+          },
+          "products": [
+            {
+              "@id": "pkg:oci/nginx"
+            }
+          ],
+          "status": "not_affected",
+          "justification": "vulnerable_code_not_in_execute_path",
+          "expires": "2026-11-12"
+        },
+        {
+          "vulnerability": {
+            "name": "CVE-2026-42533"
+          },
+          "products": [
+            {
+              "@id": "pkg:deb/debian/nginx"
+            }
+          ],
+          "status": "fixed",
+          "expires": "2026-09-15"
+        }
+      ]
+    },
+    "attached": [
+      {
+        "@context": "https://openvex.dev/ns/v0.2.0",
+        "@id": "x",
+        "statements": [
+          {
+            "vulnerability": {
+              "name": "CVE-2026-42533"
+            },
+            "products": [
+              {
+                "@id": "pkg:deb/debian/nginx"
+              }
+            ],
+            "status": "fixed",
+            "expires": "2026-09-15"
+          },
+          {
+            "vulnerability": {
+              "name": "CVE-2013-0337"
+            },
+            "products": [
+              {
+                "@id": "pkg:oci/nginx"
+              }
+            ],
+            "status": "not_affected",
+            "justification": "vulnerable_code_not_in_execute_path",
+            "expires": "2026-11-12"
+          }
+        ]
+      }
+    ],
+    "want": "fresh"
+  },
+  {
+    "name": "openvex: a withdrawn statement is stale",
+    "type": "openvex",
+    "local": {
+      "@context": "https://openvex.dev/ns/v0.2.0",
+      "@id": "x",
+      "statements": [
+        {
+          "vulnerability": {
+            "name": "CVE-2013-0337"
+          },
+          "products": [
+            {
+              "@id": "pkg:oci/nginx"
+            }
+          ],
+          "status": "not_affected",
+          "justification": "vulnerable_code_not_in_execute_path",
+          "expires": "2026-11-12"
+        },
+        {
+          "vulnerability": {
+            "name": "CVE-2026-42533"
+          },
+          "products": [
+            {
+              "@id": "pkg:deb/debian/nginx"
+            }
+          ],
+          "status": "fixed",
+          "expires": "2026-09-15"
+        }
+      ]
+    },
+    "attached": [
+      {
+        "@context": "https://openvex.dev/ns/v0.2.0",
+        "@id": "x",
+        "statements": [
+          {
+            "vulnerability": {
+              "name": "CVE-2013-0337"
+            },
+            "products": [
+              {
+                "@id": "pkg:oci/nginx"
+              }
+            ],
+            "status": "not_affected",
+            "justification": "vulnerable_code_not_in_execute_path",
+            "expires": "2026-11-12"
+          }
+        ]
+      }
+    ],
+    "want": "stale"
+  },
+  {
+    "name": "openvex: an added statement is stale",
+    "type": "openvex",
+    "local": {
+      "@context": "https://openvex.dev/ns/v0.2.0",
+      "@id": "x",
+      "statements": [
+        {
+          "vulnerability": {
+            "name": "CVE-2013-0337"
+          },
+          "products": [
+            {
+              "@id": "pkg:oci/nginx"
+            }
+          ],
+          "status": "not_affected",
+          "justification": "vulnerable_code_not_in_execute_path",
+          "expires": "2026-11-12"
+        },
+        {
+          "vulnerability": {
+            "name": "CVE-2026-42533"
+          },
+          "products": [
+            {
+              "@id": "pkg:deb/debian/nginx"
+            }
+          ],
+          "status": "fixed",
+          "expires": "2026-09-15"
+        }
+      ]
+    },
+    "attached": [
+      {
+        "@context": "https://openvex.dev/ns/v0.2.0",
+        "@id": "x",
+        "statements": [
+          {
+            "vulnerability": {
+              "name": "CVE-2013-0337"
+            },
+            "products": [
+              {
+                "@id": "pkg:oci/nginx"
+              }
+            ],
+            "status": "not_affected",
+            "justification": "vulnerable_code_not_in_execute_path",
+            "expires": "2026-11-12"
+          },
+          {
+            "vulnerability": {
+              "name": "CVE-2026-42533"
+            },
+            "products": [
+              {
+                "@id": "pkg:deb/debian/nginx"
+              }
+            ],
+            "status": "fixed",
+            "expires": "2026-09-15"
+          },
+          {
+            "vulnerability": {
+              "name": "CVE-2013-0337"
+            },
+            "products": [
+              {
+                "@id": "pkg:oci/nginx"
+              }
+            ],
+            "status": "not_affected",
+            "justification": "component_not_present",
+            "expires": "2026-11-12"
+          }
+        ]
+      }
+    ],
+    "want": "stale"
+  },
+  {
+    "name": "openvex: a changed justification is stale",
+    "type": "openvex",
+    "local": {
+      "@context": "https://openvex.dev/ns/v0.2.0",
+      "@id": "x",
+      "statements": [
+        {
+          "vulnerability": {
+            "name": "CVE-2013-0337"
+          },
+          "products": [
+            {
+              "@id": "pkg:oci/nginx"
+            }
+          ],
+          "status": "not_affected",
+          "justification": "vulnerable_code_not_in_execute_path",
+          "expires": "2026-11-12"
+        },
+        {
+          "vulnerability": {
+            "name": "CVE-2026-42533"
+          },
+          "products": [
+            {
+              "@id": "pkg:deb/debian/nginx"
+            }
+          ],
+          "status": "fixed",
+          "expires": "2026-09-15"
+        }
+      ]
+    },
+    "attached": [
+      {
+        "@context": "https://openvex.dev/ns/v0.2.0",
+        "@id": "x",
+        "statements": [
+          {
+            "vulnerability": {
+              "name": "CVE-2013-0337"
+            },
+            "products": [
+              {
+                "@id": "pkg:oci/nginx"
+              }
+            ],
+            "status": "not_affected",
+            "justification": "component_not_present",
+            "expires": "2026-11-12"
+          },
+          {
+            "vulnerability": {
+              "name": "CVE-2026-42533"
+            },
+            "products": [
+              {
+                "@id": "pkg:deb/debian/nginx"
+              }
+            ],
+            "status": "fixed",
+            "expires": "2026-09-15"
+          }
+        ]
+      }
+    ],
+    "want": "stale"
+  },
+  {
+    "name": "openvex: a bumped expiry is stale",
+    "type": "openvex",
+    "local": {
+      "@context": "https://openvex.dev/ns/v0.2.0",
+      "@id": "x",
+      "statements": [
+        {
+          "vulnerability": {
+            "name": "CVE-2013-0337"
+          },
+          "products": [
+            {
+              "@id": "pkg:oci/nginx"
+            }
+          ],
+          "status": "not_affected",
+          "justification": "vulnerable_code_not_in_execute_path",
+          "expires": "2026-11-12"
+        },
+        {
+          "vulnerability": {
+            "name": "CVE-2026-42533"
+          },
+          "products": [
+            {
+              "@id": "pkg:deb/debian/nginx"
+            }
+          ],
+          "status": "fixed",
+          "expires": "2026-09-15"
+        }
+      ]
+    },
+    "attached": [
+      {
+        "@context": "https://openvex.dev/ns/v0.2.0",
+        "@id": "x",
+        "statements": [
+          {
+            "vulnerability": {
+              "name": "CVE-2013-0337"
+            },
+            "products": [
+              {
+                "@id": "pkg:oci/nginx"
+              }
+            ],
+            "status": "not_affected",
+            "justification": "vulnerable_code_not_in_execute_path",
+            "expires": "2027-01-01"
+          },
+          {
+            "vulnerability": {
+              "name": "CVE-2026-42533"
+            },
+            "products": [
+              {
+                "@id": "pkg:deb/debian/nginx"
+              }
+            ],
+            "status": "fixed",
+            "expires": "2026-09-15"
+          }
+        ]
+      }
+    ],
+    "want": "stale"
+  },
+  {
+    "name": "openvex: one of several matches, so fresh",
+    "type": "openvex",
+    "local": {
+      "@context": "https://openvex.dev/ns/v0.2.0",
+      "@id": "x",
+      "statements": [
+        {
+          "vulnerability": {
+            "name": "CVE-2013-0337"
+          },
+          "products": [
+            {
+              "@id": "pkg:oci/nginx"
+            }
+          ],
+          "status": "not_affected",
+          "justification": "vulnerable_code_not_in_execute_path",
+          "expires": "2026-11-12"
+        },
+        {
+          "vulnerability": {
+            "name": "CVE-2026-42533"
+          },
+          "products": [
+            {
+              "@id": "pkg:deb/debian/nginx"
+            }
+          ],
+          "status": "fixed",
+          "expires": "2026-09-15"
+        }
+      ]
+    },
+    "attached": [
+      {
+        "@context": "https://openvex.dev/ns/v0.2.0",
+        "@id": "x",
+        "statements": [
+          {
+            "vulnerability": {
+              "name": "CVE-2013-0337"
+            },
+            "products": [
+              {
+                "@id": "pkg:oci/nginx"
+              }
+            ],
+            "status": "not_affected",
+            "justification": "vulnerable_code_not_in_execute_path",
+            "expires": "2026-11-12"
+          }
+        ]
+      },
+      {
+        "@context": "https://openvex.dev/ns/v0.2.0",
+        "@id": "x",
+        "statements": [
+          {
+            "vulnerability": {
+              "name": "CVE-2013-0337"
+            },
+            "products": [
+              {
+                "@id": "pkg:oci/nginx"
+              }
+            ],
+            "status": "not_affected",
+            "justification": "vulnerable_code_not_in_execute_path",
+            "expires": "2026-11-12"
+          },
+          {
+            "vulnerability": {
+              "name": "CVE-2026-42533"
+            },
+            "products": [
+              {
+                "@id": "pkg:deb/debian/nginx"
+              }
+            ],
+            "status": "fixed",
+            "expires": "2026-09-15"
+          }
+        ]
+      }
+    ],
+    "want": "fresh"
+  },
+  {
+    "name": "openvex: a document with no statements list does not block",
+    "type": "openvex",
+    "local": {
+      "@context": "https://openvex.dev/ns/v0.2.0",
+      "@id": "x",
+      "statements": [
+        {
+          "vulnerability": {
+            "name": "CVE-2013-0337"
+          },
+          "products": [
+            {
+              "@id": "pkg:oci/nginx"
+            }
+          ],
+          "status": "not_affected",
+          "justification": "vulnerable_code_not_in_execute_path",
+          "expires": "2026-11-12"
+        },
+        {
+          "vulnerability": {
+            "name": "CVE-2026-42533"
+          },
+          "products": [
+            {
+              "@id": "pkg:deb/debian/nginx"
+            }
+          ],
+          "status": "fixed",
+          "expires": "2026-09-15"
+        }
+      ]
+    },
+    "attached": [
+      {
+        "@context": "https://openvex.dev/ns/v0.2.0"
+      }
+    ],
+    "want": "stale"
+  },
+  {
+    "name": "openvex: a scan handed in as VEX is an error",
+    "type": "openvex",
+    "local": {
+      "scanner": {
+        "uri": "pkg:github/anchore/grype@v0.118.0",
+        "version": "0.118.0",
+        "db": {
+          "uri": "",
+          "version": "2026-09-04T06:00:00Z"
+        },
+        "result": {}
+      },
+      "metadata": {
+        "scanFinishedOn": "2026-09-04T07:00:00Z"
+      }
+    },
+    "attached": [],
+    "want": "error"
+  },
+  {
+    "name": "cyclonedx: never stale",
+    "type": "cyclonedx",
+    "local": {
+      "bomFormat": "CycloneDX"
+    },
+    "attached": [
+      {
+        "bomFormat": "CycloneDX"
+      }
+    ],
+    "want": "fresh"
+  },
+  {
+    "name": "unknown type: an error, not a guess",
+    "type": "slsaprovenance",
+    "local": {
+      "bomFormat": "CycloneDX"
+    },
+    "attached": [],
+    "want": "error"
+  }
+]

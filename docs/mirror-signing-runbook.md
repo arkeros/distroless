@@ -12,6 +12,8 @@ file is what you open when one of them fails.
 |---|---|---|---|
 | Signature | `…/arkeros/distroless/.github/workflows/ci.yaml@refs/heads/main` | `mirror_push`'s `_sign` target, run by the `publish` job | `cosign verify` |
 | **SBOM** (CycloneDX) | same | `mirror_push`'s `_attest_sbom` target, same job | `cosign verify-attestation --type=cyclonedx` |
+| **Vulnerability scan** (cosign vuln record around grype's report) | same | `mirror_push`'s `_attest_vuln` target, same job | `cosign verify-attestation --type=vuln` |
+| **VEX document** (OpenVEX; only images with statements) | same | `mirror_push`'s `_attest_vex` target, same job | `cosign verify-attestation --type=openvex` |
 | **Platform provenance** (SLSA v0.2) | `…/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/vX.Y.Z` | the generator's reusable workflow, `provenance` job | `slsa-verifier verify-image --source-uri github.com/arkeros/distroless --builder-id …` |
 
 The provenance signer is the generator's, not ours. It is the same for every
@@ -88,6 +90,8 @@ reproducibility validator in `.bazelrc` now rejects at build time.
 | Symptom | Likely cause | First check |
 |---|---|---|
 | `cosign`: `no matching attestations`, or `none of the attestations matched the predicate type: cyclonedx` | The SBOM attest step did not run for this digest (the second wording appears when a signature referrer exists but no SBOM) | Re-run `bazel run <base>_attest_sbom`; in `publish` both are classified as absent and trigger it |
+| `cosign`: `none of the attestations matched the predicate type: vuln` (or `openvex`) | The scan (or VEX) attest step did not run for this digest. Digests published before scans were attached look like this until `publish` next runs against them, which it does on every `main` build | Re-run `bazel run <base>_attest_vuln` (or `_attest_vex`); `publish` classifies it as absent and triggers it. The Directory's vulnerabilities page for the digest is a 404 until then |
+| Several `vuln` (or `openvex`) attestations on one digest | Expected. `publish` adds a scan whenever the pinned grype database is newer than any scan on the digest, and a VEX document whenever its statements changed. The Directory shows the newest scan by `scanFinishedOn` and the newest VEX document by log time | Nothing. To prune, delete older referrers via the packages API (see GHCR notes); never the newest |
 | `slsa-verifier`: `no matching attestations` | The `provenance` job has not reached this digest, or the matrix leg failed | Look at the `provenance` job in the same run; if it failed, the next push to `main` retries |
 | `slsa-verifier`: `source used to generate the binary does not match provenance` | Provenance on this digest was produced for another repository | This is what the negative test asserts on `ghcr.io/kyverno/kyverno`. On one of our digests it means someone attached foreign provenance; start at Rekor. |
 | `slsa-verifier`: `the image is mutable` | A tag was passed instead of a digest | `slsa-verifier` refuses tag references; resolve first with `crane digest` |

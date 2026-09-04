@@ -91,6 +91,16 @@ say nothing determinable.
 _Avoid_: license (unqualified it implies the audited answer, which nobody here
 computed), SPDX (that is one notation for it, not the thing)
 
+**Scan record**:
+What one scanner, with one database, matched against an **Index**'s **SBOM**
+at one moment — attached as an **Attestation** in cosign's vulnerability
+predicate, unfiltered. It says what the scanner found; the **VEX statement**s
+say what the project makes of it, and a reader joins the two. Only as current
+as the database it names: a CVE published after that is not in it.
+_Avoid_: vulnerability report (a report implies a verdict; this is the raw
+output), scan (ambiguous with the act, and with the **Gate** that runs one),
+CVE list
+
 **Silent zero**:
 A clean scan that is clean because nothing was **Routable**, not because
 nothing is vulnerable. The failure mode the whole gate exists to prevent: a
@@ -133,8 +143,9 @@ kind this replaced), build provenance (the retired Bazel-written predicate —
 see Flagged ambiguities), GHA provenance (names the vendor, not the property)
 
 **Attestation**:
-A signed predicate bound to a **Digest** — **Platform provenance** or
-**SBOM** — attached over the OCI 1.1 referrers API.
+A signed predicate bound to a **Digest** — **Platform provenance**, **SBOM**,
+**Scan record**, or the **VEX statement**s as one OpenVEX document — attached
+over the OCI 1.1 referrers API.
 _Avoid_: metadata, annotation (those are unsigned and live in the manifest)
 
 ### Distribution
@@ -169,11 +180,13 @@ implements the OCI distribution pull API)
 
 **Directory**:
 The human-readable view of the **Mirror**, served at everything on
-`distroless.io` that is not `/v2/`: what is inside a published image, read from
-the **Attestation**s bound to its **Digest**. It verifies the **SBOM**
-attestation against the same identity **Mirror push** signs with, and renders
-nothing it could not verify — an unverified attestation is a document that looks like
-evidence, which is the **Silent zero** mistake wearing different clothes.
+`distroless.io` that is not `/v2/`: what is inside a published image and what a
+scanner found in it, read from the **Attestation**s bound to its **Digest**. It
+verifies each attestation against the same identity **Mirror push** signs with,
+and renders nothing it could not verify — an unverified attestation is a
+document that looks like evidence, which is the **Silent zero** mistake wearing
+different clothes. On its vulnerabilities page a finding a **VEX statement**
+covers is shown set aside, not dropped.
 _Avoid_: website (it renders evidence, not prose), UI, docs; and note the Cloud
 Run service is deployed under the name `web`, which is the deployment's name,
 not this one
@@ -198,8 +211,13 @@ _Avoid_: CI verification (that guards this repo, not a consumer)
   **Silent zero** — the last one is why an empty report is not evidence
 - A **VEX statement** silences a finding until its **Expiry**; after that the
   gate fails again and the claim must be remade
-- **Mirror push** binds the signature and the **SBOM** to a **Digest**, and is
-  the only way onto the **Mirror**
+- **Mirror push** binds the signature, the **SBOM**, the **Scan record** and
+  the **VEX statement**s to a **Digest**, and is the only way onto the
+  **Mirror**
+- A **Scan record** is made at publication and made again whenever the
+  pinned database is newer than the one it names, so a **Digest** carries a
+  history of scans; the **Directory** shows the newest, and what any one of
+  them says about today is bounded by the database build it names
 - **Platform provenance** is bound to a **Digest** by the platform after the
   push, exactly once per digest, and under an identity that is the platform's
   rather than ours — so verifying it means checking the statement names this

@@ -1,10 +1,11 @@
 # distroless
 
 Minimal container base images, built from source with Bazel. Every published
-image carries a signature and a CycloneDX SBOM signed by this repository's
-workflow, and SLSA Build L3 provenance written by
+image carries a signature, a CycloneDX SBOM and a vulnerability scan signed by
+this repository's workflow — plus a VEX document where the project has
+statements to make — and SLSA Build L3 provenance written by
 [slsa-github-generator](https://github.com/slsa-framework/slsa-github-generator)
-— a build platform component our own build cannot forge. All three are bound
+— a build platform component our own build cannot forge. All of them are bound
 to the image digest. The L3 claim is self-assessed against the SLSA
 requirements; there is no third-party assessment of the build platform.
 

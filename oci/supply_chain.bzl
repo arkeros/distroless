@@ -90,6 +90,109 @@ _LICENSE_FILTERS = {
     "deb": _DEB_LICENSE_FILTER,
 }
 
+# cosign's vulnerability scan record wrapped around grype's report: the
+# scanner, the database it consulted, and when. See
+# https://github.com/sigstore/cosign/blob/main/specs/COSIGN_VULN_ATTESTATION_SPEC.md.
+#
+# The report goes in whole, minus two things that are about the machine rather
+# than the image: grype's dump of its own configuration, which carries the
+# sandbox path it ran in, and the path of the SBOM it scanned, cut to the file
+# name. What the scanner *found* — matches, database, version — is as it wrote
+# it.
+#
+# The database is named by when it was built. That is the freshness a reader
+# needs, and it is what the pinned file in //bazel/include:oci.MODULE.bazel is
+# named by; the URL is the listing it was pinned from.
+_VULN_ATTESTATION_FILTER = """
+{
+  invocation: {parameters: [], uri: "", event_id: "", "builder.id": ""},
+  scanner: {
+    uri: ("pkg:github/anchore/grype@v" + .descriptor.version),
+    version: .descriptor.version,
+    db: {
+      uri: "https://grype.anchore.io/databases/v6",
+      version: .descriptor.db.status.built
+    },
+    result: (del(.descriptor.configuration) | .source.target |= (split("/") | last))
+  },
+  metadata: {scanStartedOn: .descriptor.timestamp, scanFinishedOn: .descriptor.timestamp}
+}
+""".strip()
+
+# Several VEX documents into one OpenVEX document, for a single `openvex`
+# attestation per image. Statements are concatenated and deduplicated — a debug
+# variant's documents restate the release ones — under the first document's
+# header, dated by the newest, with an id of the image's own. The per-document
+# ids name the BUILD anchors the statements were authored under, which a
+# consumer can still read in the sources.
+_VEX_MERGE_FILTER = """
+{
+  "@context": .[0]["@context"],
+  "@id": $id,
+  author: .[0].author,
+  timestamp: ([.[].timestamp] | max),
+  version: 1,
+  statements: ([.[].statements[]] | unique)
+}
+""".strip()
+
+def vulnerability_attestation(base, scan, vex = None):
+    """Predicates for `mirror_push`'s scan and VEX attestations.
+
+    Generates `<base>_vuln` — cosign's vulnerability scan record around `scan`
+    — and, when `vex` names any documents, `<base>_vex`, the OpenVEX document
+    merged from them. The scan is attested unfiltered and the VEX separately:
+    the record says what the scanner found, the VEX what this project makes
+    of it, and a consumer (the Directory among them) joins the two.
+
+    Args:
+      base: Target stem; the image's base label.
+      scan: Label of a `grype_scan` JSON report.
+      vex: Optional list of OpenVEX document labels (see //oci:vex.bzl).
+    """
+    jq(
+        name = base + "_vuln",
+        srcs = [scan],
+        out = base + "_vuln.json",
+        filter = _VULN_ATTESTATION_FILTER,
+    )
+    if vex:
+        jq(
+            name = base + "_vex",
+            srcs = vex,
+            out = base + "_vex.openvex.json",
+            args = [
+                "--slurp",
+                "--arg",
+                "id",
+                "https://github.com/arkeros/distroless/blob/main/{}/BUILD#{}-vex".format(native.package_name(), base),
+            ],
+            filter = _VEX_MERGE_FILTER,
+        )
+
+def image_vulnerabilities(image, vex = None, database = "@grype_database"):
+    """Scan an image's SBOM and prepare the scan for attestation, without gating.
+
+    For the Index of a multi-arch image, whose per-arch manifests
+    `image_supply_chain` already gates: this is the scan a consumer would get
+    from `grype sbom:<sbom>`, covering every architecture at once, kept as a
+    record of what the scanner found in what shipped. Generates
+    `<base>_vuln_scan` plus what `vulnerability_attestation` does. Requires
+    `<base>_sbom` from `image_sbom`.
+
+    Args:
+      image: Label of the OCI image (typically an `image_index`).
+      vex: Optional list of OpenVEX document labels the image's gates apply.
+      database: Grype vulnerability DB target. Default `@grype_database`.
+    """
+    base = image.rsplit(":", 1)[-1]
+    grype_scan(
+        name = base + "_vuln_scan",
+        database = database,
+        sbom = ":" + base + "_sbom",
+    )
+    vulnerability_attestation(base, ":" + base + "_vuln_scan", vex)
+
 def image_sbom(image, licenses = None, licenses_format = None):
     """Attach a CycloneDX SBOM to an OCI image, without CVE scanning or gating.
 
@@ -171,6 +274,11 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
         <base>_cve_test_stale_vex (only when `vex` is non-empty)
                                   — fails when a VEX statement targets a
                                     CVE the scanner doesn't flag.
+        <base>_vuln               — the scan as cosign's vulnerability scan
+                                    record, for `mirror_push`.
+        <base>_vex (only when `vex` is non-empty)
+                                  — the VEX documents merged into one, for
+                                    `mirror_push`.
 
     Args:
       image: Label of the OCI image. Must be reachable from supply_chain_tools'
@@ -201,6 +309,7 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
         scan_result = ":" + base + "_cve_scan",
         vex = vex,
     )
+    vulnerability_attestation(base, ":" + base + "_cve_scan", vex)
 
     # Silent-zero gate. Fails when the SBOM carries components that grype
     # has no matcher for — see _SILENT_ZERO_FILTER above for the rationale.

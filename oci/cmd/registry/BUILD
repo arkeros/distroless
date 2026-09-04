@@ -82,6 +82,7 @@ go_binary(
             "{{.STABLE_MONOREPO_SHORT_VERSION}}" + mode.replace("_", "-"),
         ],
         tags = ["manual"],
+        vulnerabilities = ":image" + mode + "_vuln",
     )
     for mode in DEBUG_MODE
 ]

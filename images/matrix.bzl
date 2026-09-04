@@ -4,7 +4,7 @@ load("@rules_img//img:image.bzl", "image_index")
 load("//images:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//images/common:variables.bzl", "NONROOT")
 load("//oci:oci_image.bzl", "oci_image")
-load("//oci:supply_chain.bzl", "image_sbom")
+load("//oci:supply_chain.bzl", "image_sbom", "image_vulnerabilities")
 
 # Where each Distro's licence data comes from. Hummingbird's rpm metadata
 # declares one per package, recorded in the lockfile by `rules_rpm`'s pin tool.
@@ -198,4 +198,13 @@ def distroless_matrix(
                 image = ":" + index_name,
                 licenses = licenses,
                 licenses_format = licenses_format,
+            )
+
+            # Index-level scan, attested by mirror_push next to the SBOM. The
+            # per-arch gates decide whether the image ships; this records what
+            # the scanner found in what shipped. Debug variants carry the
+            # debug VEX on top of the release one, as their gates do.
+            image_vulnerabilities(
+                image = ":" + index_name,
+                vex = (kwargs.get("vex") or []) + ((debug_vex or []) if mode == "_debug" else []),
             )

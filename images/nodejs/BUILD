@@ -165,6 +165,8 @@ vex_document(
             major + ("-debug" if mode else ""),
         ],
         tags = ["manual"],
+        vex = ":nodejs" + major + mode + "_nonroot_hummingbird_vex",
+        vulnerabilities = ":nodejs" + major + mode + "_nonroot_hummingbird_vuln",
     )
     for major in NODEJS_MAJOR_VERSIONS
     for mode in DEBUG_MODE

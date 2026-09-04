@@ -92,7 +92,13 @@ def _cosign_attest_impl(ctx):
     runfiles = ctx.runfiles(files = [digest_file, ctx.file.predicate])
     runfiles = runfiles.merge(cosign.default.default_runfiles)
 
-    return DefaultInfo(executable = executable, runfiles = runfiles)
+    return [
+        DefaultInfo(executable = executable, runfiles = runfiles),
+        # The predicate on its own, for a caller deciding whether to run this
+        # at all: CI compares it with what the registry already carries before
+        # adding another attestation to a digest.
+        OutputGroupInfo(predicate = depset([ctx.file.predicate])),
+    ]
 
 cosign_attest = rule(
     implementation = _cosign_attest_impl,

@@ -1,7 +1,8 @@
 """`mirror_push` — the policy unit for publishing an image to the public mirror.
 
-Wraps `image_push` (by digest) + `cosign_sign` + `cosign_attest` for the SBOM
-+ `crane_tag` into a coherent set of targets. There is no path to publish to
+Wraps `image_push` (by digest) + `cosign_sign` + `cosign_attest` for the SBOM,
+the vulnerability scan and the VEX document + `crane_tag` into a coherent set
+of targets. There is no path to publish to
 the public mirror surface (`ghcr.io/arkeros/distroless/*`) except via this
 macro, encoding the "every mirror image is signed and has an SBOM" policy in
 the build graph rather than in CI script discipline.
@@ -24,12 +25,14 @@ def mirror_push(
         repository,
         tag_list,
         sbom = None,
+        vulnerabilities = None,
+        vex = None,
         registry = OCI_REGISTRY,
         repository_prefix = OCI_REPOSITORY_PREFIX,
         tags = None,
         visibility = None,
         **kwargs):
-    """Publish an image to the public mirror with signature + SBOM attestation.
+    """Publish an image to the public mirror with signature + attestations.
 
     Generates these targets:
 
@@ -37,16 +40,18 @@ def mirror_push(
                              `<registry>/<repository_prefix>/<repository>`.
       `<name>_sign`        — `cosign sign --recursive --yes` against the pushed digest.
       `<name>_attest_sbom` — `cosign attest --type=cyclonedx --predicate=<sbom>` (only when `sbom` is set).
+      `<name>_attest_vuln` — `cosign attest --type=vuln --predicate=<vulnerabilities>` (only when set).
+      `<name>_attest_vex`  — `cosign attest --type=openvex --predicate=<vex>` (only when set).
       `<name>_tag`         — `crane tag <repo>@<digest> <tag>` for every entry
                              of `tag_list`, after stamp expansion.
 
-    CI runs them in two phases. `publish`: push, sign, attest_sbom. Then the
-    platform attaches provenance and `verify` checks every artifact. Only then
-    does `release` run `_tag`, so a tag never names a digest that is not fully
-    attested. Each target is independently re-runnable. `_push` and `_tag` are
-    idempotent on `<repo>@<digest>`; `_sign` and `_attest_sbom` are not — every
-    run appends another signature or attestation to the digest, which
-    verification tolerates but `cosign tree` shows.
+    CI runs them in two phases. `publish`: push, sign, every `_attest_*`. Then
+    the platform attaches provenance and `verify` checks every artifact. Only
+    then does `release` run `_tag`, so a tag never names a digest that is not
+    fully attested. Each target is independently re-runnable. `_push` and
+    `_tag` are idempotent on `<repo>@<digest>`; `_sign` and the `_attest_*`
+    targets are not — every run appends another signature or attestation to
+    the digest, which verification tolerates but `cosign tree` shows.
 
     Args:
       name: Base name. Sub-targets are derived as `<name>_<step>`.
@@ -61,6 +66,14 @@ def mirror_push(
       sbom: Optional label of a CycloneDX SBOM file (typically the
         `<image>_sbom` target produced by `image_supply_chain`). When set,
         adds an `attest_sbom` step.
+      vulnerabilities: Optional label of a cosign vulnerability scan record
+        (the `<image>_vuln` target from `image_supply_chain` or
+        `image_vulnerabilities`). When set, adds an `attest_vuln` step. The
+        Directory's vulnerabilities page is rendered from this.
+      vex: Optional label of an OpenVEX document (the `<image>_vex` target
+        from the same macros). When set, adds an `attest_vex` step. Kept apart
+        from the scan on purpose: the scan says what the scanner found, this
+        says what the project makes of it, and each is verifiable alone.
       registry: Mirror registry. Default: `OCI_REGISTRY` (`ghcr.io`).
       repository_prefix: Path prefix under the registry. Default:
         `OCI_REPOSITORY_PREFIX` (`arkeros/distroless`).
@@ -116,6 +129,28 @@ def mirror_push(
             repository = full_url,
             type = "cyclonedx",
             predicate = sbom,
+            tags = tags,
+            visibility = visibility,
+        )
+
+    if vulnerabilities:
+        cosign_attest(
+            name = name + "_attest_vuln",
+            image = image,
+            repository = full_url,
+            type = "vuln",
+            predicate = vulnerabilities,
+            tags = tags,
+            visibility = visibility,
+        )
+
+    if vex:
+        cosign_attest(
+            name = name + "_attest_vex",
+            image = image,
+            repository = full_url,
+            type = "openvex",
+            predicate = vex,
             tags = tags,
             visibility = visibility,
         )

@@ -306,6 +306,8 @@ _NGINX_RPM_REPO = {
             "debug" if mode else "latest",
         ] if version_label == NGINX_LATEST_CHANNEL else []),
         tags = ["manual"],
+        vex = ":nginx_" + version_label + mode + "_nonroot_debian_vex",
+        vulnerabilities = ":nginx_" + version_label + mode + "_nonroot_debian_vuln",
     )
     for version_label, short_version in NGINX_TAGS.items()
     for mode in DEBUG_MODE

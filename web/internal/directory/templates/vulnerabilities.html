@@ -48,7 +48,7 @@
 
   <p class="verdict">
     {{if .Open}}<strong>{{.Open}} finding{{if ne .Open 1}}s{{end}}</strong>: {{range $i, $count := .Summary}}{{if $i}}, {{end}}{{$count.Count}} {{$count.Severity.Lower}}{{end}}{{else}}<strong>No findings</strong>{{end}}{{if .Suppressed}}, and {{.Suppressed}} set aside by a VEX statement{{end}}.
-    Scanned by {{.Scanner}} on <time datetime="{{.Finished.Format "2006-01-02T15:04:05Z07:00"}}">{{.Finished.Format "2006-01-02"}}</time>, against a vulnerability database built <time datetime="{{.Database.Format "2006-01-02T15:04:05Z07:00"}}">{{.Database.Format "2006-01-02"}}</time>.
+    Scanned by {{if .ScannerURL}}<a href="{{.ScannerURL}}">{{.Scanner}}</a>{{else}}{{.Scanner}}{{end}} on <time datetime="{{.Finished.UTC.Format "2006-01-02T15:04:05Z07:00"}}">{{.Finished.UTC.Format "2006-01-02 15:04:05 UTC"}}</time>, against a vulnerability database built <time datetime="{{.Database.UTC.Format "2006-01-02T15:04:05Z07:00"}}">{{.Database.UTC.Format "2006-01-02 15:04:05 UTC"}}</time>.
   </p>
 
   {{if .Rows}}
@@ -56,9 +56,9 @@
     <table data-sortable id="vulnerabilities">
       <thead>
         <tr>
-          <th data-column="severity" aria-sort="ascending"><button type="button">Severity</button></th>
           <th data-column="id"><button type="button">Vulnerability</button></th>
-          <th data-column="package"><button type="button">Component</button></th>
+          <th data-column="severity" aria-sort="ascending"><button type="button">Severity</button></th>
+          <th data-column="package" title="The source package the scanner matched, and the packages built from it that this build carries"><button type="button">Component</button></th>
           <th data-column="version"><button type="button">Version</button></th>
           <th data-column="fix" title="Versions the scanner knows to carry a fix. A build picks these up when its packages are next updated."><button type="button">Fixed in</button></th>
           <th data-column="status" title="Whether the finding stands, or a published VEX statement sets it aside and why"><button type="button">Status</button></th>
@@ -67,9 +67,9 @@
       <tbody>
         {{range .Rows}}
         <tr{{if .Suppressed}} class="suppressed"{{end}}>
-          <td data-sort-key="{{.Severity.Rank}}"><span class="severity severity-{{.Severity.Lower}}">{{.Severity}}</span></td>
           <td class="id">{{if .URL}}<a href="{{.URL}}" title="{{.Description}}">{{.ID}}</a>{{else}}<span title="{{.Description}}">{{.ID}}</span>{{end}}</td>
-          <td>{{.Package}}</td>
+          <td data-sort-key="{{.Severity.Rank}}"><span class="severity severity-{{.Severity.Lower}}">{{.Severity}}</span></td>
+          <td>{{.Component}}{{if .Packages}} <span class="packages">{{range $i, $package := .Packages}}{{if $i}}, {{end}}{{$package}}{{end}}</span>{{end}}</td>
           <td class="version">{{.Version}}</td>
           <td class="version">{{if .Fix}}{{.Fix}}{{else}}<span class="unknown">{{if .FixState}}{{.FixState}}{{else}}unknown{{end}}</span>{{end}}</td>
           <td>{{if .Suppressed}}<span title="{{.Suppressed.Impact}}">{{.Suppressed.Words}}</span>{{else}}open{{end}}</td>

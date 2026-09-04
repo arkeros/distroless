@@ -188,9 +188,20 @@ td.license {
   white-space: nowrap;
 }
 
-td:nth-child(2) {
+/* Identifiers and versions are things a reader copies or compares, so they
+   are set in the mono face the digest already uses. Named rather than
+   positional: the vulnerabilities table has two version columns and its
+   identifier leads, so no one position would do for both pages. */
+td.version, td.id {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* The binary packages behind a source: the names the SBOM page lists, kept
+   on the row for a reader going there, but after the name the row is about. */
+.packages {
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 th {
@@ -566,25 +577,8 @@ tr.suppressed .severity {
   border-color: var(--line);
 }
 
-/* Identifiers and versions are things a reader copies or compares, so they
-   are set in the mono face the digest already uses. The SBOM page's version
-   column gets it by position; here the columns are named, because the table
-   has two of them. */
-#vulnerabilities td.id,
-#vulnerabilities td.version {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-}
-
 #vulnerabilities td.id a {
   color: inherit;
-}
-
-/* The SBOM page's version column is its second one; this page's second
-   column is the identifier and its versions are named above, so the
-   positional rule from the SBOM page is undone here. */
-#vulnerabilities td:nth-child(2) {
-  font-family: var(--mono);
 }
 
 /* Two links in one cell on the versions list. */

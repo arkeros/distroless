@@ -95,14 +95,29 @@ func TestVulnerabilitiesPageEscapesFindingFields(t *testing.T) {
 }
 
 // The dates are what make the result mean anything: a scan is only as current
-// as the database it ran against.
+// as the database it ran against. To the second, in UTC — a database is
+// rebuilt more than once a day, and a reader comparing two scans wants to see
+// which is newer without opening the download.
 func TestVulnerabilitiesPageDatesTheScan(t *testing.T) {
 	body := get(t, scanned(), "/directory/image/nginx/latest/vulnerabilities", nil).Body.String()
 
-	for _, want := range []string{"2026-09-03", "grype 0.118.0"} {
+	for _, want := range []string{"2026-09-03 21:12:53 UTC", "2026-09-03 00:34:04 UTC", "grype 0.118.0"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page does not say %q:\n%s", want, body)
 		}
+	}
+}
+
+// The scanner's name is a way to its release notes, which is where a reader
+// learns what that version matches and what it does not.
+func TestVulnerabilitiesPageLinksTheScannerRelease(t *testing.T) {
+	source := scanned()
+	source.scan.ScannerURL = "https://github.com/anchore/grype/releases/tag/v0.118.0"
+
+	body := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Body.String()
+
+	if !strings.Contains(body, `<a href="https://github.com/anchore/grype/releases/tag/v0.118.0">grype 0.118.0</a>`) {
+		t.Errorf("scanner not linked to its release:\n%s", body)
 	}
 }
 
@@ -380,5 +395,38 @@ func TestVulnerabilitiesPageOffersTheDownload(t *testing.T) {
 
 	if !strings.Contains(body, `href="/directory/image/nginx/1.27/vulnerabilities.json"`) {
 		t.Errorf("page does not link to the download:\n%s", body)
+	}
+}
+
+// The identifier leads the row: it is what a reader looks for, and what they
+// type into the filter.
+func TestVulnerabilitiesPageLeadsWithTheIdentifier(t *testing.T) {
+	source := scanned(directory.Finding{ID: "CVE-2026-0001", Severity: directory.High, Package: "busybox"})
+
+	body := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Body.String()
+
+	id, severity := strings.Index(body, "CVE-2026-0001"), strings.Index(body, `class="severity severity-high"`)
+	if id < 0 || severity < 0 || id > severity {
+		t.Errorf("identifier at %d, severity at %d, want the identifier first:\n%s", id, severity, body)
+	}
+}
+
+// A glibc CVE is one row, named by the source, with the binary packages it
+// reached on the row — those are the names on the SBOM page.
+func TestVulnerabilitiesPageShowsOneRowPerVulnerability(t *testing.T) {
+	source := scanned(
+		directory.Finding{ID: "CVE-2026-0001", Severity: directory.Medium, Package: "libc6", Version: "2.43-4", Upstream: "glibc"},
+		directory.Finding{ID: "CVE-2026-0001", Severity: directory.Medium, Package: "libc-gconv-modules-extra", Version: "2.43-4", Upstream: "glibc"},
+	)
+
+	body := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Body.String()
+
+	if got := strings.Count(body, "CVE-2026-0001"); got != 1 {
+		t.Errorf("CVE-2026-0001 appears %d times, want once", got)
+	}
+	for _, want := range []string{"glibc", "libc6", "libc-gconv-modules-extra", "<strong>1 finding</strong>"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("page does not show %q:\n%s", want, body)
+		}
 	}
 }

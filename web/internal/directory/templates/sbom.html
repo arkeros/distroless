@@ -60,7 +60,7 @@
         {{range .Rows}}
         <tr>
           <td>{{.Name}}</td>
-          <td data-sort-key="{{.VersionRank}}">{{.Version}}</td>
+          <td class="version" data-sort-key="{{.VersionRank}}">{{.Version}}</td>
           <td class="license" title="{{.License}}">{{.License}}</td>
           <td>{{.Type}}</td>
         </tr>

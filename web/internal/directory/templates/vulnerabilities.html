@@ -47,7 +47,7 @@
   </div>
 
   <p class="verdict">
-    {{if .Open}}<strong>{{.Open}} finding{{if ne .Open 1}}s{{end}}</strong>: {{range $i, $count := .Summary}}{{if $i}}, {{end}}{{$count.Count}} {{lower $count.Severity}}{{end}}{{else}}<strong>No findings</strong>{{end}}{{if .Suppressed}}, and {{.Suppressed}} set aside by a VEX statement{{end}}.
+    {{if .Open}}<strong>{{.Open}} finding{{if ne .Open 1}}s{{end}}</strong>: {{range $i, $count := .Summary}}{{if $i}}, {{end}}{{$count.Count}} {{$count.Severity.Lower}}{{end}}{{else}}<strong>No findings</strong>{{end}}{{if .Suppressed}}, and {{.Suppressed}} set aside by a VEX statement{{end}}.
     Scanned by {{.Scanner}} on <time datetime="{{.Finished.Format "2006-01-02T15:04:05Z07:00"}}">{{.Finished.Format "2006-01-02"}}</time>, against a vulnerability database built <time datetime="{{.Database.Format "2006-01-02T15:04:05Z07:00"}}">{{.Database.Format "2006-01-02"}}</time>.
   </p>
 
@@ -67,7 +67,7 @@
       <tbody>
         {{range .Rows}}
         <tr{{if .Suppressed}} class="suppressed"{{end}}>
-          <td data-sort-key="{{.SeverityRank}}"><span class="severity severity-{{lower .Severity}}">{{.Severity}}</span></td>
+          <td data-sort-key="{{.Severity.Rank}}"><span class="severity severity-{{.Severity.Lower}}">{{.Severity}}</span></td>
           <td class="id">{{if .URL}}<a href="{{.URL}}" title="{{.Description}}">{{.ID}}</a>{{else}}<span title="{{.Description}}">{{.ID}}</span>{{end}}</td>
           <td>{{.Package}}</td>
           <td class="version">{{.Version}}</td>

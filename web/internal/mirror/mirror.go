@@ -828,7 +828,7 @@ func decodeScan(predicate json.RawMessage) (*directory.Scan, error) {
 	for _, match := range result.Matches {
 		findings = append(findings, directory.Finding{
 			ID:          match.Vulnerability.ID,
-			Severity:    match.Vulnerability.Severity,
+			Severity:    directory.ParseSeverity(match.Vulnerability.Severity),
 			Package:     match.Artifact.Name,
 			Version:     match.Artifact.Version,
 			Type:        ecosystem(match.Artifact.PURL),

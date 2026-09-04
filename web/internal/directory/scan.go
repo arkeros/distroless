@@ -41,7 +41,7 @@ func (s *Scan) Fingerprint() string {
 	sum := sha256.New()
 	sum.Write([]byte(s.Scanner + "\n" + s.Database.UTC().Format(time.RFC3339Nano) + "\n" + s.Finished.UTC().Format(time.RFC3339Nano) + "\n"))
 	for _, finding := range s.Findings {
-		sum.Write([]byte(finding.ID + "\x1f" + finding.PURL + "\x1f" + finding.Severity + "\x1f" + finding.FixState + "\x1f" + strings.Join(finding.FixedIn, ",")))
+		sum.Write([]byte(finding.ID + "\x1f" + finding.PURL + "\x1f" + finding.Severity.String() + "\x1f" + finding.FixState + "\x1f" + strings.Join(finding.FixedIn, ",")))
 		if finding.Suppressed != nil {
 			sum.Write([]byte("\x1f" + finding.Suppressed.Status + "\x1f" + finding.Suppressed.Justification + "\x1f" + finding.Suppressed.Impact))
 		}
@@ -54,10 +54,8 @@ func (s *Scan) Fingerprint() string {
 type Finding struct {
 	// ID is the vulnerability's identifier — a CVE, or a GHSA where the
 	// ecosystem has no CVE for it yet.
-	ID string
-	// Severity as the scanner reports it: Critical, High, Medium, Low,
-	// Negligible or Unknown.
-	Severity string
+	ID       string
+	Severity Severity
 	// Package and Version identify the Component the finding was matched to.
 	Package string
 	Version string
@@ -108,20 +106,76 @@ func (s Suppression) Words() string {
 	return words
 }
 
+// Severity is the scanner's scale, worst first. Parsed once where a scanner's
+// output enters the model, so that everything downstream — the order rows are
+// served in, the summary, the class a cell is styled with — works on the scale
+// and never on a string the scanner sent.
+type Severity int
+
+const (
+	// Unknown is the zero value on purpose: a Finding that never had a
+	// severity set must not read as Critical. It is also what the scanner
+	// says when its source gives no severity, and what a label off the scale
+	// becomes here — a scanner that invents a seventh level is a scanner
+	// bug, the page names the scanner, and the signed download keeps the
+	// string for anyone who wants it.
+	Unknown Severity = iota
+	Critical
+	High
+	Medium
+	Low
+	Negligible
+)
+
+var severityNames = [...]string{"Unknown", "Critical", "High", "Medium", "Low", "Negligible"}
+
+// scale is the severities worst first: the order rows are served in, the
+// summary reads in, and Rank counts in. Unknown last, because a finding whose
+// severity nobody has assessed is not a reason to push a known one down.
+var scale = [...]Severity{Critical, High, Medium, Low, Negligible, Unknown}
+
+// ParseSeverity places a scanner's label on the scale, case-insensitively.
+func ParseSeverity(label string) Severity {
+	for i, name := range severityNames {
+		if strings.EqualFold(label, name) {
+			return Severity(i)
+		}
+	}
+	return Unknown
+}
+
+// String is the label as shown: "High".
+func (s Severity) String() string {
+	if s < 0 || int(s) >= len(severityNames) {
+		return severityNames[Unknown]
+	}
+	return severityNames[s]
+}
+
+// Lower is the label in lower case: for a class name, and mid-sentence.
+func (s Severity) Lower() string { return strings.ToLower(s.String()) }
+
+// Rank is the position on the scale, worst first, for the browser to sort on:
+// sorted as text, "Critical" would land between "Low" and "Unknown".
+func (s Severity) Rank() int {
+	for rank, known := range scale {
+		if known == s {
+			return rank
+		}
+	}
+	return len(scale) - 1
+}
+
 // FindingRow is a Finding prepared for rendering.
 type FindingRow struct {
 	Finding
-	// SeverityRank is the Finding's position in severity order, for the
-	// browser to sort on: sorted as text, "Critical" lands between "Low" and
-	// "Unknown" alphabetically.
-	SeverityRank int
 	// Fix is FixedIn as one cell.
 	Fix string
 }
 
 // SeverityCount is how many open findings a Report has at one severity.
 type SeverityCount struct {
-	Severity string
+	Severity Severity
 	Count    int
 }
 
@@ -150,21 +204,6 @@ type Report struct {
 	Summary []SeverityCount
 }
 
-// severities is the scanner's scale, worst first. It is the order the rows are
-// served in and the order the summary reads in.
-var severities = []string{"Critical", "High", "Medium", "Low", "Negligible", "Unknown"}
-
-// severityRank places a severity label on the scale. A label the scanner
-// invents sorts after everything it did not.
-func severityRank(severity string) int {
-	for rank, known := range severities {
-		if strings.EqualFold(severity, known) {
-			return rank
-		}
-	}
-	return len(severities)
-}
-
 // NewReport selects the Findings belonging to arch and orders them as a reader
 // wants to meet them: the findings that stand before the suppressed ones, the
 // worst severity first, and within a severity the newest identifier first.
@@ -179,16 +218,15 @@ func NewReport(image, digest, arch string, scan *Scan) *Report {
 	for _, finding := range scan.Findings {
 		if belongsTo(finding.Arch, arch) {
 			rows = append(rows, FindingRow{
-				Finding:      finding,
-				SeverityRank: severityRank(finding.Severity),
-				Fix:          strings.Join(finding.FixedIn, ", "),
+				Finding: finding,
+				Fix:     strings.Join(finding.FixedIn, ", "),
 			})
 		}
 	}
 	slices.SortStableFunc(rows, func(a, b FindingRow) int {
 		return cmp.Or(
 			compareSuppressed(a, b),
-			cmp.Compare(a.SeverityRank, b.SeverityRank),
+			cmp.Compare(a.Severity.Rank(), b.Severity.Rank()),
 			cmp.Compare(b.ID, a.ID),
 			cmp.Compare(a.Package, b.Package),
 		)
@@ -204,18 +242,18 @@ func NewReport(image, digest, arch string, scan *Scan) *Report {
 		Finished:      scan.Finished,
 		Rows:          rows,
 	}
-	counts := make([]int, len(severities)+1)
+	var counts [len(scale)]int
 	for _, row := range rows {
 		if row.Suppressed != nil {
 			report.Suppressed++
 			continue
 		}
 		report.Open++
-		counts[row.SeverityRank]++
+		counts[row.Severity.Rank()]++
 	}
-	for rank, count := range counts[:len(severities)] {
+	for rank, count := range counts {
 		if count > 0 {
-			report.Summary = append(report.Summary, SeverityCount{Severity: severities[rank], Count: count})
+			report.Summary = append(report.Summary, SeverityCount{Severity: scale[rank], Count: count})
 		}
 	}
 	return report

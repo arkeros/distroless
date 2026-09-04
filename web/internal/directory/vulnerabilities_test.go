@@ -25,8 +25,8 @@ func scanned(findings ...directory.Finding) *fakeSource {
 // reader acts on: the identifier, what it is matched to, and the fix.
 func TestVulnerabilitiesPageRendersEveryFindingBySeverity(t *testing.T) {
 	source := scanned(
-		directory.Finding{ID: "CVE-2026-0002", Severity: "Low", Package: "zlib1g", Version: "1.3-1", FixedIn: []string{"1.3-2"}},
-		directory.Finding{ID: "CVE-2026-0001", Severity: "High", Package: "busybox", Version: "1:1.38.0-3", FixState: "not-fixed"},
+		directory.Finding{ID: "CVE-2026-0002", Severity: directory.Low, Package: "zlib1g", Version: "1.3-1", FixedIn: []string{"1.3-2"}},
+		directory.Finding{ID: "CVE-2026-0001", Severity: directory.High, Package: "busybox", Version: "1:1.38.0-3", FixState: "not-fixed"},
 	)
 
 	response := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil)
@@ -56,14 +56,31 @@ func TestVulnerabilitiesPageRendersEveryFindingBySeverity(t *testing.T) {
 // shared script needs no branch for this page either.
 func TestVulnerabilitiesPageEmitsSeverityRank(t *testing.T) {
 	source := scanned(
-		directory.Finding{ID: "a", Severity: "Critical"},
-		directory.Finding{ID: "b", Severity: "Unknown"},
+		directory.Finding{ID: "a", Severity: directory.Critical},
+		directory.Finding{ID: "b", Severity: directory.Unknown},
 	)
 
 	body := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Body.String()
 
 	if !strings.Contains(body, `data-sort-key="0"`) || !strings.Contains(body, `data-sort-key="5"`) {
 		t.Errorf("severity ranks not emitted as sort keys:\n%s", body)
+	}
+}
+
+// The severity styles a cell through a class name that comes from the scale,
+// never from a string the scanner sent.
+func TestVulnerabilitiesPageStylesSeveritiesByTheScale(t *testing.T) {
+	source := scanned(
+		directory.Finding{ID: "a", Severity: directory.High},
+		directory.Finding{ID: "b", Severity: directory.Unknown},
+	)
+
+	body := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Body.String()
+
+	for _, want := range []string{`class="severity severity-high">High<`, `class="severity severity-unknown">Unknown<`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("page lacks %s:\n%s", want, body)
+		}
 	}
 }
 
@@ -102,9 +119,9 @@ func TestVulnerabilitiesPageSaysWhenNothingWasFound(t *testing.T) {
 // The summary is the sentence a reader takes away: how many, how bad.
 func TestVulnerabilitiesPageSummarisesBySeverity(t *testing.T) {
 	source := scanned(
-		directory.Finding{ID: "a", Severity: "High"},
-		directory.Finding{ID: "b", Severity: "High"},
-		directory.Finding{ID: "c", Severity: "Negligible"},
+		directory.Finding{ID: "a", Severity: directory.High},
+		directory.Finding{ID: "b", Severity: directory.High},
+		directory.Finding{ID: "c", Severity: directory.Negligible},
 	)
 
 	body := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Body.String()
@@ -120,7 +137,7 @@ func TestVulnerabilitiesPageSummarisesBySeverity(t *testing.T) {
 // statement gave: silencing on the record is the whole point of one.
 func TestVulnerabilitiesPageMarksSuppressedFindings(t *testing.T) {
 	source := scanned(directory.Finding{
-		ID: "CVE-2013-0337", Severity: "Medium", Package: "nginx",
+		ID: "CVE-2013-0337", Severity: directory.Medium, Package: "nginx",
 		Suppressed: &directory.Suppression{Status: "not_affected", Justification: "vulnerable_code_not_in_execute_path"},
 	})
 
@@ -216,7 +233,7 @@ func TestVulnerabilitiesETagChangesWithTheScan(t *testing.T) {
 // So can the VEX document: a statement withdrawn or added changes what the page
 // says about a finding, with the digest and the scan untouched.
 func TestVulnerabilitiesETagChangesWithTheSuppressions(t *testing.T) {
-	source := scanned(directory.Finding{ID: "CVE-2013-0337", Severity: "Medium"})
+	source := scanned(directory.Finding{ID: "CVE-2013-0337", Severity: directory.Medium})
 	first := get(t, source, "/directory/image/nginx/latest/vulnerabilities", nil).Header().Get("ETag")
 
 	source.scan.Findings[0].Suppressed = &directory.Suppression{Status: "not_affected", Justification: "vulnerable_code_not_in_execute_path"}

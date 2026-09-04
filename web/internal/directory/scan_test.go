@@ -29,10 +29,10 @@ func ids(rows []directory.FindingRow) []string {
 // that matters most before the twenty negligible ones.
 func TestNewReportOrdersRowsBySeverity(t *testing.T) {
 	r := report("",
-		directory.Finding{ID: "CVE-2026-0003", Severity: "Negligible"},
-		directory.Finding{ID: "CVE-2026-0001", Severity: "Critical"},
-		directory.Finding{ID: "CVE-2026-0004", Severity: "Unknown"},
-		directory.Finding{ID: "CVE-2026-0002", Severity: "High"},
+		directory.Finding{ID: "CVE-2026-0003", Severity: directory.Negligible},
+		directory.Finding{ID: "CVE-2026-0001", Severity: directory.Critical},
+		directory.Finding{ID: "CVE-2026-0004", Severity: directory.Unknown},
+		directory.Finding{ID: "CVE-2026-0002", Severity: directory.High},
 	)
 
 	want := []string{"CVE-2026-0001", "CVE-2026-0002", "CVE-2026-0003", "CVE-2026-0004"}
@@ -45,9 +45,9 @@ func TestNewReportOrdersRowsBySeverity(t *testing.T) {
 // is the one a reader has not heard about yet.
 func TestNewReportOrdersEqualSeveritiesByIDNewestFirst(t *testing.T) {
 	r := report("",
-		directory.Finding{ID: "CVE-2019-0001", Severity: "High"},
-		directory.Finding{ID: "CVE-2026-0001", Severity: "High"},
-		directory.Finding{ID: "CVE-2024-0001", Severity: "High"},
+		directory.Finding{ID: "CVE-2019-0001", Severity: directory.High},
+		directory.Finding{ID: "CVE-2026-0001", Severity: directory.High},
+		directory.Finding{ID: "CVE-2024-0001", Severity: directory.High},
 	)
 
 	want := []string{"CVE-2026-0001", "CVE-2024-0001", "CVE-2019-0001"}
@@ -56,25 +56,42 @@ func TestNewReportOrdersEqualSeveritiesByIDNewestFirst(t *testing.T) {
 	}
 }
 
-// The browser sorts the severity column on the rank, so the rank — not the
-// label — has to carry the order, and unknown has to land last rather than
-// wherever the alphabet puts it.
-func TestSeverityRankFollowsSeverityOrder(t *testing.T) {
-	r := report("",
-		directory.Finding{ID: "a", Severity: "Unknown"},
-		directory.Finding{ID: "b", Severity: "Negligible"},
-		directory.Finding{ID: "c", Severity: "Low"},
-		directory.Finding{ID: "d", Severity: "Medium"},
-		directory.Finding{ID: "e", Severity: "High"},
-		directory.Finding{ID: "f", Severity: "Critical"},
-	)
-
-	rank := map[string]int{}
-	for _, row := range r.Rows {
-		rank[row.ID] = row.SeverityRank
+// A scanner's label enters the model once, through ParseSeverity, and a label
+// off the scale becomes Unknown there rather than surviving as a string every
+// consumer has to defend against.
+func TestParseSeverity(t *testing.T) {
+	for label, want := range map[string]directory.Severity{
+		"Critical":     directory.Critical,
+		"high":         directory.High,
+		"MEDIUM":       directory.Medium,
+		"Low":          directory.Low,
+		"Negligible":   directory.Negligible,
+		"Unknown":      directory.Unknown,
+		"Catastrophic": directory.Unknown,
+		"":             directory.Unknown,
+	} {
+		if got := directory.ParseSeverity(label); got != want {
+			t.Errorf("ParseSeverity(%q) = %v, want %v", label, got, want)
+		}
 	}
-	if !(rank["f"] < rank["e"] && rank["e"] < rank["d"] && rank["d"] < rank["c"] && rank["c"] < rank["b"] && rank["b"] < rank["a"]) {
-		t.Errorf("ranks = %v, want critical < high < medium < low < negligible < unknown", rank)
+}
+
+// The scale ranks worst first, which is what the rows are sorted on and what
+// the browser sorts on — and its zero value is Unknown, so a Finding built
+// without a severity does not read as Critical.
+func TestSeverityScaleRanksWorstFirst(t *testing.T) {
+	scale := []directory.Severity{directory.Critical, directory.High, directory.Medium, directory.Low, directory.Negligible, directory.Unknown}
+	for i := 1; i < len(scale); i++ {
+		if !(scale[i-1].Rank() < scale[i].Rank()) {
+			t.Errorf("%v does not rank before %v", scale[i-1], scale[i])
+		}
+	}
+	var zero directory.Severity
+	if zero != directory.Unknown {
+		t.Errorf("zero value is %v, want Unknown", zero)
+	}
+	if directory.High.String() != "High" || directory.High.Lower() != "high" {
+		t.Errorf("High renders as %q / %q", directory.High.String(), directory.High.Lower())
 	}
 }
 
@@ -83,8 +100,8 @@ func TestSeverityRankFollowsSeverityOrder(t *testing.T) {
 // the findings that stand.
 func TestNewReportListsSuppressedFindingsLast(t *testing.T) {
 	r := report("",
-		directory.Finding{ID: "CVE-2026-0001", Severity: "Critical", Suppressed: &directory.Suppression{Status: "not_affected", Justification: "vulnerable_code_not_in_execute_path"}},
-		directory.Finding{ID: "CVE-2026-0002", Severity: "Low"},
+		directory.Finding{ID: "CVE-2026-0001", Severity: directory.Critical, Suppressed: &directory.Suppression{Status: "not_affected", Justification: "vulnerable_code_not_in_execute_path"}},
+		directory.Finding{ID: "CVE-2026-0002", Severity: directory.Low},
 	)
 
 	want := []string{"CVE-2026-0002", "CVE-2026-0001"}
@@ -132,13 +149,13 @@ func TestNewReportDefaultsToAmd64(t *testing.T) {
 // suppressed critical is not a critical.
 func TestNewReportSummarisesOpenFindingsBySeverity(t *testing.T) {
 	r := report("",
-		directory.Finding{ID: "a", Severity: "High"},
-		directory.Finding{ID: "b", Severity: "High"},
-		directory.Finding{ID: "c", Severity: "Negligible"},
-		directory.Finding{ID: "d", Severity: "Critical", Suppressed: &directory.Suppression{Status: "not_affected"}},
+		directory.Finding{ID: "a", Severity: directory.High},
+		directory.Finding{ID: "b", Severity: directory.High},
+		directory.Finding{ID: "c", Severity: directory.Negligible},
+		directory.Finding{ID: "d", Severity: directory.Critical, Suppressed: &directory.Suppression{Status: "not_affected"}},
 	)
 
-	want := []directory.SeverityCount{{Severity: "High", Count: 2}, {Severity: "Negligible", Count: 1}}
+	want := []directory.SeverityCount{{Severity: directory.High, Count: 2}, {Severity: directory.Negligible, Count: 1}}
 	if !slices.Equal(r.Summary, want) {
 		t.Errorf("summary = %v, want %v", r.Summary, want)
 	}

@@ -29,11 +29,7 @@ var assets embed.FS
 // Parsed once at startup so a broken template fails the process rather than a
 // request. The tests in this package execute it against real data, which is
 // what catches a renamed field.
-var pages = template.Must(template.New("").Funcs(template.FuncMap{
-	// Severities arrive capitalised, which is right for a cell and wrong
-	// mid-sentence.
-	"lower": strings.ToLower,
-}).ParseFS(assets, "templates/*.html"))
+var pages = template.Must(template.ParseFS(assets, "templates/*.html"))
 
 // Source resolves an image reference to the evidence attached to its Index.
 //

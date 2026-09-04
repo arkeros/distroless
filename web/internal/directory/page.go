@@ -21,7 +21,6 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"time"
 )
 
 //go:embed templates static/directory.css static/directory.mjs static/main.mjs static/fonts
@@ -267,11 +266,12 @@ func serveVulnerabilities(w http.ResponseWriter, r *http.Request, source Source,
 	report := NewReport(pullName(mirror, family, ref), digest, arch, scan)
 	report.Links = links(r, source, family, ref, digest, arch, viewVulnerabilities)
 
-	// Unlike an SBOM, a scan is not immutable for a Digest: the same build
-	// can be scanned again, and the newer record replaces the older on this
-	// page. So the validator names the scan too, or a cache would hold the
-	// old page for as long as the digest lived.
-	if !revalidated(w, r, ref, digest+"-"+report.Arch+"-"+scan.Finished.UTC().Format(time.RFC3339)) {
+	// Unlike an SBOM, what this page shows is not immutable for a Digest: the
+	// same build can be scanned again, and its VEX document reissued, and
+	// either replaces what the page says. So the validator carries a
+	// fingerprint of the content too, or a cache would hold the old page for
+	// as long as the digest lived.
+	if !revalidated(w, r, ref, digest+"-"+report.Arch+"-"+scan.Fingerprint()) {
 		writePage(w, "vulnerabilities.html", report, family, ref)
 	}
 }

@@ -1224,8 +1224,8 @@ func TestIndexListsEveryPublishedFamily(t *testing.T) {
 			t.Errorf("index repeats the mirror host on the %s card", family)
 		}
 	}
-	if strings.Count(body, "distroless.io") != 2 {
-		t.Errorf("index names the mirror host %d times, want once in the title and once in the heading:\n%s", strings.Count(body, "distroless.io"), body)
+	if strings.Count(body, "distroless.io") != 3 {
+		t.Errorf("index names the mirror host %d times, want once each in the title, the topbar and the heading:\n%s", strings.Count(body, "distroless.io"), body)
 	}
 }
 
@@ -1309,7 +1309,9 @@ func TestPagesTolerateAFamilyWithoutALogo(t *testing.T) {
 		if response.Code != http.StatusOK {
 			t.Errorf("GET %s = %d, want %d", target, response.Code, http.StatusOK)
 		}
-		if strings.Contains(response.Body.String(), `<span class="logo">`) {
+		// The topbar draws the listed families' marks on every page, so
+		// what must not appear is a mark with nothing in it.
+		if strings.Contains(response.Body.String(), `<span class="logo"></span>`) {
 			t.Errorf("GET %s draws an empty logo for a family that has none", target)
 		}
 	}
@@ -1343,5 +1345,112 @@ func TestPagesLeadBackToTheDirectory(t *testing.T) {
 		if crumb > heading {
 			t.Errorf("GET %s puts the crumb at %d after the heading at %d, want it above", target, crumb, heading)
 		}
+	}
+}
+
+// Every page carries the same strip above its own content: the mirror, as
+// the way home, and a search across every published family. The candidates
+// are shipped in the page as links, so without JavaScript the search is a
+// menu, and with it the menu is narrowed — nothing is fetched to find an
+// image.
+func TestPagesSearchEveryFamily(t *testing.T) {
+	source := &fakeSource{
+		digest:     testDigest,
+		components: []directory.Component{{Name: "libc6"}},
+		scan:       &directory.Scan{},
+		versions:   []directory.Version{{Tag: "latest", Digest: testDigest}},
+	}
+
+	for _, target := range []string{
+		"/directory",
+		"/directory/image/nginx/versions",
+		"/directory/image/nginx/latest/sbom",
+		"/directory/image/nginx/latest/vulnerabilities",
+	} {
+		body := get(t, source, target, nil).Body.String()
+
+		home := strings.Index(body, `<a class="home" href="/directory">distroless.io</a>`)
+		search := strings.Index(body, `<input id="search" type="search"`)
+		heading := strings.Index(body, "<h1>")
+		if home < 0 || search < 0 {
+			t.Errorf("GET %s has no topbar (home=%d search=%d):\n%s", target, home, search, body)
+			continue
+		}
+		if home > heading || search > heading {
+			t.Errorf("GET %s puts the topbar (home=%d search=%d) after the heading at %d, want it above", target, home, search, heading)
+		}
+		for _, family := range []string{"bash", "java", "node", "nginx"} {
+			if !strings.Contains(body, `<span class="name">`+family+`</span></a>`) {
+				t.Errorf("GET %s does not offer %s in the search:\n%s", target, family, body)
+			}
+		}
+	}
+}
+
+// Finding another family from the vulnerabilities of this one should land on
+// the vulnerabilities of that one, at its default tag and on the same
+// architecture: the reader asked to change image, not what they were looking
+// at. The versions page and the front page have no build to carry, so they
+// lead to the versions list.
+func TestSearchLeadsToTheSameViewOfAnotherFamily(t *testing.T) {
+	source := &fakeSource{
+		digest: testDigest,
+		components: []directory.Component{
+			{Name: "libc6", Arch: "amd64"},
+			{Name: "libc6", Arch: "arm64"},
+		},
+		scan: &directory.Scan{Findings: []directory.Finding{
+			{ID: "CVE-2024-0001", Arch: "amd64"},
+			{ID: "CVE-2024-0001", Arch: "arm64"},
+		}},
+		versions: []directory.Version{{Tag: "latest", Digest: testDigest}},
+	}
+
+	for _, c := range []struct{ target, want string }{
+		{"/directory", "/directory/image/java/versions"},
+		{"/directory/image/nginx/versions", "/directory/image/java/versions"},
+		{"/directory/image/nginx/1.30-debug/sbom?arch=arm64", "/directory/image/java/sbom?arch=arm64"},
+		{"/directory/image/nginx/1.30-debug/vulnerabilities?arch=arm64", "/directory/image/java/vulnerabilities?arch=arm64"},
+	} {
+		body := get(t, source, c.target, nil).Body.String()
+
+		if want := `<a href="` + c.want + `"><span class="logo">`; !strings.Contains(body, want) {
+			t.Errorf("GET %s does not lead to java at %s:\n%s", c.target, c.want, body)
+		}
+	}
+}
+
+// A candidate is drawn the way its card is: the family's mark beside its
+// name. The name is in an element of its own, because the mark carries a
+// title of its own — "OpenJDK" — and the search must match what the reader
+// sees as the name, not that.
+func TestSearchDrawsEachFamilyWithItsLogo(t *testing.T) {
+	body := get(t, &fakeSource{}, "/directory", nil).Body.String()
+
+	for _, family := range []string{"bash", "java", "node", "nginx"} {
+		want := `<a href="/directory/image/` + family + `/versions"><span class="logo"><svg`
+		if !strings.Contains(body, want) {
+			t.Errorf("the search does not draw the %s logo (%s):\n%s", family, want, body)
+		}
+		if !strings.Contains(body, `<span class="name">`+family+`</span></a>`) {
+			t.Errorf("the search does not name %s apart from its logo:\n%s", family, body)
+		}
+	}
+}
+
+// The box says what it is for with a magnifier as well as a placeholder: the
+// placeholder goes as soon as the reader types. Constant markup drawn in the
+// template, decoration to a screen reader, and before the input so it can
+// sit over the input's left edge without a wrapper of its own.
+func TestSearchBoxCarriesAMagnifier(t *testing.T) {
+	body := get(t, &fakeSource{}, "/directory", nil).Body.String()
+
+	icon := strings.Index(body, `<svg class="magnifier" aria-hidden="true"`)
+	input := strings.Index(body, `<input id="search"`)
+	if icon < 0 {
+		t.Fatalf("the search box has no magnifier:\n%s", body)
+	}
+	if icon > input {
+		t.Errorf("the magnifier at %d comes after the input at %d", icon, input)
 	}
 }

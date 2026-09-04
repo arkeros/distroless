@@ -82,6 +82,8 @@ type Table struct {
 	// Logo is the family's mark, the same one the front page draws, or
 	// empty for a family that has none. Set by the handler.
 	Logo template.HTML
+	// Topbar is the strip every page shares. Set by the handler.
+	Topbar Topbar
 	Links
 	Rows []Row
 }

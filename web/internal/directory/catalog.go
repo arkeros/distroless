@@ -49,6 +49,8 @@ type Index struct {
 	// Mirror is the host the images are published under.
 	Mirror string
 	Cards  []Card
+	// Topbar is the strip every page shares. Set by the handler.
+	Topbar Topbar
 }
 
 // NewIndex lists every published family under the mirror a reader pulls by.
@@ -80,4 +82,43 @@ func logo(family string) template.HTML {
 		return ""
 	}
 	return template.HTML(svg)
+}
+
+// Topbar is the strip above every page: the mirror, as the way home, and a
+// search across every published family.
+type Topbar struct {
+	// Mirror is the host the images are published under, which is also the
+	// name of the way home.
+	Mirror string
+	// Candidates is every published family, each linking to the view the
+	// reader is on — the vulnerabilities of java from the vulnerabilities of
+	// nginx — at the family's default tag, on the same architecture. The
+	// reader asked to change image, not what they were looking at.
+	//
+	// Shipped in the page rather than fetched, because there are four and
+	// the browser narrows them as the reader types. Without JavaScript they
+	// are a menu, which is why they are links and not a datalist.
+	Candidates []Candidate
+}
+
+// Candidate is one family the search can lead to, drawn as its card is: the
+// mark beside the name.
+type Candidate struct {
+	Name string
+	URL  string
+	Logo template.HTML
+}
+
+// topbar builds the strip for a page showing view, carrying query — the
+// architecture, or nothing — onto every candidate.
+func topbar(mirror, view, query string) Topbar {
+	candidates := make([]Candidate, 0, len(families))
+	for _, family := range families {
+		candidates = append(candidates, Candidate{
+			Name: family.Name,
+			URL:  familyURL(family.Name, view) + query,
+			Logo: logo(family.Name),
+		})
+	}
+	return Topbar{Mirror: mirror, Candidates: candidates}
 }

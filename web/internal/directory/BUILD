@@ -53,6 +53,7 @@ go_library(
         "static/main.mjs",
         "templates/index.html",
         "templates/sbom.html",
+        "templates/topbar.html",
         "templates/versions.html",
         "templates/vulnerabilities.html",
     ],

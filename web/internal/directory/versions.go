@@ -98,6 +98,8 @@ type Versions struct {
 	// Logo is the family's mark, the same one the front page draws, or
 	// empty for a family that has none. Set by the handler.
 	Logo template.HTML
+	// Topbar is the strip every page shares. Set by the handler.
+	Topbar Topbar
 	// SBOM and Vulnerabilities are the other two views in the navigation
 	// this page shares with them: the evidence for the build a bare pull
 	// would get, since a family-level page has no build of its own.

@@ -2,7 +2,7 @@
 // behaviours in directory.mjs. All the branching about which page this is
 // lives here, so nothing in directory.mjs has to ask.
 
-import { copyable, dismissSwitchers, sortable } from './directory.mjs';
+import { copyable, dismissSwitchers, searchable, sortable } from './directory.mjs';
 
 // No Clipboard API — a plain-http origin — means no copy button at all,
 // rather than one that cannot copy.
@@ -20,4 +20,11 @@ dismissSwitchers(document);
 const table = document.querySelector('table[data-sortable]');
 if (table !== null) {
   sortable(table);
+}
+
+// The image search is on every page. Found through its box rather than by
+// two ids, so the input and its list stay one thing in the markup.
+const search = document.querySelector('.search');
+if (search !== null) {
+  searchable(search.querySelector('ul'), search.querySelector('input'));
 }

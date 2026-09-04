@@ -92,6 +92,10 @@ const (
 	viewVulnerabilities = "vulnerabilities"
 )
 
+// viewVersions is the third view, and the one that belongs to a family
+// rather than to a build: there is no per-reference URL for it.
+const viewVersions = "versions"
+
 // NewHandler serves the directory pages and the assets they reference.
 //
 // mirror is the host the images are published under — the name a reader pulls
@@ -144,7 +148,7 @@ func NewHandler(source Source, mirror string) http.Handler {
 	// /directory/image/java.
 	for _, pattern := range []string{"GET /directory/image/{family}", "GET /directory/image/{family}/{$}"} {
 		mux.HandleFunc(pattern, permanentRedirect(func(family string) string {
-			return familyURL(family, "versions")
+			return familyURL(family, viewVersions)
 		}))
 	}
 	return mux
@@ -178,7 +182,9 @@ const indexURL = "/directory"
 // for as long as the assets are.
 func serveIndex(w http.ResponseWriter, mirror string) {
 	w.Header().Set("Cache-Control", "public, max-age=3600")
-	writePage(w, "index.html", NewIndex(mirror), "", "")
+	index := NewIndex(mirror)
+	index.Topbar = topbar(mirror, viewVersions, "")
+	writePage(w, "index.html", index, "", "")
 }
 
 // serveVersions lists what a family publishes right now.
@@ -197,6 +203,7 @@ func serveVersions(w http.ResponseWriter, r *http.Request, source Source, mirror
 
 	versions := NewVersions(mirror+"/"+family, published)
 	versions.Logo = logo(family)
+	versions.Topbar = topbar(mirror, viewVersions, "")
 	versions.SBOM = resourceURL(family, defaultRef, viewSBOM)
 	versions.Vulnerabilities = resourceURL(family, defaultRef, viewVulnerabilities)
 	for i, release := range versions.Releases {
@@ -253,6 +260,7 @@ func serveSBOM(w http.ResponseWriter, r *http.Request, source Source, mirror str
 	arch := r.URL.Query().Get("arch")
 	table := NewTable(pullName(mirror, family, ref), digest, arch, components)
 	table.Logo = logo(family)
+	table.Topbar = topbar(mirror, viewSBOM, archQuery(arch))
 	table.Links = links(r, source, family, ref, digest, arch, viewSBOM)
 
 	// An SBOM is immutable for a Digest, so the digest is the validator: a
@@ -284,6 +292,7 @@ func serveVulnerabilities(w http.ResponseWriter, r *http.Request, source Source,
 	arch := r.URL.Query().Get("arch")
 	report := NewReport(pullName(mirror, family, ref), digest, arch, scan)
 	report.Logo = logo(family)
+	report.Topbar = topbar(mirror, viewVulnerabilities, archQuery(arch))
 	report.Links = links(r, source, family, ref, digest, arch, viewVulnerabilities)
 
 	// Unlike an SBOM, what this page shows is not immutable for a Digest: the
@@ -399,15 +408,12 @@ func serveDocument(w http.ResponseWriter, r *http.Request, fetch func(context.Co
 // an unqualified page should stay unqualified. It is carried on every link so
 // that switching view or tag does not silently switch architecture too.
 func links(r *http.Request, source Source, family, ref, digest, arch, view string) Links {
-	query := ""
-	if arch != "" {
-		query = "?arch=" + url.QueryEscape(arch)
-	}
+	query := archQuery(arch)
 	built := Links{
 		Download:        resourceURL(family, ref, view+".json"),
 		SBOM:            resourceURL(family, ref, viewSBOM) + query,
 		Vulnerabilities: resourceURL(family, ref, viewVulnerabilities) + query,
-		Versions:        familyURL(family, "versions"),
+		Versions:        familyURL(family, viewVersions),
 		Showing:         ref,
 	}
 	// A page reached by tag can name the exact build it is showing; one
@@ -447,6 +453,15 @@ func siblings(r *http.Request, source Source, family, view, query string) []Tag 
 		siblings = append(siblings, Tag{Name: tag, URL: resourceURL(family, tag, view) + query})
 	}
 	return siblings
+}
+
+// archQuery is the query string that carries the architecture a reader asked
+// for from one page to the next, or nothing when they asked for none.
+func archQuery(arch string) string {
+	if arch == "" {
+		return ""
+	}
+	return "?arch=" + url.QueryEscape(arch)
 }
 
 // pullName is the image as a reader would pull it. A tag joins with a colon

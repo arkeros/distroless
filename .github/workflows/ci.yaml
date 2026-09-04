@@ -94,7 +94,8 @@ jobs:
   # Mirror publish.
   #
   # `publish` pushes every mirror image *by digest* — no tag names it yet —
-  # then signs it and attests its SBOM, both under this workflow's identity.
+  # then signs it and attests its SBOM, its vulnerability scan and its VEX
+  # document, all under this workflow's identity.
   # It then asks the registry which of those digests already carry platform
   # provenance and hands the rest to `provenance` as a matrix.
   # ---------------------------------------------------------------------------
@@ -203,8 +204,8 @@ jobs:
           echo "TRUSTED_ROOT=$(realpath "$(bazel cquery //oci:sigstore_trusted_root --output=files)")" >> "$GITHUB_ENV"
 
       # One build for everything the loop below runs: every mirror image's
-      # push binary, sign and SBOM-attest scripts, and the deploy manifest
-      # that names the digest. Before this, the loop ran three Bazel commands
+      # push binary, sign and attest scripts, the predicates those attest,
+      # and the deploy manifest that names the digest. Before this, the loop ran three Bazel commands
       # per image — sixty analyses of the same graph, the first one cold at
       # 30 s — for files one invocation produces. A separate step so its cost
       # is visible in the job timeline.
@@ -215,17 +216,19 @@ jobs:
       # lazy push (.bazelrc) the push binaries carry no layers, and `all` would
       # download every layer of every image as an intermediate output anyway —
       # the very thing lazy push exists to avoid. `toplevel` fetches the
-      # executables, their runfiles and the deploy manifests: kilobytes. One
-      # cquery then maps each target to its executable and, for pushes, its
-      # manifest — no per-image Bazel from here on.
+      # executables, their runfiles, the deploy manifests and the predicates:
+      # kilobytes to megabytes. One cquery then maps each target to its
+      # executable and, for pushes, its manifest; for attestations, its
+      # predicate — no per-image Bazel from here on.
       - name: Build every mirror image's push, sign and attest targets
         run: |
           set -euo pipefail
           TARGETS=$(bazel query 'kind("cosign_sign rule", //...) + kind("cosign_attest rule", //...) + kind("crane_tag rule", //...) + attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
           bazel build --remote_download_outputs=toplevel \
-              --output_groups=+deploy_manifest,+tags ${TARGETS}
-          # label <TAB> executable <TAB> deploy manifest (pushes) <TAB> expanded tag list (tags)
-          bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr='"%s\t%s\t%s\t%s" % (str(target.label).removeprefix("@@"), target.files_to_run.executable.path, (getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None).to_list()[0].path if getattr(providers(target)["OutputGroupInfo"], "deploy_manifest", None) else ""), (getattr(providers(target)["OutputGroupInfo"], "tags", None).to_list()[0].path if getattr(providers(target)["OutputGroupInfo"], "tags", None) else ""))' \
+              --output_groups=+deploy_manifest,+tags,+predicate ${TARGETS}
+          # label <TAB> executable <TAB> deploy manifest (pushes) <TAB> expanded tag list (tags) <TAB> predicate (attestations)
+          group() { echo "(getattr(providers(target)[\"OutputGroupInfo\"], \"$1\", None).to_list()[0].path if getattr(providers(target)[\"OutputGroupInfo\"], \"$1\", None) else \"\")"; }
+          bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr="\"%s\\t%s\\t%s\\t%s\\t%s\" % (str(target.label).removeprefix(\"@@\"), target.files_to_run.executable.path, $(group deploy_manifest), $(group tags), $(group predicate))" \
               > "${RUNNER_TEMP}/mirror_targets.tsv"
           echo "$(wc -l < "${RUNNER_TEMP}/mirror_targets.tsv") targets built"
 
@@ -249,25 +252,38 @@ jobs:
             echo "provenance_source_uri=${COSIGN_POLICY_PROVENANCE_SOURCE_URI}"
           } | tee -a "$GITHUB_OUTPUT"
 
-      # `mirror_push` macros emit <name>_push, <name>_sign, <name>_attest_sbom
-      # and <name>_tag. Every mirror image has exactly one `_sign`, so the
-      # `_sign` rows of the table built above enumerate the images. `_tag` is
-      # deliberately not run here — see `release`.
+      # `mirror_push` macros emit <name>_push, <name>_sign, <name>_attest_sbom,
+      # <name>_attest_vuln, <name>_attest_vex and <name>_tag. Every mirror
+      # image has exactly one `_sign`, so the `_sign` rows of the table built
+      # above enumerate the images. `_tag` is deliberately not run here — see
+      # `release`.
       #
-      # Every artifact is added at most once per digest. After the push, each
-      # of the three is *verified* under the production policy and classified:
+      # Every artifact is added at most once per digest, with two exceptions
+      # below. After the push, each one is *verified* under the production
+      # policy and classified:
       #   verified      → already there from an earlier run; skip.
-      #   absent        → add it: run `_sign` / `_attest_sbom`, or hand the
+      #   absent        → add it: run `_sign` / `_attest_*`, or hand the
       #                   digest to the `provenance` matrix.
       #   anything else → fail. A Rekor or TUF outage must not read as
       #                   "absent" and be answered with a duplicate
       #                   (ADR 0014: one of each per digest).
       #
-      # "Absent" for the two we sign includes "signed, but not by us": a
+      # "Absent" for the ones we sign includes "signed, but not by us": a
       # workflow rename heals itself on the next push, and a foreign signature
       # on our digest cannot block a release. Digests are stable across
       # commits when their content is, so a push that changes nothing adds
       # nothing.
+      #
+      # The exceptions are the two attestations whose truth moves while the
+      # digest stands still. A vulnerability scan is only as current as the
+      # database it ran against, so a digest is re-attested whenever the
+      # pinned database (//bazel/include:oci.MODULE.bazel, bumped daily by
+      # update-grype-db.yaml) is newer than the one any scan on the registry
+      # names; that is how a build published months ago still shows today's
+      # CVEs. A VEX document is re-attested whenever its statements differ
+      # from every one already attached — a statement added, withdrawn, or
+      # re-justified past its expiry. Each addition is one more referrer; the
+      # Directory shows the newest and verifies them all.
       - name: Push, sign, and attest mirror images
         id: publish
         env:
@@ -318,6 +334,53 @@ jobs:
           exe_of() { awk -F'\t' -v l="$1" '$1==l{print $2}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
           manifest_of() { awk -F'\t' -v l="$1" '$1==l{print $3}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
           tags_of() { awk -F'\t' -v l="$1" '$1==l{print $4}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
+          predicate_of() { awk -F'\t' -v l="$1" '$1==l{print $5}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
+
+          # attested TYPE REF: prints the predicate of every verified
+          # attestation of TYPE on REF, one JSON document per line. Empty when
+          # there are none; aborts, like needs_artifact, when cosign fails for
+          # a reason that is not a statement about the registry.
+          attested() {
+            local TYPE=$1 REF=$2
+            local STDERR; STDERR=$(mktemp)
+            if ! "${COSIGN}" verify-attestation \
+                --trusted-root="${TRUSTED_ROOT}" \
+                --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
+                --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
+                --type="${TYPE}" \
+                "${REF}" 2> "${STDERR}" | jq -r '.payload | @base64d | fromjson | .predicate | @json'; then
+              if grep -qE "no signatures found|no matching signatures|no matching attestations|none of the attestations matched the predicate type" "${STDERR}"; then
+                return 0
+              fi
+              echo "ERROR: could not list ${TYPE} attestations on ${REF}; refusing to guess." >&2
+              cat "${STDERR}" >&2
+              exit 1
+            fi
+          }
+
+          # stale TYPE REF PREDICATE: returns 0 when the attestation built
+          # here should be added even though REF already carries one of TYPE.
+          #   vuln    → no scan on the registry names a database at least as
+          #             new as the one this scan ran against.
+          #   openvex → no document on the registry carries exactly these
+          #             statements.
+          #   others  → never; one per digest.
+          stale() {
+            local TYPE=$1 REF=$2 PREDICATE=$3
+            case "${TYPE}" in
+              vuln)
+                local LOCAL; LOCAL=$(jq -r '.scanner.db.version' "${PREDICATE}")
+                attested vuln "${REF}" | jq -e -s --arg local "${LOCAL}" 'map(.scanner.db.version) | all(. < $local)' > /dev/null
+                ;;
+              openvex)
+                local LOCAL; LOCAL=$(jq -c -S '.statements | sort_by(.vulnerability.name, .status)' "${PREDICATE}")
+                attested openvex "${REF}" | jq -e -s --argjson local "${LOCAL}" 'map(.statements | sort_by(.vulnerability.name, .status)) | all(. != $local)' > /dev/null
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
 
           # Cross-runner check: the same target built on the `test` runner
           # must have produced the same digest, or nothing about this image
@@ -347,9 +410,6 @@ jobs:
             same_digest_as_test "${BASE}" "${DIGEST}"
 
             run_built "$(exe_of "${BASE}_push")"
-            TAGS=$(jq -R . "$(tags_of "${BASE}_tag")" | jq -c -s .)
-            jq -c -n --arg target "${BASE}" --arg ref "${REF}" --argjson tags "${TAGS}" '{$target, $ref, $tags}' \
-              >> "${RUNNER_TEMP}/published.jsonl"
 
             if ! needs_artifact signature "${REF}" \
                 "${COSIGN}" verify \
@@ -360,17 +420,36 @@ jobs:
               run_built "$(exe_of "${BASE}_sign")"
             fi
 
-            if [[ -n "$(exe_of "${BASE}_attest_sbom")" ]]; then
-              if ! needs_artifact "SBOM attestation" "${REF}" \
+            # One attestation per `_attest_<step>` target the macro emitted,
+            # each told apart by the predicate type cosign names it by. The
+            # types this image carries go to `verify`, which checks each one
+            # again under the production policy: a VEX document is only
+            # attested for images that publish statements, so `verify` cannot
+            # assume the set.
+            TYPES=()
+            for ATTESTATION in sbom:cyclonedx vuln:vuln vex:openvex; do
+              STEP=${ATTESTATION%%:*}
+              TYPE=${ATTESTATION##*:}
+              [[ -n "$(exe_of "${BASE}_attest_${STEP}")" ]] || continue
+              if ! needs_artifact "${TYPE} attestation" "${REF}" \
                   "${COSIGN}" verify-attestation \
                     --trusted-root="${TRUSTED_ROOT}" \
                     --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
                     --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
-                    --type=cyclonedx \
+                    --type="${TYPE}" \
                     "${REF}"; then
-                run_built "$(exe_of "${BASE}_attest_sbom")"
+                run_built "$(exe_of "${BASE}_attest_${STEP}")"
+              elif stale "${TYPE}" "${REF}" "$(predicate_of "${BASE}_attest_${STEP}")"; then
+                echo "${TYPE} attestation superseded, adding a fresh one: ${REF}"
+                run_built "$(exe_of "${BASE}_attest_${STEP}")"
               fi
-            fi
+              TYPES+=("${TYPE}")
+            done
+
+            TAGS=$(jq -R . "$(tags_of "${BASE}_tag")" | jq -c -s .)
+            ATTESTED=$(printf '%s\n' "${TYPES[@]}" | jq -R . | jq -c -s 'map(select(. != ""))')
+            jq -c -n --arg target "${BASE}" --arg ref "${REF}" --argjson tags "${TAGS}" --argjson types "${ATTESTED}" \
+              '{$target, $ref, $tags, $types}' >> "${RUNNER_TEMP}/published.jsonl"
 
             if ! needs_artifact provenance "${REF}" \
                 "${SLSA_VERIFIER}" verify-image "${REF}" \
@@ -496,12 +575,15 @@ jobs:
           echo "${EXPECTED_SHA256}  ${TRUSTED_ROOT}" | sha256sum -c -
           echo "TRUSTED_ROOT=${TRUSTED_ROOT}" >> "$GITHUB_ENV"
 
-      # Positive test: every digest `publish` pushed must carry all three
-      # artifacts under the production policy — our signature, our SBOM
-      # attestation, and platform provenance that names *this* repository as
-      # its source. Catches a mis-run attest step, a failed matrix leg that
-      # `provenance` reported anyway, signer drift between producer and
-      # policy, and provenance minted for the wrong source.
+      # Positive test: every digest `publish` pushed must carry every artifact
+      # under the production policy — our signature, each attestation
+      # `publish` says it attached (SBOM, vulnerability scan, VEX document),
+      # and platform provenance that names *this* repository as its source.
+      # An SBOM and a scan are not optional: a mirror image without either is
+      # a `mirror_push` that forgot to name them, and fails here by name.
+      # Catches a mis-run attest step, a failed matrix leg that `provenance`
+      # reported anyway, signer drift between producer and policy, and
+      # provenance minted for the wrong source.
       #
       # An empty list is refused first. Zero verifications passing is not
       # evidence of anything — it is the Silent zero this project's gates
@@ -522,26 +604,34 @@ jobs:
             exit 1
           fi
           echo "verifying ${COUNT} image(s)"
-          while IFS= read -r REF <&3; do
+          while IFS=$'\t' read -r REF TYPES <&3; do
             [[ -n "$REF" ]] || continue
             echo "::group::verify ${REF}"
+            for REQUIRED in cyclonedx vuln; do
+              if [[ " ${TYPES} " != *" ${REQUIRED} "* ]]; then
+                echo "ERROR: ${REF} was published without a ${REQUIRED} attestation; every mirror image carries an SBOM and a vulnerability scan." >&2
+                exit 1
+              fi
+            done
             "${COSIGN}" verify \
                 --trusted-root="${TRUSTED_ROOT}" \
                 --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
                 --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
                 "${REF}" > /dev/null
-            "${COSIGN}" verify-attestation \
-                --trusted-root="${TRUSTED_ROOT}" \
-                --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
-                --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
-                --type=cyclonedx \
-                "${REF}" > /dev/null
+            for TYPE in ${TYPES}; do
+              "${COSIGN}" verify-attestation \
+                  --trusted-root="${TRUSTED_ROOT}" \
+                  --certificate-identity-regexp="${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}" \
+                  --certificate-oidc-issuer="${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}" \
+                  --type="${TYPE}" \
+                  "${REF}" > /dev/null
+            done
             "${SLSA_VERIFIER}" verify-image "${REF}" \
                 --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
                 --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}"
-            echo "OK: ${REF}"
+            echo "OK: ${REF} (${TYPES})"
             echo "::endgroup::"
-          done 3< <(jq -r '.[].ref' <<< "${PUBLISHED}")
+          done 3< <(jq -r '.[] | [.ref, (.types | join(" "))] | @tsv' <<< "${PUBLISHED}")
 
       # Negative tests. Each must fail for the *specific* reason the policy
       # exists to produce; cosign or slsa-verifier failing for any other

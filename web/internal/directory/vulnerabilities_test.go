@@ -430,3 +430,31 @@ func TestVulnerabilitiesPageShowsOneRowPerVulnerability(t *testing.T) {
 		}
 	}
 }
+
+// The three views of a family are one navigation, on every page: a reader on
+// the versions list gets to the evidence, and a reader on the evidence gets
+// back to the list. From the list, the evidence links lead where a bare pull
+// would: the latest build.
+func TestEveryPageOffersTheSameViews(t *testing.T) {
+	source := scanned(directory.Finding{ID: "a"})
+	source.versions = []directory.Version{{Tag: "1.27", Digest: testDigest}}
+	source.components = []directory.Component{{Name: "libc6"}}
+
+	versions := get(t, source, "/directory/image/nginx/versions", nil).Body.String()
+	for _, want := range []string{
+		`<a aria-current="page">Versions</a>`,
+		`href="/directory/image/nginx/latest/sbom">SBOM</a>`,
+		`href="/directory/image/nginx/latest/vulnerabilities">Vulnerabilities</a>`,
+	} {
+		if !strings.Contains(versions, want) {
+			t.Errorf("versions page lacks %s:\n%s", want, versions)
+		}
+	}
+
+	for _, view := range []string{"sbom", "vulnerabilities"} {
+		body := get(t, source, "/directory/image/nginx/1.27/"+view, nil).Body.String()
+		if !strings.Contains(body, `href="/directory/image/nginx/versions">Versions</a>`) {
+			t.Errorf("%s page does not lead back to the versions list:\n%s", view, body)
+		}
+	}
+}

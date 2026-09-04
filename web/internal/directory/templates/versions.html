@@ -15,6 +15,12 @@
     <p class="command"><span class="prompt" aria-hidden="true">$</span> <code data-copyable tabindex="0">docker pull {{.Image}}</code></p>
   </section>
 
+  <nav class="views" aria-label="Evidence">
+    <a aria-current="page">Versions</a>
+    <a href="{{.SBOM}}">SBOM</a>
+    <a href="{{.Vulnerabilities}}">Vulnerabilities</a>
+  </nav>
+
   <div class="scroller" tabindex="0" role="region" aria-label="Versions">
     <table data-sortable id="versions">
       <thead>

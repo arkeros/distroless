@@ -43,9 +43,11 @@ type Links struct {
 	Download string
 	// SBOM and Vulnerabilities are the two views of this same build, at the
 	// same reference and architecture, so a reader can switch without losing
-	// the build they were on. One of them is the page itself.
+	// the build they were on. One of them is the page itself. Versions is
+	// the family's list, the third view in the same navigation.
 	SBOM            string
 	Vulnerabilities string
+	Versions        string
 	// Permalink is this same page addressed by Digest rather than by the tag
 	// the reader arrived on — the URL that will still show this exact build
 	// after the tag has moved. Empty when the reader is already at it.

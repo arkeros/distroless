@@ -176,6 +176,8 @@ func serveVersions(w http.ResponseWriter, r *http.Request, source Source, mirror
 	}
 
 	versions := NewVersions(mirror+"/"+family, published)
+	versions.SBOM = resourceURL(family, defaultRef, viewSBOM)
+	versions.Vulnerabilities = resourceURL(family, defaultRef, viewVulnerabilities)
 	for i, release := range versions.Releases {
 		versions.Releases[i].SBOM = resourceURL(family, release.Digest, viewSBOM)
 		versions.Releases[i].Vulnerabilities = resourceURL(family, release.Digest, viewVulnerabilities)
@@ -383,6 +385,7 @@ func links(r *http.Request, source Source, family, ref, digest, arch, view strin
 		Download:        resourceURL(family, ref, view+".json"),
 		SBOM:            resourceURL(family, ref, viewSBOM) + query,
 		Vulnerabilities: resourceURL(family, ref, viewVulnerabilities) + query,
+		Versions:        familyURL(family, "versions"),
 		Showing:         ref,
 	}
 	// A page reached by tag can name the exact build it is showing; one

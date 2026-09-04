@@ -95,6 +95,11 @@ type Versions struct {
 	// sorted. One size column each.
 	Architectures []string
 	Releases      []Release
+	// SBOM and Vulnerabilities are the other two views in the navigation
+	// this page shares with them: the evidence for the build a bare pull
+	// would get, since a family-level page has no build of its own.
+	SBOM            string
+	Vulnerabilities string
 }
 
 // NewVersions groups tags by the build they name and orders both, newest

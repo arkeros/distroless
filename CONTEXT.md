@@ -214,10 +214,11 @@ _Avoid_: CI verification (that guards this repo, not a consumer)
 - **Mirror push** binds the signature, the **SBOM**, the **Scan record** and
   the **VEX statement**s to a **Digest**, and is the only way onto the
   **Mirror**
-- A **Scan record** is made at publication and made again whenever the
-  pinned database is newer than the one it names, so a **Digest** carries a
-  history of scans; the **Directory** shows the newest, and what any one of
-  them says about today is bounded by the database build it names
+- A **Scan record** is made once per **Index**, is the scan the **Gate**s
+  ran, and is made again whenever the pinned database or the scanner is newer
+  than the one it names, so a **Digest** carries a history of scans; the
+  **Directory** shows the newest, and what any one of them says about today is
+  bounded by the database build it names
 - **Platform provenance** is bound to a **Digest** by the platform after the
   push, exactly once per digest, and under an identity that is the platform's
   rather than ours — so verifying it means checking the statement names this

@@ -882,7 +882,7 @@
         "bzlTransitiveDigest": "E6C1DeQhKMkx6a5eUA1e7wHFnDytCKDCLToAqdRfu90=",
         "usagesDigest": "h6g3papjZR8T8PqLQDkXSC09ce7kIf+6Ym+QlOhV/l8=",
         "recordedInputs": [
-          "FILE:@@//images/hummingbird.lock.json fb79df607bc02481b177e836755481675dec4f736a8986e6688bf7c1f2eac68c",
+          "FILE:@@//images/hummingbird.lock.json 9d087d608a5bc36f932aed27c1486f9963719d1647dfb7a2f130870c2c4c1134",
           "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json 880e99b4e9d6e32726926d5e69ca714bcc3a5819c8b27dbdf380926d8f5be511",
           "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json 2fb6782343aec03c4398968c174daa96fb336097356735d954d83d610c596061"
         ],
@@ -1270,12 +1270,12 @@
             "attributes": {
               "package": "hummingbird-gpg-keys",
               "arch": "noarch",
-              "version": "20251124-1.15.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-gpg-keys-20251124-1.15.hum1.noarch.rpm",
-              "sha256": "fa9997082fc2d37d92fc4767a71a143c87307f5664574873e32577aeddd98c09",
+              "version": "20251124-1.16.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-gpg-keys-20251124-1.16.hum1.noarch.rpm",
+              "sha256": "e62f7993f74614d35baf7f2daf8ad9ff3f4593a2fa100e85a99a8ffca88af55b",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.15.hum1.src.rpm",
+              "upstream": "hummingbird-release-20251124-1.16.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1284,12 +1284,12 @@
             "attributes": {
               "package": "hummingbird-release",
               "arch": "noarch",
-              "version": "20251124-1.15.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-release-20251124-1.15.hum1.noarch.rpm",
-              "sha256": "1962918e29843eac85ac7a0c9afd365bebde24aaf3612ebf71537dd13bfc9604",
+              "version": "20251124-1.16.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-release-20251124-1.16.hum1.noarch.rpm",
+              "sha256": "9ddb81fa46fb7d085b35b7c2c053b07b9feefc4e9dee0f5036f21a37da5f0d16",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.15.hum1.src.rpm",
+              "upstream": "hummingbird-release-20251124-1.16.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },
@@ -1298,12 +1298,12 @@
             "attributes": {
               "package": "hummingbird-repos",
               "arch": "noarch",
-              "version": "20251124-1.15.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-repos-20251124-1.15.hum1.noarch.rpm",
-              "sha256": "a23c8138e877f5fe11e2f19c500b9e4a2a5a4392245d204713dd3ba44136f81e",
+              "version": "20251124-1.16.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-repos-20251124-1.16.hum1.noarch.rpm",
+              "sha256": "592fdc37a3ae95df621343516949350e73eec8ac5a8b5541d9e7287e2a46d61a",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.15.hum1.src.rpm",
+              "upstream": "hummingbird-release-20251124-1.16.hum1.src.rpm",
               "purl_distro": "hummingbird-1"
             }
           },

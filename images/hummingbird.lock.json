@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1788374272",
-    "repomd_sha256": "8b52e5fab765bb625565ff2f3cb5687535d6b0a499d4c3a6483a0f43a089db48"
+    "revision": "1788475884",
+    "repomd_sha256": "85c22b6994e452f7b728ae7b9c48adc4a6793f07e3238f6c2e5b9dfd22948cd0"
   },
   "packages": {
     "audit-libs": {
@@ -256,32 +256,32 @@
     },
     "hummingbird-gpg-keys": {
       "noarch": {
-        "version": "20251124-1.15.hum1",
-        "sha256": "fa9997082fc2d37d92fc4767a71a143c87307f5664574873e32577aeddd98c09",
-        "path": "x86_64/Packages/h/hummingbird-gpg-keys-20251124-1.15.hum1.noarch.rpm",
+        "version": "20251124-1.16.hum1",
+        "sha256": "e62f7993f74614d35baf7f2daf8ad9ff3f4593a2fa100e85a99a8ffca88af55b",
+        "path": "x86_64/Packages/h/hummingbird-gpg-keys-20251124-1.16.hum1.noarch.rpm",
         "size": 29130,
         "license": "GPL-2.0-or-later",
-        "upstream": "hummingbird-release-20251124-1.15.hum1.src.rpm"
+        "upstream": "hummingbird-release-20251124-1.16.hum1.src.rpm"
       }
     },
     "hummingbird-release": {
       "noarch": {
-        "version": "20251124-1.15.hum1",
-        "sha256": "1962918e29843eac85ac7a0c9afd365bebde24aaf3612ebf71537dd13bfc9604",
-        "path": "x86_64/Packages/h/hummingbird-release-20251124-1.15.hum1.noarch.rpm",
-        "size": 24664,
+        "version": "20251124-1.16.hum1",
+        "sha256": "9ddb81fa46fb7d085b35b7c2c053b07b9feefc4e9dee0f5036f21a37da5f0d16",
+        "path": "x86_64/Packages/h/hummingbird-release-20251124-1.16.hum1.noarch.rpm",
+        "size": 23440,
         "license": "GPL-2.0-or-later",
-        "upstream": "hummingbird-release-20251124-1.15.hum1.src.rpm"
+        "upstream": "hummingbird-release-20251124-1.16.hum1.src.rpm"
       }
     },
     "hummingbird-repos": {
       "noarch": {
-        "version": "20251124-1.15.hum1",
-        "sha256": "a23c8138e877f5fe11e2f19c500b9e4a2a5a4392245d204713dd3ba44136f81e",
-        "path": "x86_64/Packages/h/hummingbird-repos-20251124-1.15.hum1.noarch.rpm",
+        "version": "20251124-1.16.hum1",
+        "sha256": "592fdc37a3ae95df621343516949350e73eec8ac5a8b5541d9e7287e2a46d61a",
+        "path": "x86_64/Packages/h/hummingbird-repos-20251124-1.16.hum1.noarch.rpm",
         "size": 13763,
         "license": "GPL-2.0-or-later",
-        "upstream": "hummingbird-release-20251124-1.15.hum1.src.rpm"
+        "upstream": "hummingbird-release-20251124-1.16.hum1.src.rpm"
       }
     },
     "libacl": {

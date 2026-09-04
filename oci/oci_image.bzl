@@ -10,6 +10,7 @@ def oci_image(
         ignore_cves = None,
         vex = None,
         created = None,
+        gate = True,
         **kwargs):
     """Build an OCI container image with SBOM + CVE scanning.
 
@@ -19,6 +20,12 @@ def oci_image(
 
     Args:
         name: Target name.
+        gate: Whether to attach `image_supply_chain` to this manifest. Off for
+            a manifest that is one architecture of an `image_index` whose
+            gates run on the index instead (//images:matrix.bzl): one scan
+            per index both decides publication and is attested as the record
+            of it, and scanning each architecture again would be the same
+            findings under another name.
         fail_on_severity: CVE severity threshold for the policy test.
             Default "high".
         ignore_cves: List of CVE IDs to allow-list (flat).
@@ -43,12 +50,13 @@ def oci_image(
         **kwargs
     )
 
-    image_supply_chain(
-        fail_on_severity = fail_on_severity,
-        ignore_cves = ignore_cves,
-        vex = vex,
-        image = ":" + name,
-    )
+    if gate:
+        image_supply_chain(
+            fail_on_severity = fail_on_severity,
+            ignore_cves = ignore_cves,
+            vex = vex,
+            image = ":" + name,
+        )
 
     image_load(
         name = name + "_load",

@@ -4,7 +4,7 @@ load("@rules_img//img:image.bzl", "image_index")
 load("//images:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//images/common:variables.bzl", "NONROOT")
 load("//oci:oci_image.bzl", "oci_image")
-load("//oci:supply_chain.bzl", "image_sbom", "image_vulnerabilities")
+load("//oci:supply_chain.bzl", "image_supply_chain")
 
 # Where each Distro's licence data comes from. Hummingbird's rpm metadata
 # declares one per package, recorded in the lockfile by `rules_rpm`'s pin tool.
@@ -55,7 +55,13 @@ def _emit_image(arch, uid, working_dir, **kwargs):
     kwargs["platform"] = ARCHITECTURE_PLATFORMS[arch]
     kwargs["user"] = "%d" % uid
     kwargs["working_dir"] = working_dir
+
+    # One architecture of an index: the gates run on the index below.
+    kwargs["gate"] = False
     oci_image(**kwargs)
+
+# What image_supply_chain takes and oci_image would otherwise forward to it.
+_GATE_ARGS = ["fail_on_severity", "ignore_cves", "vex"]
 
 def distroless_matrix(
         name,
@@ -101,18 +107,28 @@ def distroless_matrix(
         debug_annotations: optional debug image annotations override.
         debug_index_annotations: optional debug index annotations override.
         debug_ignore_cves: optional list extending kwargs["ignore_cves"] for
-            debug images only — useful when debug layers add packages
+            the debug indexes only — useful when debug layers add packages
             (e.g. busybox) not present in the release image.
         debug_vex: optional list of VEX document labels extending
-            kwargs["vex"] for debug images only — for justifications that
-            apply only to packages added by debug layers. Mirrors
+            kwargs["vex"] for the debug indexes only — for justifications
+            that apply only to packages added by debug layers. Mirrors
             debug_ignore_cves in shape.
         created: optional label of a one-file RFC 3339 timestamp,
             forwarded to `oci_image(created = ...)`. Shared across
             release and debug variants — same upstream-snapshot anchor
             applies. See //oci:created_timestamp.bzl.
-        **kwargs: passed through to oci_image (e.g. ignore_cves, fail_on_severity).
+        **kwargs: passed through to oci_image, except `fail_on_severity`,
+            `ignore_cves` and `vex`, which go to the `image_supply_chain` of
+            each index: the gates run once per index, over the SBOM that
+            covers every architecture, and that same scan is what
+            `mirror_push` attests. Findings still name their architecture,
+            since every purl carries it.
     """
+
+    gate = {}
+    for key in _GATE_ARGS:
+        if key in kwargs:
+            gate[key] = kwargs.pop(key)
 
     release_env = env or {}
     release_annotations = annotations or {}
@@ -156,12 +172,6 @@ def distroless_matrix(
             debug_context["mode"] = "_debug"
             debug_context["debug_name"] = debug_name
 
-            debug_kwargs = _copy_dict(kwargs)
-            if debug_ignore_cves:
-                debug_kwargs["ignore_cves"] = (debug_kwargs.get("ignore_cves") or []) + debug_ignore_cves
-            if debug_vex:
-                debug_kwargs["vex"] = (debug_kwargs.get("vex") or []) + debug_vex
-
             _emit_image(
                 name = debug_name,
                 arch = arch,
@@ -172,7 +182,7 @@ def distroless_matrix(
                 env = effective_debug_env,
                 annotations = effective_debug_annotations,
                 created = created,
-                **debug_kwargs
+                **kwargs
             )
 
     for (mode, mode_annotations) in [
@@ -190,21 +200,22 @@ def distroless_matrix(
                 ],
             )
 
-            # Index-level CycloneDX SBOM, used as the predicate for mirror_push's
-            # SBOM attestation. Per-arch CVE testing already runs via oci_image;
-            # this is just the unified-across-archs materials manifest.
+            # The SBOM, the scan and the gates, once per index. The index SBOM
+            # is the same generator's walk over every architecture at once,
+            # with each purl naming its arch, so one scan of it is every
+            # per-arch scan in one report — and the report that decided
+            # publication is the one mirror_push attests. Debug indexes carry
+            # the debug suppressions on top of the release ones.
+            index_gate = _copy_dict(gate)
+            if mode == "_debug":
+                if debug_ignore_cves:
+                    index_gate["ignore_cves"] = (index_gate.get("ignore_cves") or []) + debug_ignore_cves
+                if debug_vex:
+                    index_gate["vex"] = (index_gate.get("vex") or []) + debug_vex
             licenses, licenses_format = _DISTRO_LICENSES.get(distro, (None, None))
-            image_sbom(
+            image_supply_chain(
                 image = ":" + index_name,
                 licenses = licenses,
                 licenses_format = licenses_format,
-            )
-
-            # Index-level scan, attested by mirror_push next to the SBOM. The
-            # per-arch gates decide whether the image ships; this records what
-            # the scanner found in what shipped. Debug variants carry the
-            # debug VEX on top of the release one, as their gates do.
-            image_vulnerabilities(
-                image = ":" + index_name,
-                vex = (kwargs.get("vex") or []) + ((debug_vex or []) if mode == "_debug" else []),
+                **index_gate
             )

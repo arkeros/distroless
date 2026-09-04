@@ -67,11 +67,11 @@ def mirror_push(
         `<image>_sbom` target produced by `image_supply_chain`). When set,
         adds an `attest_sbom` step.
       vulnerabilities: Optional label of a cosign vulnerability scan record
-        (the `<image>_vuln` target from `image_supply_chain` or
-        `image_vulnerabilities`). When set, adds an `attest_vuln` step. The
-        Directory's vulnerabilities page is rendered from this.
+        (the `<image>_vuln` target `image_supply_chain` produces from the same
+        scan that gates the image). When set, adds an `attest_vuln` step. The
+        Directory's vulnerabilities page is rendered from this. See ADR 0015.
       vex: Optional label of an OpenVEX document (the `<image>_vex` target
-        from the same macros). When set, adds an `attest_vex` step. Kept apart
+        from the same macro). When set, adds an `attest_vex` step. Kept apart
         from the scan on purpose: the scan says what the scanner found, this
         says what the project makes of it, and each is verifiable alone.
       registry: Mirror registry. Default: `OCI_REGISTRY` (`ghcr.io`).

@@ -143,7 +143,8 @@ def vulnerability_attestation(base, scan, vex = None):
     — and, when `vex` names any documents, `<base>_vex`, the OpenVEX document
     merged from them. The scan is attested unfiltered and the VEX separately:
     the record says what the scanner found, the VEX what this project makes
-    of it, and a consumer (the Directory among them) joins the two.
+    of it, and a consumer (the Directory among them) joins the two. See ADR
+    0015.
 
     Args:
       base: Target stem; the image's base label.
@@ -169,29 +170,6 @@ def vulnerability_attestation(base, scan, vex = None):
             ],
             filter = _VEX_MERGE_FILTER,
         )
-
-def image_vulnerabilities(image, vex = None, database = "@grype_database"):
-    """Scan an image's SBOM and prepare the scan for attestation, without gating.
-
-    For the Index of a multi-arch image, whose per-arch manifests
-    `image_supply_chain` already gates: this is the scan a consumer would get
-    from `grype sbom:<sbom>`, covering every architecture at once, kept as a
-    record of what the scanner found in what shipped. Generates
-    `<base>_vuln_scan` plus what `vulnerability_attestation` does. Requires
-    `<base>_sbom` from `image_sbom`.
-
-    Args:
-      image: Label of the OCI image (typically an `image_index`).
-      vex: Optional list of OpenVEX document labels the image's gates apply.
-      database: Grype vulnerability DB target. Default `@grype_database`.
-    """
-    base = image.rsplit(":", 1)[-1]
-    grype_scan(
-        name = base + "_vuln_scan",
-        database = database,
-        sbom = ":" + base + "_sbom",
-    )
-    vulnerability_attestation(base, ":" + base + "_vuln_scan", vex)
 
 def image_sbom(image, licenses = None, licenses_format = None):
     """Attach a CycloneDX SBOM to an OCI image, without CVE scanning or gating.

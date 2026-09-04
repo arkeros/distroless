@@ -12,8 +12,8 @@ version: 1
 sources:
   - channel: unstable main contrib
     urls:
-      - https://snapshot.debian.org/archive/debian/20260903T023604Z
-      - https://snapshot-cloudflare.debian.org/archive/debian/20260903T023604Z
+      - https://snapshot.debian.org/archive/debian/20260904T145907Z
+      - https://snapshot-cloudflare.debian.org/archive/debian/20260904T145907Z
 archs:
   - amd64
   - arm64

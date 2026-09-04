@@ -279,8 +279,8 @@ github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiE
 github.com/aymanbagabas/go-osc52/v2 v2.0.1/go.mod h1:uYgXzlJ7ZpABp8OJ+exZzJJhRNQ2ASbcXHWsFqH8hp8=
 github.com/bazelbuild/bazel-watcher v0.33.0 h1:C6e5no+kpIT6PB0Mvq70cBy1uaBJhkRGaLTnsMEY/0A=
 github.com/bazelbuild/bazel-watcher v0.33.0/go.mod h1:iue+AnDyN3JHJVu9R4lqdifqVc5NCdOYb/uCVrMlRDY=
-github.com/bazelbuild/buildtools v0.0.0-20260903103648-d171d550ae01 h1:8tma/S7HgK3Go5GPKSB6mnXb7IERtw4a6uyZKOe2k1o=
-github.com/bazelbuild/buildtools v0.0.0-20260903103648-d171d550ae01/go.mod h1:jWjcMGVH6hAgMG98abRQOIvoFFLPx/p3e5eeTGIHUMc=
+github.com/bazelbuild/buildtools v0.0.0-20260904073137-eaa4d125b423 h1:scNMqf+FgmWYYwsX4TNjQcDLZu5kbWSwNsbrGkiF23I=
+github.com/bazelbuild/buildtools v0.0.0-20260904073137-eaa4d125b423/go.mod h1:jWjcMGVH6hAgMG98abRQOIvoFFLPx/p3e5eeTGIHUMc=
 github.com/becheran/wildmatch-go v1.0.0 h1:mE3dGGkTmpKtT4Z+88t8RStG40yN9T+kFEGj2PZFSzA=
 github.com/becheran/wildmatch-go v1.0.0/go.mod h1:gbMvj0NtVdJ15Mg/mH9uxk2R1QCistMyU7d9KFzroX4=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=

@@ -331,14 +331,25 @@ describe('sorting', () => {
 });
 
 describe('filter', () => {
-  function filterFixture() {
+  function filterFixture({ noun = 'components' } = {}) {
     const filter = node({ value: '' });
-    const count = node();
+    const count = node({ dataset: { noun } });
     const t = fakeTable(['name'], [[['libc6']], [['openssl']], [['zlib1g']]],
       { elements: { filter, count } });
     sortable(t.table);
     return { t, filter, count };
   }
+
+  it('counts in the noun the page gave it', () => {
+    // Two pages share this file and count different things; the page says
+    // which, so the script never has to be told which page it is on.
+    const { filter, count } = filterFixture({ noun: 'findings' });
+
+    filter.value = 'ssl';
+    filter.handlers.input();
+
+    assert.equal(count.textContent, '1 of 3 findings');
+  });
 
   it('hides what does not match, and counts what is left', () => {
     const { t, filter, count } = filterFixture();

@@ -1,0 +1,211 @@
+package directory
+
+import (
+	"cmp"
+	"slices"
+	"strings"
+	"time"
+)
+
+// Scan is one vulnerability scan of an Index, read off a verified
+// vulnerability attestation.
+//
+// A scan is a statement about a moment: which findings a given scanner, with a
+// given database, matched against the SBOM. Both dates are carried because an
+// empty result is only evidence if the reader can see how fresh the database
+// was — a scan from before a CVE was published says nothing about it.
+type Scan struct {
+	// Scanner names the tool and version that produced the scan, e.g.
+	// "grype 0.118.0".
+	Scanner string
+	// Database is when the vulnerability database the scan consulted was
+	// built. The freshness that matters: a scanner only knows the CVEs its
+	// database does.
+	Database time.Time
+	// Finished is when the scan ran.
+	Finished time.Time
+	Findings []Finding
+}
+
+// Finding is one vulnerability matched to one Component.
+type Finding struct {
+	// ID is the vulnerability's identifier — a CVE, or a GHSA where the
+	// ecosystem has no CVE for it yet.
+	ID string
+	// Severity as the scanner reports it: Critical, High, Medium, Low,
+	// Negligible or Unknown.
+	Severity string
+	// Package and Version identify the Component the finding was matched to.
+	Package string
+	Version string
+	// Type is the purl ecosystem of that Component — deb, rpm, generic.
+	Type string
+	// Arch is the architecture the Component was built for. An Index scan
+	// covers every architecture, so the same finding recurs once per
+	// architecture and this is what tells the copies apart.
+	Arch string
+	PURL string
+	// FixedIn lists the versions that carry a fix, when the scanner knows of
+	// any. Empty with FixState saying why.
+	FixedIn []string
+	// FixState is the scanner's word on a fix: fixed, not-fixed, wont-fix or
+	// unknown.
+	FixState string
+	// URL is where the scanner read the vulnerability from — the distro's
+	// tracker entry, most often — which is where a reader goes to learn more.
+	URL         string
+	Description string
+	// Suppressed is set when the scanner set this finding aside on the
+	// strength of a VEX statement; nil for a finding that stands. The finding
+	// is still listed, because a VEX statement silences on the record and the
+	// record is what this page shows.
+	Suppressed *Suppression
+}
+
+// Suppression is what a VEX statement said about a finding.
+type Suppression struct {
+	// Status is the OpenVEX status the statement carries: not_affected, or
+	// fixed for a version the scanner's database has not caught up with.
+	Status string
+	// Justification is why, for a not_affected statement, in OpenVEX's
+	// vocabulary: vulnerable_code_not_in_execute_path and the like.
+	Justification string
+	// Impact is the statement's own explanation, in prose, when it gave one.
+	Impact string
+}
+
+// Words says a Suppression the way a reader would: "not affected: vulnerable
+// code not in execute path". OpenVEX's vocabulary is snake_case identifiers,
+// which are for machines.
+func (s Suppression) Words() string {
+	words := strings.ReplaceAll(s.Status, "_", " ")
+	if s.Justification != "" {
+		words += ": " + strings.ReplaceAll(s.Justification, "_", " ")
+	}
+	return words
+}
+
+// FindingRow is a Finding prepared for rendering.
+type FindingRow struct {
+	Finding
+	// SeverityRank is the Finding's position in severity order, for the
+	// browser to sort on: sorted as text, "Critical" lands between "Low" and
+	// "Unknown" alphabetically.
+	SeverityRank int
+	// Fix is FixedIn as one cell.
+	Fix string
+}
+
+// SeverityCount is how many open findings a Report has at one severity.
+type SeverityCount struct {
+	Severity string
+	Count    int
+}
+
+// Report is one Scan ready to render, for one architecture.
+type Report struct {
+	// Image is what the reader asked for, e.g. "nginx:latest".
+	Image string
+	// Digest is what they actually got.
+	Digest string
+	// Arch is the architecture these Rows describe; Architectures is every
+	// one the Index carries, sorted. The same arrangement as the SBOM page,
+	// for the same reason.
+	Arch          string
+	Architectures []string
+	Scanner       string
+	Database      time.Time
+	Finished      time.Time
+	Links
+	Rows []FindingRow
+	// Open counts the Rows that stand; Suppressed the ones a VEX statement
+	// set aside.
+	Open       int
+	Suppressed int
+	// Summary counts the open findings by severity, worst first, listing only
+	// the severities that occur.
+	Summary []SeverityCount
+}
+
+// severities is the scanner's scale, worst first. It is the order the rows are
+// served in and the order the summary reads in.
+var severities = []string{"Critical", "High", "Medium", "Low", "Negligible", "Unknown"}
+
+// severityRank places a severity label on the scale. A label the scanner
+// invents sorts after everything it did not.
+func severityRank(severity string) int {
+	for rank, known := range severities {
+		if strings.EqualFold(severity, known) {
+			return rank
+		}
+	}
+	return len(severities)
+}
+
+// NewReport selects the Findings belonging to arch and orders them as a reader
+// wants to meet them: the findings that stand before the suppressed ones, the
+// worst severity first, and within a severity the newest identifier first.
+//
+// arch is resolved as on the SBOM page: empty or absent falls back to amd64,
+// then to whatever is there.
+func NewReport(image, digest, arch string, scan *Scan) *Report {
+	available := architectures(scan.Findings, func(f Finding) string { return f.Arch })
+	arch = resolveArch(arch, available)
+
+	rows := make([]FindingRow, 0, len(scan.Findings))
+	for _, finding := range scan.Findings {
+		if belongsTo(finding.Arch, arch) {
+			rows = append(rows, FindingRow{
+				Finding:      finding,
+				SeverityRank: severityRank(finding.Severity),
+				Fix:          strings.Join(finding.FixedIn, ", "),
+			})
+		}
+	}
+	slices.SortStableFunc(rows, func(a, b FindingRow) int {
+		return cmp.Or(
+			compareSuppressed(a, b),
+			cmp.Compare(a.SeverityRank, b.SeverityRank),
+			cmp.Compare(b.ID, a.ID),
+			cmp.Compare(a.Package, b.Package),
+		)
+	})
+
+	report := &Report{
+		Image:         image,
+		Digest:        digest,
+		Arch:          arch,
+		Architectures: available,
+		Scanner:       scan.Scanner,
+		Database:      scan.Database,
+		Finished:      scan.Finished,
+		Rows:          rows,
+	}
+	counts := make([]int, len(severities)+1)
+	for _, row := range rows {
+		if row.Suppressed != nil {
+			report.Suppressed++
+			continue
+		}
+		report.Open++
+		counts[row.SeverityRank]++
+	}
+	for rank, count := range counts[:len(severities)] {
+		if count > 0 {
+			report.Summary = append(report.Summary, SeverityCount{Severity: severities[rank], Count: count})
+		}
+	}
+	return report
+}
+
+// compareSuppressed orders open findings before suppressed ones.
+func compareSuppressed(a, b FindingRow) int {
+	switch {
+	case a.Suppressed == nil && b.Suppressed != nil:
+		return -1
+	case a.Suppressed != nil && b.Suppressed == nil:
+		return 1
+	default:
+		return 0
+	}
+}

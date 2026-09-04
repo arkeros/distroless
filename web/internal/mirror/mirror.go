@@ -21,6 +21,7 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 
 	"github.com/arkeros/distroless/web/internal/attestation"
 	"github.com/arkeros/distroless/web/internal/directory"
@@ -42,13 +43,21 @@ const maxTagLookups = 8
 // real tags.
 var cosignFallbackTag = regexp.MustCompile(`^sha256-[0-9a-f]{64}(\.[a-z]+)?$`)
 
+// defaultScanTTL bounds how long a Digest's scan is served from memory. Unlike
+// components, a scan is not immutable for a digest: CI attaches a fresh one
+// whenever the vulnerability database pin moves, about daily, and a reader
+// should see it within the hour rather than when this process happens to
+// restart.
+const defaultScanTTL = time.Hour
+
 // maxAttestationBytes caps how much of a referrer blob is read. A full SBOM
 // for a language runtime runs to a few MB; anything past this is not one.
 const maxAttestationBytes = 64 << 20
 
-// errNotSBOM marks a referrer that verified fine and simply asserts something
-// else — the SLSA provenance attached to the same Digest, most often.
-var errNotSBOM = errors.New("no CycloneDX attestation on this referrer")
+// errUnverified marks a referrer that carried nothing this Verifier would
+// accept: a signature rather than an attestation, or an attestation signed by
+// someone else or about another image.
+var errUnverified = errors.New("no verifiable attestation on this referrer")
 
 // Verifier establishes that an attestation blob was signed by the identity
 // permitted to publish to the Mirror, and reports what it asserts.
@@ -56,7 +65,7 @@ type Verifier interface {
 	Verify(blob []byte, subjectDigest string) (*attestation.Statement, error)
 }
 
-// Client reads SBOMs off a registry holding the Mirror's images.
+// Client reads attestations off a registry holding the Mirror's images.
 type Client struct {
 	registry         string
 	repositoryPrefix string
@@ -78,6 +87,11 @@ type Client struct {
 	// digest, keyed by Digest. Immutable for a digest like the components
 	// are, and read once per versions page rather than once per tag on it.
 	builds *lru.Cache[string, build]
+
+	// scans resolved per Digest, for the same reason as components — but
+	// expiring, because a digest acquires newer scans. See defaultScanTTL.
+	scans   *expirable.LRU[string, *directory.Scan]
+	scanTTL time.Duration
 }
 
 // Option configures a Client.
@@ -87,6 +101,14 @@ type Option func(*Client)
 func Insecure() Option {
 	return func(c *Client) {
 		c.nameOptions = append(c.nameOptions, name.Insecure)
+	}
+}
+
+// ScanTTL sets how long a Digest's scan is served from memory before the
+// registry is asked again. For tests; the default is defaultScanTTL.
+func ScanTTL(ttl time.Duration) Option {
+	return func(c *Client) {
+		c.scanTTL = ttl
 	}
 }
 
@@ -101,7 +123,7 @@ func WithRemoteOptions(options ...remote.Option) Option {
 // option because a Client that renders unverified attestations is not a
 // degraded Client, it is the wrong thing entirely.
 func New(registry, repositoryPrefix string, verifier Verifier, options ...Option) *Client {
-	c := &Client{registry: registry, repositoryPrefix: repositoryPrefix, verifier: verifier}
+	c := &Client{registry: registry, repositoryPrefix: repositoryPrefix, verifier: verifier, scanTTL: defaultScanTTL}
 	// Only errors on a non-positive size, and maxCachedImages is a positive
 	// constant — so this cannot fail at runtime.
 	cache, err := lru.New[string, []directory.Component](maxCachedImages)
@@ -117,6 +139,8 @@ func New(registry, repositoryPrefix string, verifier Verifier, options ...Option
 	for _, option := range options {
 		option(c)
 	}
+	// After the options, so it carries the TTL they may have set.
+	c.scans = expirable.NewLRU[string, *directory.Scan](maxCachedImages, nil, c.scanTTL)
 	// Built after the options, so it carries them. Only errors on malformed
 	// options, which would be a programming error here rather than a runtime
 	// condition.
@@ -146,7 +170,7 @@ func (c *Client) SBOM(ctx context.Context, family, ref string) (string, []direct
 		return digest, components, nil
 	}
 
-	predicate, err := c.predicate(subject, digest, options)
+	predicate, err := c.predicate(subject, digest, options, attestation.CycloneDX)
 	if err != nil {
 		return "", nil, err
 	}
@@ -170,11 +194,74 @@ func (c *Client) Document(ctx context.Context, family, ref string) (string, []by
 	if err != nil {
 		return "", nil, err
 	}
-	predicate, err := c.predicate(subject, digest, options)
+	predicate, err := c.predicate(subject, digest, options, attestation.CycloneDX)
 	if err != nil {
 		return "", nil, err
 	}
 	return digest, predicate, nil
+}
+
+// Scan resolves family and ref and returns the vulnerability scan attached to
+// the Digest behind them: the findings of the newest verified scan record,
+// with those a verified VEX document covers marked as suppressed.
+//
+// Two attestations, joined here rather than at scan time. The scanner is asked
+// for its unfiltered report, so the record says what it found; the VEX document
+// is this project's statement about that report; and the join is by
+// vulnerability identifier, which is how the publication gates apply the same
+// statements (//oci:supply_chain.bzl). Applying the VEX inside the scanner
+// would also have missed the statements scoped to the image rather than to a
+// package — grype has no image identifier to match them against when what it
+// scanned is an SBOM.
+func (c *Client) Scan(ctx context.Context, family, ref string) (string, *directory.Scan, error) {
+	subject, digest, options, err := c.resolve(ctx, family, ref)
+	if err != nil {
+		return "", nil, err
+	}
+	if scan, ok := c.scans.Get(digest); ok {
+		return digest, scan, nil
+	}
+
+	found, err := c.predicates(subject, digest, options)
+	if err != nil {
+		return "", nil, err
+	}
+	record, err := newestScan(found[attestation.Vuln])
+	if err != nil {
+		return "", nil, fmt.Errorf("%w attached to %s", err, subject)
+	}
+	// Only the newest VEX document speaks. It is reissued whole whenever a
+	// statement is added, withdrawn or re-justified, so an older one on the
+	// same digest may still name a statement since withdrawn — and a
+	// withdrawn statement must stop silencing.
+	if vex := newestStatement(found[attestation.OpenVEX]); vex != nil {
+		if err := suppress(record.scan, vex.Predicate); err != nil {
+			// A VEX document that will not decode silences nothing, which
+			// is the safe direction: the finding stays on the page.
+			slog.Warn("skipping VEX document", "subject", subject, "error", err)
+		}
+	}
+	c.scans.Add(digest, record.scan)
+	return digest, record.scan, nil
+}
+
+// ScanDocument returns the newest verified scan record for an image exactly as
+// it was signed — the same record Scan was rendered from. Not cached, as
+// Document is not.
+func (c *Client) ScanDocument(ctx context.Context, family, ref string) (string, []byte, error) {
+	subject, digest, options, err := c.resolve(ctx, family, ref)
+	if err != nil {
+		return "", nil, err
+	}
+	found, err := c.predicates(subject, digest, options)
+	if err != nil {
+		return "", nil, err
+	}
+	record, err := newestScan(found[attestation.Vuln])
+	if err != nil {
+		return "", nil, fmt.Errorf("%w attached to %s", err, subject)
+	}
+	return digest, record.raw, nil
 }
 
 // Tags lists what a family publishes, and nothing else about it.
@@ -424,35 +511,84 @@ func (c *Client) resolve(ctx context.Context, family, ref string) (name.Digest, 
 	return repository.Digest(digest), digest, options, nil
 }
 
-// predicate walks what is attached to a Digest and returns the CycloneDX
-// document from the first attestation that verifies.
-func (c *Client) predicate(subject name.Digest, digest string, options []remote.Option) (json.RawMessage, error) {
+// predicate walks what is attached to a Digest and returns the predicate of
+// the first attestation that verifies and asserts what want names.
+func (c *Client) predicate(subject name.Digest, digest string, options []remote.Option, want attestation.PredicateType) (json.RawMessage, error) {
+	var found json.RawMessage
+	err := c.eachStatement(subject, digest, options, func(statement *attestation.Statement) bool {
+		if statement.Type != want {
+			return false
+		}
+		found = statement.Predicate
+		return true
+	})
+	if err != nil {
+		return nil, err
+	}
+	if found == nil {
+		return nil, fmt.Errorf("no verified %s attestation attached to %s", want, subject)
+	}
+	return found, nil
+}
+
+// predicates collects every verified statement attached to a Digest, by type:
+// for the attestations that may legitimately be attached more than once — a
+// scan re-run, a VEX document reissued — and for the pages that need two kinds
+// at once.
+func (c *Client) predicates(subject name.Digest, digest string, options []remote.Option) (map[attestation.PredicateType][]*attestation.Statement, error) {
+	found := map[attestation.PredicateType][]*attestation.Statement{}
+	err := c.eachStatement(subject, digest, options, func(statement *attestation.Statement) bool {
+		found[statement.Type] = append(found[statement.Type], statement)
+		return false
+	})
+	return found, err
+}
+
+// newestStatement picks the statement signed last, by the log's clock rather
+// than anything the document says about itself. Referrer order breaks a tie,
+// later winning; nil when there are none.
+func newestStatement(statements []*attestation.Statement) *attestation.Statement {
+	var newest *attestation.Statement
+	for _, statement := range statements {
+		if newest == nil || !statement.SignedAt.Before(newest.SignedAt) {
+			newest = statement
+		}
+	}
+	return newest
+}
+
+// eachStatement verifies every attestation attached to a Digest and hands each
+// one to visit, in referrer order, until visit asks to stop.
+//
+// Cosign gives every attestation the same artifactType, so the only thing that
+// tells an SBOM from a scan from provenance is the predicate type inside the
+// signed envelope — hence every referrer is verified, and the caller decides
+// which it wanted.
+func (c *Client) eachStatement(subject name.Digest, digest string, options []remote.Option, visit func(*attestation.Statement) (stop bool)) error {
 	referrers, err := remote.Referrers(subject, options...)
 	if err != nil {
-		return nil, fmt.Errorf("listing referrers of %s: %w", subject, err)
+		return fmt.Errorf("listing referrers of %s: %w", subject, err)
 	}
 	manifest, err := referrers.IndexManifest()
 	if err != nil {
-		return nil, fmt.Errorf("reading referrers of %s: %w", subject, err)
+		return fmt.Errorf("reading referrers of %s: %w", subject, err)
 	}
 
-	// Cosign gives the SBOM and the SLSA provenance the same artifactType, so
-	// the only thing that tells them apart is the predicate type inside the
-	// signed envelope. Hence: verify each, keep the one that is an SBOM.
 	for _, referrer := range manifest.Manifests {
-		found, err := c.sbom(subject.Context(), referrer, digest, options)
+		statement, err := c.statement(subject.Context(), referrer, digest, options)
 		switch {
-		case errors.Is(err, errNotSBOM):
+		case errors.Is(err, errUnverified):
 			continue
 		case err != nil:
-			// One unreadable referrer must not hide an SBOM behind it.
+			// One unreadable referrer must not hide an attestation behind it.
 			slog.Warn("skipping referrer", "subject", subject, "referrer", referrer.Digest, "error", err)
 			continue
 		}
-		return found, nil
+		if visit(statement) {
+			return nil
+		}
 	}
-
-	return nil, fmt.Errorf("no verified CycloneDX attestation attached to %s", subject)
+	return nil
 }
 
 // repository locates a family on the registry behind the Mirror.
@@ -464,10 +600,10 @@ func (c *Client) repository(family string) (name.Repository, error) {
 	return name.NewRepository(path+family, c.nameOptions...)
 }
 
-// sbom pulls one referrer, verifies the attestation it carries, and returns
-// the CycloneDX predicate inside it — the bytes the signature covers, which is
-// what the download serves and what the page is projected from.
-func (c *Client) sbom(repository name.Repository, referrer v1.Descriptor, subjectDigest string, options []remote.Option) (json.RawMessage, error) {
+// statement pulls one referrer and returns the verified statement it carries:
+// the bytes the signature covers, which is what a download serves and what a
+// page is projected from.
+func (c *Client) statement(repository name.Repository, referrer v1.Descriptor, subjectDigest string, options []remote.Option) (*attestation.Statement, error) {
 	image, err := remote.Image(repository.Digest(referrer.Digest.String()), options...)
 	if err != nil {
 		return nil, err
@@ -497,12 +633,9 @@ func (c *Client) sbom(repository name.Repository, referrer v1.Descriptor, subjec
 				"referrer", referrer.Digest, "subject", subjectDigest, "error", err)
 			continue
 		}
-		if statement.Type != attestation.CycloneDX {
-			continue
-		}
-		return statement.Predicate, nil
+		return statement, nil
 	}
-	return nil, errNotSBOM
+	return nil, errUnverified
 }
 
 // decodeBOM parses the predicate of a verified CycloneDX attestation.
@@ -586,4 +719,187 @@ func ecosystem(purl string) string {
 	}
 	ecosystem, _, _ := strings.Cut(rest, "/")
 	return ecosystem
+}
+
+// scanRecord is one decoded vulnerability attestation and the bytes it came
+// from, kept together so the download is the record the page was rendered
+// from.
+type scanRecord struct {
+	scan *directory.Scan
+	raw  json.RawMessage
+}
+
+// vulnPredicate is cosign's vulnerability scan record
+// (https://github.com/sigstore/cosign/blob/main/specs/COSIGN_VULN_ATTESTATION_SPEC.md),
+// to the depth the page reads it: who scanned, with what database, when — and
+// the scanner's own report as the result.
+//
+// The result is decoded as grype's document. The spec leaves it to the
+// scanner, and grype is the scanner //oci:supply_chain.bzl runs; a record from
+// another scanner would decode to no findings, which is why the scanner is
+// named on the page.
+type vulnPredicate struct {
+	Scanner struct {
+		URI     string `json:"uri"`
+		Version string `json:"version"`
+		DB      struct {
+			URI     string `json:"uri"`
+			Version string `json:"version"`
+		} `json:"db"`
+		Result grypeDocument `json:"result"`
+	} `json:"scanner"`
+	Metadata struct {
+		ScanStartedOn  string `json:"scanStartedOn"`
+		ScanFinishedOn string `json:"scanFinishedOn"`
+	} `json:"metadata"`
+}
+
+// grypeDocument is grype's JSON report, to the depth the page reads it.
+type grypeDocument struct {
+	Matches    []grypeMatch `json:"matches"`
+	Descriptor struct {
+		Name      string `json:"name"`
+		Version   string `json:"version"`
+		Timestamp string `json:"timestamp"`
+		DB        struct {
+			Status struct {
+				Built string `json:"built"`
+			} `json:"status"`
+		} `json:"db"`
+	} `json:"descriptor"`
+}
+
+type grypeMatch struct {
+	Vulnerability struct {
+		ID          string `json:"id"`
+		DataSource  string `json:"dataSource"`
+		Severity    string `json:"severity"`
+		Description string `json:"description"`
+		Fix         struct {
+			Versions []string `json:"versions"`
+			State    string   `json:"state"`
+		} `json:"fix"`
+	} `json:"vulnerability"`
+	Artifact struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+		PURL    string `json:"purl"`
+	} `json:"artifact"`
+}
+
+// newestScan decodes every scan record on a Digest and keeps the one that ran
+// last: a digest is re-scanned whenever the database pin moves, carries every
+// scan it ever had, and the newest is what the page shows.
+//
+// Ordered by the scan's own clock rather than the log's: the two agree in
+// practice, and the scan time is what the page states.
+func newestScan(statements []*attestation.Statement) (scanRecord, error) {
+	var newest scanRecord
+	for _, statement := range statements {
+		scan, err := decodeScan(statement.Predicate)
+		if err != nil {
+			slog.Warn("skipping undecodable scan record", "error", err)
+			continue
+		}
+		if newest.scan == nil || scan.Finished.After(newest.scan.Finished) {
+			newest = scanRecord{scan: scan, raw: statement.Predicate}
+		}
+	}
+	if newest.scan == nil {
+		return scanRecord{}, errors.New("no verified vulnerability scan")
+	}
+	return newest, nil
+}
+
+// decodeScan projects one scan record onto what the page shows.
+func decodeScan(predicate json.RawMessage) (*directory.Scan, error) {
+	var record vulnPredicate
+	if err := json.Unmarshal(predicate, &record); err != nil {
+		return nil, fmt.Errorf("decoding vulnerability predicate: %w", err)
+	}
+	result := record.Scanner.Result
+
+	scanner := strings.TrimSpace(result.Descriptor.Name + " " + result.Descriptor.Version)
+	if scanner == "" {
+		scanner = record.Scanner.URI
+	}
+
+	findings := make([]directory.Finding, 0, len(result.Matches))
+	for _, match := range result.Matches {
+		findings = append(findings, directory.Finding{
+			ID:          match.Vulnerability.ID,
+			Severity:    match.Vulnerability.Severity,
+			Package:     match.Artifact.Name,
+			Version:     match.Artifact.Version,
+			Type:        ecosystem(match.Artifact.PURL),
+			Arch:        qualifier(match.Artifact.PURL, "arch"),
+			PURL:        match.Artifact.PURL,
+			FixedIn:     match.Vulnerability.Fix.Versions,
+			FixState:    match.Vulnerability.Fix.State,
+			URL:         match.Vulnerability.DataSource,
+			Description: match.Vulnerability.Description,
+		})
+	}
+
+	return &directory.Scan{
+		Scanner: scanner,
+		// The record names the database by when it was built, which is the
+		// freshness a reader needs; grype's own descriptor is the fallback
+		// for a record wrapped without it.
+		Database: firstTime(record.Scanner.DB.Version, result.Descriptor.DB.Status.Built),
+		Finished: firstTime(record.Metadata.ScanFinishedOn, result.Descriptor.Timestamp),
+		Findings: findings,
+	}, nil
+}
+
+// firstTime parses the first of candidates that is an RFC 3339 timestamp. Zero
+// when none is, which the page shows as a gap rather than as an error.
+func firstTime(candidates ...string) time.Time {
+	for _, candidate := range candidates {
+		if parsed, err := time.Parse(time.RFC3339Nano, candidate); err == nil {
+			return parsed
+		}
+	}
+	return time.Time{}
+}
+
+// openVEX is an OpenVEX document to the depth the join reads it.
+type openVEX struct {
+	Statements []struct {
+		Vulnerability struct {
+			Name string `json:"name"`
+		} `json:"vulnerability"`
+		Status          string `json:"status"`
+		Justification   string `json:"justification"`
+		ImpactStatement string `json:"impact_statement"`
+	} `json:"statements"`
+}
+
+// suppress marks the findings a VEX document silences.
+//
+// Only not_affected and fixed silence — the two statuses grype itself drops a
+// match for. An affected or under_investigation statement is a statement too,
+// and it leaves the finding standing.
+func suppress(scan *directory.Scan, document json.RawMessage) error {
+	var vex openVEX
+	if err := json.Unmarshal(document, &vex); err != nil {
+		return fmt.Errorf("decoding OpenVEX document: %w", err)
+	}
+	byID := make(map[string]directory.Suppression, len(vex.Statements))
+	for _, statement := range vex.Statements {
+		if statement.Status != "not_affected" && statement.Status != "fixed" {
+			continue
+		}
+		byID[statement.Vulnerability.Name] = directory.Suppression{
+			Status:        statement.Status,
+			Justification: statement.Justification,
+			Impact:        statement.ImpactStatement,
+		}
+	}
+	for i := range scan.Findings {
+		if suppression, ok := byID[scan.Findings[i].ID]; ok {
+			scan.Findings[i].Suppressed = &suppression
+		}
+	}
+	return nil
 }

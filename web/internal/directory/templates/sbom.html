@@ -17,12 +17,17 @@
     <p class="command"><code data-copyable tabindex="0">FROM {{.Image}}</code></p>
   </section>
 
+  <nav class="views" aria-label="Evidence">
+    <a aria-current="page">SBOM</a>
+    <a href="{{.Vulnerabilities}}">Vulnerabilities</a>
+  </nav>
+
   <div class="controls">
     {{if .Siblings}}
     <details class="switcher">
       <summary><span class="key">Tag:</span><span class="value">{{.Showing}}</span></summary>
       <ul>
-        {{range .Siblings}}<li><a href="{{.SBOM}}">{{.Name}}</a></li>{{end}}
+        {{range .Siblings}}<li><a href="{{.URL}}">{{.Name}}</a></li>{{end}}
       </ul>
     </details>
     {{end}}
@@ -37,7 +42,7 @@
     {{end}}
 
     <input id="filter" type="search" placeholder="Filter components" autocomplete="off" spellcheck="false" aria-label="Filter components">
-    <p id="count" aria-live="polite">{{len .Rows}} components</p>
+    <p id="count" data-noun="components" aria-live="polite">{{len .Rows}} components</p>
     <a class="download" href="{{.Download}}" title="The signed CycloneDX document, covering every architecture">Download SBOM</a>
   </div>
 

@@ -487,3 +487,108 @@ tbody tr:hover {
     animation: none;
   }
 }
+
+/* The two views of one build. Plain links styled as tabs rather than a
+   widget: each is a real page at its own URL, and the current one is marked
+   with aria-current so the marking and the styling are one fact. */
+.views {
+  display: flex;
+  gap: 1.25rem;
+  margin: 0 0 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.views a {
+  padding: 0.4rem 0;
+  margin-bottom: -1px;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.views a:hover {
+  color: inherit;
+}
+
+.views a[aria-current="page"] {
+  color: inherit;
+  font-weight: 600;
+  border-bottom-color: currentColor;
+}
+
+/* Particular to the vulnerabilities page. The verdict is the sentence a
+   reader takes away; the dates in it are what make it one. */
+.verdict {
+  margin: 0 0 1rem;
+  max-width: 70ch;
+}
+
+/* Severity as a label rather than a colour. A tint is added on top for the
+   two that should stop a reader, but the word carries the meaning, so a
+   monochrome print or a colour-blind reader loses nothing. Tints are mixed
+   from fixed hues at low opacity so they hold in both colour schemes. */
+.severity {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.8125rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.severity-critical {
+  background: color-mix(in srgb, #d1242f 22%, transparent);
+  border-color: color-mix(in srgb, #d1242f 50%, transparent);
+}
+
+.severity-high {
+  background: color-mix(in srgb, #e36209 18%, transparent);
+  border-color: color-mix(in srgb, #e36209 45%, transparent);
+}
+
+.severity-medium {
+  background: color-mix(in srgb, #bf8700 14%, transparent);
+}
+
+.severity-negligible,
+.severity-unknown {
+  color: var(--muted);
+}
+
+/* A suppressed finding is still on the page — the point of a VEX statement
+   is that it silences on the record — but it should read as set aside. */
+tr.suppressed td {
+  color: var(--muted);
+}
+
+tr.suppressed .severity {
+  background: none;
+  border-color: var(--line);
+}
+
+/* Identifiers and versions are things a reader copies or compares, so they
+   are set in the mono face the digest already uses. The SBOM page's version
+   column gets it by position; here the columns are named, because the table
+   has two of them. */
+#vulnerabilities td.id,
+#vulnerabilities td.version {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+#vulnerabilities td.id a {
+  color: inherit;
+}
+
+/* The SBOM page's version column is its second one; this page's second
+   column is the identifier and its versions are named above, so the
+   positional rule from the SBOM page is undone here. */
+#vulnerabilities td:nth-child(2) {
+  font-family: var(--mono);
+}
+
+/* Two links in one cell on the versions list. */
+.evidence a {
+  margin-right: 0.5rem;
+  white-space: nowrap;
+}

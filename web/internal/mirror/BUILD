@@ -14,6 +14,7 @@ go_library(
         "@com_github_google_go_containerregistry//pkg/v1:pkg",
         "@com_github_google_go_containerregistry//pkg/v1/remote",
         "@com_github_hashicorp_golang_lru_v2//:golang-lru",
+        "@com_github_hashicorp_golang_lru_v2//expirable",
     ],
 )
 
@@ -24,6 +25,7 @@ go_test(
         ":mirror",
         "//oci/ocitest",
         "//web/internal/attestation",
+        "//web/internal/directory",
         "@com_github_google_go_containerregistry//pkg/name",
         "@com_github_google_go_containerregistry//pkg/v1:pkg",
         "@com_github_google_go_containerregistry//pkg/v1/empty",

@@ -35,6 +35,33 @@ type Row struct {
 	VersionRank int
 }
 
+// Links is how a page for one build is reached and left. Set by the handler,
+// which knows the reader's own path and reference; the page models are built
+// from an image name that has already been rewritten for display.
+type Links struct {
+	// Download is where the signed document behind this page can be had.
+	Download string
+	// SBOM and Vulnerabilities are the two views of this same build, at the
+	// same reference and architecture, so a reader can switch without losing
+	// the build they were on. One of them is the page itself.
+	SBOM            string
+	Vulnerabilities string
+	// Permalink is this same page addressed by Digest rather than by the tag
+	// the reader arrived on — the URL that will still show this exact build
+	// after the tag has moved. Empty when the reader is already at it.
+	Permalink string
+	// Showing names the reference this page was reached by, for the tag
+	// switcher to label itself with: the tag, or a short digest when no tag
+	// was asked for.
+	Showing string
+	// Siblings is every other tag the family publishes, so a reader can move
+	// between them without going back to the versions list. Empty when the
+	// registry would not say, or when there is nothing to switch to — the
+	// evidence is what the page is for, and a missing switcher is not an
+	// error.
+	Siblings []Tag
+}
+
 // Table is one SBOM ready to render, for one architecture.
 type Table struct {
 	// Image is what the reader asked for, e.g. "java:latest".
@@ -49,25 +76,8 @@ type Table struct {
 	Arch string
 	// Architectures is every architecture the Index carries, sorted.
 	Architectures []string
-	// Download is where the signed document behind this page can be had.
-	// Set by the handler, which knows the reader's own path and reference;
-	// the Table is built from an image name that has already been rewritten
-	// for display.
-	Download string
-	// Permalink is this same page addressed by Digest rather than by the tag
-	// the reader arrived on — the URL that will still show this exact build
-	// after the tag has moved. Empty when the reader is already at it.
-	Permalink string
-	// Showing names the reference this page was reached by, for the tag
-	// switcher to label itself with: the tag, or a short digest when no tag
-	// was asked for.
-	Showing string
-	// Siblings is every other tag the family publishes, so a reader can move
-	// between them without going back to the versions list. Empty when the
-	// registry would not say, or when there is nothing to switch to — the
-	// SBOM is what the page is for, and a missing switcher is not an error.
-	Siblings []Tag
-	Rows     []Row
+	Links
+	Rows []Row
 }
 
 // defaultArch is what a reader gets when they express no preference.
@@ -82,12 +92,12 @@ const defaultArch = "amd64"
 // there. A reader who guesses a wrong architecture should see the image, not
 // an empty page.
 func NewTable(image, digest, arch string, components []Component) *Table {
-	available := architectures(components)
+	available := architectures(components, func(c Component) string { return c.Arch })
 	arch = resolveArch(arch, available)
 
 	rows := make([]Row, 0, len(components))
 	for _, component := range components {
-		if belongsTo(component, arch) {
+		if belongsTo(component.Arch, arch) {
 			rows = append(rows, Row{Component: component})
 		}
 	}
@@ -108,19 +118,21 @@ func NewTable(image, digest, arch string, components []Component) *Table {
 	}
 }
 
-// belongsTo reports whether a Component is shown for arch. An absent or "all"
-// architecture marks a Component as architecture-independent, which means it
-// belongs to every one of them rather than to none.
-func belongsTo(component Component, arch string) bool {
-	return component.Arch == arch || component.Arch == "" || component.Arch == "all"
+// belongsTo reports whether something built for own is shown for arch. An
+// absent or "all" architecture marks it as architecture-independent, which
+// means it belongs to every one of them rather than to none.
+func belongsTo(own, arch string) bool {
+	return own == arch || own == "" || own == "all"
 }
 
-// architectures lists the concrete architectures an SBOM covers.
-func architectures(components []Component) []string {
-	found := make([]string, 0, len(components))
-	for _, component := range components {
-		if component.Arch != "" && component.Arch != "all" {
-			found = append(found, component.Arch)
+// architectures lists the concrete architectures items cover, given how to
+// read each item's own. Shared by the SBOM and the vulnerabilities page, whose
+// rows are both per-architecture copies of one Index-wide document.
+func architectures[T any](items []T, arch func(T) string) []string {
+	found := make([]string, 0, len(items))
+	for _, item := range items {
+		if own := arch(item); own != "" && own != "all" {
+			found = append(found, own)
 		}
 	}
 	slices.Sort(found)

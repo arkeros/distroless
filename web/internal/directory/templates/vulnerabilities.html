@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Image}} — vulnerabilities</title>
+<link rel="stylesheet" href="/directory/static/directory.css">
+</head>
+<body>
+<main>
+  <h1>{{.Image}}</h1>
+  <p class="digest">{{if .Permalink}}<a href="{{.Permalink}}" title="Permanent link to this exact build, which this tag will stop naming when it moves"><code>{{.Digest}}</code></a>{{else}}<code>{{.Digest}}</code>{{end}}</p>
+  <section class="install">
+    <p class="label">Install from the command line</p>
+    <p class="command"><span class="prompt" aria-hidden="true">$</span> <code data-copyable tabindex="0">docker pull {{.Image}}</code></p>
+    <p class="label">Use as a base image in a Dockerfile</p>
+    <p class="command"><code data-copyable tabindex="0">FROM {{.Image}}</code></p>
+  </section>
+
+  <nav class="views" aria-label="Evidence">
+    <a href="{{.SBOM}}">SBOM</a>
+    <a aria-current="page">Vulnerabilities</a>
+  </nav>
+
+  <div class="controls">
+    {{if .Siblings}}
+    <details class="switcher">
+      <summary><span class="key">Tag:</span><span class="value">{{.Showing}}</span></summary>
+      <ul>
+        {{range .Siblings}}<li><a href="{{.URL}}">{{.Name}}</a></li>{{end}}
+      </ul>
+    </details>
+    {{end}}
+
+    {{if gt (len .Architectures) 1}}
+    <details class="switcher">
+      <summary><span class="key">Arch:</span><span class="value">{{.Arch}}</span></summary>
+      <ul>
+        {{range .Architectures}}<li><a href="?arch={{.}}"{{if eq . $.Arch}} aria-current="page"{{end}}>{{.}}</a></li>{{end}}
+      </ul>
+    </details>
+    {{end}}
+
+    <input id="filter" type="search" placeholder="Filter findings" autocomplete="off" spellcheck="false" aria-label="Filter findings">
+    <p id="count" data-noun="findings" aria-live="polite">{{len .Rows}} findings</p>
+    <a class="download" href="{{.Download}}" title="The signed scan record, covering every architecture">Download scan</a>
+  </div>
+
+  <p class="verdict">
+    {{if .Open}}<strong>{{.Open}} finding{{if ne .Open 1}}s{{end}}</strong>: {{range $i, $count := .Summary}}{{if $i}}, {{end}}{{$count.Count}} {{lower $count.Severity}}{{end}}{{else}}<strong>No findings</strong>{{end}}{{if .Suppressed}}, and {{.Suppressed}} set aside by a VEX statement{{end}}.
+    Scanned by {{.Scanner}} on <time datetime="{{.Finished.Format "2006-01-02T15:04:05Z07:00"}}">{{.Finished.Format "2006-01-02"}}</time>, against a vulnerability database built <time datetime="{{.Database.Format "2006-01-02T15:04:05Z07:00"}}">{{.Database.Format "2006-01-02"}}</time>.
+  </p>
+
+  {{if .Rows}}
+  <div class="scroller" tabindex="0" role="region" aria-label="Findings">
+    <table data-sortable id="vulnerabilities">
+      <thead>
+        <tr>
+          <th data-column="severity" aria-sort="ascending"><button type="button">Severity</button></th>
+          <th data-column="id"><button type="button">Vulnerability</button></th>
+          <th data-column="package"><button type="button">Component</button></th>
+          <th data-column="version"><button type="button">Version</button></th>
+          <th data-column="fix" title="Versions the scanner knows to carry a fix. A build picks these up when its packages are next updated."><button type="button">Fixed in</button></th>
+          <th data-column="status" title="Whether the finding stands, or a published VEX statement sets it aside and why"><button type="button">Status</button></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr{{if .Suppressed}} class="suppressed"{{end}}>
+          <td data-sort-key="{{.SeverityRank}}"><span class="severity severity-{{lower .Severity}}">{{.Severity}}</span></td>
+          <td class="id">{{if .URL}}<a href="{{.URL}}" title="{{.Description}}">{{.ID}}</a>{{else}}<span title="{{.Description}}">{{.ID}}</span>{{end}}</td>
+          <td>{{.Package}}</td>
+          <td class="version">{{.Version}}</td>
+          <td class="version">{{if .Fix}}{{.Fix}}{{else}}<span class="unknown">{{if .FixState}}{{.FixState}}{{else}}unknown{{end}}</span>{{end}}</td>
+          <td>{{if .Suppressed}}<span title="{{.Suppressed.Impact}}">{{.Suppressed.Words}}</span>{{else}}open{{end}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+
+  <p class="footnote">A scan is a statement about a moment: what one scanner, with one database, matched against this build's SBOM. A vulnerability published after that database was built is not on this page. The verdict on a suppressed finding is this project's, made on the record in a VEX statement; the scanner's own record is the download.</p>
+</main>
+<script src="/directory/static/main.mjs" type="module"></script>
+</body>
+</html>

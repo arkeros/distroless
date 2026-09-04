@@ -135,13 +135,15 @@ export function sortable(table) {
     haystack: element.textContent.toLowerCase(),
   }));
 
-  // Filtering is the SBOM page's alone — a versions page lists a handful of
-  // builds, and a search box over six rows earns nothing. So the controls are
-  // optional, and the noun below is the only thing in this file that knows
-  // which page brought them.
+  // Filtering belongs to the pages with a long table — a versions page lists
+  // a handful of builds, and a search box over six rows earns nothing. So the
+  // controls are optional, and what the count counts is the page's to say:
+  // components on one, findings on another, and nothing here has to know
+  // which.
   const filter = document.getElementById('filter');
   const count = document.getElementById('count');
   if (filter !== null) {
+    const noun = count.dataset.noun;
     filter.addEventListener('input', () => {
       const needle = filter.value.trim().toLowerCase();
       let shown = 0;
@@ -151,8 +153,8 @@ export function sortable(table) {
         if (matches) shown += 1;
       }
       count.textContent = needle === ''
-        ? `${rows.length} components`
-        : `${shown} of ${rows.length} components`;
+        ? `${rows.length} ${noun}`
+        : `${shown} of ${rows.length} ${noun}`;
     });
   }
 

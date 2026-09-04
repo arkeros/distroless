@@ -31,6 +31,12 @@ type fakeSource struct {
 	tags       []string
 	tagsErr    error
 	err        error
+	// scan is what Scan answers; scanErr stands for an image with no
+	// verified vulnerability attestation, which is a different absence from
+	// err and one that must not take the SBOM down with it.
+	scan         *directory.Scan
+	scanDocument []byte
+	scanErr      error
 
 	// family and ref record what the handler asked for, so a test can check
 	// the handler passes the path through rather than re-deriving it.
@@ -55,6 +61,16 @@ func (f *fakeSource) Versions(_ context.Context, family string) ([]directory.Ver
 func (f *fakeSource) Tags(_ context.Context, family string) ([]string, error) {
 	f.family = family
 	return f.tags, f.tagsErr
+}
+
+func (f *fakeSource) Scan(_ context.Context, family, ref string) (string, *directory.Scan, error) {
+	f.family, f.ref = family, ref
+	return f.digest, f.scan, f.scanErr
+}
+
+func (f *fakeSource) ScanDocument(_ context.Context, family, ref string) (string, []byte, error) {
+	f.family, f.ref = family, ref
+	return f.digest, f.scanDocument, f.scanErr
 }
 
 func get(t *testing.T, source directory.Source, target string, headers http.Header) *httptest.ResponseRecorder {

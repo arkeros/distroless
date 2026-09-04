@@ -2,15 +2,19 @@
 
 Public mirror of distroless container images. Pull from `distroless.io/<image>:<tag>` — the canonical bytes live at `ghcr.io/arkeros/distroless/<image>:<tag>` and the `distroless.io` vanity domain is a proxy in front (see [`//oci/cmd/registry`](../oci/cmd/registry/README.md)). Both surfaces verify against the same identity policy; the examples below use `distroless.io` because that's the consumer-facing entry point.
 
-Every image is published with three signed artifacts, from two signers:
+Every image is published with signed artifacts from two signers:
 
 | Artifact | Signed by | Inner predicate type | Verify with |
 |---|---|---|---|
 | Signature | this repository's `ci.yaml` on `main` | — (signature + cert only) | `cosign verify` |
 | CycloneDX SBOM | same | `https://cyclonedx.org/bom` | `cosign verify-attestation --type=cyclonedx` |
+| Vulnerability scan | same | `https://cosign.sigstore.dev/attestation/vuln/v1` | `cosign verify-attestation --type=vuln` |
+| VEX document (images with statements) | same | `https://openvex.dev/ns` | `cosign verify-attestation --type=openvex` |
 | SLSA provenance | `slsa-framework/slsa-github-generator` | `https://slsa.dev/provenance/v0.2` | `slsa-verifier verify-image` |
 
-The signature and the SBOM are ours and are attached via the **OCI 1.1 referrers API** (the `subject` field of a separate manifest), stored as `application/vnd.dev.sigstore.bundle.v0.3+json` Sigstore bundles. `oras discover` shows both with `artifactType` `application/vnd.oci.empty.v1+json`; the predicate type that tells them apart is inside the bundle's DSSE envelope, and `cosign verify-attestation --type=…` is what reads that deep.
+The signature, the SBOM, the scan and the VEX document are ours and are attached via the **OCI 1.1 referrers API** (the `subject` field of a separate manifest), stored as `application/vnd.dev.sigstore.bundle.v0.3+json` Sigstore bundles. `oras discover` shows them all with `artifactType` `application/vnd.oci.empty.v1+json`; the predicate type that tells them apart is inside the bundle's DSSE envelope, and `cosign verify-attestation --type=…` is what reads that deep.
+
+The scan and the VEX document are deliberately two artifacts. The scan is [grype](https://github.com/anchore/grype)'s report on the SBOM, unfiltered, wrapped in cosign's [vulnerability scan record](https://github.com/sigstore/cosign/blob/main/specs/COSIGN_VULN_ATTESTATION_SPEC.md) so it names the scanner, the database build it consulted and when it ran; it says what the scanner found. The VEX document is this project's statement about those findings — which do not affect the image, and why — with a review-by date on every statement. Neither is rewritten in the light of the other, so each can be checked on its own, and a consumer joins them the way the directory at `distroless.io/directory/image/<image>/<tag>/vulnerabilities` does: a finding whose CVE a `not_affected` or `fixed` statement names is set aside, everything else stands. A scan is only as current as the database it names; a CVE published after that is not in it. The database pin is bumped daily and every `main` build re-attests any digest whose newest scan names an older database, so a digest accumulates scans over its life and the newest is the one to read — `cosign verify-attestation` prints them all, one envelope per line. The VEX document is re-attested when its statements change, and the newest by log time is the one that speaks.
 
 The provenance is different in two ways, both deliberate ([ADR 0014](./adr/0014-platform-provenance-slsa-github-generator.md)). It is written and signed by the generator's reusable workflow, which runs in its own VM after our build has finished, so nothing our build does can forge it — that is what makes it SLSA Build L3 rather than a statement the build made about itself. And because the generator attaches with its own cosign, it lands as the legacy `sha256-<hex>.att` sibling tag rather than as a referrer; `slsa-verifier` and cosign both find it there.
 
@@ -45,6 +49,37 @@ slsa-verifier verify-image "distroless.io/<image>@${DIGEST}" \
 ```
 
 Add `--source-tag` or `--source-branch main` to also pin the ref. `cosign verify-attestation --type=slsaprovenance` with the generator's identity regexp (`^https://github\.com/slsa-framework/slsa-github-generator/\.github/workflows/generator_container_slsa3\.yml@refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$`) verifies the signature but **not** the source; on its own it would accept any project's provenance on this digest.
+
+### Vulnerability scan attestation
+
+Verify only:
+
+```bash
+cosign verify-attestation \
+    --certificate-identity-regexp='^https://github\.com/arkeros/distroless/\.github/workflows/ci\.yaml@refs/heads/main$' \
+    --certificate-oidc-issuer='https://token.actions.githubusercontent.com' \
+    --type=vuln \
+    distroless.io/<image>:<tag>
+```
+
+Verify and extract grype's report, then list what stands after the VEX document is applied (the same join the directory does):
+
+```bash
+VERIFY=(cosign verify-attestation
+    --certificate-identity-regexp='^https://github\.com/arkeros/distroless/\.github/workflows/ci\.yaml@refs/heads/main$'
+    --certificate-oidc-issuer='https://token.actions.githubusercontent.com')
+"${VERIFY[@]}" --type=vuln distroless.io/<image>:<tag> 2>/dev/null \
+  | jq -r '.payload' | base64 -d | jq '.predicate.scanner.result' > scan.grype.json
+"${VERIFY[@]}" --type=openvex distroless.io/<image>:<tag> 2>/dev/null \
+  | jq -r '.payload' | base64 -d | jq '.predicate' > vex.openvex.json   # absent for images with no statements
+jq --slurpfile vex vex.openvex.json '
+  [$vex[0].statements[] | select(.status == "not_affected" or .status == "fixed") | .vulnerability.name] as $silenced
+  | [.matches[] | select(.vulnerability.id | IN($silenced[]) | not)
+      | {id: .vulnerability.id, severity: .vulnerability.severity, package: .artifact.name, version: .artifact.version}]
+  | unique' scan.grype.json
+```
+
+`grype sbom:sbom.cdx.json` against the SBOM download below reproduces the scan with today's database, which is the check to run when the record's `scanner.db.version` is older than you would like.
 
 ### CycloneDX SBOM attestation
 

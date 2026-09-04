@@ -581,15 +581,23 @@ func TestVersionsPageGroupsTagsThatShareABuild(t *testing.T) {
 	}
 }
 
-// Each row is a way into the evidence: the SBOM for that exact build, at its
-// permanent URL rather than through the tag that happens to name it today.
+// Each row names two things, a tag and a build, and each is a link to its own
+// view: the digest leads to that exact build's SBOM at its permanent URL,
+// rather than through the tag that happens to name it today. The other kinds
+// of evidence are one step further, through the navigation on that page, so
+// the row carries no column of extra links for them.
 func TestVersionsPageLinksEachBuildToItsSBOM(t *testing.T) {
 	source := &fakeSource{versions: []directory.Version{{Tag: "latest", Digest: testDigest}}}
 
 	body := get(t, source, "/directory/image/nginx/versions", nil).Body.String()
 
-	if !strings.Contains(body, `href="/directory/image/nginx/`+testDigest+`/sbom"`) {
-		t.Errorf("versions page does not link a build to its SBOM:\n%s", body)
+	link := strings.Index(body, `href="/directory/image/nginx/`+testDigest+`/sbom"`)
+	digest := strings.Index(body, `<code>`+testDigest+`</code></a>`)
+	if link < 0 || digest < 0 || digest < link || digest-link > 200 {
+		t.Errorf("digest is not itself the link to the build's SBOM (link at %d, digest at %d):\n%s", link, digest, body)
+	}
+	if strings.Contains(body, ">Evidence<") || strings.Contains(body, testDigest+`/vulnerabilities"`) {
+		t.Errorf("versions page still carries an evidence column:\n%s", body)
 	}
 }
 

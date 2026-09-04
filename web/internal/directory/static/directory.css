@@ -580,9 +580,3 @@ tr.suppressed .severity {
 #vulnerabilities td.id a {
   color: inherit;
 }
-
-/* Two links in one cell on the versions list. */
-.evidence a {
-  margin-right: 0.5rem;
-  white-space: nowrap;
-}

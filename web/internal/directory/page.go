@@ -180,7 +180,6 @@ func serveVersions(w http.ResponseWriter, r *http.Request, source Source, mirror
 	versions.Vulnerabilities = resourceURL(family, defaultRef, viewVulnerabilities)
 	for i, release := range versions.Releases {
 		versions.Releases[i].SBOM = resourceURL(family, release.Digest, viewSBOM)
-		versions.Releases[i].Vulnerabilities = resourceURL(family, release.Digest, viewVulnerabilities)
 		for j, tag := range release.Tags {
 			versions.Releases[i].Tags[j].URL = resourceURL(family, tag.Name, viewSBOM)
 		}

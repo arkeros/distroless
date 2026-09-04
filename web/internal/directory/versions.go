@@ -79,11 +79,10 @@ type Release struct {
 	// row and the header carry the same shape: cell i is always column i.
 	// A build that does not publish an architecture has a zero there.
 	Sizes []Size
-	// SBOM and Vulnerabilities are where this build's evidence is, at its
-	// permanent URL rather than through a tag that may since have moved. Set
-	// by the handler, which knows the reader's own path.
-	SBOM            string
-	Vulnerabilities string
+	// SBOM is where this build's evidence starts, at its permanent URL
+	// rather than through a tag that may since have moved. The digest is the
+	// link. Set by the handler, which knows the reader's own path.
+	SBOM string
 }
 
 // Versions is the list of what a family currently publishes, ready to render.

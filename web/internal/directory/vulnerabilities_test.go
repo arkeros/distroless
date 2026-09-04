@@ -292,18 +292,6 @@ func TestSBOMAndVulnerabilitiesPagesLinkEachOther(t *testing.T) {
 	}
 }
 
-// Every build on the versions list has two kinds of evidence, and the list
-// should offer both.
-func TestVersionsPageLinksEachBuildToItsVulnerabilities(t *testing.T) {
-	source := &fakeSource{versions: []directory.Version{{Tag: "latest", Digest: testDigest}}}
-
-	body := get(t, source, "/directory/image/nginx/versions", nil).Body.String()
-
-	if !strings.Contains(body, `href="/directory/image/nginx/`+testDigest+`/vulnerabilities"`) {
-		t.Errorf("versions page does not link a build to its vulnerabilities:\n%s", body)
-	}
-}
-
 func TestVulnerabilitiesPageLinksTheDigestAsAPermalink(t *testing.T) {
 	source := scanned(directory.Finding{ID: "a"})
 

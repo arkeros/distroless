@@ -198,6 +198,8 @@ _VEX = {
             "debug" if mode else "latest",
         ] + [version + mode.replace("_", "-") for version in BASH_TAGS],
         tags = ["manual"],
+        vex = ":bash" + mode + "_nonroot_debian_vex",
+        vulnerabilities = ":bash" + mode + "_nonroot_debian_vuln",
     )
     for mode in DEBUG_MODE
 ]

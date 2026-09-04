@@ -209,6 +209,8 @@ vex_document(
             major + ("-debug" if mode else ""),
         ],
         tags = ["manual"],
+        vex = ":java" + major + mode + "_nonroot_hummingbird_vex",
+        vulnerabilities = ":java" + major + mode + "_nonroot_hummingbird_vuln",
     )
     for major in JAVA_MAJOR_VERSIONS
     for mode in DEBUG_MODE

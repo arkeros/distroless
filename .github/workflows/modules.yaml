@@ -1,0 +1,51 @@
+---
+# The Bazel modules under bazel/modules are workspaces of their own, consumed
+# by the root through local_path_override and listed in .bazelignore, so
+# `bazel test //...` at the root never reaches their tests. This runs each
+# module's own suite, in its own workspace, as a check on pull requests and
+# on main. No remote cache: the modules are small, and the root's cache
+# configuration lives in the root .bazelrc, which these workspaces do not
+# read.
+name: Modules
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - bazel/modules/**
+      - .github/workflows/modules.yaml
+  push:
+    branches: [main]
+    paths:
+      - bazel/modules/**
+      - .github/workflows/modules.yaml
+
+jobs:
+  test:
+    name: Test ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # One entry per directory under bazel/modules. A new module is a new
+        # line here; the root's local_path_override is the other place it is
+        # named.
+        module:
+          - cosign.bzl
+          - rules_rpm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          repository-cache: true
+          external-cache: true
+          cache-save: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Test
+        working-directory: bazel/modules/${{ matrix.module }}
+        run: bazel test //...

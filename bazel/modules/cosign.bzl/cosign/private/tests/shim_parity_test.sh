@@ -16,10 +16,14 @@ set -o pipefail -o errexit -o nounset
 if [[ -n "${TEST_SRCDIR:-}" ]]; then
     # Bazel test invocation. The cosign.bzl module's runfiles live under
     # ${TEST_SRCDIR}/cosign.bzl+/ when consumed via bzlmod (canonical repo
-    # name with the `+` suffix). When the test runs from inside the module
-    # itself, bzlmod still uses the canonical name. Glob to be tolerant of
-    # name-mangling differences across Bazel versions.
+    # name with the `+` suffix), and under ${TEST_SRCDIR}/_main when the
+    # test runs inside the module's own workspace, as the Modules workflow
+    # does. Glob the former to be tolerant of name-mangling differences
+    # across Bazel versions; fall back to the latter.
     MODULE_DIR=$(find "${TEST_SRCDIR}" -maxdepth 1 -type d -name 'cosign.bzl*' | head -1)
+    if [[ -z "${MODULE_DIR}" && -f "${TEST_SRCDIR}/_main/cosign.bzl" ]]; then
+        MODULE_DIR="${TEST_SRCDIR}/_main"
+    fi
     if [[ -z "${MODULE_DIR}" ]]; then
         echo "ERROR: could not locate cosign.bzl module runfiles dir under ${TEST_SRCDIR}" >&2
         ls "${TEST_SRCDIR}" >&2

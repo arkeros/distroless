@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/arkeros/distroless/web/internal/attestation"
+	"github.com/arkeros/distroless/web/internal/compress"
 	"github.com/arkeros/distroless/web/internal/directory"
 	"github.com/arkeros/distroless/web/internal/mirror"
 	"github.com/arkeros/distroless/web/internal/policy"
@@ -64,7 +65,9 @@ func main() {
 	})
 
 	server := &http.Server{
-		Handler:           mux,
+		// Nothing in front of this process compresses — Cloud Run's frontend
+		// passes bodies through — so it is done here, for every route.
+		Handler:           compress.Handler(mux),
 		ReadTimeout:       10 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
 		// Longer than the registry proxy's: rendering a page costs a tag

@@ -18,6 +18,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//web/internal/attestation",
+        "//web/internal/compress",
         "//web/internal/directory",
         "//web/internal/mirror",
         "//web/internal/policy",

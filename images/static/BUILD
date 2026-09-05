@@ -5,7 +5,8 @@ load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", BUSYBOX_ARCHITECTURES = "ALL_ARCHITECTURES")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
-load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE")
+load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load(":busybox.bzl", "busybox_layer")
 load(":config.bzl", "STATIC_ARCHITECTURES", "STATIC_DISTROS", "static_debug_layers", "static_layers")
@@ -256,3 +257,22 @@ bzl_library(
     name = "config",
     srcs = ["config.bzl"],
 )
+
+# Published as static publishes on the mirror: the nonroot Debian index, with
+# the debug build under its own tag. No version tags — nothing here has an
+# upstream version to name.
+[
+    mirror_push(
+        name = "static" + mode,
+        image = ":static" + mode + "_nonroot_debian",
+        repository = "static",
+        sbom = ":static" + mode + "_nonroot_debian_sbom",
+        tag_list = [
+            "debug" if mode else "latest",
+        ],
+        tags = ["manual"],
+        vex = ":static" + mode + "_nonroot_debian_vex",
+        vulnerabilities = ":static" + mode + "_nonroot_debian_vuln",
+    )
+    for mode in DEBUG_MODE
+]

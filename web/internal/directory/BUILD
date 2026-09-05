@@ -47,6 +47,7 @@ go_library(
         "static/directory.mjs",
         "static/logos/LICENSE.txt",
         "static/logos/bash.svg",
+        "static/logos/generic.svg",
         "static/logos/java.svg",
         "static/logos/nginx.svg",
         "static/logos/node.svg",

@@ -28,6 +28,8 @@ var families = []Family{
 	{Name: "java", Summary: "Temurin JRE, one tag per LTS line, with the JDK on debug tags"},
 	{Name: "node", Summary: "Node.js, one tag per release line"},
 	{Name: "nginx", Summary: "nginx stable and mainline, serving a webroot as nonroot"},
+	{Name: "static", Summary: "Certificates, time zones and a nonroot user: the base for Go, Rust and static binaries"},
+	{Name: "cc", Summary: "static plus glibc, libstdc++ and OpenSSL, for dynamically linked programs"},
 }
 
 // Card is one Family on the front page and where it leads. It names the
@@ -71,15 +73,20 @@ func NewIndex(mirror string) *Index {
 // files are this package's own, which is what makes them safe to inline as
 // HTML.
 //
-// Empty for a family without one, which a page renders as no mark at all:
-// not every published family is on the front page, and a page must not fail
-// for lack of decoration. family is a reader-supplied path segment, but the
-// embedded FS is read-only and the lookup can only ever find one of its own
-// files.
+// A family without a mark of its own gets the generic one. That is the
+// bases that are nobody's product, static and cc, and any published family
+// not on the front page: the pages are laid out around a mark, so a family
+// must neither fail for lack of decoration nor leave a hole where the others
+// have one. family is a reader-supplied path
+// segment, but the embedded FS is read-only and the lookup can only ever
+// find one of its own files.
 func logo(family string) template.HTML {
 	svg, err := assets.ReadFile("static/logos/" + family + ".svg")
 	if err != nil {
-		return ""
+		svg, err = assets.ReadFile("static/logos/generic.svg")
+		if err != nil {
+			return ""
+		}
 	}
 	return template.HTML(svg)
 }

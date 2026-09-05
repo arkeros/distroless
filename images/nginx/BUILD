@@ -419,29 +419,49 @@ _NGINX_RPM_REPO = {
 # fails loud, with false positives; a CPE fails quiet, with nothing found,
 # and NVD's own records lacked an open-source nginx CPE for two of the three
 # July 2026 CVEs — Anchore's enrichment of the grype database supplied it.
-# So: scan a fixed SBOM of nginx 1.30.3, identified exactly as the images
-# identify theirs, against the pinned database, and require those three
-# CVEs (all fixed in 1.30.4 per https://nginx.org/en/security_advisories.html)
-# to be found. The daily database bump then notices the day the route stops
-# working. The actual file lists the CVEs that went missing.
-grype_scan(
-    name = "nginx_cpe_canary_scan",
-    database = "@grype_database",
-    sbom = "nginx_cpe_canary.cdx.json",
-)
+# So: scan two fixed SBOMs, identified exactly as the images identify
+# theirs, against the pinned database. At 1.30.3 the three CVEs (all fixed
+# in 1.30.4 per https://nginx.org/en/security_advisories.html) must be
+# found; at 1.30.4 none of them may be. The first catches the route going
+# quiet, the second catches a range going unbounded. The daily database
+# bump then notices either the day it happens. The actual file lists the
+# CVEs missing at 1.30.3 and present at 1.30.4.
+_NGINX_CPE_CANARY_CVES = '["CVE-2026-42533", "CVE-2026-56434", "CVE-2026-60005"]'
+
+[
+    grype_scan(
+        name = "nginx_cpe_canary_scan_" + state,
+        database = "@grype_database",
+        sbom = "nginx_cpe_canary_" + state + ".cdx.json",
+    )
+    for state in [
+        "vulnerable",
+        "fixed",
+    ]
+]
 
 jq(
-    name = "nginx_cpe_canary_missing",
-    srcs = [":nginx_cpe_canary_scan"],
-    out = "nginx_cpe_canary_missing.json",
-    filter = '["CVE-2026-42533", "CVE-2026-56434", "CVE-2026-60005"] - [.matches[].vulnerability.id]',
+    name = "nginx_cpe_canary_violations",
+    srcs = [
+        ":nginx_cpe_canary_scan_fixed",
+        ":nginx_cpe_canary_scan_vulnerable",
+    ],
+    out = "nginx_cpe_canary_violations.json",
+    args = ["--slurp"],
+    filter = """. as [$vulnerable, $fixed] | {
+  missing_at_1_30_3: (%s - [$vulnerable.matches[].vulnerability.id]),
+  present_at_1_30_4: ([$fixed.matches[].vulnerability.id] | map(select(IN(%s[])))),
+}""" % (_NGINX_CPE_CANARY_CVES, _NGINX_CPE_CANARY_CVES),
 )
 
 write_file(
     name = "nginx_cpe_canary_expected",
     out = "nginx_cpe_canary_expected.json",
     content = [
-        "[]",
+        "{",
+        '  "missing_at_1_30_3": [],',
+        '  "present_at_1_30_4": []',
+        "}",
         "",
     ],
 )
@@ -449,9 +469,9 @@ write_file(
 diff_test(
     name = "nginx_cpe_canary_test",
     size = "small",
-    failure_message = "grype no longer finds known nginx 1.30.3 CVEs through the f5:nginx CPE; the actual file lists the missing ones. Either the pinned database lost its open-source nginx CPE ranges or the identity in nginx_cpe_canary.cdx.json drifted from what image_sbom emits.",
+    failure_message = "the f5:nginx CPE route no longer behaves: known nginx CVEs are missing at 1.30.3, or reported at 1.30.4 where they are fixed. The actual file lists which. Either the pinned database's open-source nginx ranges moved or the identity in the nginx_cpe_canary_*.cdx.json fixtures drifted from what image_sbom emits.",
     file1 = ":nginx_cpe_canary_expected",
-    file2 = ":nginx_cpe_canary_missing",
+    file2 = ":nginx_cpe_canary_violations",
 )
 
 container_structure_test(

@@ -1,0 +1,14 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "components": [
+    {
+      "type": "library",
+      "name": "nginx",
+      "version": "1.30.4",
+      "purl": "pkg:generic/nginx@1.30.4?arch=amd64",
+      "cpe": "cpe:2.3:a:f5:nginx:1.30.4:*:*:*:*:*:*:*"
+    }
+  ]
+}

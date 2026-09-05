@@ -15,3 +15,17 @@ fileExistenceTests:
   - name: 'libstdc++'
     path: '/usr/lib/x86_64-linux-gnu/libstdc++.so.6'
     shouldExist: true
+  # libssl3t64 3.6.4-1's libcrypto.so.3 has DT_NEEDED entries for libz.so.1
+  # and libzstd.so.1 (Debian enabled zlib and zstd compression in openssl
+  # 3.6). The closure target for libssl3t64 carries no deps in the lock —
+  # it is not a manifest package — so the layer has to list them explicitly
+  # or libcrypto fails to load in every image built on cc.
+  - name: 'libcrypto'
+    path: '/usr/lib/x86_64-linux-gnu/libcrypto.so.3'
+    shouldExist: true
+  - name: 'libz (libcrypto DT_NEEDED)'
+    path: '/usr/lib/x86_64-linux-gnu/libz.so.1'
+    shouldExist: true
+  - name: 'libzstd (libcrypto DT_NEEDED)'
+    path: '/usr/lib/x86_64-linux-gnu/libzstd.so.1'
+    shouldExist: true

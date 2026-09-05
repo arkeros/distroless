@@ -124,11 +124,12 @@ true.
 - `nginx_<channel>_<distro>_image_identity_test` scans the image as a
   consumer would, in CycloneDX form, and diffs the same way, so the image and
   the SBOM cannot disagree.
-- `nginx_cpe_canary_test` scans a fixed SBOM of nginx 1.30.3 against the
-  pinned database and requires the three known CVEs to be found. NVD's own
-  records lacked an open-source nginx CPE for two of them; Anchore's
-  enrichment of the grype database supplied it, and the daily database bump
-  now notices the day it stops.
+- `nginx_cpe_canary_test` scans two fixed SBOMs against the pinned database
+  and requires the three known CVEs to be found at 1.30.3 and absent at
+  1.30.4: the first catches the route going quiet, the second a range going
+  unbounded. NVD's own records lacked an open-source nginx CPE for two of
+  them; Anchore's enrichment of the grype database supplied it, and the
+  daily database bump now notices the day either side moves.
 - The container structure test asserts the dpkg entry is absent and that
   `nginx -v` prints the version string the classifier reads.
 - The version-stripping helpers are unit-tested in both extensions.

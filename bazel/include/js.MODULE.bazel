@@ -11,4 +11,3 @@ lockfile to keep pinned. This is the node toolchain and nothing more.
 """
 
 bazel_dep(name = "aspect_rules_js", version = "3.4.1")
-

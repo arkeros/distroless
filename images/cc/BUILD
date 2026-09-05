@@ -1,9 +1,12 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
+load("@rules_img//img:image.bzl", "image_manifest")
 load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("//images:matrix.bzl", "distroless_matrix")
+load("//images:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
+load("//images/common:debian_unfixed_vex.bzl", "ZLIB_UNFIXED_VEX_STATEMENTS")
 load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
@@ -15,7 +18,7 @@ vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/cc/BUILD",
-    statements = GLIBC_FIXED_VEX_STATEMENTS,
+    statements = GLIBC_FIXED_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
     timestamp = "2026-05-01T00:00:00Z",
 )
 
@@ -23,7 +26,7 @@ vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/cc/BUILD#debug",
-    statements = BUSYBOX_FIXED_VEX_STATEMENTS,
+    statements = BUSYBOX_FIXED_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
     timestamp = "2026-05-01T00:00:00Z",
 )
 
@@ -50,8 +53,14 @@ _VEX = {
     "hummingbird": [":vex_hummingbird"],
 }
 
-# Debian cc layer: libc6 + libssl3t64 + libstdc++6. Closure refs (not `:data`)
-# preserve `PackageMetadataInfo` for SBOM — alias targets don't propagate
+# Debian cc layer: libc6 + libssl3t64 + libstdc++6, plus zlib1g and libzstd1
+# because openssl 3.6.4-1's libcrypto.so.3 has DT_NEEDED entries for both
+# (Debian enabled zlib and zstd compression). The closure target for
+# libssl3t64 carries no deps — it is not a manifest package, and the lock
+# only records closures for those — so they have to be listed here or
+# libcrypto fails to load in every image built on cc (`cc_tls_test` proves
+# the loader path end to end). Closure refs (not `:data`) preserve
+# `PackageMetadataInfo` for SBOM — alias targets don't propagate
 # `applicable_licenses` through the gather_metadata aspect.
 [
     flatten(
@@ -62,6 +71,8 @@ _VEX = {
             "@debian//libc6/{}".format(arch),
             "@debian//libssl3t64/{}".format(arch),
             "@debian//libstdc++6/{}".format(arch),
+            "@debian//libzstd1/{}".format(arch),
+            "@debian//zlib1g/{}".format(arch),
         ],
     )
     for arch in CC_ARCHITECTURES["debian"]
@@ -165,17 +176,58 @@ container_structure_test(
     image = ":cc_nonroot_amd64_debian.tar",
 )
 
+# cc ships no executable, so whether what it does ship actually loads —
+# libssl.so.3 -> libcrypto.so.3 -> libz.so.1 + libzstd.so.1 — is only
+# observable from a consumer. This probe is that consumer: Debian's `openssl`
+# CLI (one binary plus openssl.cnf; every library it loads comes from cc)
+# layered on the release image. Test-only, never published.
+flatten(
+    name = "cc_tls_probe_layer",
+    testonly = True,
+    compress = COMPRESSION,
+    deduplicate = True,
+    tars = ["@debian//openssl/amd64"],
+)
+
+image_manifest(
+    name = "cc_tls_probe_amd64_debian",
+    testonly = True,
+    base = ":cc_nonroot_amd64_debian",
+    layers = [":cc_tls_probe_layer"],
+    platform = ARCHITECTURE_PLATFORMS["amd64"],
+)
+
+filegroup(
+    name = "cc_tls_probe_amd64_debian.oci_layout",
+    testonly = True,
+    srcs = [":cc_tls_probe_amd64_debian"],
+    output_group = "oci_layout",
+)
+
+# Network-bound, split from cc_test so offline runs skip it
+# (`--test_tag_filters=-requires-network`), same split as java's network test.
+container_structure_test(
+    name = "cc_tls_test",
+    size = "small",
+    configs = ["test_tls.yaml"],
+    driver = "docker",
+    exec_properties = {
+        "test.workload-isolation-type": "firecracker",
+        "test.init-dockerd": "true",
+    },
+    image = ":cc_tls_probe_amd64_debian.oci_layout",
+    tags = [
+        "requires-docker",
+        "requires-network",
+    ],
+)
+
 container_structure_test(
     name = "cc_hummingbird_test",
     size = "small",
     configs = ["test_hummingbird.yaml"],
     driver = "tar",
     image = ":cc_nonroot_amd64_hummingbird.tar",
-)
-
-bzl_library(
-    name = "config",
-    srcs = ["config.bzl"],
 )
 
 # Published as cc publishes on the mirror: the nonroot Debian index, with
@@ -196,3 +248,8 @@ bzl_library(
     )
     for mode in DEBUG_MODE
 ]
+
+bzl_library(
+    name = "config",
+    srcs = ["config.bzl"],
+)

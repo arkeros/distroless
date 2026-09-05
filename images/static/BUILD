@@ -253,11 +253,6 @@ bzl_library(
     ],
 )
 
-bzl_library(
-    name = "config",
-    srcs = ["config.bzl"],
-)
-
 # Published as static publishes on the mirror: the nonroot Debian index, with
 # the debug build under its own tag. No version tags — nothing here has an
 # upstream version to name.
@@ -276,3 +271,8 @@ bzl_library(
     )
     for mode in DEBUG_MODE
 ]
+
+bzl_library(
+    name = "config",
+    srcs = ["config.bzl"],
+)

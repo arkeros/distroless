@@ -8,6 +8,7 @@ load("@tar.bzl", "tar")
 load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NGINX_FIXED_VEX_STATEMENTS")
+load("//images/common:debian_unfixed_vex.bzl", "ZLIB_UNFIXED_VEX_STATEMENTS")
 load("//images/common:hummingbird_fixed_vex.bzl", "NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
 load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
 load("//oci:created_timestamp.bzl", "hummingbird_created_timestamp")
@@ -73,7 +74,7 @@ NGINX_VEX_STATEMENTS = [
         name = "vex_" + channel,
         author = "rafael@arquero.cat",
         id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#debian-" + channel,
-        statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS,
+        statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
         timestamp = "2026-08-01T00:00:00Z",
     )
     for channel in NGINX_VERSIONS.keys()
@@ -84,7 +85,7 @@ NGINX_VEX_STATEMENTS = [
         name = "debug_vex_" + channel,
         author = "rafael@arquero.cat",
         id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#debian-" + channel + "-debug",
-        statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS,
+        statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
         timestamp = "2026-08-01T00:00:00Z",
     )
     for channel in NGINX_VERSIONS.keys()

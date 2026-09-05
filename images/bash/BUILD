@@ -7,6 +7,7 @@ load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NCURSES_FIXED_VEX_STATEMENTS")
+load("//images/common:debian_unfixed_vex.bzl", "ZLIB_UNFIXED_VEX_STATEMENTS")
 load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
@@ -42,7 +43,7 @@ vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD",
-    statements = GLIBC_FIXED_VEX_STATEMENTS + NCURSES_FIXED_VEX_STATEMENTS + RUST_COREUTILS_VEX_STATEMENTS,
+    statements = GLIBC_FIXED_VEX_STATEMENTS + NCURSES_FIXED_VEX_STATEMENTS + RUST_COREUTILS_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
     timestamp = "2026-05-13T00:00:00Z",
 )
 
@@ -50,7 +51,7 @@ vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD#debug",
-    statements = BUSYBOX_FIXED_VEX_STATEMENTS + RUST_COREUTILS_VEX_STATEMENTS,
+    statements = BUSYBOX_FIXED_VEX_STATEMENTS + RUST_COREUTILS_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
     timestamp = "2026-05-13T00:00:00Z",
 )
 

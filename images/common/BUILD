@@ -310,6 +310,12 @@ bzl_library(
 )
 
 bzl_library(
+    name = "debian_unfixed_vex",
+    srcs = ["debian_unfixed_vex.bzl"],
+    deps = ["//oci:vex"],
+)
+
+bzl_library(
     name = "hummingbird_fixed_vex",
     srcs = ["hummingbird_fixed_vex.bzl"],
     deps = ["//oci:vex"],

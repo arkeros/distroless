@@ -3,6 +3,7 @@ module github.com/arkeros/distroless
 go 1.27.1
 
 require (
+	github.com/CAFxX/httpcompression v0.0.9
 	github.com/CycloneDX/cyclonedx-go v0.12.0
 	github.com/anchore/grype v0.118.0
 	github.com/bazelbuild/buildtools v0.0.0-20260903103648-d171d550ae01

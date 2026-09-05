@@ -20,20 +20,39 @@ on:
       - .github/workflows/modules.yaml
 
 jobs:
+  # The matrix is the directory listing, so a module added under
+  # bazel/modules is tested without anyone remembering to list it here. The
+  # two places that still name each module, .bazelignore and the root's
+  # local_path_override, fail the root build loudly when forgotten; this
+  # one would have failed silently.
+  discover:
+    name: List modules
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      modules: ${{ steps.list.outputs.modules }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: List
+        id: list
+        run: |
+          modules=$(find bazel/modules -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort | jq -R . | jq -c -s .)
+          echo "modules=$modules" >> "$GITHUB_OUTPUT"
+          echo "$modules"
+
   test:
     name: Test ${{ matrix.module }}
+    needs: discover
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        # One entry per directory under bazel/modules. A new module is a new
-        # line here; the root's local_path_override is the other place it is
-        # named.
-        module:
-          - cosign.bzl
-          - rules_rpm
+        module: ${{ fromJSON(needs.discover.outputs.modules) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

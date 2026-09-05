@@ -56,6 +56,23 @@ apt.install(
     mergedusr = True,
     package_template = "//images/common:package.BUILD.tmpl",
 )
+
+# nginx comes from nginx.org's own apt repo (its Debian dependencies from the
+# same snapshot as @debian), and is identified by upstream rather than as a
+# Debian package: `pkg:generic/nginx@<upstream version>` with an f5:nginx
+# CPE, the shape Chainguard's apko SBOMs give the same package.
+#
+# A deb purl routes grype to Debian's tracker, whose advisories name Debian's
+# own rebuild as the fix: Debian fixed CVE-2026-42533 in 1.30.4-3, so
+# nginx.org's 1.30.4-1~trixie — which carries the upstream fix — sorted below
+# it and was flagged, and a VEX statement per channel existed only to say
+# so. The CPE matches NVD's upstream ranges instead (on the pinned database,
+# all three of nginx's July 2026 CVEs at 1.30.3 and none at 1.30.4;
+# //images/nginx:nginx_cpe_canary_test keeps that true). `pkg:github/nginx/
+# nginx@release-<v>` was considered and rejected: grype has no matcher for
+# it and OSV no ecosystem, so it is a silent zero.
+NGINX_UPSTREAM_IDENTITIES = {"nginx": "f5:nginx"}
+
 apt.install(
     name = "nginx_stable",
     distro = "debian-unstable",
@@ -63,6 +80,7 @@ apt.install(
     manifest = "//images/nginx:nginx-stable.yaml",
     mergedusr = True,
     package_template = "//images/common:package.BUILD.tmpl",
+    upstream_identities = NGINX_UPSTREAM_IDENTITIES,
 )
 apt.install(
     name = "nginx_mainline",
@@ -71,6 +89,7 @@ apt.install(
     manifest = "//images/nginx:nginx-mainline.yaml",
     mergedusr = True,
     package_template = "//images/common:package.BUILD.tmpl",
+    upstream_identities = NGINX_UPSTREAM_IDENTITIES,
 )
 use_repo(apt, "debian", "nginx_mainline", "nginx_stable")
 
@@ -151,32 +170,22 @@ rpm.install(
         "x86_64",
         "aarch64",
     ],
-    # Routes via Hummingbird's secdb even though the binary came from
-    # nginx.org. RHEL-10's secdb has CVE entries for nginx but no fix
-    # data (RHEL doesn't ship nginx) — every flag would be a no-fix
-    # false positive. Hummingbird's secdb has accurate version-range
-    # data and all current advisories are rpmvercmp-below the shipped
-    # nginx.org rpm, so no flags surface today. Future advisories with
-    # release-suffix-strict constraints (e.g. `< X-1.hum1`) may falsely
-    # flag nginx.org's `*.el10.ngx` releases via rpmvercmp's suffix
-    # ordering; document those in //images/nginx/BUILD under
-    # `NGINX_HUMMINGBIRD_*_VEX_STATEMENTS` when they arise.
+    # Where the rpm is installed. nginx itself is not routed by it: see
+    # upstream_identities.
     distro = "hummingbird-1",
     gpg_key = "//images/nginx:nginx_signing.key",
     lock_file = "//images/nginx:nginx-stable.hummingbird.lock.json",
     packages = ["nginx"],
-    # Surfaces `pkg:rpm/nginx.org/nginx@...` in the image SBOM so grype
-    # routes lookups to NVD-CPE rather than `pkg:rpm/nginx_stable_rpm/...`
-    # (no provider matches). Crucially decouples nginx from the
-    # `ID=hummingbird` image-scan routing, sidestepping false positives
-    # from any Hummingbird advisory whose release-suffix-strict
-    # `< X-1.hum1` constraint would match nginx.org's `el10.ngx` rpms
-    # under rpmvercmp even when the upstream fix is in shared source.
-    # With this namespace, grype's SBOM-scan correctly treats nginx as
-    # an nginx.org-provided package and applies NVD's upstream
-    # version-range matching.
+    # Names the source for anything this repo ships that is not in
+    # upstream_identities: `pkg:rpm/nginx.org/...` rather than
+    # `pkg:rpm/nginx_stable_rpm/...`.
     purl_namespace = "nginx.org",
     repo_url = "https://nginx.org/packages/rhel/10",
+    # Same identity as the apt side above. Hummingbird's secdb names its
+    # own nginx rebuild as the fix, and rpmvercmp ranks nginx.org's
+    # `1.el10.ngx` release tag below Hummingbird's `2.hum1`, which flagged
+    # CVE-2026-60005 and CVE-2026-42533 on a build that carried both fixes.
+    upstream_identities = NGINX_UPSTREAM_IDENTITIES,
 )
 rpm.install(
     name = "nginx_mainline_rpm",
@@ -190,6 +199,7 @@ rpm.install(
     packages = ["nginx"],
     purl_namespace = "nginx.org",
     repo_url = "https://nginx.org/packages/mainline/rhel/10",
+    upstream_identities = NGINX_UPSTREAM_IDENTITIES,
 )
 use_repo(rpm, "hummingbird", "nginx_mainline_rpm", "nginx_stable_rpm")
 

@@ -1,7 +1,9 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
-load("@jq.bzl//jq:jq.bzl", "jq_test")
+load("@grype.bzl//grype:defs.bzl", "grype_scan")
+load("@jq.bzl//jq:jq.bzl", "jq", "jq_test")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("@tar.bzl", "tar")
@@ -13,7 +15,7 @@ load("//images/common:hummingbird_fixed_vex.bzl", "NGINX_HUMMINGBIRD_FIXED_VEX_S
 load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
 load("//oci:created_timestamp.bzl", "hummingbird_created_timestamp")
 load("//oci:mirror_push.bzl", "mirror_push")
-load("//oci:vex.bzl", "vex_document", "vex_statement")
+load("//oci:vex.bzl", "vex_document")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
 exports_files([
@@ -44,37 +46,19 @@ package(default_visibility = ["//visibility:public"])
     ]
 ]
 
-# CVE-2013-0337 — nginx default config historically created
-# access.log/error.log with world-readable permissions, exposing log
-# contents to local users on shared hosts. Debian's tracker marks it
-# `<unfixed>` in sid and `<ignored>` "Minor issue" in trixie/bookworm/
-# bullseye, blocked on upstream nginx#376. Our image never creates
-# log files: nginx.conf:3 sets `error_log /dev/stderr`, nginx.conf:20
-# sets `access_log /dev/stdout`, and the entrypoint additionally pins
-# `-e /dev/stderr` so the error-log destination is fixed at the CLI
-# level regardless of any conf override. The file-creation code path
-# the CVE describes is never reached. Drops the moment Debian or
-# upstream lands a fix (`_cve_test_stale_vex` enforces).
-NGINX_VEX_STATEMENTS = [
-    vex_statement(
-        expires = "2026-11-12",
-        impact_statement = "nginx.conf routes error_log to /dev/stderr and access_log to /dev/stdout; entrypoint pins -e /dev/stderr. No log files are created on disk, so the world-readable log-file default is never reached.",
-        justification = "vulnerable_code_not_in_execute_path",
-        products = ["pkg:oci/nginx"],
-        status = "not_affected",
-        vulnerability = "CVE-2013-0337",
-    ),
-]
-
-# Per channel, because NGINX_FIXED_VEX_STATEMENTS differs between stable
-# and mainline — Debian's fixed version sorts between the two nginx.org
-# pins. The CVE-2013-0337 statement above applies to both.
+# Per channel, because NGINX_FIXED_VEX_STATEMENTS is keyed by channel: the
+# two pin different upstream versions. Both are empty today — nginx is
+# identified in the SBOM by upstream version and CPE (`upstream_identities`
+# in //bazel/include/oci.MODULE.bazel), which retired the Debian-tracker mismatch
+# statements and the CVE-2013-0337 log-permissions one, a Debian-only
+# tracker entry that no longer reaches the scan. The documents stay wired
+# so the next statement is one line.
 [
     vex_document(
         name = "vex_" + channel,
         author = "rafael@arquero.cat",
         id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#debian-" + channel,
-        statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
+        statements = GLIBC_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + ZLIB_UNFIXED_VEX_STATEMENTS,
         timestamp = "2026-08-01T00:00:00Z",
     )
     for channel in NGINX_VERSIONS.keys()
@@ -85,22 +69,15 @@ NGINX_VEX_STATEMENTS = [
         name = "debug_vex_" + channel,
         author = "rafael@arquero.cat",
         id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#debian-" + channel + "-debug",
-        statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + NGINX_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
+        statements = BUSYBOX_FIXED_VEX_STATEMENTS + NGINX_FIXED_VEX_STATEMENTS[channel] + ZLIB_UNFIXED_VEX_STATEMENTS,
         timestamp = "2026-08-01T00:00:00Z",
     )
     for channel in NGINX_VERSIONS.keys()
 ]
 
-# The CVE-2026-60005 statement that used to live here now sits in
-# //images/common:hummingbird_fixed_vex.bzl, because the frontend
-# apps built on the hummingbird nginx base ship the same nginx.org rpm and
-# inherit the same release-tag match. Switching to Hummingbird's own nginx
-# rpm would silence it without a statement, but at the cost of its
-# images/nginx/nginx-core/nginx-filesystem decomposition and
-# gperftools/libunwind/libxcrypt linkage — the reason
-# //bazel/include/oci.MODULE.bazel sources nginx from nginx.org instead.
-
-# No statements: the mainline rpm (1.31.2) carries no scanner matches.
+# Hummingbird, per channel. Both empty today, for the same reason as the
+# Debian documents above; the statements the release-tag mismatch used to
+# need are recorded in //images/common:hummingbird_fixed_vex.bzl.
 vex_document(
     name = "vex_hummingbird_mainline",
     author = "rafael@arquero.cat",
@@ -115,8 +92,8 @@ vex_document(
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#hummingbird-stable",
     statements = NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS["stable"],
-    timestamp = "2026-08-01T00:00:00Z",
-    version = 4,
+    timestamp = "2026-09-05T00:00:00Z",
+    version = 5,
 )
 
 _IGNORE_CVES_BY_DISTRO = {
@@ -124,12 +101,7 @@ _IGNORE_CVES_BY_DISTRO = {
     "hummingbird": [],
 }
 
-# Per (channel, distro). Hummingbird stable carries the current
-# release-tag VEX (see NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS); mainline
-# carries none. Debian is per-channel too: the CVE-2013-0337
-# log-permissions statement applies to both channels, but the
-# nginx.org-vs-Debian-tracker statement only still matches stable
-# (see NGINX_FIXED_VEX_STATEMENTS).
+# Per (channel, distro), each document keyed by channel as its statements are.
 _VEX_BY_CHANNEL_AND_DISTRO = {
     "stable": {
         "debian": [":vex_stable"],
@@ -346,6 +318,98 @@ _NGINX_RPM_REPO = {
         "mainline": "nginx-mainline.lock.json",
     }.items()
 ]
+
+# The nginx.org package must be identified in every index SBOM as
+# `pkg:generic/nginx@<upstream>` with an f5:nginx CPE (`upstream_identities` on
+# its apt.install and rpm.install in //bazel/include/oci.MODULE.bazel), at the
+# version the lockfile pins, so a channel bump cannot leave a stale identity
+# behind. Two jq readings — one of the SBOM, one
+# of the lockfile — diffed per channel and distro.
+_LOCKFILES = {
+    "debian": {
+        "stable": "nginx-stable.lock.json",
+        "mainline": "nginx-mainline.lock.json",
+    },
+    "hummingbird": {
+        "stable": "nginx-stable.hummingbird.lock.json",
+        "mainline": "nginx-mainline.hummingbird.lock.json",
+    },
+}
+
+# jq + diff_test rather than jq_test, whose failure-message templating breaks
+# on filters with quotes and parentheses (see //oci/publish for the same
+# workaround).
+[
+    jq(
+        name = "nginx_" + version_label + "_" + distro + "_sbom_identity",
+        srcs = [":nginx_" + version_label + "_nonroot_" + distro + "_sbom"],
+        out = "nginx_" + version_label + "_" + distro + "_sbom_identity.json",
+        filter_file = "nginx_sbom_identity.jq",
+    )
+    for version_label in NGINX_VERSIONS.keys()
+    for distro in NGINX_CHANNEL_DISTROS[version_label]
+]
+
+[
+    jq(
+        name = "nginx_" + version_label + "_" + distro + "_lock_identity",
+        srcs = [_LOCKFILES[distro][version_label]],
+        out = "nginx_" + version_label + "_" + distro + "_lock_identity.json",
+        filter_file = "nginx_lock_version.jq",
+    )
+    for version_label in NGINX_VERSIONS.keys()
+    for distro in NGINX_CHANNEL_DISTROS[version_label]
+]
+
+[
+    diff_test(
+        name = "nginx_" + version_label + "_" + distro + "_sbom_identity_test",
+        failure_message = "nginx is not identified as pkg:generic/nginx@<upstream> with an f5:nginx cpe in the SBOM, or its version disagrees with the lockfile. See `upstream_identities` in //bazel/include/oci.MODULE.bazel.",
+        file1 = ":nginx_" + version_label + "_" + distro + "_lock_identity",
+        file2 = ":nginx_" + version_label + "_" + distro + "_sbom_identity",
+    )
+    for version_label in NGINX_VERSIONS.keys()
+    for distro in NGINX_CHANNEL_DISTROS[version_label]
+]
+
+# Canary for the CPE route the identity above depends on. A distro purl
+# fails loud, with false positives; a CPE fails quiet, with nothing found,
+# and NVD's own records lacked an open-source nginx CPE for two of the three
+# July 2026 CVEs — Anchore's enrichment of the grype database supplied it.
+# So: scan a fixed SBOM of nginx 1.30.3, identified exactly as the images
+# identify theirs, against the pinned database, and require those three
+# CVEs (all fixed in 1.30.4 per https://nginx.org/en/security_advisories.html)
+# to be found. The daily database bump then notices the day the route stops
+# working. The actual file lists the CVEs that went missing.
+grype_scan(
+    name = "nginx_cpe_canary_scan",
+    database = "@grype_database",
+    sbom = "nginx_cpe_canary.cdx.json",
+)
+
+jq(
+    name = "nginx_cpe_canary_missing",
+    srcs = [":nginx_cpe_canary_scan"],
+    out = "nginx_cpe_canary_missing.json",
+    filter = '["CVE-2026-42533", "CVE-2026-56434", "CVE-2026-60005"] - [.matches[].vulnerability.id]',
+)
+
+write_file(
+    name = "nginx_cpe_canary_expected",
+    out = "nginx_cpe_canary_expected.json",
+    content = [
+        "[]",
+        "",
+    ],
+)
+
+diff_test(
+    name = "nginx_cpe_canary_test",
+    size = "small",
+    failure_message = "grype no longer finds known nginx 1.30.3 CVEs through the f5:nginx CPE; the actual file lists the missing ones. Either the pinned database lost its open-source nginx CPE ranges or the identity in nginx_cpe_canary.cdx.json drifted from what image_sbom emits.",
+    file1 = ":nginx_cpe_canary_expected",
+    file2 = ":nginx_cpe_canary_missing",
+)
 
 container_structure_test(
     name = "nginx_stable_test",

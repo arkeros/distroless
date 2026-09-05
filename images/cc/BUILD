@@ -7,7 +7,8 @@ load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
 load("//images/common:debian_unfixed_vex.bzl", "ZLIB_UNFIXED_VEX_STATEMENTS")
-load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
+load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load(":config.bzl", "CC_ARCHITECTURES", "CC_DISTROS", "cc_layers")
 
@@ -228,6 +229,25 @@ container_structure_test(
     driver = "tar",
     image = ":cc_nonroot_amd64_hummingbird.tar",
 )
+
+# Published as cc publishes on the mirror: the nonroot Debian index, with
+# the debug build under its own tag. No version tags — nothing here has an
+# upstream version to name.
+[
+    mirror_push(
+        name = "cc" + mode,
+        image = ":cc" + mode + "_nonroot_debian",
+        repository = "cc",
+        sbom = ":cc" + mode + "_nonroot_debian_sbom",
+        tag_list = [
+            "debug" if mode else "latest",
+        ],
+        tags = ["manual"],
+        vex = ":cc" + mode + "_nonroot_debian_vex",
+        vulnerabilities = ":cc" + mode + "_nonroot_debian_vuln",
+    )
+    for mode in DEBUG_MODE
+]
 
 bzl_library(
     name = "config",

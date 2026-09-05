@@ -1211,7 +1211,7 @@ func TestIndexListsEveryPublishedFamily(t *testing.T) {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
 	}
 	body := response.Body.String()
-	for _, family := range []string{"bash", "java", "node", "nginx"} {
+	for _, family := range []string{"bash", "java", "node", "nginx", "static", "cc"} {
 		if !strings.Contains(body, `href="/directory/image/`+family+`/versions"`) {
 			t.Errorf("index does not link %s to its versions page:\n%s", family, body)
 		}
@@ -1290,8 +1290,9 @@ func TestPagesShowTheFamilyLogo(t *testing.T) {
 }
 
 // Not every published family is on the front page — the server's own image
-// is pushed the same way — and a page must not fail for lack of decoration.
-func TestPagesTolerateAFamilyWithoutALogo(t *testing.T) {
+// is pushed the same way — and a page must not fail for lack of decoration,
+// nor be laid out around a mark that is not there.
+func TestPagesDrawTheGenericMarkForAFamilyWithoutALogo(t *testing.T) {
 	source := &fakeSource{
 		digest:     testDigest,
 		components: []directory.Component{{Name: "libc6"}},
@@ -1309,10 +1310,15 @@ func TestPagesTolerateAFamilyWithoutALogo(t *testing.T) {
 		if response.Code != http.StatusOK {
 			t.Errorf("GET %s = %d, want %d", target, response.Code, http.StatusOK)
 		}
-		// The topbar draws the listed families' marks on every page, so
-		// what must not appear is a mark with nothing in it.
-		if strings.Contains(response.Body.String(), `<span class="logo"></span>`) {
+		// A family with no mark of its own is drawn with the generic one,
+		// rather than with an empty corner or with nothing: the identity
+		// header and the search entries are laid out around a mark.
+		body := response.Body.String()
+		if strings.Contains(body, `<span class="logo"></span>`) {
 			t.Errorf("GET %s draws an empty logo for a family that has none", target)
+		}
+		if !strings.Contains(body, `<title>Base image</title>`) {
+			t.Errorf("GET %s does not fall back to the generic mark:\n%s", target, body)
 		}
 	}
 }
@@ -1379,7 +1385,7 @@ func TestPagesSearchEveryFamily(t *testing.T) {
 		if home > heading || search > heading {
 			t.Errorf("GET %s puts the topbar (home=%d search=%d) after the heading at %d, want it above", target, home, search, heading)
 		}
-		for _, family := range []string{"bash", "java", "node", "nginx"} {
+		for _, family := range []string{"bash", "java", "node", "nginx", "static", "cc"} {
 			if !strings.Contains(body, `<span class="name">`+family+`</span></a>`) {
 				t.Errorf("GET %s does not offer %s in the search:\n%s", target, family, body)
 			}
@@ -1427,7 +1433,7 @@ func TestSearchLeadsToTheSameViewOfAnotherFamily(t *testing.T) {
 func TestSearchDrawsEachFamilyWithItsLogo(t *testing.T) {
 	body := get(t, &fakeSource{}, "/directory", nil).Body.String()
 
-	for _, family := range []string{"bash", "java", "node", "nginx"} {
+	for _, family := range []string{"bash", "java", "node", "nginx", "static", "cc"} {
 		want := `<a href="/directory/image/` + family + `/versions"><span class="logo"><svg`
 		if !strings.Contains(body, want) {
 			t.Errorf("the search does not draw the %s logo (%s):\n%s", family, want, body)

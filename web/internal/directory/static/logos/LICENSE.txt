@@ -13,3 +13,7 @@ and draw in the page's own, so that it reads in both colour schemes.
 The CC0 release covers the drawings only. Each mark remains the trademark of
 its owner and is shown here to identify the software an image contains, not
 to claim any affiliation with or endorsement by that owner.
+
+generic.svg is this project's own drawing — a frame with a block in it, for
+a family that is nobody's product and so has no mark of its own — and is
+released under the same CC0 1.0 Universal.

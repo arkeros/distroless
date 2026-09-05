@@ -15,35 +15,11 @@ load(":config.bzl", "BASH_ARCHITECTURES", "BASH_DISTROS", "BASH_TAGS", "BASH_VER
 
 package(default_visibility = ["//visibility:public"])
 
-# rust-coreutils 0.8.0-1 carries one unfixed High in Debian sid:
-# mkfifo (CVE-2026-35341). The rust-coreutils multicall binary contains
-# all subcommands, but our images only expose the symlinks enumerated in
-# //images/common:BUILD's COREUTILS_COMMANDS. mkfifo was never
-# in that set, so it is not resolvable by name on PATH — invoking it
-# requires the non-standard `/bin/coreutils mkfifo` multicall form,
-# which neither the entrypoint nor any layered tooling uses. Drops the
-# moment Debian ships a fix (`_cve_test_stale_vex` will turn red and
-# force deletion). Two former neighbours were pruned by exactly that
-# mechanism when the grype DB stopped flagging them: chroot
-# (CVE-2026-35368), and mkdir TOCTOU (CVE-2026-35352) with the
-# 2026-08-14 DB. mkdir stays out of COREUTILS_COMMANDS regardless —
-# that removal was a composition decision, not a consequence of the VEX.
-RUST_COREUTILS_VEX_STATEMENTS = [
-    vex_statement(
-        expires = "2026-11-12",
-        impact_statement = "mkfifo is not in COREUTILS_COMMANDS — no /usr/bin/mkfifo symlink to the rust-coreutils multicall.",
-        justification = "vulnerable_code_not_in_execute_path",
-        products = ["pkg:oci/bash"],
-        status = "not_affected",
-        vulnerability = "CVE-2026-35341",
-    ),
-]
-
 vex_document(
     name = "vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD",
-    statements = GLIBC_FIXED_VEX_STATEMENTS + NCURSES_FIXED_VEX_STATEMENTS + RUST_COREUTILS_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
+    statements = GLIBC_FIXED_VEX_STATEMENTS + NCURSES_FIXED_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
     timestamp = "2026-05-13T00:00:00Z",
 )
 
@@ -51,7 +27,7 @@ vex_document(
     name = "debug_vex",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/bash/BUILD#debug",
-    statements = BUSYBOX_FIXED_VEX_STATEMENTS + RUST_COREUTILS_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
+    statements = BUSYBOX_FIXED_VEX_STATEMENTS + ZLIB_UNFIXED_VEX_STATEMENTS,
     timestamp = "2026-05-13T00:00:00Z",
 )
 

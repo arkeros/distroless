@@ -619,14 +619,14 @@
     "@@grype.bzl+//grype:extensions.bzl%grype_database": {
       "general": {
         "bzlTransitiveDigest": "E69de1QsaTVlPLDE3A8bjoHGeN2y0nzhHkVjXsPB8rE=",
-        "usagesDigest": "TJ+7OMcWAGd4SHfryJMYLXRpwHrf/1mbmcgcMq3dzGc=",
+        "usagesDigest": "Ow8/dl8bAgB273pWS+6mN3WgS71RI7Wy0aQjSX5R394=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "grype_database": {
             "repoRuleId": "@@grype.bzl+//grype:database.bzl%grype_database_archive",
             "attributes": {
-              "url": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-04T00:30:56Z_1788503446.tar.zst",
-              "sha256": "d588f263d59606363b9e499aa5631c1c8a504cb447304797ca5c92cb7ff44a29"
+              "url": "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-05T00:31:34Z_1788589620.tar.zst",
+              "sha256": "43c58300b3989b927b54a71ab7c4b53b3cba7e1a47ca1ca09c04cd288efdbc4a"
             }
           }
         }

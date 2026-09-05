@@ -20,16 +20,17 @@ Statement-name conventions (`<package>_HUMMINGBIRD_FIXED_VEX_STATEMENTS`)
 mirror the Debian module's `<package>_FIXED_VEX_STATEMENTS`.
 """
 
-# nginx, per channel. Empty: the nginx.org rpm is identified in the SBOM
-# by its upstream version and an f5:nginx CPE (`upstream_identities` on
-# its rpm.install in //bazel/include/oci.MODULE.bazel), so grype matches
-# it against NVD's upstream
-# ranges rather than Hummingbird's secdb. That retired the two statements
-# that used to live here — CVE-2026-60005 and CVE-2026-42533, both fixed
-# upstream in 1.30.4 but flagged because rpmvercmp ranked nginx.org's
-# `1.el10.ngx` release tag below Hummingbird's own `2.hum1` rebuild. Keyed
-# by channel because the two pin different upstream versions;
-# `_cve_test_stale_vex` prunes whatever stops matching.
+# nginx, per channel. Empty: nginx.org's rpm is identified by its upstream
+# version and an f5:nginx CPE (`upstream_identities` on its rpm.install in
+# //bazel/include/oci.MODULE.bazel), in the attested SBOM and on the image
+# alike — the image's rpmdb carries no row for it, so a scanner reads the
+# version out of the binary instead. Both scans match NVD's upstream ranges
+# rather than Hummingbird's secdb, which retired the two statements that
+# used to live here: CVE-2026-60005 and CVE-2026-42533, both fixed upstream
+# in 1.30.4 but flagged because rpmvercmp ranked nginx.org's `1.el10.ngx`
+# release tag below Hummingbird's own `2.hum1` rebuild. Keyed by channel
+# because the two pin different upstream versions; `_cve_test_stale_vex`
+# prunes whatever stops matching.
 #
 # Shared by //images/nginx and by every frontend image built on the
 # hummingbird nginx base, all of which ship the same nginx.org rpm.

@@ -39,19 +39,21 @@ def _rpm_package_impl(ctx):
         progress_message = "Extracting %s-%s (%s)" % (ctx.attr.package, ctx.attr.version, ctx.attr.arch),
     )
 
-    return [
+    providers = [
         DefaultInfo(files = depset([content_tar])),
         OutputGroupInfo(
             content = depset([content_tar]),
             header = depset([header_blob]),
         ),
-        RpmHeaderInfo(
+    ]
+    if ctx.attr.rpmdb:
+        providers.append(RpmHeaderInfo(
             header = header_blob,
             package = ctx.attr.package,
             version = ctx.attr.version,
             arch = ctx.attr.arch,
-        ),
-    ]
+        ))
+    return providers
 
 rpm_package = rule(
     implementation = _rpm_package_impl,
@@ -69,6 +71,10 @@ rpm_package = rule(
         "package": attr.string(mandatory = True),
         "version": attr.string(mandatory = True),
         "arch": attr.string(mandatory = True),
+        "rpmdb": attr.bool(
+            default = True,
+            doc = "Whether the package's header is offered to rpmdb_merge (RpmHeaderInfo). False for a package identified by its upstream (`upstream_identities` on the install tag): a row in the image's rpmdb would make a scanner call it a distro package at the distro's version, contradicting the SBOM; without one, syft reads the identity out of the binary instead.",
+        ),
         "_extract_tool": attr.label(
             default = "@rules_rpm//rpm/tools/rpm-extract",
             executable = True,

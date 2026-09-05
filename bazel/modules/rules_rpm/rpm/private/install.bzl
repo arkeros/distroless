@@ -73,21 +73,43 @@ def _rpm_purl(namespace, name, version, arch, upstream, distro):
         q = "&".join(parts),
     )
 
-# The upstream version of an rpm version: epoch and release stripped, so
-# `2:1.30.4-1.el10.ngx` reads `1.30.4`. That is the version upstream
-# advisories and NVD ranges are expressed in.
-def _upstream_version(evr):
+def upstream_version(evr):
+    """The upstream version inside an rpm version.
+
+    Epoch and release stripped, so `2:1.30.4-1.el10.ngx` reads `1.30.4`: the
+    version upstream advisories and NVD ranges are expressed in. Only the
+    last dash-separated part is a release; a dash inside the version
+    survives.
+
+    Args:
+      evr: an rpm version, `[epoch:]version[-release]`.
+
+    Returns:
+      The version part.
+    """
     _, ver = _split_epoch(evr)
     if "-" in ver:
         ver = ver.rpartition("-")[0]
     return ver
 
-# purl and CPE for a package identified by its upstream rather than the
-# distro (see `upstream_identities` on the install tag). The purl keeps
-# `arch`, the one qualifier that still describes the artifact; the distro
-# qualifier would route scanners back to the distro's secdb.
-def _upstream_identity(name, version, arch, cpe_vendor_product):
-    upstream = _upstream_version(version)
+def upstream_identity(name, version, arch, cpe_vendor_product):
+    """purl and CPE for a package identified by its upstream, not the distro.
+
+    See `upstream_identities` on the install tag. The purl keeps `arch`, the
+    one qualifier that still describes the artifact; the distro qualifier
+    would route scanners back to the distro's secdb.
+
+    Args:
+      name: the package name.
+      version: the rpm version; see upstream_version.
+      arch: the package architecture, e.g. "x86_64".
+      cpe_vendor_product: the CPE vendor and product, e.g. "f5:nginx".
+
+    Returns:
+      (purl, cpe): `pkg:generic/<name>@<upstream version>?arch=<arch>` and
+      `cpe:2.3:a:<vendor>:<product>:<upstream version>:*:*:*:*:*:*:*`.
+    """
+    upstream = upstream_version(version)
     purl = "pkg:generic/{name}@{ver}?arch={arch}".format(name = name, ver = upstream, arch = arch)
     cpe = "cpe:2.3:a:{vp}:{ver}:*:*:*:*:*:*:*".format(vp = cpe_vendor_product, ver = upstream)
     return purl, cpe
@@ -104,7 +126,7 @@ def _rpm_package_repo_impl(rctx):
     )
 
     if rctx.attr.upstream_cpe:
-        purl, cpe = _upstream_identity(
+        purl, cpe = upstream_identity(
             name = rctx.attr.package,
             version = rctx.attr.version,
             arch = rctx.attr.arch,
@@ -151,6 +173,7 @@ rpm_package(
     package = {package},
     version = {version},
     arch = {arch},
+    rpmdb = {rpmdb},
 )
 """.format(
         package = repr(rctx.attr.package),
@@ -159,6 +182,7 @@ rpm_package(
         gpg_key = repr(str(rctx.attr.gpg_key)),
         purl = repr(purl),
         cpe = repr(cpe),
+        rpmdb = repr(not rctx.attr.upstream_cpe),
     ))
 
 rpm_package_repo = repository_rule(
@@ -181,7 +205,7 @@ rpm_package_repo = repository_rule(
             doc = "Consumer-side distro routing key (e.g. 'hummingbird-1', 'rhel-10'). Embedded as `?distro=...` qualifier in the purl so grype's SBOM scanner can route per-package to the right secdb provider.",
         ),
         "upstream_cpe": attr.string(
-            doc = "CPE vendor:product (e.g. 'f5:nginx') when this package is identified by its upstream rather than the distro: the purl becomes `pkg:generic/<name>@<upstream version>?arch=<arch>` and a matching CPE is emitted. Empty means the rpm purl above.",
+            doc = "CPE vendor:product (e.g. 'f5:nginx') when this package is identified by its upstream rather than the distro: the purl becomes `pkg:generic/<name>@<upstream version>?arch=<arch>`, a matching CPE is emitted, and the package contributes no rpmdb row (see rpm_package's `rpmdb`). Empty means the rpm purl above.",
         ),
     },
 )

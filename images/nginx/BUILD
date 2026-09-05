@@ -18,11 +18,21 @@ load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load(":config.bzl", "NGINX_ARCHITECTURES", "NGINX_CHANNEL_DISTROS", "NGINX_DISTROS", "NGINX_LATEST_CHANNEL", "NGINX_TAGS", "NGINX_VERSIONS", "nginx_layers")
 
-exports_files([
-    "nginx_signing.key",
-    "nginx-stable.hummingbird.lock.json",
-    "nginx-mainline.hummingbird.lock.json",
-])
+# The lockfiles, per distro and channel: what each channel pins, and the one
+# place their names are spelled. //bazel/include/oci.MODULE.bazel names the
+# same files on its apt.install and rpm.install tags.
+NGINX_LOCKFILES = {
+    "debian": {
+        "stable": "nginx-stable.lock.json",
+        "mainline": "nginx-mainline.lock.json",
+    },
+    "hummingbird": {
+        "stable": "nginx-stable.hummingbird.lock.json",
+        "mainline": "nginx-mainline.hummingbird.lock.json",
+    },
+}
+
+exports_files(["nginx_signing.key"] + NGINX_LOCKFILES["hummingbird"].values())
 
 NGINX_IGNORE_CVES = {
     "stable": [],
@@ -38,7 +48,7 @@ package(default_visibility = ["//visibility:public"])
 [
     hummingbird_created_timestamp(
         name = "created_" + channel + "_hummingbird",
-        lock = ":nginx-" + channel + ".hummingbird.lock.json",
+        lock = NGINX_LOCKFILES["hummingbird"][channel],
     )
     for channel in [
         "stable",
@@ -48,11 +58,11 @@ package(default_visibility = ["//visibility:public"])
 
 # Per channel, because NGINX_FIXED_VEX_STATEMENTS is keyed by channel: the
 # two pin different upstream versions. Both are empty today — nginx is
-# identified in the SBOM by upstream version and CPE (`upstream_identities`
-# in //bazel/include/oci.MODULE.bazel), which retired the Debian-tracker mismatch
-# statements and the CVE-2013-0337 log-permissions one, a Debian-only
-# tracker entry that no longer reaches the scan. The documents stay wired
-# so the next statement is one line.
+# identified by upstream version and CPE in the SBOM and on the image alike
+# (`upstream_identities` in //bazel/include/oci.MODULE.bazel), which retired
+# the distro-tracker statements and the CVE-2013-0337 log-permissions one,
+# a Debian-only tracker entry that no longer reaches any scan. The documents
+# stay wired so the next statement is one line.
 [
     vex_document(
         name = "vex_" + channel,
@@ -93,7 +103,7 @@ vex_document(
     id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#hummingbird-stable",
     statements = NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS["stable"],
     timestamp = "2026-09-05T00:00:00Z",
-    version = 5,
+    version = 7,
 )
 
 _IGNORE_CVES_BY_DISTRO = {
@@ -313,29 +323,15 @@ _NGINX_RPM_REPO = {
   ),
 }""",
     )
-    for version_label, lockfile in {
-        "stable": "nginx-stable.lock.json",
-        "mainline": "nginx-mainline.lock.json",
-    }.items()
+    for version_label, lockfile in NGINX_LOCKFILES["debian"].items()
 ]
 
 # The nginx.org package must be identified in every index SBOM as
 # `pkg:generic/nginx@<upstream>` with an f5:nginx CPE (`upstream_identities` on
 # its apt.install and rpm.install in //bazel/include/oci.MODULE.bazel), at the
 # version the lockfile pins, so a channel bump cannot leave a stale identity
-# behind. Two jq readings — one of the SBOM, one
-# of the lockfile — diffed per channel and distro.
-_LOCKFILES = {
-    "debian": {
-        "stable": "nginx-stable.lock.json",
-        "mainline": "nginx-mainline.lock.json",
-    },
-    "hummingbird": {
-        "stable": "nginx-stable.hummingbird.lock.json",
-        "mainline": "nginx-mainline.hummingbird.lock.json",
-    },
-}
-
+# behind. Two jq readings, one of the SBOM and one of the lockfile, diffed
+# per channel and distro.
 # jq + diff_test rather than jq_test, whose failure-message templating breaks
 # on filters with quotes and parentheses (see //oci/publish for the same
 # workaround).
@@ -353,7 +349,7 @@ _LOCKFILES = {
 [
     jq(
         name = "nginx_" + version_label + "_" + distro + "_lock_identity",
-        srcs = [_LOCKFILES[distro][version_label]],
+        srcs = [NGINX_LOCKFILES[distro][version_label]],
         out = "nginx_" + version_label + "_" + distro + "_lock_identity.json",
         filter_file = "nginx_lock_version.jq",
     )
@@ -367,6 +363,47 @@ _LOCKFILES = {
         failure_message = "nginx is not identified as pkg:generic/nginx@<upstream> with an f5:nginx cpe in the SBOM, or its version disagrees with the lockfile. See `upstream_identities` in //bazel/include/oci.MODULE.bazel.",
         file1 = ":nginx_" + version_label + "_" + distro + "_lock_identity",
         file2 = ":nginx_" + version_label + "_" + distro + "_sbom_identity",
+    )
+    for version_label in NGINX_VERSIONS.keys()
+    for distro in NGINX_CHANNEL_DISTROS[version_label]
+]
+
+# The image must tell a consumer's scanner the same thing the SBOM says. syft
+# reads /var/lib/dpkg/status.d and the rpmdb first, and would call nginx a
+# distro package at the distro's version; with no such entry for nginx it
+# falls back to its nginx binary classifier, which reads the version out of
+# /usr/sbin/nginx and emits pkg:generic/nginx with an nginx CPE — the same
+# identity, matched against the same upstream ranges. Scan the image as a
+# consumer would, in CycloneDX form so the package list is visible, and diff
+# nginx's identity against the lockfile exactly as the SBOM test above does.
+[
+    grype_scan(
+        name = "nginx_" + version_label + "_" + distro + "_image_packages",
+        database = "@grype_database",
+        format = "cyclonedx-json",
+        image = ":nginx_" + version_label + "_nonroot_" + NGINX_ARCHITECTURES[distro][0] + "_" + distro + "_load",
+    )
+    for version_label in NGINX_VERSIONS.keys()
+    for distro in NGINX_CHANNEL_DISTROS[version_label]
+]
+
+[
+    jq(
+        name = "nginx_" + version_label + "_" + distro + "_image_identity",
+        srcs = [":nginx_" + version_label + "_" + distro + "_image_packages"],
+        out = "nginx_" + version_label + "_" + distro + "_image_identity.json",
+        filter_file = "nginx_sbom_identity.jq",
+    )
+    for version_label in NGINX_VERSIONS.keys()
+    for distro in NGINX_CHANNEL_DISTROS[version_label]
+]
+
+[
+    diff_test(
+        name = "nginx_" + version_label + "_" + distro + "_image_identity_test",
+        failure_message = "a scanner reading the image does not identify nginx as pkg:generic/nginx@<upstream> with an nginx CPE, or its version disagrees with the lockfile. The image must not carry a dpkg status entry or rpmdb row for nginx; see `upstream_identities` in //bazel/include/oci.MODULE.bazel.",
+        file1 = ":nginx_" + version_label + "_" + distro + "_lock_identity",
+        file2 = ":nginx_" + version_label + "_" + distro + "_image_identity",
     )
     for version_label in NGINX_VERSIONS.keys()
     for distro in NGINX_CHANNEL_DISTROS[version_label]

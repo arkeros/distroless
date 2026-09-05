@@ -35,7 +35,7 @@ register_toolchains(
 
 git_override(
     module_name = "grype.bzl",
-    commit = "3faf01f19537ba685f9deb9c12b3742b1815c583",
+    commit = "f4ca2e2e3ca7ed09154b445dbf7a1c04e7e3874d",
     remote = "https://github.com/arkeros/grype.bzl.git",
 )
 
@@ -64,13 +64,22 @@ apt.install(
 #
 # A deb purl routes grype to Debian's tracker, whose advisories name Debian's
 # own rebuild as the fix: Debian fixed CVE-2026-42533 in 1.30.4-3, so
-# nginx.org's 1.30.4-1~trixie — which carries the upstream fix — sorted below
-# it and was flagged, and a VEX statement per channel existed only to say
-# so. The CPE matches NVD's upstream ranges instead (on the pinned database,
-# all three of nginx's July 2026 CVEs at 1.30.3 and none at 1.30.4;
-# //images/nginx:nginx_cpe_canary_test keeps that true). `pkg:github/nginx/
-# nginx@release-<v>` was considered and rejected: grype has no matcher for
-# it and OSV no ecosystem, so it is a silent zero.
+# nginx.org's 1.30.4-1~trixie — which carries the upstream fix — sorts below
+# it and is flagged. The CPE matches NVD's upstream ranges instead (on the
+# pinned database, all three of nginx's July 2026 CVEs at 1.30.3 and none at
+# 1.30.4; //images/nginx:nginx_cpe_canary_test keeps that true).
+# `pkg:github/nginx/nginx@release-<v>` was considered and rejected: grype
+# has no matcher for it and OSV no ecosystem, so it is a silent zero.
+#
+# The image says the same. It carries no dpkg status entry and no rpmdb row
+# for nginx — either would make a scanner reading the image call it a distro
+# package at the distro's version — so syft falls back to its nginx binary
+# classifier, which reads the version out of /usr/sbin/nginx and emits the
+# same generic purl and CPE. The publication gate scans the image that way
+# too (`image_scans` in //oci:supply_chain.bzl), and
+# //images/nginx:nginx_*_image_identity_test holds the two views equal. The
+# price: a scanner with no nginx binary classifier (trivy) sees no nginx on
+# the image at all, and must read the attested SBOM.
 NGINX_UPSTREAM_IDENTITIES = {"nginx": "f5:nginx"}
 
 apt.install(

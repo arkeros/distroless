@@ -1049,7 +1049,7 @@
     },
     "@@rules_rpm+//rpm:extensions.bzl%rpm": {
       "general": {
-        "bzlTransitiveDigest": "8ay8n1uWNmIPIlGXvGzng9ZY3h1lJX9JLyXZAMci5Rg=",
+        "bzlTransitiveDigest": "b3pqK8O+mtEb6/rw4WeSdB53PKS+/EfcX2DZ5sEJJWY=",
         "usagesDigest": "7Ac8eUdDU9PcREZRMo2eUfPj19he6qzgS4QeDQbvHGE=",
         "recordedInputs": [
           "FILE:@@//images/hummingbird.lock.json 9d087d608a5bc36f932aed27c1486f9963719d1647dfb7a2f130870c2c4c1134",

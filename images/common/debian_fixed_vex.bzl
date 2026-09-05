@@ -30,17 +30,17 @@ BUSYBOX_FIXED_VEX_STATEMENTS = []
 # that ships bash / readline-using tools.
 NCURSES_FIXED_VEX_STATEMENTS = []
 
-# nginx, per channel. Empty: the nginx.org .deb is identified in the SBOM
-# by its upstream version and an f5:nginx CPE (`upstream_identities` on
-# its apt.install in //bazel/include/oci.MODULE.bazel), so grype matches
-# it against NVD's upstream
-# ranges rather than Debian's tracker. That retired the statement that used
-# to live here — CVE-2026-42533, fixed upstream in 1.30.4 but flagged
+# nginx, per channel. Empty: nginx.org's .deb is identified by its upstream
+# version and an f5:nginx CPE (`upstream_identities` on its apt.install in
+# //bazel/include/oci.MODULE.bazel), in the attested SBOM and on the image
+# alike — the image carries no dpkg status entry for it, so a scanner reads
+# the version out of the binary instead. Both scans match NVD's upstream
+# ranges rather than Debian's tracker, which retired the statement that
+# used to live here: CVE-2026-42533, fixed upstream in 1.30.4 but flagged
 # because Debian's own fix, 1.30.4-3, sorts above nginx.org's
-# 1.30.4-1~trixie — and Debian-only entries such as CVE-2013-0337, which
-# never reach an NVD-CPE match. Keyed by channel because the two pin
-# different upstream versions; `_cve_test_stale_vex` prunes whatever
-# stops matching.
+# 1.30.4-1~trixie. Debian-only entries such as CVE-2013-0337 no longer
+# reach either scan. Keyed by channel because the two pin different
+# upstream versions; `_cve_test_stale_vex` prunes whatever stops matching.
 #
 # Shared by //images/nginx and by every frontend image built on the nginx
 # base, all of which ship the same nginx.org .deb.

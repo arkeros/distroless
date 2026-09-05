@@ -1,4 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":install_test.bzl", "install_test_suite")
 
 package(default_visibility = ["//rpm:__subpackages__"])
 
@@ -54,3 +55,5 @@ bzl_library(
 )
 
 exports_files(["pin.sh.tpl"])
+
+install_test_suite(name = "install_test")

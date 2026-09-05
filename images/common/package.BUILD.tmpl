@@ -43,8 +43,13 @@ dpkg_statusd(
 # Bundles `:data` (the .deb's filesystem payload) with `:statusd` so the
 # arch-named filegroup propagates both through the dep closure that
 # `flatten` consumes — every transitive package contributes both layers.
+# `{{statusd}}` is `[":statusd"]`, or `[]` for a package identified by its
+# upstream (`upstream_identities` on apt.install): listing that one in dpkg
+# status would make a scanner call it a distro package, contradicting the
+# SBOM. Substituted as Starlark source, the same way `{{deps}}` is. (Doubled
+# braces: this file goes through str.format, and a comment is not exempt.)
 filegroup(
     name = "{target_name}",
-    srcs = {deps} + [":data", ":statusd"],
+    srcs = {deps} + [":data"] + {statusd},
     visibility = ["//visibility:public"],
 )

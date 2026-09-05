@@ -108,6 +108,13 @@ version ranges instead. The identity is declared with `upstream_identities` on
 the nginx `apt.install` and `rpm.install` in `bazel/include/oci.MODULE.bazel`;
 the exact package installed is what the lockfiles record.
 
+The image says the same: it carries no dpkg status entry and no rpmdb row for
+nginx, so a scanner reading the image falls back to reading the version out of
+the binary itself. grype and syft do that and arrive at the same purl and CPE;
+a scanner without an nginx binary classifier, such as trivy, sees no nginx on
+the image and must read the attested SBOM. Every other package keeps its
+distro entry.
+
 ## Updating
 
 The nginx.org repo is not a Debian snapshot, so the available package set can

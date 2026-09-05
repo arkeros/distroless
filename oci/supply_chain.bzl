@@ -239,12 +239,17 @@ def image_sbom(image, licenses = None, licenses_format = None):
         filter = _LICENSE_FILTERS[licenses_format],
     )
 
-def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database", licenses = None, licenses_format = None):
+def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database", licenses = None, licenses_format = None, image_scans = None):
     """Attach SBOM + CVE scan + policy test to an OCI image.
 
     Generates the following targets, named after `image`'s base label:
         <base>_sbom               — CycloneDX 1.6 JSON, sourced from the build graph.
-        <base>_cve_scan           — grype JSON report (artifact only).
+        <base>_cve_scan           — grype JSON report of the SBOM (artifact only).
+        <base>_image_scan_<i>     — grype JSON report of each `image_scans`
+                                    entry, scanned as a consumer would.
+        <base>_gate_scan (only when `image_scans` is non-empty)
+                                  — the matches of every scan above in one
+                                    report; what the gates read.
         <base>_cve_test           — gates on `fail_on_severity`.
         <base>_cve_test_stale_ignores
                                   — fails when an `ignore_cves` entry no
@@ -271,6 +276,11 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
         it to the suppression set. The companion `_stale_vex` test fires
         when a statement no longer matches a scan CVE.
       database: Grype vulnerability DB target. Default `@grype_database`.
+      licenses: Optional lockfile-derived licence source for `image_sbom`.
+      licenses_format: "deb" or "rpm", the shape of `licenses`.
+      image_scans: Optional list of image labels carrying a docker-archive
+        `tarball` output group (an `image_load` target), each scanned as a
+        consumer would scan the published image. See below.
     """
     base = image.rsplit(":", 1)[-1]
 
@@ -280,11 +290,39 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
         database = database,
         sbom = ":" + base + "_sbom",
     )
+
+    # Two audiences see two scans. The SBOM scan is this project's: its
+    # components carry the identity the build declared, and it is the scan
+    # record `mirror_push` attests. A consumer who runs `grype <image>` gets
+    # syft's reading of the image instead — /var/lib/dpkg/status.d, the
+    # rpmdb, and its binary classifiers for whatever those do not list. The
+    # two are meant to agree, and the gates read the union of both so that
+    # the day they do not — a package the image describes differently from
+    # the SBOM, a finding only a consumer would see — the gate goes red
+    # rather than the consumer finding out. The attested record stays the
+    # SBOM scan: it says what the scanner found in what was attested (ADR
+    # 0015).
+    gate_scan = ":" + base + "_cve_scan"
+    if image_scans:
+        for i, scanned in enumerate(image_scans):
+            grype_scan(
+                name = base + "_image_scan_%d" % i,
+                database = database,
+                image = scanned,
+            )
+        jq(
+            name = base + "_gate_scan",
+            srcs = [":" + base + "_cve_scan"] + [":" + base + "_image_scan_%d" % i for i in range(len(image_scans))],
+            out = base + "_gate_scan.json",
+            args = ["--slurp"],
+            filter = "{matches: [.[].matches[]?]}",
+        )
+        gate_scan = ":" + base + "_gate_scan"
     grype_test(
         name = base + "_cve_test",
         fail_on_severity = fail_on_severity,
         ignore_cves = ignore_cves,
-        scan_result = ":" + base + "_cve_scan",
+        scan_result = gate_scan,
         vex = vex,
     )
     vulnerability_attestation(base, ":" + base + "_cve_scan", vex)

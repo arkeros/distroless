@@ -213,8 +213,14 @@ def distroless_matrix(
                 if debug_vex:
                     index_gate["vex"] = (index_gate.get("vex") or []) + debug_vex
             licenses, licenses_format = _DISTRO_LICENSES.get(distro, (None, None))
+
+            # The consumer's view, on the first architecture only: what
+            # syft reads from dpkg status or the rpmdb does not vary by
+            # architecture, and one tarball per index is the cost worth
+            # paying. See image_supply_chain for why the gate reads it.
             image_supply_chain(
                 image = ":" + index_name,
+                image_scans = [":" + _image_name(name, mode, user, architectures[0], distro) + "_load"],
                 licenses = licenses,
                 licenses_format = licenses_format,
                 **index_gate

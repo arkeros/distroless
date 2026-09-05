@@ -226,6 +226,9 @@ _NGINX_RPM_REPO = {
     distroless_matrix(
         name = "nginx_stable",
         architectures = NGINX_ARCHITECTURES[distro],
+        # nginx is identified by its upstream, on the image as in the SBOM;
+        # the consumer's scan is what proves the image agrees. ADR 0016.
+        consumer_scan = True,
         created = ":created_stable_hummingbird" if distro == "hummingbird" else None,
         debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],
@@ -253,6 +256,9 @@ _NGINX_RPM_REPO = {
     distroless_matrix(
         name = "nginx_mainline",
         architectures = NGINX_ARCHITECTURES[distro],
+        # nginx is identified by its upstream, on the image as in the SBOM;
+        # the consumer's scan is what proves the image agrees. ADR 0016.
+        consumer_scan = True,
         created = ":created_mainline_hummingbird" if distro == "hummingbird" else None,
         debug_env = DEFAULT_DEBUG_ENV,
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],

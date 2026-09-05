@@ -80,6 +80,7 @@ def distroless_matrix(
         debug_index_annotations = None,
         debug_ignore_cves = None,
         debug_vex = None,
+        consumer_scan = False,
         **kwargs):
     """Generates release/debug OCI images plus per-user manifest indexes.
 
@@ -117,6 +118,15 @@ def distroless_matrix(
             forwarded to `oci_image(created = ...)`. Shared across
             release and debug variants — same upstream-snapshot anchor
             applies. See //oci:created_timestamp.bzl.
+        consumer_scan: also scan each index's image as a consumer would,
+            and gate on that scan together with the SBOM scan. Off by
+            default: the two views agree by construction for a family
+            whose packages all carry their distro's metadata, and the
+            scan costs a load tarball per index. On for a family that
+            identifies a package by its upstream (`upstream_identities`
+            in //bazel/include/oci.MODULE.bazel), where the image is made
+            to say the same thing and this is what proves it. See ADR
+            0016.
         **kwargs: passed through to oci_image, except `fail_on_severity`,
             `ignore_cves` and `vex`, which go to the `image_supply_chain` of
             each index: the gates run once per index, over the SBOM that
@@ -215,12 +225,15 @@ def distroless_matrix(
             licenses, licenses_format = _DISTRO_LICENSES.get(distro, (None, None))
 
             # The consumer's view, on the first architecture only: what
-            # syft reads from dpkg status or the rpmdb does not vary by
-            # architecture, and one tarball per index is the cost worth
-            # paying. See image_supply_chain for why the gate reads it.
+            # syft reads from dpkg status, the rpmdb or a binary does not
+            # vary by architecture. See image_supply_chain for why the
+            # gate reads it, and `consumer_scan` above for who asks.
+            image_scans = None
+            if consumer_scan:
+                image_scans = [":" + _image_name(name, mode, user, architectures[0], distro) + "_load"]
             image_supply_chain(
                 image = ":" + index_name,
-                image_scans = [":" + _image_name(name, mode, user, architectures[0], distro) + "_load"],
+                image_scans = image_scans,
                 licenses = licenses,
                 licenses_format = licenses_format,
                 **index_gate

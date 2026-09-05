@@ -14,22 +14,78 @@ import (
 	"crypto/sha256"
 	"embed"
 	"encoding/hex"
+	"fmt"
 	"html/template"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"path"
 	"regexp"
 	"slices"
 	"strings"
 )
 
-//go:embed templates static/directory.css static/directory.mjs static/main.mjs static/fonts static/logos
+// dist/ is what the build made of the sources under static/: one minified
+// script, one minified stylesheet. The fonts and logos are served as they are.
+//
+//go:embed templates static/fonts static/logos dist/directory.mjs dist/directory.css
 var assets embed.FS
+
+// built is what every page links to, under names that change with the
+// content. A browser is told to keep them for a year, which is safe only
+// because a deploy that changes either changes its URL too — the hash is
+// computed here, from the bytes actually embedded, so the two cannot drift.
+var built = hashed(assets, "dist/directory.mjs", "dist/directory.css")
 
 // Parsed once at startup so a broken template fails the process rather than a
 // request. The tests in this package execute it against real data, which is
 // what catches a renamed field.
-var pages = template.Must(template.ParseFS(assets, "templates/*.html"))
+var pages = template.Must(template.New("").Funcs(template.FuncMap{"asset": built.url}).ParseFS(assets, "templates/*.html"))
+
+// assetPrefix is where everything the pages link to is served from.
+const assetPrefix = "/directory/static/"
+
+// contentAddressed is the set of files served under a name their content
+// decides, which is what makes the name safe to cache without asking again.
+type contentAddressed struct {
+	// urls maps an asset's base name to its URL, which is what a template
+	// asks for.
+	urls map[string]string
+	// files maps a URL back to the embedded file it serves.
+	files map[string]string
+}
+
+// hashed names each file after its content: `directory.mjs` becomes
+// `directory.<12 hex of sha256>.mjs`, under assetPrefix. Read at startup, so a
+// file missing from the embed is a failed process rather than a broken link.
+func hashed(fsys fs.FS, files ...string) contentAddressed {
+	built := contentAddressed{urls: map[string]string{}, files: map[string]string{}}
+	for _, file := range files {
+		content, err := fs.ReadFile(fsys, file)
+		if err != nil {
+			panic(err)
+		}
+		sum := sha256.Sum256(content)
+		name := path.Base(file)
+		extension := path.Ext(name)
+		href := assetPrefix + strings.TrimSuffix(name, extension) + "." + hex.EncodeToString(sum[:6]) + extension
+		built.urls[name] = href
+		built.files[href] = file
+	}
+	return built
+}
+
+// url is the template's way to link an asset by the name it was written
+// under. An unknown name is a template bug, and fails the render — a page
+// that links nothing would otherwise pass every test and arrive unstyled.
+func (c contentAddressed) url(name string) (string, error) {
+	href, ok := c.urls[name]
+	if !ok {
+		return "", fmt.Errorf("no built asset named %q", name)
+	}
+	return href, nil
+}
 
 // Source resolves an image reference to the evidence attached to its Index.
 //
@@ -109,7 +165,7 @@ const viewVersions = "versions"
 // permanent default view of an image.
 func NewHandler(source Source, mirror string) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("GET /directory/static/", http.StripPrefix("/directory", staticHeaders(http.FileServerFS(assets))))
+	mux.HandleFunc("GET "+assetPrefix, serveStatic)
 	mux.HandleFunc("GET /directory", func(w http.ResponseWriter, _ *http.Request) {
 		serveIndex(w, mirror)
 	})
@@ -526,23 +582,35 @@ func shortDigest(digest string) string {
 	return digest
 }
 
-func staticHeaders(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Short, because these are served under unversioned names.
-		w.Header().Set("Cache-Control", "public, max-age=3600")
+// serveStatic answers for everything under assetPrefix: the built script and
+// stylesheet under their content-hashed names, and the fonts and logos under
+// their own.
+func serveStatic(w http.ResponseWriter, r *http.Request) {
+	if file, ok := built.files[r.URL.Path]; ok {
+		// The name is the content, so there is nothing to revalidate: as
+		// long as a browser will keep anything, it can keep this.
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		contentType(w, file)
+		http.ServeFileFS(w, r, assets, file)
+		return
+	}
+	// Short, because these are served under unversioned names.
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	contentType(w, r.URL.Path)
+	http.StripPrefix("/directory", http.FileServerFS(assets)).ServeHTTP(w, r)
+}
 
-		// The file server would otherwise ask mime.TypeByExtension, which
-		// answers from the host's /etc/mime.types — a file the image we ship
-		// in does not have. Stating it keeps the type the same everywhere.
-		switch {
-		case strings.HasSuffix(r.URL.Path, ".woff2"):
-			w.Header().Set("Content-Type", "font/woff2")
-		case strings.HasSuffix(r.URL.Path, ".mjs"):
-			// A browser will not execute a module served as anything else,
-			// and Go's built-in table has no .mjs entry at all.
-			w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
-		}
-
-		next.ServeHTTP(w, r)
-	})
+// contentType states the type of an asset the file server would otherwise
+// ask mime.TypeByExtension for, which answers from the host's /etc/mime.types
+// — a file the image we ship in does not have. Stating it keeps the type the
+// same everywhere.
+func contentType(w http.ResponseWriter, name string) {
+	switch {
+	case strings.HasSuffix(name, ".woff2"):
+		w.Header().Set("Content-Type", "font/woff2")
+	case strings.HasSuffix(name, ".mjs"):
+		// A browser will not execute a module served as anything else,
+		// and Go's built-in table has no .mjs entry at all.
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+	}
 }

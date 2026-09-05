@@ -357,12 +357,64 @@ func TestDigestPageDoesNotLinkToItself(t *testing.T) {
 	}
 }
 
+// assets reads the stylesheet and the script a rendered page links to. The
+// names are the server's to choose — they carry a hash of the content — so a
+// test that wants to fetch one has to be told rather than guess.
+func assets(t *testing.T, body string) (stylesheet, script string) {
+	t.Helper()
+	link := regexp.MustCompile(`<link rel="stylesheet" href="([^"]+)">`).FindStringSubmatch(body)
+	if link == nil {
+		t.Fatalf("page links no stylesheet:\n%s", body)
+	}
+	module := regexp.MustCompile(`<script src="([^"]+)" type="module"></script>`).FindStringSubmatch(body)
+	if module == nil {
+		t.Fatalf("page loads no module script:\n%s", body)
+	}
+	return link[1], module[1]
+}
+
+// The stylesheet and the script are linked under names that change with their
+// content, which is what lets a browser keep them for a year: a deploy that
+// changes either changes the URL, and a URL never means two things. Served
+// minified, because the sources are mostly comments a browser has no use for.
+func TestPagesLinkAssetsByContentHash(t *testing.T) {
+	body := get(t, &fakeSource{digest: testDigest}, "/directory/image/java/latest/sbom", nil).Body.String()
+	stylesheet, script := assets(t, body)
+
+	hashed := regexp.MustCompile(`^/directory/static/[a-z]+\.[0-9a-f]{12}\.(css|mjs)$`)
+	for _, asset := range []string{stylesheet, script} {
+		if !hashed.MatchString(asset) {
+			t.Errorf("asset %q is not linked under a content-hashed name", asset)
+		}
+
+		response := get(t, &fakeSource{}, asset, nil)
+		if response.Code != http.StatusOK {
+			t.Fatalf("GET %s = %d, want %d", asset, response.Code, http.StatusOK)
+		}
+		if got := response.Header().Get("Cache-Control"); got != "public, max-age=31536000, immutable" {
+			t.Errorf("GET %s Cache-Control = %q, want immutable", asset, got)
+		}
+		if comment := regexp.MustCompile(`(?m)^\s*(//|/\*)`); comment.MatchString(response.Body.String()) {
+			t.Errorf("GET %s is served with its comments:\n%s", asset, response.Body.String())
+		}
+	}
+
+	// The same asset under a hash it does not have is not this asset, so it
+	// must not be served as it: an immutable answer under the wrong name
+	// would be cached as the wrong thing for a year.
+	stale := regexp.MustCompile(`\.[0-9a-f]{12}\.`).ReplaceAllString(script, ".000000000000.")
+	if code := get(t, &fakeSource{}, stale, nil).Code; code != http.StatusNotFound {
+		t.Errorf("GET %s = %d, want %d", stale, code, http.StatusNotFound)
+	}
+}
+
 // A font the stylesheet asks for but the binary does not embed is a 404 the
 // reader sees as the fallback face, so every url() must resolve.
 func TestStaticAssetsResolveEveryStylesheetReference(t *testing.T) {
 	source := &fakeSource{digest: testDigest}
 
-	css := get(t, source, "/directory/static/directory.css", nil)
+	stylesheet, _ := assets(t, get(t, source, "/directory/image/java/latest/sbom", nil).Body.String())
+	css := get(t, source, stylesheet, nil)
 	if css.Code != http.StatusOK {
 		t.Fatalf("stylesheet status = %d, want %d", css.Code, http.StatusOK)
 	}
@@ -711,9 +763,8 @@ func TestBothTablesOptIntoSharedSorting(t *testing.T) {
 		if !strings.Contains(body, "<table data-sortable") {
 			t.Errorf("%s table does not opt into sorting:\n%s", page.name, body)
 		}
-		if !strings.Contains(body, `<script src="/directory/static/main.mjs" type="module"></script>`) {
-			t.Errorf("%s page does not load the shared entry point", page.name)
-		}
+		// assets fails the test if the script is missing.
+		assets(t, body)
 		for _, column := range page.columns {
 			if !strings.Contains(body, `data-column="`+column+`"`) {
 				t.Errorf("%s page has no sortable %q header", page.name, column)
@@ -1186,18 +1237,14 @@ func TestTagSwitcherOrdersTagsLikeTheVersionsPage(t *testing.T) {
 func TestModulesAreServedAsJavaScript(t *testing.T) {
 	mime.AddExtensionType(".mjs", "application/x-not-javascript")
 
-	for _, asset := range []string{
-		"/directory/static/main.mjs",
-		"/directory/static/directory.mjs",
-	} {
-		response := get(t, &fakeSource{}, asset, nil)
+	_, script := assets(t, get(t, &fakeSource{digest: testDigest}, "/directory/image/java/latest/sbom", nil).Body.String())
+	response := get(t, &fakeSource{}, script, nil)
 
-		if response.Code != http.StatusOK {
-			t.Fatalf("GET %s = %d, want %d", asset, response.Code, http.StatusOK)
-		}
-		if got := response.Header().Get("Content-Type"); got != "text/javascript; charset=utf-8" {
-			t.Errorf("GET %s Content-Type = %q, want a JavaScript type", asset, got)
-		}
+	if response.Code != http.StatusOK {
+		t.Fatalf("GET %s = %d, want %d", script, response.Code, http.StatusOK)
+	}
+	if got := response.Header().Get("Content-Type"); got != "text/javascript; charset=utf-8" {
+		t.Errorf("GET %s Content-Type = %q, want a JavaScript type", script, got)
 	}
 }
 

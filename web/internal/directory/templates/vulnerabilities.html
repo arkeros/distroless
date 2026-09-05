@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Image}} — vulnerabilities</title>
-<link rel="stylesheet" href="/directory/static/directory.css">
+<link rel="stylesheet" href="{{asset "directory.css"}}">
 </head>
 <body>
 {{template "topbar" .Topbar}}
@@ -90,6 +90,6 @@
 
   <p class="footnote">A scan is a statement about a moment: what one scanner, with one database, matched against this build's SBOM. A vulnerability published after that database was built is not on this page. The verdict on a suppressed finding is this project's, made on the record in a VEX statement; the scanner's own record is the download.</p>
 </main>
-<script src="/directory/static/main.mjs" type="module"></script>
+<script src="{{asset "directory.mjs"}}" type="module"></script>
 </body>
 </html>

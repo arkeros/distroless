@@ -28,10 +28,15 @@ def _upstream_identity_test(ctx):
     asserts.equals(env, "cpe:2.3:a:f5:nginx:1.30.4:*:*:*:*:*:*:*", cpe)
 
     # purl-reserved characters in the version are percent-encoded in the
-    # purl and left alone in the CPE.
+    # purl. In the CPE, every printable non-alphanumeric character other
+    # than `-`, `.` and `_` is backslash-escaped, per the CPE 2.3 formatted
+    # string binding and as syft writes them.
     purl, cpe = upstream_identity("zlib1g", "1:1.3.dfsg+really1.3.2-3", "arm64", "zlib:zlib")
     asserts.equals(env, "pkg:generic/zlib1g@1.3.dfsg%2Breally1.3.2?arch=arm64", purl)
-    asserts.equals(env, "cpe:2.3:a:zlib:zlib:1.3.dfsg+really1.3.2:*:*:*:*:*:*:*", cpe)
+    asserts.equals(env, "cpe:2.3:a:zlib:zlib:1.3.dfsg\\+really1.3.2:*:*:*:*:*:*:*", cpe)
+    purl, cpe = upstream_identity("nginx", "1.31.0~rc1-1~trixie", "amd64", "f5:nginx")
+    asserts.equals(env, "pkg:generic/nginx@1.31.0~rc1?arch=amd64", purl)
+    asserts.equals(env, "cpe:2.3:a:f5:nginx:1.31.0\\~rc1:*:*:*:*:*:*:*", cpe)
     return unittest.end(env)
 
 upstream_version_test = unittest.make(_upstream_version_test)

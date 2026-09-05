@@ -43,6 +43,10 @@ _install = tag_class(
         "distro": attr.string(
             doc = "Consumer-side distro routing key emitted as `?distro=<value>` on every package's purl. Drives grype's per-package secdb routing — `hummingbird-1` to route to the hummingbird secdb provider, `rhel-10` for nginx.org-built RHEL10 rpms, etc. Optional; omitted from the purl when unset (which forces grype back to NVD-CPE / no-secdb matching).",
         ),
+        "upstream_identities": attr.string_dict(
+            doc = "Packages this repository ships from the upstream project's own rpm repository rather than the distro's, by package name, each valued by the CPE vendor:product to identify it under (e.g. {\"nginx\": \"f5:nginx\"}). Such a package is emitted as `pkg:generic/<name>@<upstream version>` with a matching `cpe:2.3:a:<vendor>:<product>:<upstream version>` instead of an rpm purl, so scanners match it against the upstream's own advisories rather than the distro's secdb, whose fixed versions name the distro's rebuilds. Default empty.",
+            default = {},
+        ),
         "repomd_signature": attr.string(
             default = "required",
             values = ["required", "optional"],
@@ -76,6 +80,7 @@ def _rpm_extension_impl(mctx):
                         purl_namespace = purl_ns,
                         upstream = entry.get("upstream", ""),
                         purl_distro = install.distro,
+                        upstream_cpe = install.upstream_identities.get(pkg_name, ""),
                     )
 
             # Hub repo: aliases all spokes under @<name>//<pkg>/<arch>:{content,header}

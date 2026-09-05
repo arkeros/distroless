@@ -97,6 +97,17 @@ Each channel produces images for:
 
 Target naming: `nginx_{mainline,stable}[_debug]_{root,nonroot}_{amd64,arm64}_debian`
 
+## SBOM identity
+
+nginx.org's package is listed in the SBOM as `pkg:generic/nginx@<upstream version>`
+with the CPE `cpe:2.3:a:f5:nginx:<upstream version>`, not as the `.deb` or `.rpm`
+it was installed from. A distro purl would route scanners to Debian's or
+Hummingbird's tracker, whose advisories name their own rebuilds as the fix and
+flag nginx.org's builds that already carry it; the CPE matches NVD's upstream
+version ranges instead. The identity is declared with `upstream_identities` on
+the nginx `apt.install` and `rpm.install` in `bazel/include/oci.MODULE.bazel`;
+the exact package installed is what the lockfiles record.
+
 ## Updating
 
 The nginx.org repo is not a Debian snapshot, so the available package set can

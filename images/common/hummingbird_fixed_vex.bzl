@@ -13,56 +13,27 @@ binary doesn't actually have.
 The companion `_cve_test_stale_vex` test (in supply_chain.bzl) fires when a
 statement here outlives the scanner's fix sync — i.e. silences nothing.
 That's how this list gets pruned: stale tests turn red, statements get
-deleted. Two predecessors of the nginx statements below (CVE-2026-9256 and
-CVE-2026-42055) were removed exactly that way.
+deleted. Four nginx statements (CVE-2026-9256, CVE-2026-42055,
+CVE-2026-60005, CVE-2026-42533) were removed exactly that way.
 
 Statement-name conventions (`<package>_HUMMINGBIRD_FIXED_VEX_STATEMENTS`)
 mirror the Debian module's `<package>_FIXED_VEX_STATEMENTS`.
 """
 
-load("//oci:vex.bzl", "vex_statement")
-
-# nginx CVEs fixed upstream in the nginx.org rpm we actually ship, but still
-# flagged because grype compares its release tag against Hummingbird's own
-# nginx rebuild.
+# nginx, per channel. Empty: the nginx.org rpm is identified in the SBOM
+# by its upstream version and an f5:nginx CPE (`upstream_identities` on
+# its rpm.install in //bazel/include/oci.MODULE.bazel), so grype matches
+# it against NVD's upstream
+# ranges rather than Hummingbird's secdb. That retired the two statements
+# that used to live here — CVE-2026-60005 and CVE-2026-42533, both fixed
+# upstream in 1.30.4 but flagged because rpmvercmp ranked nginx.org's
+# `1.el10.ngx` release tag below Hummingbird's own `2.hum1` rebuild. Keyed
+# by channel because the two pin different upstream versions;
+# `_cve_test_stale_vex` prunes whatever stops matching.
 #
 # Shared by //images/nginx and by every frontend image built on the
-# hummingbird nginx base (apps/*), all of which ship the same nginx.org rpm.
-#
-# Keyed by nginx channel because the two channels pin different upstream
-# versions, and only some of those fall below the advisory's fixed version.
-# Same shape as NGINX_FIXED_VEX_STATEMENTS in the Debian module.
+# hummingbird nginx base, all of which ship the same nginx.org rpm.
 NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS = {
-    "stable": [
-        # CVE-2026-60005 — uninitialized-memory disclosure in
-        # ngx_http_slice_module. Fixed upstream in nginx 1.30.4 (stable) per
-        # https://nginx.org/en/security_advisories.html, which is exactly the
-        # version our stable lockfile pins.
-        vex_statement(
-            expires = "2026-09-15",
-            impact_statement = "Fixed upstream in nginx 1.30.4; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.4-2.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 2.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
-            products = ["pkg:rpm/nginx.org/nginx"],
-            status = "fixed",
-            vulnerability = "CVE-2026-60005",
-        ),
-        # CVE-2026-42533 — heap buffer overflow when a `map` directive uses
-        # regex matching and a string expression references the map's capture
-        # variables before the map output variable. nginx.org's advisory lists
-        # 1.30.4+ (stable) and 1.31.3+ (mainline) as not vulnerable, and our
-        # stable lockfile pins exactly 1.30.4. Same release-tag artifact as
-        # CVE-2026-60005 above, and the Debian twin of this statement lives in
-        # NGINX_FIXED_VEX_STATEMENTS["stable"] — the two distros flag the same
-        # nginx.org build for the same reason.
-        vex_statement(
-            expires = "2026-09-15",
-            impact_statement = "Fixed upstream in nginx 1.30.4; the el10.ngx rpm shipped here is that exact version. The Hummingbird secdb advisory targets Hummingbird's own nginx-1.30.4-2.hum1 build, and rpmvercmp ranks the nginx.org 1.el10.ngx release tag below 2.hum1 — a cross-vendor release-tag artifact, not a missing fix.",
-            products = ["pkg:rpm/nginx.org/nginx"],
-            status = "fixed",
-            vulnerability = "CVE-2026-42533",
-        ),
-    ],
-    # Empty: mainline pins 1.31.3, which sorts above both advisories' fixed
-    # versions, so grype stops matching on its own. A statement here would be
-    # stale — `_cve_test_stale_vex` enforces that.
+    "stable": [],
     "mainline": [],
 }

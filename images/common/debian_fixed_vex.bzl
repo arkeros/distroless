@@ -19,8 +19,6 @@ each image composes them: cc/static/nginx pull glibc + busybox; bash adds
 ncurses on top.
 """
 
-load("//oci:vex.bzl", "vex_statement")
-
 # glibc CVEs fixed in libc6 / libc-gconv-modules-extra at sid versions.
 GLIBC_FIXED_VEX_STATEMENTS = []
 
@@ -32,45 +30,21 @@ BUSYBOX_FIXED_VEX_STATEMENTS = []
 # that ships bash / readline-using tools.
 NCURSES_FIXED_VEX_STATEMENTS = []
 
-# nginx CVEs fixed upstream in the nginx.org .deb we actually ship, but
-# still flagged because grype resolves the package against Debian's own
-# `nginx` source package rather than nginx.org's.
+# nginx, per channel. Empty: the nginx.org .deb is identified in the SBOM
+# by its upstream version and an f5:nginx CPE (`upstream_identities` on
+# its apt.install in //bazel/include/oci.MODULE.bazel), so grype matches
+# it against NVD's upstream
+# ranges rather than Debian's tracker. That retired the statement that used
+# to live here — CVE-2026-42533, fixed upstream in 1.30.4 but flagged
+# because Debian's own fix, 1.30.4-3, sorts above nginx.org's
+# 1.30.4-1~trixie — and Debian-only entries such as CVE-2013-0337, which
+# never reach an NVD-CPE match. Keyed by channel because the two pin
+# different upstream versions; `_cve_test_stale_vex` prunes whatever
+# stops matching.
 #
-# rules_distroless hardcodes `pkg:deb/debian/{name}` in `_deb_purl` with
-# no vendor override, so every apt-sourced package routes to
-# `debian:distro:debian:unstable` regardless of which repo supplied it.
-# On the rpm side the same problem is solved structurally, by setting
-# `purl_namespace = "nginx.org"` on `rpm.install` (see
-# //bazel/include/oci.MODULE.bazel) — that qualifier pushes grype to
-# NVD-CPE upstream-version matching. Until the apt extension grows the
-# equivalent knob, the deb side needs scanner-side suppression here.
-#
-# Shared by //images/nginx and by every frontend image built on
-# the nginx base (apps/*), all of which ship the same nginx.org .deb.
-#
-# Keyed by nginx channel because the two channels pin different upstream
-# versions, and grype compares those against Debian's *single* fixed
-# version — so a Debian fix can land above one pin and below the other.
-# Same shape as NGINX_IGNORE_CVES in //images/nginx:BUILD.
+# Shared by //images/nginx and by every frontend image built on the nginx
+# base, all of which ship the same nginx.org .deb.
 NGINX_FIXED_VEX_STATEMENTS = {
-    "stable": [
-        # Heap buffer overflow when a `map` directive uses regex matching
-        # and a string expression references the map's capture variables
-        # before the map output variable. nginx.org's advisory lists
-        # 1.30.4+ as not vulnerable and our stable pin is 1.30.4-1~trixie,
-        # which carries the fix. Debian fixed its own nginx package in
-        # 1.30.4-3, and dpkg orders `1.30.4-1~trixie` below `1.30.4-3`
-        # (`~` sorts before end-of-string), so grype still matches.
-        vex_statement(
-            expires = "2026-09-15",
-            impact_statement = "The .deb shipped here is nginx.org's 1.30.4-1~trixie, listed not-vulnerable in https://nginx.org/en/security_advisories.html. The match comes from Debian's tracker entry for Debian's own nginx source package (fixed in 1.30.4-3), which grype selects because rules_distroless emits pkg:deb/debian/nginx with no vendor namespace.",
-            products = ["pkg:deb/debian/nginx"],
-            status = "fixed",
-            vulnerability = "CVE-2026-42533",
-        ),
-    ],
-    # Empty: mainline pins 1.31.3-1~trixie, which sorts above Debian's
-    # 1.30.4-3 fix, so grype stops matching CVE-2026-42533 on its own.
-    # A statement here would be stale — `_cve_test_stale_vex` enforces.
+    "stable": [],
     "mainline": [],
 }

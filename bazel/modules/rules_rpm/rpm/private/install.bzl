@@ -73,6 +73,25 @@ def _rpm_purl(namespace, name, version, arch, upstream, distro):
         q = "&".join(parts),
     )
 
+# The upstream version of an rpm version: epoch and release stripped, so
+# `2:1.30.4-1.el10.ngx` reads `1.30.4`. That is the version upstream
+# advisories and NVD ranges are expressed in.
+def _upstream_version(evr):
+    _, ver = _split_epoch(evr)
+    if "-" in ver:
+        ver = ver.rpartition("-")[0]
+    return ver
+
+# purl and CPE for a package identified by its upstream rather than the
+# distro (see `upstream_identities` on the install tag). The purl keeps
+# `arch`, the one qualifier that still describes the artifact; the distro
+# qualifier would route scanners back to the distro's secdb.
+def _upstream_identity(name, version, arch, cpe_vendor_product):
+    upstream = _upstream_version(version)
+    purl = "pkg:generic/{name}@{ver}?arch={arch}".format(name = name, ver = upstream, arch = arch)
+    cpe = "cpe:2.3:a:{vp}:{ver}:*:*:*:*:*:*:*".format(vp = cpe_vendor_product, ver = upstream)
+    return purl, cpe
+
 def _rpm_package_repo_impl(rctx):
     # Repository rules run before the analysis phase, so we can't invoke the
     # `rpm-extract` go_binary here (it's not built yet). The repo only
@@ -84,14 +103,23 @@ def _rpm_package_repo_impl(rctx):
         output = "package.rpm",
     )
 
-    purl = _rpm_purl(
-        namespace = rctx.attr.purl_namespace,
-        name = rctx.attr.package,
-        version = rctx.attr.version,
-        arch = rctx.attr.arch,
-        upstream = rctx.attr.upstream,
-        distro = rctx.attr.purl_distro,
-    )
+    if rctx.attr.upstream_cpe:
+        purl, cpe = _upstream_identity(
+            name = rctx.attr.package,
+            version = rctx.attr.version,
+            arch = rctx.attr.arch,
+            cpe_vendor_product = rctx.attr.upstream_cpe,
+        )
+    else:
+        purl = _rpm_purl(
+            namespace = rctx.attr.purl_namespace,
+            name = rctx.attr.package,
+            version = rctx.attr.version,
+            arch = rctx.attr.arch,
+            upstream = rctx.attr.upstream,
+            distro = rctx.attr.purl_distro,
+        )
+        cpe = ""
 
     # `package_metadata(purl=...)` + `package(default_package_metadata=...)`
     # surfaces the rpm's identity to supply_chain_tools' gather_metadata
@@ -111,6 +139,7 @@ exports_files(["package.rpm"])
 
 package_metadata(
     name = "package_metadata",
+    cpe = {cpe},
     purl = {purl},
     visibility = ["//visibility:public"],
 )
@@ -129,6 +158,7 @@ rpm_package(
         arch = repr(rctx.attr.arch),
         gpg_key = repr(str(rctx.attr.gpg_key)),
         purl = repr(purl),
+        cpe = repr(cpe),
     ))
 
 rpm_package_repo = repository_rule(
@@ -149,6 +179,9 @@ rpm_package_repo = repository_rule(
         ),
         "purl_distro": attr.string(
             doc = "Consumer-side distro routing key (e.g. 'hummingbird-1', 'rhel-10'). Embedded as `?distro=...` qualifier in the purl so grype's SBOM scanner can route per-package to the right secdb provider.",
+        ),
+        "upstream_cpe": attr.string(
+            doc = "CPE vendor:product (e.g. 'f5:nginx') when this package is identified by its upstream rather than the distro: the purl becomes `pkg:generic/<name>@<upstream version>?arch=<arch>` and a matching CPE is emitted. Empty means the rpm purl above.",
         ),
     },
 )

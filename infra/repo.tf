@@ -99,12 +99,17 @@ resource "github_repository_ruleset" "main_checks" {
     required_linear_history = true
 
     required_status_checks {
-      # `Test` is the `name:` of the one job in pr.yaml, the only workflow
-      # that runs on `pull_request`; ci.yaml runs on push to `main` alone.
-      # Renaming that job silently disables this rule, so the two names have
-      # to move together.
+      # `Test` is the `name:` of the one job in pr.yaml; `Modules` is the
+      # fan-in job in modules.yaml, which runs each module under
+      # bazel/modules in its own workspace, since `bazel test //...` at the
+      # root cannot reach them. Both workflows run on every `pull_request`;
+      # ci.yaml runs on push to `main` alone. Renaming either job silently
+      # disables its rule, so each pair of names has to move together.
       required_check {
         context = "Test"
+      }
+      required_check {
+        context = "Modules"
       }
 
       # Strict: a branch has to be current with `main` before it can merge,

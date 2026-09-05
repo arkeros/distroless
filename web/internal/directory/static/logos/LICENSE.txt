@@ -1,0 +1,15 @@
+The logos in this directory are from Simple Icons
+(https://simpleicons.org, https://github.com/simple-icons/simple-icons),
+released under CC0 1.0 Universal: https://creativecommons.org/publicdomain/zero/1.0/
+
+Each file was taken as published and altered only to drop the brand colour
+and draw in the page's own, so that it reads in both colour schemes.
+
+  bash.svg   GNU Bash   https://simpleicons.org/?q=gnubash
+  java.svg   OpenJDK    https://simpleicons.org/?q=openjdk
+  node.svg   Node.js    https://simpleicons.org/?q=nodedotjs
+  nginx.svg  NGINX      https://simpleicons.org/?q=nginx
+
+The CC0 release covers the drawings only. Each mark remains the trademark of
+its owner and is shown here to identify the software an image contains, not
+to claim any affiliation with or endorsement by that owner.

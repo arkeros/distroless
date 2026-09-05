@@ -196,3 +196,59 @@ export function sortable(table) {
     body.append(...rows.map((row) => row.element));
   });
 }
+
+/**
+ * Makes a list of links searchable from an input.
+ *
+ * The candidates are the links already in the list — the page shipped every
+ * family, there being a handful — so searching is hiding the ones that do not
+ * match, and choosing is following the first one left. Nothing is fetched.
+ * Showing and hiding the list itself is the stylesheet's, on focus, which is
+ * why letting go of the input is how Escape closes it.
+ *
+ * @param {Element} list element holding one link per candidate.
+ * @param {HTMLInputElement} input where the reader types.
+ */
+export function searchable(list, input) {
+  const options = Array.from(list.querySelectorAll('a'), (link) => ({
+    link,
+    // Hidden as the whole item, or an empty bullet would be left behind.
+    item: link.parentElement,
+    // The name alone: the logo beside it has a title of its own — "OpenJDK"
+    // — and matching that would find java for a word that is not on screen.
+    name: link.querySelector('.name').textContent.trim().toLowerCase(),
+  }));
+
+  const narrow = () => {
+    const needle = input.value.trim().toLowerCase();
+    for (const option of options) {
+      option.item.hidden = needle !== '' && !option.name.includes(needle);
+    }
+  };
+
+  input.addEventListener('input', narrow);
+  input.addEventListener('keydown', (event) => {
+    switch (event.key) {
+      case 'Enter': {
+        const first = options.find((option) => !option.item.hidden);
+        if (first === undefined) return;
+        // Clicking the link navigates, and leaves resolving the href to the
+        // link rather than to anything here.
+        event.preventDefault();
+        first.link.click();
+        break;
+      }
+      case 'Escape':
+        input.value = '';
+        narrow();
+        input.blur();
+        break;
+      default:
+    }
+  });
+
+  // A mousedown on a link would move focus off the input, the list would
+  // close under the pointer, and the click would land on nothing. Keeping
+  // focus where it is costs the link nothing: the click still fires.
+  list.addEventListener('mousedown', (event) => event.preventDefault());
+}

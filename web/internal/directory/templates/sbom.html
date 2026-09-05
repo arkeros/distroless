@@ -7,9 +7,16 @@
 <link rel="stylesheet" href="/directory/static/directory.css">
 </head>
 <body>
+{{template "topbar" .Topbar}}
 <main>
-  <h1>{{.Image}}</h1>
-  <p class="digest">{{if .Permalink}}<a href="{{.Permalink}}" title="Permanent link to this exact build, which this tag will stop naming when it moves"><code>{{.Digest}}</code></a>{{else}}<code>{{.Digest}}</code>{{end}}</p>
+  <nav aria-label="Breadcrumb"><a class="crumb" href="/directory">All images</a></nav>
+  <header class="identity">
+    {{if .Logo}}<span class="logo">{{.Logo}}</span>{{end}}
+    <div>
+      <h1>{{.Image}}</h1>
+      <p class="digest">{{if .Permalink}}<a href="{{.Permalink}}" title="Permanent link to this exact build, which this tag will stop naming when it moves"><code>{{.Digest}}</code></a>{{else}}<code>{{.Digest}}</code>{{end}}</p>
+    </div>
+  </header>
   <section class="install">
     <p class="label">Install from the command line</p>
     <p class="command"><span class="prompt" aria-hidden="true">$</span> <code data-copyable tabindex="0">docker pull {{.Image}}</code></p>
@@ -18,6 +25,7 @@
   </section>
 
   <nav class="views" aria-label="Evidence">
+    <a href="{{.Versions}}">Versions</a>
     <a aria-current="page">SBOM</a>
     <a href="{{.Vulnerabilities}}">Vulnerabilities</a>
   </nav>
@@ -60,7 +68,7 @@
         {{range .Rows}}
         <tr>
           <td>{{.Name}}</td>
-          <td data-sort-key="{{.VersionRank}}">{{.Version}}</td>
+          <td class="version" data-sort-key="{{.VersionRank}}">{{.Version}}</td>
           <td class="license" title="{{.License}}">{{.License}}</td>
           <td>{{.Type}}</td>
         </tr>

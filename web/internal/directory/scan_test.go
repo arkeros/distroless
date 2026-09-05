@@ -187,3 +187,58 @@ func TestNewReportWithNoFindings(t *testing.T) {
 		t.Error("scan dates dropped; an empty result without them is a silent zero")
 	}
 }
+
+// Grype matches a CVE against a source package and reports it once per
+// binary package built from it, so one glibc CVE arrives as libc6 and as
+// libc-gconv-modules-extra. That is one vulnerability, and one row: named by
+// the source, with the binary packages it reached listed on the row so a
+// reader can still find them on the SBOM page.
+func TestNewReportGroupsTheBinaryPackagesOfOneSource(t *testing.T) {
+	r := report("",
+		directory.Finding{ID: "CVE-2026-0001", Severity: directory.Medium, Package: "libc6", Version: "2.43-4", Upstream: "glibc", FixState: "not-fixed"},
+		directory.Finding{ID: "CVE-2026-0001", Severity: directory.Medium, Package: "libc-gconv-modules-extra", Version: "2.43-4", Upstream: "glibc", FixState: "not-fixed"},
+		directory.Finding{ID: "CVE-2026-0002", Severity: directory.Low, Package: "nginx", Version: "1.30.4-1", Upstream: "nginx"},
+	)
+
+	if len(r.Rows) != 2 {
+		t.Fatalf("got %d rows, want 2 — one per vulnerability: %+v", len(r.Rows), r.Rows)
+	}
+	glibc := r.Rows[0]
+	if glibc.Component != "glibc" {
+		t.Errorf("component = %q, want the source package glibc", glibc.Component)
+	}
+	if want := []string{"libc-gconv-modules-extra", "libc6"}; !slices.Equal(glibc.Packages, want) {
+		t.Errorf("packages = %v, want %v in name order", glibc.Packages, want)
+	}
+	nginx := r.Rows[1]
+	if nginx.Component != "nginx" || len(nginx.Packages) != 0 {
+		t.Errorf("row = %q behind %v, want nginx with nothing to list — the source is its own binary package", nginx.Component, nginx.Packages)
+	}
+	if r.Open != 2 {
+		t.Errorf("open = %d, want 2 — the verdict counts vulnerabilities, not matches", r.Open)
+	}
+}
+
+// One CVE can hit two unrelated packages, with a fix in one and none in the
+// other. Those are different findings and the fix column has to be able to
+// say different things, so they stay apart.
+func TestNewReportKeepsOneCVEAgainstDifferentSourcesApart(t *testing.T) {
+	r := report("",
+		directory.Finding{ID: "CVE-2026-0001", Package: "curl", Version: "8.0-1", FixedIn: []string{"8.0-2"}, FixState: "fixed"},
+		directory.Finding{ID: "CVE-2026-0001", Package: "libssl3", Version: "3.0-1", Upstream: "openssl", FixState: "not-fixed"},
+	)
+
+	if len(r.Rows) != 2 {
+		t.Fatalf("got %d rows, want 2: %+v", len(r.Rows), r.Rows)
+	}
+	curl, openssl := r.Rows[0], r.Rows[1]
+	if curl.Component != "curl" || len(curl.Packages) != 0 {
+		t.Errorf("row = %q behind %v, want curl — a finding with no source named is its own component", curl.Component, curl.Packages)
+	}
+	if openssl.Component != "openssl" || !slices.Equal(openssl.Packages, []string{"libssl3"}) {
+		t.Errorf("row = %q behind %v, want openssl behind libssl3", openssl.Component, openssl.Packages)
+	}
+	if curl.Fix != "8.0-2" || openssl.FixState != "not-fixed" {
+		t.Errorf("fixes = %q and %q, want each row to keep its own", curl.Fix, openssl.FixState)
+	}
+}

@@ -19,7 +19,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { copyable, dismissSwitchers, sortable } from './static/directory.mjs';
+import { copyable, dismissSwitchers, searchable, sortable } from './static/directory.mjs';
 
 // textContent and innerHTML are accessors because the DOM makes them
 // alternative views of the same content: setting one clears the other, which
@@ -381,5 +381,122 @@ describe('filter', () => {
 
     t.click(0);
     assert.equal(t.column(0), 'a b');
+  });
+});
+
+describe('image search', () => {
+  // The candidates are links already in the page, one per family; the
+  // stylesheet shows the list while the input has focus, so all the script
+  // owns is which of them are hidden and what Enter does.
+  function searchFixture(names = ['bash', 'java', 'node', 'nginx']) {
+    const input = node({ value: '', blurred: false, blur() { this.blurred = true; } });
+    const options = names.map((name) => {
+      const item = { hidden: false };
+      // The link holds the logo as well, whose title — "OpenJDK" — is in its
+      // text; the name is what is matched.
+      const link = {
+        textContent: `OpenJDK ${name}`,
+        querySelector: () => ({ textContent: name }),
+        parentElement: item,
+        clicked: false,
+        click() { this.clicked = true; },
+      };
+      return { item, link };
+    });
+    const list = node({ querySelectorAll: () => options.map((option) => option.link) });
+    searchable(list, input);
+    const type = (value) => {
+      input.value = value;
+      input.handlers.input();
+    };
+    const press = (key) => {
+      const event = { key, prevented: false, preventDefault() { this.prevented = true; } };
+      input.handlers.keydown(event);
+      return event;
+    };
+    return {
+      input, type, press,
+      hidden: () => options.map((option) => option.item.hidden),
+      clicked: () => options.map((option) => option.link.clicked),
+    };
+  }
+
+  it('narrows the list to what was typed, whatever the case', () => {
+    const { type, hidden } = searchFixture();
+
+    type('JA');
+
+    assert.deepEqual(hidden(), [true, false, true, true]);
+  });
+
+  it('matches anywhere in the name', () => {
+    const { type, hidden } = searchFixture();
+
+    type('n');
+
+    // node and nginx, and nothing else.
+    assert.deepEqual(hidden(), [true, true, false, false]);
+  });
+
+  it('matches the name, not the title of the logo beside it', () => {
+    const { type, hidden } = searchFixture();
+
+    type('jdk');
+
+    assert.deepEqual(hidden(), [true, true, true, true]);
+  });
+
+  it('restores every entry when cleared', () => {
+    const { type, hidden } = searchFixture();
+
+    type('ja');
+    type('');
+
+    assert.deepEqual(hidden(), [false, false, false, false]);
+  });
+
+  it('follows the first match on Enter', () => {
+    const { type, press, clicked } = searchFixture();
+
+    type('n');
+    const event = press('Enter');
+
+    assert.deepEqual(clicked(), [false, false, true, false]);
+    assert.equal(event.prevented, true);
+  });
+
+  it('does nothing on Enter when nothing matches', () => {
+    const { type, press, clicked } = searchFixture();
+
+    type('rust');
+    press('Enter');
+
+    assert.deepEqual(clicked(), [false, false, false, false]);
+  });
+
+  it('clears and lets go on Escape', () => {
+    const { input, type, press, hidden } = searchFixture();
+
+    type('ja');
+    press('Escape');
+
+    assert.equal(input.value, '');
+    assert.deepEqual(hidden(), [false, false, false, false]);
+    // Losing focus is what closes the list.
+    assert.equal(input.blurred, true);
+  });
+
+  it('keeps focus on the input while a link is clicked', () => {
+    // A mousedown on a link would otherwise move focus off the input, the
+    // list would close under the pointer, and the click would land on
+    // nothing.
+    const input = node({ value: '' });
+    const list = node({ querySelectorAll: () => [] });
+    searchable(list, input);
+
+    const event = { prevented: false, preventDefault() { this.prevented = true; } };
+    list.handlers.mousedown(event);
+
+    assert.equal(event.prevented, true);
   });
 });

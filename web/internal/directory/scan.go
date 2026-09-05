@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"crypto/sha256"
 	"encoding/hex"
+	"html/template"
 	"slices"
 	"strings"
 	"time"
@@ -18,8 +19,10 @@ import (
 // was — a scan from before a CVE was published says nothing about it.
 type Scan struct {
 	// Scanner names the tool and version that produced the scan, e.g.
-	// "grype 0.118.0".
-	Scanner string
+	// "grype 0.118.0". ScannerURL is that release's page, when the record
+	// names the scanner in a way that has one; empty otherwise.
+	Scanner    string
+	ScannerURL string
 	// Database is when the vulnerability database the scan consulted was
 	// built. The freshness that matters: a scanner only knows the CVEs its
 	// database does.
@@ -59,6 +62,11 @@ type Finding struct {
 	// Package and Version identify the Component the finding was matched to.
 	Package string
 	Version string
+	// Upstream is the source package Package was built from, when the
+	// scanner named one: glibc for libc6. A scanner matches a CVE against
+	// the source and reports it once per binary package built from it, so
+	// this is what tells those copies apart from separate findings.
+	Upstream string
 	// Type is the purl ecosystem of that Component — deb, rpm, generic.
 	Type string
 	// Arch is the architecture the Component was built for. An Index scan
@@ -166,11 +174,28 @@ func (s Severity) Rank() int {
 	return len(scale) - 1
 }
 
-// FindingRow is a Finding prepared for rendering.
+// FindingRow is one vulnerability prepared for rendering: the Findings that
+// share an identifier and a source package, as one row.
 type FindingRow struct {
 	Finding
+	// Component is what the row is against: the source package, or the
+	// package itself when the scanner named no source.
+	Component string
+	// Packages lists the binary packages the finding was matched to, in name
+	// order, when Component is not itself one of them. Those are the names
+	// the SBOM page lists, so a reader can get from here to there.
+	Packages []string
 	// Fix is FixedIn as one cell.
 	Fix string
+}
+
+// key is what makes two Findings one row: the same vulnerability against the
+// same source at the same version, with the same fix. A scanner matches a
+// CVE against a source package and fans it out to the binaries built from
+// it, so those agree; two matches that disagree are two findings, because
+// the fix column can only say one thing.
+func (r FindingRow) key() string {
+	return strings.Join([]string{r.ID, r.Component, r.Version, r.FixState, r.Fix}, "\x1f")
 }
 
 // SeverityCount is how many open findings a Report has at one severity.
@@ -191,8 +216,14 @@ type Report struct {
 	Arch          string
 	Architectures []string
 	Scanner       string
+	ScannerURL    string
 	Database      time.Time
 	Finished      time.Time
+	// Logo is the family's mark, the same one the front page draws, or
+	// empty for a family that has none. Set by the handler.
+	Logo template.HTML
+	// Topbar is the strip every page shares. Set by the handler.
+	Topbar Topbar
 	Links
 	Rows []FindingRow
 	// Open counts the Rows that stand; Suppressed the ones a VEX statement
@@ -204,9 +235,11 @@ type Report struct {
 	Summary []SeverityCount
 }
 
-// NewReport selects the Findings belonging to arch and orders them as a reader
-// wants to meet them: the findings that stand before the suppressed ones, the
-// worst severity first, and within a severity the newest identifier first.
+// NewReport selects the Findings belonging to arch, folds the copies of one
+// vulnerability the scanner reported per binary package into one row, and
+// orders the rows as a reader wants to meet them: the findings that stand
+// before the suppressed ones, the worst severity first, and within a severity
+// the newest identifier first.
 //
 // arch is resolved as on the SBOM page: empty or absent falls back to amd64,
 // then to whatever is there.
@@ -215,12 +248,28 @@ func NewReport(image, digest, arch string, scan *Scan) *Report {
 	arch = resolveArch(arch, available)
 
 	rows := make([]FindingRow, 0, len(scan.Findings))
+	index := make(map[string]int)
 	for _, finding := range scan.Findings {
-		if belongsTo(finding.Arch, arch) {
-			rows = append(rows, FindingRow{
-				Finding: finding,
-				Fix:     strings.Join(finding.FixedIn, ", "),
-			})
+		if !belongsTo(finding.Arch, arch) {
+			continue
+		}
+		row := FindingRow{
+			Finding:   finding,
+			Component: cmp.Or(finding.Upstream, finding.Package),
+			Fix:       strings.Join(finding.FixedIn, ", "),
+		}
+		if i, seen := index[row.key()]; seen {
+			rows[i].Packages = append(rows[i].Packages, finding.Package)
+			continue
+		}
+		index[row.key()] = len(rows)
+		row.Packages = []string{finding.Package}
+		rows = append(rows, row)
+	}
+	for i := range rows {
+		slices.Sort(rows[i].Packages)
+		if slices.Equal(rows[i].Packages, []string{rows[i].Component}) {
+			rows[i].Packages = nil
 		}
 	}
 	slices.SortStableFunc(rows, func(a, b FindingRow) int {
@@ -228,7 +277,7 @@ func NewReport(image, digest, arch string, scan *Scan) *Report {
 			compareSuppressed(a, b),
 			cmp.Compare(a.Severity.Rank(), b.Severity.Rank()),
 			cmp.Compare(b.ID, a.ID),
-			cmp.Compare(a.Package, b.Package),
+			cmp.Compare(a.Component, b.Component),
 		)
 	})
 
@@ -238,6 +287,7 @@ func NewReport(image, digest, arch string, scan *Scan) *Report {
 		Arch:          arch,
 		Architectures: available,
 		Scanner:       scan.Scanner,
+		ScannerURL:    scan.ScannerURL,
 		Database:      scan.Database,
 		Finished:      scan.Finished,
 		Rows:          rows,

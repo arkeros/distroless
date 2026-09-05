@@ -1,0 +1,19 @@
+{{/* The strip every page shares, above its own content. The candidates are
+     links, so a reader without JavaScript gets a menu of every family; with
+     it, typing narrows the menu and Enter follows what is left. A div with the
+     search role rather than a form: there is nothing to submit, and a form
+     would reload the page on Enter when the script is not there. */}}
+{{define "topbar"}}
+<header class="topbar">
+  <a class="home" href="/directory">{{.Mirror}}</a>
+  <div class="search" role="search">
+    {{/* A circle and a handle: drawn here for the same reason the copy icon
+         is drawn in the script, that two strokes are not worth an icon set. */}}
+    <svg class="magnifier" aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="6.75" cy="6.75" r="4.75"/><path d="m10.5 10.5 3.75 3.75"/></svg>
+    <input id="search" type="search" placeholder="Search images" aria-label="Search images" autocomplete="off" spellcheck="false">
+    <ul aria-label="Images">
+      {{range .Candidates}}<li><a href="{{.URL}}">{{if .Logo}}<span class="logo">{{.Logo}}</span>{{end}}<span class="name">{{.Name}}</span></a></li>{{end}}
+    </ul>
+  </div>
+</header>
+{{end}}

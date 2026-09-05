@@ -23,7 +23,7 @@ import (
 	"strings"
 )
 
-//go:embed templates static/directory.css static/directory.mjs static/main.mjs static/fonts
+//go:embed templates static/directory.css static/directory.mjs static/main.mjs static/fonts static/logos
 var assets embed.FS
 
 // Parsed once at startup so a broken template fails the process rather than a
@@ -92,6 +92,10 @@ const (
 	viewVulnerabilities = "vulnerabilities"
 )
 
+// viewVersions is the third view, and the one that belongs to a family
+// rather than to a build: there is no per-reference URL for it.
+const viewVersions = "versions"
+
 // NewHandler serves the directory pages and the assets they reference.
 //
 // mirror is the host the images are published under — the name a reader pulls
@@ -106,6 +110,12 @@ const (
 func NewHandler(source Source, mirror string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /directory/static/", http.StripPrefix("/directory", staticHeaders(http.FileServerFS(assets))))
+	mux.HandleFunc("GET /directory", func(w http.ResponseWriter, _ *http.Request) {
+		serveIndex(w, mirror)
+	})
+	// `{$}` because a bare `/directory/` pattern would match everything
+	// beneath it, and this only stands for the one URL the slash makes.
+	mux.HandleFunc("GET /directory/{$}", permanentRedirect(func(string) string { return indexURL }))
 	mux.HandleFunc("GET /directory/image/{family}/{ref}/sbom", func(w http.ResponseWriter, r *http.Request) {
 		serveSBOM(w, r, source, mirror)
 	})
@@ -138,7 +148,7 @@ func NewHandler(source Source, mirror string) http.Handler {
 	// /directory/image/java.
 	for _, pattern := range []string{"GET /directory/image/{family}", "GET /directory/image/{family}/{$}"} {
 		mux.HandleFunc(pattern, permanentRedirect(func(family string) string {
-			return familyURL(family, "versions")
+			return familyURL(family, viewVersions)
 		}))
 	}
 	return mux
@@ -161,6 +171,22 @@ func permanentRedirect(target func(family string) string) http.HandlerFunc {
 	}
 }
 
+// indexURL is the front page of the directory: every family, and the way
+// into each.
+const indexURL = "/directory"
+
+// serveIndex lists the families the Mirror publishes.
+//
+// Nothing here is read from the registry — see families — so there is nothing
+// to go stale between deploys and nothing to validate against; it is cached
+// for as long as the assets are.
+func serveIndex(w http.ResponseWriter, mirror string) {
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	index := NewIndex(mirror)
+	index.Topbar = topbar(mirror, viewVersions, "")
+	writePage(w, "index.html", index, "", "")
+}
+
 // serveVersions lists what a family publishes right now.
 //
 // The one page here that is inherently mutable: it answers a question about
@@ -176,9 +202,12 @@ func serveVersions(w http.ResponseWriter, r *http.Request, source Source, mirror
 	}
 
 	versions := NewVersions(mirror+"/"+family, published)
+	versions.Logo = logo(family)
+	versions.Topbar = topbar(mirror, viewVersions, "")
+	versions.SBOM = resourceURL(family, defaultRef, viewSBOM)
+	versions.Vulnerabilities = resourceURL(family, defaultRef, viewVulnerabilities)
 	for i, release := range versions.Releases {
 		versions.Releases[i].SBOM = resourceURL(family, release.Digest, viewSBOM)
-		versions.Releases[i].Vulnerabilities = resourceURL(family, release.Digest, viewVulnerabilities)
 		for j, tag := range release.Tags {
 			versions.Releases[i].Tags[j].URL = resourceURL(family, tag.Name, viewSBOM)
 		}
@@ -230,6 +259,8 @@ func serveSBOM(w http.ResponseWriter, r *http.Request, source Source, mirror str
 	// Shown as the reader would pull it, not as it is stored upstream.
 	arch := r.URL.Query().Get("arch")
 	table := NewTable(pullName(mirror, family, ref), digest, arch, components)
+	table.Logo = logo(family)
+	table.Topbar = topbar(mirror, viewSBOM, archQuery(arch))
 	table.Links = links(r, source, family, ref, digest, arch, viewSBOM)
 
 	// An SBOM is immutable for a Digest, so the digest is the validator: a
@@ -260,6 +291,8 @@ func serveVulnerabilities(w http.ResponseWriter, r *http.Request, source Source,
 
 	arch := r.URL.Query().Get("arch")
 	report := NewReport(pullName(mirror, family, ref), digest, arch, scan)
+	report.Logo = logo(family)
+	report.Topbar = topbar(mirror, viewVulnerabilities, archQuery(arch))
 	report.Links = links(r, source, family, ref, digest, arch, viewVulnerabilities)
 
 	// Unlike an SBOM, what this page shows is not immutable for a Digest: the
@@ -375,14 +408,12 @@ func serveDocument(w http.ResponseWriter, r *http.Request, fetch func(context.Co
 // an unqualified page should stay unqualified. It is carried on every link so
 // that switching view or tag does not silently switch architecture too.
 func links(r *http.Request, source Source, family, ref, digest, arch, view string) Links {
-	query := ""
-	if arch != "" {
-		query = "?arch=" + url.QueryEscape(arch)
-	}
+	query := archQuery(arch)
 	built := Links{
 		Download:        resourceURL(family, ref, view+".json"),
 		SBOM:            resourceURL(family, ref, viewSBOM) + query,
 		Vulnerabilities: resourceURL(family, ref, viewVulnerabilities) + query,
+		Versions:        familyURL(family, viewVersions),
 		Showing:         ref,
 	}
 	// A page reached by tag can name the exact build it is showing; one
@@ -422,6 +453,15 @@ func siblings(r *http.Request, source Source, family, view, query string) []Tag 
 		siblings = append(siblings, Tag{Name: tag, URL: resourceURL(family, tag, view) + query})
 	}
 	return siblings
+}
+
+// archQuery is the query string that carries the architecture a reader asked
+// for from one page to the next, or nothing when they asked for none.
+func archQuery(arch string) string {
+	if arch == "" {
+		return ""
+	}
+	return "?arch=" + url.QueryEscape(arch)
 }
 
 // pullName is the image as a reader would pull it. A tag joins with a colon

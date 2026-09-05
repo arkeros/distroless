@@ -9,7 +9,7 @@ load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
-load(":config.bzl", "JAVA_ARCHITECTURES", "JAVA_DISTROS", "JAVA_MAJOR_VERSIONS", "JAVA_VERSIONS", "java_layers")
+load(":config.bzl", "JAVA_ARCHITECTURES", "JAVA_DISTROS", "JAVA_LATEST", "JAVA_MAJOR_VERSIONS", "JAVA_VERSIONS", "java_layers")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -207,7 +207,9 @@ vex_document(
         sbom = ":java" + major + mode + "_nonroot_hummingbird_sbom",
         tag_list = [
             major + ("-debug" if mode else ""),
-        ],
+        ] + ([
+            "debug" if mode else "latest",
+        ] if major == JAVA_LATEST else []),
         tags = ["manual"],
         vex = ":java" + major + mode + "_nonroot_hummingbird_vex",
         vulnerabilities = ":java" + major + mode + "_nonroot_hummingbird_vuln",

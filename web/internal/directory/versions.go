@@ -3,6 +3,7 @@ package directory
 import (
 	"cmp"
 	"fmt"
+	"html/template"
 	"slices"
 	"time"
 )
@@ -79,11 +80,10 @@ type Release struct {
 	// row and the header carry the same shape: cell i is always column i.
 	// A build that does not publish an architecture has a zero there.
 	Sizes []Size
-	// SBOM and Vulnerabilities are where this build's evidence is, at its
-	// permanent URL rather than through a tag that may since have moved. Set
-	// by the handler, which knows the reader's own path.
-	SBOM            string
-	Vulnerabilities string
+	// SBOM is where this build's evidence starts, at its permanent URL
+	// rather than through a tag that may since have moved. The digest is the
+	// link. Set by the handler, which knows the reader's own path.
+	SBOM string
 }
 
 // Versions is the list of what a family currently publishes, ready to render.
@@ -95,6 +95,16 @@ type Versions struct {
 	// sorted. One size column each.
 	Architectures []string
 	Releases      []Release
+	// Logo is the family's mark, the same one the front page draws, or
+	// empty for a family that has none. Set by the handler.
+	Logo template.HTML
+	// Topbar is the strip every page shares. Set by the handler.
+	Topbar Topbar
+	// SBOM and Vulnerabilities are the other two views in the navigation
+	// this page shares with them: the evidence for the build a bare pull
+	// would get, since a family-level page has no build of its own.
+	SBOM            string
+	Vulnerabilities string
 }
 
 // NewVersions groups tags by the build they name and orders both, newest

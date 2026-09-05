@@ -12,6 +12,7 @@
   "automergeStrategy": "squash",
   "platformAutomerge": true,
   "dependencyDashboardOSVVulnerabilitySummary": "all",
+  "osvVulnerabilityAlerts": true,
   "commitMessagePrefix": "chore(deps):",
   "recreateWhen": "always",
   "ignorePaths": [
@@ -92,6 +93,21 @@
       "rangeStrategy": "bump"
     },
     {
+      "description": "Indirect deps are disabled by default, but these get linked into the binaries we ship and are where the CVEs that fail the cve_tests keep landing. golang.org/x/exp is excluded: it has no semver tags, so it would only ever produce digest churn.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "matchPackageNames": [
+        "golang.org/x/**",
+        "!golang.org/x/exp",
+        "github.com/ulikunitz/xz"
+      ],
+      "enabled": true
+    },
+    {
       "matchManagers": [
         "gomod"
       ],
@@ -109,7 +125,7 @@
           "bazel/modules/*/MODULE.bazel",
           "bazel/modules/*/MODULE.bazel.lock"
         ],
-        "executionMode": "update"
+        "executionMode": "branch"
       },
       "postUpdateOptions": [
         "goModTidy"

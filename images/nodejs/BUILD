@@ -9,7 +9,7 @@ load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
-load(":config.bzl", "NODEJS_ARCHITECTURES", "NODEJS_DISTROS", "NODEJS_MAJOR_VERSIONS", "NODEJS_VERSIONS", "nodejs_layers")
+load(":config.bzl", "NODEJS_ARCHITECTURES", "NODEJS_DISTROS", "NODEJS_LATEST", "NODEJS_MAJOR_VERSIONS", "NODEJS_VERSIONS", "nodejs_layers")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -163,7 +163,9 @@ vex_document(
         sbom = ":nodejs" + major + mode + "_nonroot_hummingbird_sbom",
         tag_list = [
             major + ("-debug" if mode else ""),
-        ],
+        ] + ([
+            "debug" if mode else "latest",
+        ] if major == NODEJS_LATEST else []),
         tags = ["manual"],
         vex = ":nodejs" + major + mode + "_nonroot_hummingbird_vex",
         vulnerabilities = ":nodejs" + major + mode + "_nonroot_hummingbird_vuln",

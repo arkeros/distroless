@@ -781,10 +781,18 @@ type grypeMatch struct {
 		} `json:"fix"`
 	} `json:"vulnerability"`
 	Artifact struct {
-		Name    string `json:"name"`
-		Version string `json:"version"`
-		PURL    string `json:"purl"`
+		Name      string          `json:"name"`
+		Version   string          `json:"version"`
+		PURL      string          `json:"purl"`
+		Upstreams []grypeUpstream `json:"upstreams"`
 	} `json:"artifact"`
+}
+
+// grypeUpstream is the source package grype names for a binary one: glibc
+// for libc6. The match is made against the source, and reported once per
+// binary built from it.
+type grypeUpstream struct {
+	Name string `json:"name"`
 }
 
 // newestScan decodes every scan record on a Digest and keeps the one that ran
@@ -811,6 +819,30 @@ func newestScan(statements []*attestation.Statement) (scanRecord, error) {
 	return newest, nil
 }
 
+// releasePage is where a scanner named by a GitHub purl,
+// pkg:github/anchore/grype@v0.118.0, publishes that release. Empty for any
+// other naming: a link that is not known to resolve is worse than none.
+func releasePage(purl string) string {
+	rest, ok := strings.CutPrefix(purl, "pkg:github/")
+	if !ok {
+		return ""
+	}
+	repository, version, ok := strings.Cut(rest, "@")
+	if !ok || version == "" || strings.Count(repository, "/") != 1 {
+		return ""
+	}
+	return "https://github.com/" + repository + "/releases/tag/" + version
+}
+
+// upstream is the first source package named, or nothing: grype lists one
+// for a distro package, and none for the rest.
+func upstream(upstreams []grypeUpstream) string {
+	if len(upstreams) == 0 {
+		return ""
+	}
+	return upstreams[0].Name
+}
+
 // decodeScan projects one scan record onto what the page shows.
 func decodeScan(predicate json.RawMessage) (*directory.Scan, error) {
 	var record vulnPredicate
@@ -831,6 +863,7 @@ func decodeScan(predicate json.RawMessage) (*directory.Scan, error) {
 			Severity:    directory.ParseSeverity(match.Vulnerability.Severity),
 			Package:     match.Artifact.Name,
 			Version:     match.Artifact.Version,
+			Upstream:    upstream(match.Artifact.Upstreams),
 			Type:        ecosystem(match.Artifact.PURL),
 			Arch:        qualifier(match.Artifact.PURL, "arch"),
 			PURL:        match.Artifact.PURL,
@@ -842,7 +875,8 @@ func decodeScan(predicate json.RawMessage) (*directory.Scan, error) {
 	}
 
 	return &directory.Scan{
-		Scanner: scanner,
+		Scanner:    scanner,
+		ScannerURL: releasePage(record.Scanner.URI),
 		// The record names the database by when it was built, which is the
 		// freshness a reader needs; grype's own descriptor is the fallback
 		// for a record wrapped without it.

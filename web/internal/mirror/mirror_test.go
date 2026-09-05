@@ -755,6 +755,10 @@ func TestScanReturnsFindingsFromAttestation(t *testing.T) {
 	if scan.Scanner != "grype 0.118.0" {
 		t.Errorf("scanner = %q, want grype 0.118.0", scan.Scanner)
 	}
+	// The record names the scanner by purl; the page names it by its release.
+	if want := "https://github.com/anchore/grype/releases/tag/v0.118.0"; scan.ScannerURL != want {
+		t.Errorf("scanner url = %q, want %q", scan.ScannerURL, want)
+	}
 	if want := time.Date(2026, 9, 3, 6, 30, 55, 0, time.UTC); !scan.Database.Equal(want) {
 		t.Errorf("database = %v, want %v — when the database was built", scan.Database, want)
 	}
@@ -788,6 +792,26 @@ func TestScanReturnsFindingsFromAttestation(t *testing.T) {
 	}
 	if openssl.Suppressed != nil {
 		t.Errorf("finding suppressed with no VEX document attached: %+v", openssl.Suppressed)
+	}
+}
+
+// Grype names the source package a Debian binary was built from, and matches
+// against it: one glibc CVE comes back once per binary package. The page
+// groups on the source, so the source has to survive the projection.
+func TestScanReadsTheSourcePackage(t *testing.T) {
+	match := grypeMatch("CVE-2026-0003", "Medium", "libc6", "2.43-4", "amd64", nil, "not-fixed")
+	match["artifact"].(map[string]any)["upstreams"] = []any{map[string]any{"name": "glibc"}}
+	report := map[string]any{"matches": []any{match}, "descriptor": grypeReport["descriptor"]}
+	server := ocitest.NewServer(t)
+	repository, subject := pushIndex(t, server, "nginx", "latest")
+	attest(t, repository, subject, attestation.Vuln, scanRecord("2026-09-03T21:12:53Z", report))
+
+	_, scan, err := newClient(t, server).Scan(context.Background(), "nginx", "latest")
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+	if len(scan.Findings) != 1 || scan.Findings[0].Package != "libc6" || scan.Findings[0].Upstream != "glibc" {
+		t.Errorf("findings = %+v, want libc6 from the source glibc", scan.Findings)
 	}
 }
 

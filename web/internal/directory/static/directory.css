@@ -65,6 +65,12 @@
   --muted: color-mix(in srgb, currentColor 60%, transparent);
   --mono: 'Fira Mono', ui-monospace, monospace;
   --edge: color-mix(in srgb, currentColor 25%, transparent);
+  /* The one colour on the page that is not a severity: links, focus, and
+     the current tab. A green with a darker cut for light mode, since the
+     phosphor shade only reads on dark; both clear 4.5:1 on their scheme's
+     Canvas. It stays off the severity badges, where green would read as a
+     verdict this page is not giving. */
+  --accent: light-dark(#1a7f37, #3fb950);
   /* One height for everything in the controls row. */
   --control: 2.25rem;
 }
@@ -74,15 +80,163 @@ body {
   font: 15px/1.5 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
 }
 
+/* One colour for a link whether or not it has been followed: a directory is
+   a reference, not a reading list, and the browser's visited purple made a
+   table of tags look half-read. Links that are really controls — the tabs,
+   the cards, the switcher — set their own colour below. */
+a {
+  color: var(--accent);
+}
+
+/* A keyboard reader's cursor, in the same colour, and only for the keyboard:
+   a click already knows where it landed. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 main {
   max-width: 80rem;
   margin: 0 auto;
   padding: 2rem 1rem;
 }
 
+/* The strip every page shares: the mirror, as the way home, and a search
+   across every family. Outside main, because it is the site's rather than
+   the page's, so its rule runs the full width; the padding is what lines its
+   contents up with main's column. */
+.topbar {
+  /* Pinned, so the way home and the way to another image are there however
+     far down a long table the reader is. Opaque, or the page would show
+     through it as it scrolled past; above the switchers' menus and the
+     tables' own layers, which stop at 1. */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem max(1rem, calc((100% - 80rem) / 2));
+  background: Canvas;
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar .home {
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.topbar .home:hover,
+.topbar .home:focus-visible {
+  color: var(--accent);
+}
+
+/* The search is an input over a list of links. The list is positioned
+   against the box and shown while anything in it has focus, which is what
+   makes it usable with no script at all: focus the input, tab to a link. */
+.search {
+  position: relative;
+  flex: 0 1 18rem;
+}
+
+/* The magnifier sits over the input's left edge, and the input's padding
+   leaves it room. Inert to the pointer, so a click on it reaches the input. */
+.magnifier {
+  position: absolute;
+  top: 50%;
+  left: 0.7rem;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+#search {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--control);
+  padding: 0 0.6rem 0 2.1rem;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+}
+
+#search:hover {
+  border-color: var(--accent);
+}
+
+.search ul {
+  display: none;
+  position: absolute;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  max-height: 18rem;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem;
+  overflow-y: auto;
+  list-style: none;
+  background: Canvas;
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 8px color-mix(in srgb, currentColor 15%, transparent);
+  animation: switcher-open 120ms ease-out;
+}
+
+.search:focus-within ul {
+  display: block;
+}
+
 h1 {
   margin: 0;
   font-size: 1.5rem;
+}
+
+/* The way back up: a crumb above the name rather than a link on the logo or
+   the host, which are what a site hangs its root on, and the root is kept
+   for a landing page. Muted until hovered, so it does not compete with the
+   name it sits over. */
+.crumb {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.crumb::before {
+  content: '\2190\00A0';
+}
+
+.crumb:hover,
+.crumb:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* The name and the mark, side by side. The block keeps the digest line's
+   bottom margin as its own, so the panel below sits where it did without
+   one. */
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.identity .digest {
+  margin-bottom: 0;
+}
+
+/* A family's mark, wherever it appears: inline SVG drawn in currentColor, so
+   it is whatever colour the text is, in either scheme. */
+.logo svg {
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .digest {
@@ -116,6 +270,16 @@ h1 {
 .switcher summary {
   box-sizing: border-box;
   height: var(--control);
+}
+
+/* The row answers a hover in the page's link colour, as one thing: a control
+   that lit up alone would read as the primary action, and none of these is.
+   The keyboard gets the shared focus ring instead, so a focused filter does
+   not wear both. */
+#filter:hover,
+.download:hover,
+.switcher summary:hover {
+  border-color: var(--accent);
 }
 
 /* Baseline alignment does not survive a <details> in the row, so these are
@@ -188,9 +352,20 @@ td.license {
   white-space: nowrap;
 }
 
-td:nth-child(2) {
+/* Identifiers and versions are things a reader copies or compares, so they
+   are set in the mono face the digest already uses. Named rather than
+   positional: the vulnerabilities table has two version columns and its
+   identifier leads, so no one position would do for both pages. */
+td.version, td.id {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* The binary packages behind a source: the names the SBOM page lists, kept
+   on the row for a reader going there, but after the name the row is about. */
+.packages {
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 th {
@@ -421,10 +596,6 @@ tbody tr:hover {
   font-family: var(--mono);
 }
 
-.switcher summary:hover {
-  border-color: var(--edge);
-}
-
 .switcher ul {
   position: absolute;
   left: 0;
@@ -458,7 +629,8 @@ tbody tr:hover {
   }
 }
 
-.switcher a {
+.switcher a,
+.search a {
   display: block;
   padding: 0.2rem 0.6rem;
   font-family: var(--mono);
@@ -468,12 +640,27 @@ tbody tr:hover {
   border-radius: 0.25rem;
 }
 
-.switcher a:hover {
+.switcher a:hover,
+.search a:hover {
   background: color-mix(in srgb, currentColor 8%, transparent);
 }
 
 .switcher a[aria-current="page"] {
   background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+/* A search entry is drawn as its card is, mark then name, at the size of a
+   line rather than of a card. After the shared rule above, which it overrides
+   for the display alone. */
+.search a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search .logo svg {
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
 /* Motion here is decoration on things that are already legible without it, so
@@ -482,7 +669,9 @@ tbody tr:hover {
   .switcher summary,
   .switcher summary::after,
   .switcher ul,
-  .copy {
+  .search ul,
+  .copy,
+  .families a {
     transition: none;
     animation: none;
   }
@@ -513,7 +702,7 @@ tbody tr:hover {
 .views a[aria-current="page"] {
   color: inherit;
   font-weight: 600;
-  border-bottom-color: currentColor;
+  border-bottom-color: var(--accent);
 }
 
 /* Particular to the vulnerabilities page. The verdict is the sentence a
@@ -566,29 +755,65 @@ tr.suppressed .severity {
   border-color: var(--line);
 }
 
-/* Identifiers and versions are things a reader copies or compares, so they
-   are set in the mono face the digest already uses. The SBOM page's version
-   column gets it by position; here the columns are named, because the table
-   has two of them. */
-#vulnerabilities td.id,
-#vulnerabilities td.version {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
+/* A link whose text is an identifier — a digest, a tag, a CVE — is set in
+   mono and coloured already, and a 64-character underline made the digest
+   column the loudest thing on a page whose tags are the point. The underline
+   comes back on hover and for the keyboard, where it says "this one". */
+a:has(> code),
+td.id a {
+  text-decoration: none;
 }
 
-#vulnerabilities td.id a {
+a:has(> code):hover,
+a:has(> code):focus-visible,
+td.id a:hover,
+td.id a:focus-visible {
+  text-decoration: underline;
+}
+
+/* Particular to the front page: one card per family. The whole card is the
+   link, so there is one target to hit rather than a name to aim at. A grid
+   rather than flex, so the cards on one row share a width and wrap into a
+   single column on a phone. */
+.families {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.families a {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.9rem;
+  align-items: center;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 0.9rem 1rem;
   color: inherit;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  transition: border-color 150ms ease;
 }
 
-/* The SBOM page's version column is its second one; this page's second
-   column is the identifier and its versions are named above, so the
-   positional rule from the SBOM page is undone here. */
-#vulnerabilities td:nth-child(2) {
+.families a:hover {
+  border-color: var(--edge);
+}
+
+/* The mark spans both lines of text beside it. */
+.families .logo {
+  grid-row: span 2;
+}
+
+.families .name code {
   font-family: var(--mono);
+  font-weight: 600;
 }
 
-/* Two links in one cell on the versions list. */
-.evidence a {
-  margin-right: 0.5rem;
-  white-space: nowrap;
+.families .summary {
+  color: var(--muted);
+  font-size: 0.875rem;
 }

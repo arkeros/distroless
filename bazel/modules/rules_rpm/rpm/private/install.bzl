@@ -92,6 +92,25 @@ def upstream_version(evr):
         ver = ver.rpartition("-")[0]
     return ver
 
+# The subset of rpm version characters that must be percent-encoded inside a
+# purl (https://github.com/package-url/purl-spec): `+` is common (`1.0+git`);
+# `~` is allowed unescaped.
+def _purl_encode_version(version):
+    return version.replace("+", "%2B").replace(":", "%3A")
+
+# CPE 2.3 formatted-string binding: every printable non-alphanumeric
+# character in an attribute value is backslash-escaped, except `-`, `.` and
+# `_`; `*` and `?` are wildcards and never appear in a version. This is the
+# form syft writes and grype parses (`2\:1.30.4-1.el10.ngx`).
+def _cpe_escape(value):
+    out = ""
+    for c in value.elems():
+        if c.isalnum() or c in "-._":
+            out += c
+        else:
+            out += "\\" + c
+    return out
+
 def upstream_identity(name, version, arch, cpe_vendor_product):
     """purl and CPE for a package identified by its upstream, not the distro.
 
@@ -107,11 +126,13 @@ def upstream_identity(name, version, arch, cpe_vendor_product):
 
     Returns:
       (purl, cpe): `pkg:generic/<name>@<upstream version>?arch=<arch>` and
-      `cpe:2.3:a:<vendor>:<product>:<upstream version>:*:*:*:*:*:*:*`.
+      `cpe:2.3:a:<vendor>:<product>:<upstream version>:*:*:*:*:*:*:*`, the
+      version percent-encoded in the purl and backslash-escaped in the CPE
+      as each format requires.
     """
     upstream = upstream_version(version)
-    purl = "pkg:generic/{name}@{ver}?arch={arch}".format(name = name, ver = upstream, arch = arch)
-    cpe = "cpe:2.3:a:{vp}:{ver}:*:*:*:*:*:*:*".format(vp = cpe_vendor_product, ver = upstream)
+    purl = "pkg:generic/{name}@{ver}?arch={arch}".format(name = name, ver = _purl_encode_version(upstream), arch = arch)
+    cpe = "cpe:2.3:a:{vp}:{ver}:*:*:*:*:*:*:*".format(vp = cpe_vendor_product, ver = _cpe_escape(upstream))
     return purl, cpe
 
 def _rpm_package_repo_impl(rctx):

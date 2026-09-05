@@ -96,15 +96,22 @@ have and the project publishes a statement asking to be believed.
 ### The gate reads the consumer's scan too
 
 `image_supply_chain` takes `image_scans`, and `distroless_matrix` passes each
-**Index**'s first-architecture load tarball, scanned as `docker-archive`. The
-severity and stale gates read the union of the SBOM scan and that scan, so a
-package the image describes differently from the SBOM, or a finding only a
-consumer would see, turns the gate red rather than reaching the consumer.
-One architecture suffices: what syft reads from dpkg status, the rpmdb or a
-binary does not vary by architecture. The attested Scan record stays the SBOM
-scan, for the reason ADR 0015 gives: it says what the scanner found in what
-was attested. The whole CI test job, including one such scan per index
-across every family, ran in under six minutes.
+**Index**'s first-architecture load tarball, scanned as `docker-archive`, when
+its `consumer_scan` switch is on. The severity and stale gates then read the
+union of the SBOM scan and that scan, so a package the image describes
+differently from the SBOM, or a finding only a consumer would see, turns the
+gate red rather than reaching the consumer. One architecture suffices: what
+syft reads from dpkg status, the rpmdb or a binary does not vary by
+architecture. The attested Scan record stays the SBOM scan, for the reason
+ADR 0015 gives: it says what the scanner found in what was attested.
+
+The switch is on for nginx and off everywhere else. It was first wired for
+every family, which added about a minute and a half to a five-minute CI
+test job and found nothing: for a family whose packages all carry their
+distro's metadata the two views agree by construction. The scan earns its
+cost where the image has been made to agree with the SBOM by hand, and that
+is the family with an `upstream_identities` entry. A second such family
+turns the switch on with its own image-identity test.
 
 ### Controls
 
@@ -158,4 +165,8 @@ true.
   container test fails on the first; the second removes the exception.
 - The canary goes red without a nginx release to explain it: the enrichment
   moved, and the identity needs another route.
-- A second package wants `upstream_identities`.
+- A second package wants `upstream_identities`. It brings its own
+  image-identity test and turns `consumer_scan` on for its family.
+- A family without `upstream_identities` diverges between image and SBOM
+  for some other reason. The switch is then the wrong shape, and the scan
+  should go back to every family.

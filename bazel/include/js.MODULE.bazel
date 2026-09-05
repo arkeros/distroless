@@ -7,7 +7,15 @@ script, so a reference error or a sort that compares strings where it meant
 numbers passes every other test and breaks only in a reader's browser.
 
 No npm dependencies, and none intended — the script has none, so there is no
-lockfile to keep pinned. This is the node toolchain and nothing more.
+lockfile to keep pinned. This is the node toolchain, and esbuild to minify what
+the browser is sent: the sources carry their reasoning in comments, and a
+reader's browser has no use for any of it.
 """
 
 bazel_dep(name = "aspect_rules_js", version = "3.4.1")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
+
+esbuild = use_extension("@aspect_rules_esbuild//esbuild:extensions.bzl", "esbuild")
+esbuild.toolchain(esbuild_version = "0.28.0")
+use_repo(esbuild, "esbuild_toolchains")
+register_toolchains("@esbuild_toolchains//:all")

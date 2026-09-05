@@ -155,3 +155,8 @@ common --incompatible_python_disallow_native_rules
 # in a git-ignored file.
 # Should be at the end of this file so that users can override anything above.
 try-import %workspace%/.bazelrc.user
+
+# rules_esbuild carries Aspect's ruleset telemetry, which reports the module
+# graph to Aspect from the machine evaluating it. Off, with the variable the
+# module documents honouring, so neither CI nor a laptop reports anywhere.
+common --repo_env=DO_NOT_TRACK=1

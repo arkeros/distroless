@@ -18,4 +18,5 @@ bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
 esbuild = use_extension("@aspect_rules_esbuild//esbuild:extensions.bzl", "esbuild")
 esbuild.toolchain(esbuild_version = "0.28.0")
 use_repo(esbuild, "esbuild_toolchains")
+
 register_toolchains("@esbuild_toolchains//:all")

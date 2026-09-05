@@ -2,6 +2,8 @@
 # Pull requests: test, and nothing else. Everything here can only read the
 # Bazel cache; ci.yaml, on `main` alone, is what writes, publishes and deploys.
 # Why the split: docs/adr/0014-platform-provenance-slsa-github-generator.md.
+# modules.yaml runs alongside this, for the workspaces under bazel/modules
+# that `bazel test //...` here does not reach.
 name: PR
 on:
   pull_request:

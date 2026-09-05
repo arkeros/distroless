@@ -6,13 +6,16 @@
 # on main. No remote cache: the modules are small, and the root's cache
 # configuration lives in the root .bazelrc, which these workspaces do not
 # read.
+#
+# On pull requests this runs unconditionally, with no path filter: the
+# `Modules` job below is a required check in the `main-checks` ruleset
+# (infra/repo.tf), and a required check that does not run leaves the pull
+# request waiting for it forever. On main the filter stays; nothing gates
+# there, and the run only warms the cache.
 name: Modules
 on:
   pull_request:
     branches: [main]
-    paths:
-      - bazel/modules/**
-      - .github/workflows/modules.yaml
   push:
     branches: [main]
     paths:
@@ -68,3 +71,21 @@ jobs:
       - name: Test
         working-directory: bazel/modules/${{ matrix.module }}
         run: bazel test //...
+
+  # One check with a fixed name for the ruleset to require, fanned in from
+  # the matrix, so the required-checks list in infra/repo.tf does not have
+  # to name each module: that list would be the third place a module's name
+  # lives, and the one that fails silently. Runs even when a leg failed or
+  # was cancelled, and fails then; `needs` alone would skip it, and a skipped
+  # required check reads as passing to the ruleset.
+  modules:
+    name: Modules
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Every module passed
+        run: |
+          [ "${{ needs.test.result }}" = "success" ]

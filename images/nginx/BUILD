@@ -440,17 +440,24 @@ _NGINX_CPE_CANARY_CVES = '["CVE-2026-42533", "CVE-2026-56434", "CVE-2026-60005"]
     ]
 ]
 
+# The vulnerable scan is the input; the fixed scan comes in by name, as
+# `$fixed`, rather than as a second slurped input: buildifier sorts `srcs`,
+# and a filter that destructures a slurped pair by position would read
+# them in whatever order that leaves.
 jq(
     name = "nginx_cpe_canary_violations",
-    srcs = [
-        ":nginx_cpe_canary_scan_fixed",
-        ":nginx_cpe_canary_scan_vulnerable",
-    ],
+    srcs = [":nginx_cpe_canary_scan_vulnerable"],
     out = "nginx_cpe_canary_violations.json",
-    args = ["--slurp"],
-    filter = """. as [$vulnerable, $fixed] | {
-  missing_at_1_30_3: (%s - [$vulnerable.matches[].vulnerability.id]),
-  present_at_1_30_4: ([$fixed.matches[].vulnerability.id] | map(select(IN(%s[])))),
+    args = [
+        "--slurpfile",
+        "fixed",
+        "$(location :nginx_cpe_canary_scan_fixed)",
+    ],
+    data = [":nginx_cpe_canary_scan_fixed"],
+    expand_args = True,
+    filter = """{
+  missing_at_1_30_3: (%s - [.matches[].vulnerability.id]),
+  present_at_1_30_4: ([$fixed[0].matches[].vulnerability.id] | map(select(IN(%s[])))),
 }""" % (_NGINX_CPE_CANARY_CVES, _NGINX_CPE_CANARY_CVES),
 )
 

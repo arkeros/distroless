@@ -2,26 +2,26 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1788475884",
-    "repomd_sha256": "85c22b6994e452f7b728ae7b9c48adc4a6793f07e3238f6c2e5b9dfd22948cd0"
+    "revision": "1788652879",
+    "repomd_sha256": "6e2ca5d4442229812b8723ebf47f166c3b228bab348f1d41f1291a9b32c26e12"
   },
   "packages": {
     "audit-libs": {
       "aarch64": {
-        "version": "4.2-3.hum1",
-        "sha256": "e3fd30307829e16a19111e27d2f00944438aaf654bd461dde0a2964e88ac8639",
-        "path": "aarch64/Packages/a/audit-libs-4.2-3.hum1.aarch64.rpm",
-        "size": 151582,
+        "version": "4.2.1-2.hum1",
+        "sha256": "c271facc7cff268e2fc242af77553c17bb67820f6296ad9c02d205c4d1cd53e6",
+        "path": "aarch64/Packages/a/audit-libs-4.2.1-2.hum1.aarch64.rpm",
+        "size": 152695,
         "license": "LGPL-2.0-or-later",
-        "upstream": "audit-4.2-3.hum1.src.rpm"
+        "upstream": "audit-4.2.1-2.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "4.2-3.hum1",
-        "sha256": "9351acc2a1a42331dbf5b0bda34de99bd9435041891ff32699da7ed147ef0ff4",
-        "path": "x86_64/Packages/a/audit-libs-4.2-3.hum1.x86_64.rpm",
-        "size": 152983,
+        "version": "4.2.1-2.hum1",
+        "sha256": "c8e735822ebe1a7472d84866f142a1e3d26c8c5db28857be64d8599b9a66d1e6",
+        "path": "x86_64/Packages/a/audit-libs-4.2.1-2.hum1.x86_64.rpm",
+        "size": 154582,
         "license": "LGPL-2.0-or-later",
-        "upstream": "audit-4.2-3.hum1.src.rpm"
+        "upstream": "audit-4.2.1-2.hum1.src.rpm"
       }
     },
     "bash": {
@@ -672,20 +672,20 @@
     },
     "systemd-libs": {
       "aarch64": {
-        "version": "261-2.1.hum1",
-        "sha256": "77a1d7fc774538bb77eac86b7e3a2e7ff1e320412663847329e80d8aca5bc582",
-        "path": "aarch64/Packages/s/systemd-libs-261-2.1.hum1.aarch64.rpm",
-        "size": 887912,
+        "version": "261.2-1.hum1",
+        "sha256": "8397411c15bda36ac8ef87a3ba8b7714e1b3f0cf589ea68cfcf37c32e0ee3951",
+        "path": "aarch64/Packages/s/systemd-libs-261.2-1.hum1.aarch64.rpm",
+        "size": 883903,
         "license": "LGPL-2.1-or-later AND MIT",
-        "upstream": "systemd-261-2.1.hum1.src.rpm"
+        "upstream": "systemd-261.2-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "261-2.1.hum1",
-        "sha256": "40a17e97bca161717f3d6ec6d1b8f7daeabc8614308d9025a115c58b1b40fd8f",
-        "path": "x86_64/Packages/s/systemd-libs-261-2.1.hum1.x86_64.rpm",
-        "size": 971598,
+        "version": "261.2-1.hum1",
+        "sha256": "fda23a5e4dba961ebe05c3a6ded7d539e786c6c437005dc07692cef246415176",
+        "path": "x86_64/Packages/s/systemd-libs-261.2-1.hum1.x86_64.rpm",
+        "size": 968796,
         "license": "LGPL-2.1-or-later AND MIT",
-        "upstream": "systemd-261-2.1.hum1.src.rpm"
+        "upstream": "systemd-261.2-1.hum1.src.rpm"
       }
     },
     "tzdata": {

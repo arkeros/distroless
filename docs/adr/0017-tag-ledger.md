@@ -79,9 +79,12 @@ it claims to be. A rule that answered "nothing moved" to a ledger it could
 not read would lose history silently; one that answered "everything moved"
 would fill it with events that are not moves.
 
-The pull and push are `oras`, pinned as a tool in `go.mod` so the version has
-one home, and installed in `release` by its GitHub action at that version, as
-`crane` is: the job runs without Bazel. A ledger that does not exist yet is
+The pull and push are `oras`, pinned in `tools/tools.lock.json` with the other
+CI binaries, so the version has one home and `bazel run @multitool//tools/oras`
+is the same binary. `release` installs it by that URL and checksum through its
+GitHub action rather than by version: the action only knows the releases it
+shipped with, and the first pin was one it had not heard of. The job runs
+without Bazel, as `crane` does. A ledger that does not exist yet is
 empty; a ledger that cannot be read for any other reason stops the job,
 because appending to "empty" would write over it.
 

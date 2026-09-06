@@ -2,6 +2,7 @@ load("@rules_img//img:image.bzl", "image_manifest")
 load("@rules_img//img:load.bzl", "image_load")
 load("@rules_img//img:push.bzl", "image_push")
 load("@tar.bzl", "tar")
+load(":layer_paths.bzl", "layer_unique_paths_test")
 load(":supply_chain.bzl", "image_supply_chain")
 
 def oci_image(
@@ -48,6 +49,14 @@ def oci_image(
         name = name,
         created = created,
         **kwargs
+    )
+
+    # Every layer, on any machine: dockerd's classic store refuses a layer
+    # that lists a path twice, and only some docker setups say so.
+    layer_unique_paths_test(
+        name = name + "_unique_paths_test",
+        size = "small",
+        layers = kwargs.get("layers", []),
     )
 
     if gate:

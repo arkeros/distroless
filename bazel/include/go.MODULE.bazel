@@ -67,6 +67,5 @@ use_repo(
     "com_github_spf13_cobra",
     "com_github_ulikunitz_xz",
     "in_yaml_go_yaml_v4",
-    "land_oras_oras",
     "org_golang_x_text",
 )

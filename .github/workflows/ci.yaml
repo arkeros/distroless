@@ -122,10 +122,13 @@ jobs:
       # this job verified with, and the policy strings. See `verify`.
       cosign_version: ${{ steps.inputs.outputs.cosign_version }}
       slsa_verifier_version: ${{ steps.inputs.outputs.slsa_verifier_version }}
-      # go.mod's go-containerregistry and oras versions; `release` installs
-      # that crane and that oras.
+      # go.mod's go-containerregistry version; `release` installs that crane.
       crane_version: ${{ steps.inputs.outputs.crane_version }}
-      oras_version: ${{ steps.inputs.outputs.oras_version }}
+      # The oras release tools/tools.lock.json pins, as the URL and checksum
+      # `release` installs from. Not just a version: setup-oras only knows
+      # the releases it shipped with, and it lagged the lockfile once.
+      oras_url: ${{ steps.inputs.outputs.oras_url }}
+      oras_sha256: ${{ steps.inputs.outputs.oras_sha256 }}
       trusted_root_sha256: ${{ steps.inputs.outputs.trusted_root_sha256 }}
       certificate_identity_regexp: ${{ steps.inputs.outputs.certificate_identity_regexp }}
       certificate_oidc_issuer: ${{ steps.inputs.outputs.certificate_oidc_issuer }}
@@ -247,8 +250,10 @@ jobs:
             echo "cosign_version=$(version_of cosign)"
             echo "slsa_verifier_version=$(version_of slsa-verifier)"
             echo "crane_version=$(awk '$1 == "github.com/google/go-containerregistry" {print $2}' go.mod)"
-            # setup-oras wants the bare number: "1.3.4", not "v1.3.4".
-            echo "oras_version=$(awk '$1 == "oras.land/oras" {print substr($2, 2)}' go.mod)"
+            # The release runner is linux/x86_64; the lockfile carries the
+            # other platforms for `bazel run @multitool//tools/oras`.
+            echo "oras_url=$(jq -r '.oras.binaries[] | select(.os == "linux" and .cpu == "x86_64") | .url' tools/tools.lock.json)"
+            echo "oras_sha256=$(jq -r '.oras.binaries[] | select(.os == "linux" and .cpu == "x86_64") | .sha256' tools/tools.lock.json)"
             echo "trusted_root_sha256=$(sha256sum "${TRUSTED_ROOT}" | cut -d' ' -f1)"
             echo "certificate_identity_regexp=${COSIGN_POLICY_CERTIFICATE_IDENTITY_REGEXP}"
             echo "certificate_oidc_issuer=${COSIGN_POLICY_CERTIFICATE_OIDC_ISSUER}"
@@ -742,12 +747,14 @@ jobs:
         with:
           version: ${{ needs.publish.outputs.crane_version }}
 
-      # Likewise the oras go.mod pins as a tool: what appends to the tag
-      # ledger is the same release that oras.land/oras names in the module.
+      # The oras tools/tools.lock.json pins, by URL and checksum rather than
+      # by version: what appends to the tag ledger is the binary the lockfile
+      # names, whether or not the action has heard of that release yet.
       - name: Install oras
         uses: oras-project/setup-oras@v2.0.1
         with:
-          version: ${{ needs.publish.outputs.oras_version }}
+          url: ${{ needs.publish.outputs.oras_url }}
+          checksum: ${{ needs.publish.outputs.oras_sha256 }}
 
       # Every (ref, tag) pair, eight at a time. Failures are collected rather
       # than stopping the loop — a stopped loop leaves the earlier images

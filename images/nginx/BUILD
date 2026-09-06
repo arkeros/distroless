@@ -159,7 +159,15 @@ tar(
         compress = COMPRESSION,
         deduplicate = True,
         tars = [
-            "@{}//{}/{}".format(apt_repo, "nginx", arch),
+            # `:own`, not the closure: nginx.org's package depends on libc6,
+            # libssl, zlib, zstd — all in cc — and on lsb-base and
+            # sysvinit-utils for an init script nothing here runs. The
+            # closure shipped them all: 21.7 of the layer's 26.8 MB were
+            # already in cc and static. What nginx links that cc does not
+            # carry is libpcre2-8.so.0 and libcrypt.so.1.
+            "@{}//{}/{}:own".format(apt_repo, "nginx", arch),
+            "@debian//libpcre2-8-0/{}".format(arch),
+            "@debian//libcrypt1/{}".format(arch),
         ],
     )
     for version_label, apt_repo in NGINX_VERSIONS.items()

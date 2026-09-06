@@ -1,6 +1,9 @@
 schemaVersion: 2.0.0
-# The arch-specific half of test_hummingbird.yaml: glibc's dynamic linker
-# lives at /usr/lib64/ld-linux-x86-64.so.2 on amd64.
+# The arch-specific half of test_<distro>.yaml: glibc's dynamic linker
+# lives at /usr/lib64/ld-linux-x86-64.so.2 on amd64. True on both distros —
+# Debian's real path is /usr/lib/x86_64-linux-gnu/, but libc6 ships this
+# compatibility symlink beside it, and it is the path every Hummingbird
+# binary names as its interpreter.
 fileExistenceTests:
   - name: 'glibc dynamic linker'
     path: '/usr/lib64/ld-linux-x86-64.so.2'

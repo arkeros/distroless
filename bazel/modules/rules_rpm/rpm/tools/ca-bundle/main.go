@@ -365,20 +365,15 @@ func decodeP11Value(quoted string) ([]byte, error) {
 
 // writeBundleTar writes the bundle and the two symlinks OpenSSL's
 // compiled-in defaults on RHEL resolve (`openssl version -d` paths:
-// cafile /etc/pki/tls/cert.pem, capath /etc/pki/tls/certs). Parent
-// directories are emitted so the tar stands alone; `flatten` dedupes them
-// against the rpm's own.
+// cafile /etc/pki/tls/cert.pem, capath /etc/pki/tls/certs). No parent
+// directories: the rpm ships every one of them, and a second entry for
+// the same path with other metadata survives `flatten`'s dedupe, which
+// merges identical entries only, as a duplicate path — one dockerd's
+// classic store refuses to load. This tar is only ever composed beside
+// the rpm's content.
 func writeBundleTar(w io.Writer, bundle []byte) error {
 	tw := tar.NewWriter(w)
 	epoch := time.Unix(0, 0)
-	for _, dir := range []string{
-		"./etc", "./etc/pki", "./etc/pki/ca-trust", "./etc/pki/ca-trust/extracted",
-		"./etc/pki/ca-trust/extracted/pem", "./etc/pki/tls", "./etc/pki/tls/certs",
-	} {
-		if err := tw.WriteHeader(&tar.Header{Name: dir + "/", Mode: 0o755, Typeflag: tar.TypeDir, ModTime: epoch, Format: tar.FormatUSTAR}); err != nil {
-			return err
-		}
-	}
 	if err := tw.WriteHeader(&tar.Header{Name: bundlePath, Mode: 0o644, Size: int64(len(bundle)), Typeflag: tar.TypeReg, ModTime: epoch, Format: tar.FormatUSTAR}); err != nil {
 		return err
 	}

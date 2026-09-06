@@ -211,7 +211,20 @@ func writePayloadAsTar(tw *tar.Writer, payload *cpio.Reader) error {
 			return fmt.Errorf("cpio next: %w", err)
 		}
 		name := ent.Filename()
-		if shouldStrip(name) {
+		rewritten, drop := mergedUsr(name)
+		if shouldStrip(name) || drop {
+			// A stripped path may still be the member of a hardlink set that
+			// carries the set's bytes: hand them to the members we keep, or
+			// they would be written as an empty set at end of stream.
+			if isCpioRegular(ent) && ent.Nlink() > 1 && ent.Filesize() > 0 {
+				if links, ok := pendingLinks[ent.Ino()]; ok {
+					if err := writeHardlinkSet(tw, ent, payload, links); err != nil {
+						return err
+					}
+					delete(pendingLinks, ent.Ino())
+					continue
+				}
+			}
 			// Drain regular-file content so the cpio reader advances. Symlinks
 			// and dirs carry no payload.
 			if isCpioRegular(ent) {
@@ -219,10 +232,6 @@ func writePayloadAsTar(tw *tar.Writer, payload *cpio.Reader) error {
 					return fmt.Errorf("drain stripped %q: %w", name, err)
 				}
 			}
-			continue
-		}
-		rewritten, drop := mergedUsr(name)
-		if drop {
 			continue
 		}
 		if isCpioRegular(ent) && ent.Nlink() > 1 && ent.Filesize() == 0 {
@@ -245,20 +254,32 @@ func writePayloadAsTar(tw *tar.Writer, payload *cpio.Reader) error {
 		}
 	}
 
-	// Whatever is still pending is a set of empty files.
+	// Whatever is still pending is a set of empty files: every member had a
+	// zero filesize, and a stripped member carrying bytes was handled above.
 	for _, ino := range pendingOrder {
 		links, ok := pendingLinks[ino]
 		if !ok {
 			continue
 		}
-		first := links[0]
-		if err := writeCpioEntryAsTar(tw, first.ent, payload, first.name); err != nil {
-			return fmt.Errorf("write tar entry %q: %w", first.name, err)
+		if err := writeHardlinkSet(tw, links[0].ent, payload, links); err != nil {
+			return err
 		}
-		for _, link := range links[1:] {
-			if err := writeHardlinkAsTar(tw, link.ent, link.name, first.name); err != nil {
-				return fmt.Errorf("write tar hardlink %q: %w", link.name, err)
-			}
+	}
+	return nil
+}
+
+// writeHardlinkSet writes a set of pending paths whose bytes come from
+// `ent`, an entry not written under its own name: the first path as a
+// regular file with those bytes, the rest as hardlinks to it. Members of a
+// set share inode metadata, so `ent`'s mode, owner and mtime are theirs.
+func writeHardlinkSet(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cpio.Reader, links []pendingLink) error {
+	first := links[0]
+	if err := writeCpioEntryAsTar(tw, ent, payload, first.name); err != nil {
+		return fmt.Errorf("write tar entry %q: %w", first.name, err)
+	}
+	for _, link := range links[1:] {
+		if err := writeHardlinkAsTar(tw, link.ent, link.name, first.name); err != nil {
+			return fmt.Errorf("write tar hardlink %q: %w", link.name, err)
 		}
 	}
 	return nil

@@ -448,3 +448,41 @@ func TestWritePayloadAsTar_Hardlinks(t *testing.T) {
 		t.Errorf("tar has %d entries, want %d: %v", len(got), len(want), got)
 	}
 }
+
+// TestWritePayloadAsTar_StrippedPayloadMember: when the member carrying a
+// set's bytes is one we strip, the members we keep still get the bytes.
+// The end-of-stream fallback for empty sets must not turn that into silent
+// data loss.
+func TestWritePayloadAsTar_StrippedPayloadMember(t *testing.T) {
+	stream := newc(
+		newcEntry{name: "./usr/share/foo/data", ino: 5, nlink: 3},
+		newcEntry{name: "./usr/share/foo/data.link", ino: 5, nlink: 3},
+		newcEntry{name: "./usr/lib/.build-id/ab/cdef", ino: 5, nlink: 3, data: "bytes"},
+	)
+
+	var out bytes.Buffer
+	tw := tar.NewWriter(&out)
+	if err := writePayloadAsTar(tw, cpio.NewReader(bytes.NewReader(stream))); err != nil {
+		t.Fatalf("writePayloadAsTar: %v", err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	got := readTar(t, out.Bytes())
+
+	want := map[string]tarEntry{
+		"./usr/share/foo/data":      {typeflag: tar.TypeReg, data: "bytes"},
+		"./usr/share/foo/data.link": {typeflag: tar.TypeLink, linkname: "./usr/share/foo/data"},
+	}
+	for name, w := range want {
+		if g := got[name]; g != w {
+			t.Errorf("%s = %+v, want %+v", name, g, w)
+		}
+	}
+	if _, ok := got["./usr/lib/.build-id/ab/cdef"]; ok {
+		t.Errorf("stripped path was written")
+	}
+	if len(got) != len(want) {
+		t.Errorf("tar has %d entries, want %d: %v", len(got), len(want), got)
+	}
+}

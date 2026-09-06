@@ -163,6 +163,15 @@ vex_document(
     for arch in JAVA_ARCHITECTURES["hummingbird"]
 ]
 
+# What the elf_needs test must accept in a JRE. Every library under
+# /jre/lib lists libjvm.so, which lives in lib/server and which the
+# launcher dlopens before any of them loads; libawt_xawt and
+# libsplashscreen want X11 and libjsound wants ALSA, none of which a
+# headless image has a display or a sound card for.
+_ELF_NEEDS_ALLOW = {
+    "/jre/lib/*.so": "loaded into a JVM the launcher has already given libjvm.so from lib/server; libawt_xawt and libsplashscreen want X11 and libjsound ALSA, which headless has no use for",
+}
+
 [
     distroless_matrix(
         name = "java" + major,
@@ -182,6 +191,7 @@ vex_document(
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],
         debug_layers = java_layers(major),
         distro = distro,
+        elf_needs_allow = _ELF_NEEDS_ALLOW,
         entrypoint = [
             "/jre/bin/java",
             "-jar",

@@ -60,12 +60,6 @@ bzl_library(
     ],
 )
 
-bzl_library(
-    name = "layer_paths",
-    srcs = ["layer_paths.bzl"],
-    visibility = ["//visibility:public"],
-)
-
 # The fixture for layer_unique_paths_test, the shape of the real defect:
 # an rpm content tar, whose directories rpm-extract names without a
 # trailing slash, beside a bsdtar-written tar naming one of the same
@@ -163,6 +157,12 @@ bzl_library(
 bzl_library(
     name = "crane_tag",
     srcs = ["crane_tag.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "layer_paths",
+    srcs = ["layer_paths.bzl"],
     visibility = ["//visibility:public"],
 )
 

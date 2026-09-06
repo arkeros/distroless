@@ -69,6 +69,10 @@ _VEX = {
         deduplicate = True,
         tars = [
             "@debian//libc6/{}".format(arch),
+            # libstdc++.so.6 links libgcc_s.so.1. It was never listed here:
+            # static's base-files closure carried it, until static stopped
+            # shipping glibc.
+            "@debian//libgcc-s1/{}".format(arch),
             "@debian//libssl3t64/{}".format(arch),
             "@debian//libstdc++6/{}".format(arch),
             "@debian//libzstd1/{}".format(arch),

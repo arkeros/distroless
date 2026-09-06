@@ -390,12 +390,14 @@ td.version, td.id {
   font-size: 0.85rem;
 }
 
-th {
+/* The header is a button so the keyboard reaches it; it should still read as
+   a table header. The button carries the cell's padding, so the whole cell
+   is the click target; a header without one, as on the history page, keeps
+   the padding on the cell. */
+th:has(> button) {
   padding: 0;
 }
 
-/* The header is a button so the keyboard reaches it; it should still read as
-   a table header. */
 th button {
   width: 100%;
   padding: 0.4rem 0.75rem 0.4rem 0;
@@ -934,4 +936,14 @@ td.id a:focus-visible {
 #history th.number {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Every cell here is one date, one digest or one number, and on a phone the
+   auto layout squeezes each column to its narrowest and breaks them across
+   lines: a date at its hyphens, a digest anywhere, the way the heading's
+   digest is allowed to. One line each; the scroller is what makes the width
+   fit. */
+#history th,
+#history td {
+  white-space: nowrap;
 }

@@ -17,6 +17,18 @@
 // authentication. Nothing else: no OpenSSL "TRUSTED CERTIFICATE" form, no
 // Java keystore, no per-hash directory.
 //
+// One rule goes further than the distro's bundle. Mozilla marks some roots
+// `nss-server-distrust-after`: leaves issued after that date are not
+// trusted, while earlier ones stay valid until they expire. NSS and Chrome
+// enforce it against the leaf's notBefore at verification time; a PEM
+// bundle has no field for it, so `trust extract` keeps those roots and so
+// does RHEL's tls-ca-bundle.pem. This bundle keeps them only until no leaf
+// a browser would accept can still chain to them: the date plus the
+// 398-day maximum lifetime of a public TLS certificate, measured against
+// the build time, which is the lockfile's snapshot so the output is
+// reproducible. Ten roots carried such a date at the time of writing, all
+// past that point.
+//
 // Output is a tar (root-owned, epoch mtime, USTAR) carrying the bundle and
 // the two /etc/pki/tls symlinks OpenSSL's compiled-in default paths
 // resolve, ready for `flatten` beside the rpm's own content.
@@ -48,24 +60,42 @@ func main() {
 	var (
 		contentTar = flag.String("content-tar", "", "content tar of the ca-certificates rpm, as rpm-extract writes it")
 		out        = flag.String("out", "", "output tar")
+		nowFile    = flag.String("now-file", "", "file holding the build time as RFC 3339, the lockfile's snapshot; distrust dates are measured against it")
 	)
 	flag.Parse()
-	if *contentTar == "" || *out == "" {
-		fmt.Fprintln(os.Stderr, "ca-bundle: --content-tar and --out are required")
+	if *contentTar == "" || *out == "" || *nowFile == "" {
+		fmt.Fprintln(os.Stderr, "ca-bundle: --content-tar, --out and --now-file are required")
 		os.Exit(2)
 	}
-	if err := run(*contentTar, *out); err != nil {
+	now, err := readNow(*nowFile)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "ca-bundle:", err)
+		os.Exit(1)
+	}
+	if err := run(*contentTar, *out, now); err != nil {
 		fmt.Fprintln(os.Stderr, "ca-bundle:", err)
 		os.Exit(1)
 	}
 }
 
-func run(contentTarPath, outPath string) error {
+func readNow(path string) (time.Time, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("read %s: %w", path, err)
+	}
+	now, err := time.Parse(time.RFC3339, strings.TrimSpace(string(b)))
+	if err != nil {
+		return time.Time{}, fmt.Errorf("%s: %w", path, err)
+	}
+	return now, nil
+}
+
+func run(contentTarPath, outPath string, now time.Time) error {
 	source, err := readTarEntry(contentTarPath, trustSourcePath)
 	if err != nil {
 		return err
 	}
-	bundle, err := extractServerAnchors(bytes.NewReader(source))
+	bundle, err := extractServerAnchors(bytes.NewReader(source), now)
 	if err != nil {
 		return fmt.Errorf("parse %s: %w", trustSourcePath, err)
 	}
@@ -164,9 +194,15 @@ var (
 	oidAnyExtendedKey = asn1.ObjectIdentifier{2, 5, 29, 37, 0}
 )
 
+// maxLeafLifetime is the longest a public TLS certificate may be valid,
+// per the CA/Browser Forum baseline requirements since 2020. An anchor
+// whose server distrust date is further in the past than this can no
+// longer validate any leaf a browser would accept.
+const maxLeafLifetime = 398 * 24 * time.Hour
+
 // extractServerAnchors returns the PEM bundle of every certificate the
-// trust source anchors for server authentication.
-func extractServerAnchors(r io.Reader) ([]byte, error) {
+// trust source anchors for server authentication at `now`.
+func extractServerAnchors(r io.Reader, now time.Time) ([]byte, error) {
 	objects, err := parseP11Kit(r)
 	if err != nil {
 		return nil, err
@@ -210,6 +246,11 @@ func extractServerAnchors(r io.Reader) ([]byte, error) {
 	var bundle bytes.Buffer
 	for _, o := range objects {
 		if o.attrs["trusted"] != "true" || o.attrs["x-distrusted"] == "true" {
+			continue
+		}
+		if dead, err := distrustedForServersAt(o.attrs["nss-server-distrust-after"], now); err != nil {
+			return nil, fmt.Errorf("object %s: %w", o.attrs["label"], err)
+		} else if dead {
 			continue
 		}
 		for _, b := range o.pems {
@@ -264,6 +305,35 @@ func subjectPublicKeyInfo(cert []byte) ([]byte, error) {
 		}
 	}
 	return field.FullBytes, nil
+}
+
+// distrustedForServersAt reports whether an anchor's nss-server-distrust-
+// after date, as p11-kit persists it, is more than one maximum leaf
+// lifetime before `now`. The value is a quoted ASN.1 UTCTime
+// ("YYMMDDhhmmssZ") or GeneralizedTime ("YYYYMMDDhhmmssZ"); "%00" is the
+// attribute unset.
+func distrustedForServersAt(value string, now time.Time) (bool, error) {
+	if value == "" || value == `"%00"` {
+		return false, nil
+	}
+	if len(value) < 2 || value[0] != '"' || value[len(value)-1] != '"' {
+		return false, fmt.Errorf("nss-server-distrust-after is not quoted: %s", value)
+	}
+	raw := value[1 : len(value)-1]
+	var date time.Time
+	var err error
+	switch len(raw) {
+	case len("YYMMDDhhmmssZ"):
+		date, err = time.Parse("060102150405Z", raw)
+	case len("YYYYMMDDhhmmssZ"):
+		date, err = time.Parse("20060102150405Z", raw)
+	default:
+		err = fmt.Errorf("neither UTCTime nor GeneralizedTime")
+	}
+	if err != nil {
+		return false, fmt.Errorf("nss-server-distrust-after %s: %w", value, err)
+	}
+	return date.Add(maxLeafLifetime).Before(now), nil
 }
 
 // decodeP11Value undoes p11-kit's quoting of a binary attribute: the value

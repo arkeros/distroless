@@ -337,14 +337,27 @@ func writeHardlinkAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, name, target
 }
 
 // shouldStrip drops cpio entries whose paths are useless on a distroless
-// image. Currently: `/usr/lib/.build-id/**` — the GDB build-id symlink tree
-// is only consumed by debugger tooling that distroless images don't ship,
-// and (per ADR 0007's cc bring-up) glibc-common's cpio places these symlinks
-// before their parent directory, which strict tar extractors reject. Same
-// posture as Wolfi/Chainguard distroless and `rpm --excludedocs`.
+// image:
+//
+//   - `/usr/lib/.build-id/**` — the GDB build-id symlink tree is only
+//     consumed by debugger tooling that distroless images don't ship, and
+//     (per ADR 0007's cc bring-up) glibc-common's cpio places these
+//     symlinks before their parent directory, which strict tar extractors
+//     reject.
+//   - `/usr/share/{doc,man,info}/**` — %doc, what `rpm --excludedocs`
+//     drops: nothing reads a man page or a README on an image with no
+//     shell. `/usr/share/licenses` stays, as it does under --excludedocs:
+//     the licence text is what lets the binaries be redistributed.
+//
+// Same posture as Wolfi/Chainguard distroless.
 func shouldStrip(filename string) bool {
 	clean := strings.TrimPrefix(filename, "./")
-	return clean == "usr/lib/.build-id" || strings.HasPrefix(clean, "usr/lib/.build-id/")
+	for _, prefix := range []string{"usr/lib/.build-id", "usr/share/doc", "usr/share/man", "usr/share/info"} {
+		if clean == prefix || strings.HasPrefix(clean, prefix+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 // mergedUsr rewrites legacy root paths (/lib, /lib64, /bin, /sbin) onto

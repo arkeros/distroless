@@ -821,11 +821,15 @@ td.id a:focus-visible {
 /* Particular to the history page. The chart is computed on the server and
    drawn as SVG in the page itself, so it is there from the first byte and
    needs no script; the table below it has every number the bars stand for.
-   Severity is one hue in four steps, darkest for the worst on a light
-   scheme and lightest for the worst on a dark one, so the band a reader
-   should stop at is the one that stands out on either. Both ramps pass an
-   ordinal check: monotone lightness, visible steps, the faint end clearing
-   the surface. */
+   Each severity band has a hue of its own — red, orange, yellow, then blue
+   for low and grey for unknown — the hues the severity badges use, so the
+   two pages read alike. Three warm hues in a row are the hard case for
+   colour-blind readers, so the sets below were picked to keep every
+   adjacent pair apart under simulated deficiency as well as normal vision,
+   with lightness doing the separating; the stack order, the legend and
+   the table carry the identity where colour alone would not. The yellow
+   and the grey clear the surface by less than 3:1 on a light scheme, which
+   the table is the relief for. */
 .history {
   margin: 0 0 1.5rem;
   max-width: 48rem;
@@ -868,10 +872,11 @@ td.id a:focus-visible {
   stroke-width: 2;
 }
 
-.band-critical { fill: light-dark(#7a0619, #ffa599); }
-.band-high     { fill: light-dark(#c22b3a, #f0625c); }
-.band-medium   { fill: light-dark(#e8776a, #c9353f); }
-.band-low      { fill: light-dark(#f09a8c, #a1232d); }
+.band-critical { fill: light-dark(#a4111d, #ff8079); }
+.band-high     { fill: light-dark(#d4611a, #b85506); }
+.band-medium   { fill: light-dark(#d9ad00, #dfbd3f); }
+.band-low      { fill: light-dark(#1a63d6, #3b8cff); }
+.band-unknown  { fill: light-dark(#8c959f, #7d8590); }
 
 .legend {
   display: flex;
@@ -893,10 +898,11 @@ td.id a:focus-visible {
   vertical-align: -1px;
 }
 
-.legend .band-critical { background: light-dark(#7a0619, #ffa599); }
-.legend .band-high     { background: light-dark(#c22b3a, #f0625c); }
-.legend .band-medium   { background: light-dark(#e8776a, #c9353f); }
-.legend .band-low      { background: light-dark(#f09a8c, #a1232d); }
+.legend .band-critical { background: light-dark(#a4111d, #ff8079); }
+.legend .band-high     { background: light-dark(#d4611a, #b85506); }
+.legend .band-medium   { background: light-dark(#d9ad00, #dfbd3f); }
+.legend .band-low      { background: light-dark(#1a63d6, #3b8cff); }
+.legend .band-unknown  { background: light-dark(#8c959f, #7d8590); }
 
 #history td.number,
 #history th.number {

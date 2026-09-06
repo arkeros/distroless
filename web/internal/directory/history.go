@@ -41,16 +41,18 @@ type Era struct {
 	Scans []*Scan
 }
 
-// The chart stacks findings in four bands rather than six severities. Low,
-// negligible and unknown are one band because a reader acts on none of them
-// and three slivers at the top of a bar say less than one.
-const bands = 4
+// The chart stacks findings in five bands rather than six severities: low
+// and negligible are one, because a reader acts on neither and two slivers
+// at the top of a bar say less than one. Unknown stays apart, since it is
+// not a low severity but the absence of one.
+const bands = 5
 
-var bandNames = [bands]string{"Critical", "High", "Medium", "Low and below"}
+var bandNames = [bands]string{"Critical", "High", "Medium", "Low", "Unknown"}
 
 // bandClasses is the class each band's marks carry, worst first: the
-// stylesheet gives them one hue in four steps, darkest for the worst.
-var bandClasses = [bands]string{"critical", "high", "medium", "low"}
+// stylesheet gives each its own hue, red through yellow for the ones a
+// reader acts on, blue for low, grey for unknown.
+var bandClasses = [bands]string{"critical", "high", "medium", "low", "unknown"}
 
 func band(severity Severity) int {
 	switch severity {
@@ -60,8 +62,10 @@ func band(severity Severity) int {
 		return 1
 	case Medium:
 		return 2
-	default:
+	case Low, Negligible:
 		return 3
+	default:
+		return 4
 	}
 }
 

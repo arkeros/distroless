@@ -1,4 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
 load("@rules_distroless//distroless:defs.bzl", "cacerts", "group", "home", "locale", "os_release", "passwd")
 load("@tar.bzl", "tar")
 load("//images:platforms.bzl", "ALL_ARCHITECTURES", "ALL_DISTROS", "VERSIONS")
@@ -198,6 +199,28 @@ _LOCALE_CACERTS_DISTROS = ["debian"]
     for arch in COMMON_ARCHITECTURES
     for distro in _LOCALE_CACERTS_DISTROS
 ]
+
+# Hummingbird's ca-certificates rpm ships its roots as one p11-kit trust
+# source and writes every consumer-facing form of it — the PEM bundle that
+# /etc/ssl/certs/ca-certificates.crt and OpenSSL's default cafile point at —
+# from a %post script that rpm-extract never runs. Composed from the rpm
+# alone, an image has the symlinks and nothing behind them, and every TLS
+# verification fails. This is the bundle `update-ca-trust` would have
+# written: the anchors trusted for server authentication, as plain PEM,
+# plus OpenSSL's two /etc/pki/tls paths pointing at it. noarch, so one tar
+# serves both architectures. See @rules_rpm//rpm/tools/ca-bundle.
+run_binary(
+    name = "cacerts_hummingbird",
+    srcs = ["@hummingbird//ca-certificates/noarch"],
+    outs = ["cacerts_hummingbird.tar"],
+    args = [
+        "--content-tar",
+        "$(execpath @hummingbird//ca-certificates/noarch)",
+        "--out",
+        "$(execpath cacerts_hummingbird.tar)",
+    ],
+    tool = "@rules_rpm//rpm/tools/ca-bundle",
+)
 
 # create /etc/group with the root, tty, and staff groups
 group(

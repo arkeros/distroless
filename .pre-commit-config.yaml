@@ -13,6 +13,16 @@ repos:
         entry: bazel test //:gazelle.check
         files: .*
         pass_filenames: false
+      # CI runs with --lockfile_mode=error. A re-pinned rpm or apt lockfile
+      # changes an input the module extension records in MODULE.bazel.lock,
+      # and `bazel run @<repo>//:pin` records the hash from before it wrote,
+      # so the refresh is a second step that is easy to forget.
+      - id: bazel-lockfile
+        name: MODULE.bazel.lock is current
+        language: system
+        entry: bazel mod deps --lockfile_mode=error
+        files: ^(MODULE\.bazel|MODULE\.bazel\.lock|bazel/include/.*\.MODULE\.bazel|images/.*\.lock\.json)$
+        pass_filenames: false
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.12.0
     hooks:

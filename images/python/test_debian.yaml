@@ -1,0 +1,106 @@
+schemaVersion: 2.0.0
+# The Debian counterpart of test_hummingbird.yaml. Every behavioural check
+# is deliberately word-for-word the same: the two distros split CPython into
+# different packages and link different libraries, and the point of running
+# both is that a consumer cannot tell from the outside. What differs is the
+# distro identity, where the package inventory lives, and the two checks
+# that only make sense on Debian's packaging of CPython.
+metadataTest:
+  entrypoint: ['/usr/bin/python3']
+  workdir: '/home/nonroot'
+  user: '65532'
+  envVars:
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-certificates.crt
+fileExistenceTests:
+  - name: 'python3'
+    path: '/usr/bin/python3'
+    shouldExist: true
+  # Distroless: no shell, no package manager, no pip.
+  - name: 'no shell'
+    path: '/bin/sh'
+    shouldExist: false
+  - name: 'no pip'
+    path: '/usr/bin/pip3'
+    shouldExist: false
+  # `python3.NN` (pdb, pydoc, pygettext) is deliberately not installed —
+  # only `python3.NN-minimal`, which is what carries the interpreter.
+  - name: 'no pydoc'
+    path: '/usr/bin/pydoc3'
+    shouldExist: false
+  # Inherited cc/static surface. Re-checked here so a regression in any
+  # composed layer fails this image's tests too. The dynamic linker's path
+  # is the one arch-specific check and lives in test_<arch>.yaml — Debian's
+  # libc6 ships the /usr/lib64 and /usr/lib compatibility symlinks, so the
+  # same two configs serve both distros.
+  - name: 'os-release canonical'
+    path: '/usr/lib/os-release'
+    shouldExist: true
+  # Debian's answer to the rpmdb: one /var/lib/dpkg/status.d fragment per
+  # package, named after it, which is what syft's dpkg cataloger reads off
+  # the published image. libexpat1 rather than one of the interpreter
+  # packages because this config is shared by both lines.
+  - name: 'dpkg status entry'
+    path: '/var/lib/dpkg/status.d/libexpat1'
+    shouldExist: true
+fileContentTests:
+  - name: 'os-release has ID=debian'
+    path: '/usr/lib/os-release'
+    expectedContents: ['(?m)^ID="debian"$']
+commandTests:
+  - name: 'python executes'
+    command: '/usr/bin/python3'
+    args: ['-c', 'print("ok")']
+    expectedOutput: ['^ok']
+  # Every extension module whose library the layer ships. A file-existence
+  # test cannot tell a present .so from a loadable one; a library missing
+  # from the layer fails here with ImportError before the first line of an
+  # application runs.
+  - name: 'stdlib extension modules load their libraries'
+    command: '/usr/bin/python3'
+    args:
+      - '-c'
+      - |
+        import bz2, ctypes, curses, curses.panel, dbm.gnu, decimal, hashlib
+        import lzma, readline, sqlite3, ssl, uuid, zlib
+        import xml.parsers.expat
+        print("loaded")
+    expectedOutput: ['^loaded']
+  # `_dbm` links libdb-5.3 on Debian where Hummingbird links gdbm_compat,
+  # so this one has no counterpart in test_hummingbird.yaml: libdb5.3t64 is
+  # in the layer only because the stdlib package declares it, and nothing
+  # else here would notice it missing.
+  - name: 'dbm.ndbm links libdb'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import dbm.ndbm; print(dbm.ndbm.library)']
+    expectedOutput: ['^Berkeley DB']
+  # ssl and hashlib come from cc's libssl3t64, not a copy of OpenSSL
+  # inside libpython — that is the point of building against the distro.
+  - name: 'ssl links the distro OpenSSL 3'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import ssl; print(ssl.OPENSSL_VERSION)']
+    expectedOutput: ['^OpenSSL 3\.']
+  - name: 'hashlib blake2b'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import hashlib; print(hashlib.blake2b(b"distroless").hexdigest()[:16])']
+    expectedOutput: ['^[0-9a-f]{16}']
+  - name: 'sqlite3 opens an in-memory database'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import sqlite3; print(sqlite3.connect(":memory:").execute("select sqlite_version()").fetchone()[0])']
+    expectedOutput: ['^3\.']
+  - name: 'decimal uses libmpdec'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import decimal; print(decimal.__libmpdec_version__)']
+    expectedOutput: ['^[0-9]']
+  - name: 'ctypes loads libc through libffi'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import ctypes; print(ctypes.CDLL("libc.so.6").strlen(b"ok"))']
+    expectedOutput: ['^2']
+  - name: 'time zones resolve from tzdata'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import zoneinfo; print(zoneinfo.ZoneInfo("Europe/Madrid").key)']
+    expectedOutput: ['^Europe/Madrid']
+  - name: 'nonroot cannot write to the stdlib'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import os, sys; print(os.access(os.path.dirname(os.__file__), os.W_OK))']
+    expectedOutput: ['^False']

@@ -1,6 +1,8 @@
 schemaVersion: 2.0.0
-# The arch-specific half of test_hummingbird.yaml: on arm64 glibc puts the
-# dynamic linker under /usr/lib/, not /usr/lib64/.
+# The arch-specific half of test_<distro>.yaml: on arm64 glibc puts the
+# dynamic linker under /usr/lib/, not /usr/lib64/. Both distros ship it
+# there — Debian's real path is /usr/lib/aarch64-linux-gnu/, with this one
+# beside it as a symlink.
 fileExistenceTests:
   - name: 'glibc dynamic linker'
     path: '/usr/lib/ld-linux-aarch64.so.1'

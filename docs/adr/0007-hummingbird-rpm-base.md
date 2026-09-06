@@ -313,6 +313,16 @@ Its structure tests are behavioural — import every extension module, open a TL
 
 **Lesson.** A file-existence test is satisfied by a dangling symlink and an empty file. The handshake and the import are the tests that would have caught 1 and 2 at the cc and static bring-ups; they are cheap, and every family that composes these layers should carry one.
 
+## Amendment (2026-09-06): a Debian python beside the Hummingbird one
+
+`//images/python` now also builds and publishes on Debian sid, for the two lines sid carries at the pinned snapshot: 3.13 (`3.13.15-1`) and 3.14 (`3.14.7-3`). 3.15 is packaged there too, as `3.15.0~rc2-1`, and is left out — a tag naming a release candidate has to move again at final release.
+
+This is a deliberate exception to §"Scope: all distroless images", which said the whole distroless surface ships one identity. The exception is bounded by the tag namespace: the unsuffixed tags (`python:3.14`, `python:latest`, `python:3.14.7`) stay Hummingbird's, and the Debian images publish under a `-debian` suffix with `python:debian` as their own `latest`. A consumer who pulls `python:3.14` gets the same image they got before this change, on the same supply chain, and has to ask for the other one by name. `static`, `cc` and `bash` already build both distros; what is new is publishing both.
+
+What it costs, stated plainly: the Debian images carry `ID=debian`, so they route to sid's security tracker, and they take the same `DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES` threading and the same `ZLIB_UNFIXED_VEX_STATEMENTS` document that cc and bash do. Both lists are empty at amendment time; the zlib statement is not, and the Debian python is now a third image it speaks for. That is exactly the tax §"Why not Debian sid" exists to avoid, which is why it is not on the default tags.
+
+What it buys is a second reading of the same question. The two images are composed from different packagings of the same interpreter — Debian splits CPython four ways to Hummingbird's two, statically links libpython into `/usr/bin/python3.NN` where Hummingbird builds `--enable-shared`, and gets `_blake2` and `_decimal` from bundled sources where Hummingbird links libb2 and mpdecimal — and their structure tests are deliberately the same file twice over, so a difference between them is a difference a consumer could see. The one behavioural check that exists only on Debian is `dbm.ndbm`, which links libdb there and gdbm_compat on Hummingbird.
+
 ## See also
 
 - [[docs/research/deb-vs-apk-vs-oci-components.md]] — broader format/channel analysis; Option B (OCI-component overlay) was the prior recommendation; this ADR supersedes it for glibc-bearing images specifically while preserving its conclusions for non-glibc cases

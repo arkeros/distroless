@@ -65,10 +65,14 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         compress = COMPRESSION,
         deduplicate = True,
         tars = [
-            "@debian//{}/{}".format("base-files", arch),
-            "@debian//{}/{}".format("netbase", arch),
-            "@debian//{}/{}".format("tzdata", arch),
-            "@debian//{}/{}".format("media-types", arch),
+            # `:own`, not the closure: base-files pre-depends on awk, and
+            # the closure shipped mawk and all of glibc in the image whose
+            # premise is no glibc — 12.7 of its 14.9 MB. test.yaml holds
+            # the premise now.
+            "@debian//{}/{}:own".format("base-files", arch),
+            "@debian//{}/{}:own".format("netbase", arch),
+            "@debian//{}/{}:own".format("tzdata", arch),
+            "@debian//{}/{}:own".format("media-types", arch),
             "//images/common:rootfs",
             "//images/common:passwd",
             "//images/common:home",

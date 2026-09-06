@@ -22,3 +22,14 @@ fileExistenceTests:
   - name: 'no shell'
     path: '/bin/sh'
     shouldExist: false
+  # The premise of static: no glibc. base-files pre-depends on awk, and its
+  # closure brought mawk and all of glibc along for the ride.
+  - name: 'no glibc'
+    path: '/usr/lib/x86_64-linux-gnu/libc.so.6'
+    shouldExist: false
+  - name: 'no dynamic linker'
+    path: '/usr/lib64/ld-linux-x86-64.so.2'
+    shouldExist: false
+  - name: 'no awk'
+    path: '/usr/bin/mawk'
+    shouldExist: false

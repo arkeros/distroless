@@ -51,10 +51,9 @@ Publicly mirrored:
 | `java` | Temurin JRE 17, 21 and 25, with the JDK on `-debug` tags |
 | `node` | Node 20, 24 and 26 |
 | `nginx` | nginx stable and mainline, serving a webroot as nonroot |
+| `python` | Python 3.11, 3.12, 3.13 and 3.14, one tag per line |
 | `static` | Certificates, time zones and a nonroot user: the base for Go, Rust and static binaries |
 | `cc` | `static` plus glibc, libstdc++ and OpenSSL, for dynamically linked programs |
-
-Built here as a base for the above, not separately mirrored: `python`.
 
 Images come in a matrix of **distro** (`debian`, `hummingbird`), **user**
 (`root`, `nonroot`) and **debug** (with or without busybox), for `amd64` and

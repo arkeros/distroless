@@ -1,0 +1,26 @@
+schemaVersion: 2.0.0
+fileExistenceTests:
+  - name: 'versioned interpreter'
+    path: '/usr/bin/python3.12'
+    shouldExist: true
+commandTests:
+  - name: 'python3 --version reports 3.12'
+    command: '/usr/bin/python3'
+    args: ['--version']
+    expectedOutput: ['^Python 3\.12\.']
+  - name: 'python3.12 is the same interpreter'
+    command: '/usr/bin/python3.12'
+    args: ['-c', 'import sys; print(sys.version_info[:2])']
+    expectedOutput: ['^\(3, 12\)']
+  # The nis chain (libnsl2 -> libtirpc -> krb5) is deliberately not shipped;
+  # see the BUILD comment. Deprecated module, removed in 3.13.
+  - name: 'nis is the one module left out'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import nis']
+    exitCode: 1
+    expectedError: ['ImportError']
+  - name: 'crypt links libxcrypt'
+    command: '/usr/bin/python3'
+    # The runner expands `$name` in args, so the salt comes from mksalt.
+    args: ['-W', 'ignore', '-c', 'import crypt; print(crypt.crypt("distroless", crypt.mksalt(crypt.METHOD_SHA512))[:3])']
+    expectedOutput: ['^\$6\$']

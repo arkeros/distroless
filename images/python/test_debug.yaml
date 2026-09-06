@@ -1,0 +1,15 @@
+schemaVersion: 2.0.0
+metadataTest:
+  entrypoint: ['/busybox/sh']
+fileExistenceTests:
+  - name: 'busybox shell'
+    path: '/busybox/sh'
+    shouldExist: true
+  - name: 'python3'
+    path: '/usr/bin/python3'
+    shouldExist: true
+commandTests:
+  - name: 'python3 resolves on PATH from the debug shell'
+    command: '/busybox/sh'
+    args: ['-c', 'python3 -c "print(1 + 1)"']
+    expectedOutput: ['^2']

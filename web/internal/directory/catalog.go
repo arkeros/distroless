@@ -28,6 +28,7 @@ var families = []Family{
 	{Name: "java", Summary: "Temurin JRE, one tag per LTS line, with the JDK on debug tags"},
 	{Name: "node", Summary: "Node.js, one tag per release line"},
 	{Name: "nginx", Summary: "nginx stable and mainline, serving a webroot as nonroot"},
+	{Name: "python", Summary: "Python 3.11 to 3.14, one tag per line, with every library it links as its own package"},
 	{Name: "static", Summary: "Certificates, time zones and a nonroot user: the base for Go, Rust and static binaries"},
 	{Name: "cc", Summary: "static plus glibc, libstdc++ and OpenSSL, for dynamically linked programs"},
 }

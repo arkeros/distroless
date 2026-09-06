@@ -194,6 +194,10 @@ _NGINX_RPM_REPO = {
                 _NGINX_RPM_REPO[version_label],
                 HUMMINGBIRD_ARCH_MAP[arch],
             ),
+            # nginx -> libpcre2-8.so.0 and libcrypt.so.2, neither in cc. Found
+            # by the elf_needs test: the binary could not start.
+            "@hummingbird//pcre2/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//libxcrypt/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
         ],
     )
     for version_label in NGINX_VERSIONS.keys()

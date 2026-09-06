@@ -373,7 +373,7 @@ func resolve(repoURL string, declaredArches, declaredPkgs []string, trustRoot op
 
 			key := pkgKey{name: pkg.Name, arch: pkg.Arch}
 			evr := formatEVR(pkg.Version)
-			if cur, ok := bestEVR[key]; ok && rpmutils.Vercmp(evr, cur) <= 0 {
+			if cur, ok := bestEVR[key]; ok && compareEVR(evr, cur) <= 0 {
 				continue
 			}
 			bestEVR[key] = evr
@@ -571,6 +571,34 @@ func validate(best map[string]map[string]lockEntry, declaredArches, declaredPkgs
 // formatEVR renders an RPM version triple as the lockfile string form:
 // epoch-prefixed (`<E>:<V>-<R>`) when epoch is non-zero/non-empty, else
 // just `<V>-<R>`. Mirrors what dnf/rpm print as the public version.
+// compareEVR orders two EVR strings in formatEVR's shape as rpm does:
+// epoch, then version, then release, each by rpmvercmp. Returns -1, 0 or 1.
+func compareEVR(a, b string) int {
+	ea, va, ra := splitEVR(a)
+	eb, vb, rb := splitEVR(b)
+	if c := rpmutils.Vercmp(ea, eb); c != 0 {
+		return c
+	}
+	if c := rpmutils.Vercmp(va, vb); c != 0 {
+		return c
+	}
+	return rpmutils.Vercmp(ra, rb)
+}
+
+// splitEVR is formatEVR's inverse: "[epoch:]version-release" into its
+// fields, with a missing epoch read as "0" so it compares equal to an
+// explicit zero.
+func splitEVR(evr string) (epoch, version, release string) {
+	epoch = "0"
+	if i := strings.Index(evr, ":"); i >= 0 {
+		epoch, evr = evr[:i], evr[i+1:]
+	}
+	if i := strings.LastIndex(evr, "-"); i >= 0 {
+		return epoch, evr[:i], evr[i+1:]
+	}
+	return epoch, evr, ""
+}
+
 func formatEVR(v primaryVersion) string {
 	if v.Epoch != "" && v.Epoch != "0" {
 		return fmt.Sprintf("%s:%s-%s", v.Epoch, v.Ver, v.Rel)

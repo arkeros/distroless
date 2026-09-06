@@ -817,3 +817,89 @@ td.id a:focus-visible {
   color: var(--muted);
   font-size: 0.875rem;
 }
+
+/* Particular to the history page. The chart is computed on the server and
+   drawn as SVG in the page itself, so it is there from the first byte and
+   needs no script; the table below it has every number the bars stand for.
+   Severity is one hue in four steps, darkest for the worst on a light
+   scheme and lightest for the worst on a dark one, so the band a reader
+   should stop at is the one that stands out on either. Both ramps pass an
+   ordinal check: monotone lightness, visible steps, the faint end clearing
+   the surface. */
+.history {
+  margin: 0 0 1.5rem;
+  max-width: 48rem;
+}
+
+.history figcaption {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.history svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-size: 11px;
+}
+
+.history .grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.history .tick {
+  fill: var(--muted);
+}
+
+/* The hit target is the whole column, so a hover finds a one-finding bar. */
+.history .hit {
+  fill: transparent;
+}
+
+.history .bar:hover .hit {
+  fill: color-mix(in srgb, currentColor 6%, transparent);
+}
+
+/* A scan with nothing open is still a scan: a mark on the baseline says so
+   where an empty slot would read as a day nobody looked. */
+.history .clean {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.band-critical { fill: light-dark(#7a0619, #ffa599); }
+.band-high     { fill: light-dark(#c22b3a, #f0625c); }
+.band-medium   { fill: light-dark(#e8776a, #c9353f); }
+.band-low      { fill: light-dark(#f09a8c, #a1232d); }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.legend .swatch {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-right: 0.375rem;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+.legend .band-critical { background: light-dark(#7a0619, #ffa599); }
+.legend .band-high     { background: light-dark(#c22b3a, #f0625c); }
+.legend .band-medium   { background: light-dark(#e8776a, #c9353f); }
+.legend .band-low      { background: light-dark(#f09a8c, #a1232d); }
+
+#history td.number,
+#history th.number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

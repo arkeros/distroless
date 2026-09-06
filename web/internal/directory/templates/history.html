@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Image}} — vulnerability history</title>
+<link rel="stylesheet" href="{{asset "directory.css"}}">
+</head>
+<body>
+{{template "topbar" .Topbar}}
+<main>
+  <nav aria-label="Breadcrumb"><a class="crumb" href="/directory">All images</a></nav>
+  <header class="identity">
+    {{if .Logo}}<span class="logo">{{.Logo}}</span>{{end}}
+    <div>
+      <h1>{{.Image}}</h1>
+      <p class="digest">{{if .Permalink}}<a href="{{.Permalink}}" title="Permanent link to this exact build, which this tag will stop naming when it moves"><code>{{.Digest}}</code></a>{{else}}<code>{{.Digest}}</code>{{end}}</p>
+    </div>
+  </header>
+  <section class="install">
+    <p class="label">Install from the command line</p>
+    <p class="command"><span class="prompt" aria-hidden="true">$</span> <code data-copyable tabindex="0">docker pull {{.Image}}</code></p>
+    <p class="label">Use as a base image in a Dockerfile</p>
+    <p class="command"><code data-copyable tabindex="0">FROM {{.Image}}</code></p>
+  </section>
+
+  <nav class="views" aria-label="Evidence">
+    <a href="{{.Versions}}">Versions</a>
+    <a href="{{.SBOM}}">SBOM</a>
+    <a href="{{.Vulnerabilities}}">Vulnerabilities</a>
+    <a aria-current="page">History</a>
+  </nav>
+
+  <div class="controls">
+    {{if .Siblings}}
+    <details class="switcher">
+      <summary><span class="key">Tag:</span><span class="value">{{.Showing}}</span></summary>
+      <ul>
+        {{range .Siblings}}<li><a href="{{.URL}}">{{.Name}}</a></li>{{end}}
+      </ul>
+    </details>
+    {{end}}
+
+    {{if gt (len .Architectures) 1}}
+    <details class="switcher">
+      <summary><span class="key">Arch:</span><span class="value">{{.Arch}}</span></summary>
+      <ul>
+        {{range .Architectures}}<li><a href="?arch={{.}}"{{if eq . $.Arch}} aria-current="page"{{end}}>{{.}}</a></li>{{end}}
+      </ul>
+    </details>
+    {{end}}
+  </div>
+
+  <p class="verdict">
+    {{$n := len .Points}}<strong>{{$n}} scan{{if ne $n 1}}s{{end}}</strong> of {{.Builds}} build{{if ne .Builds 1}}s{{end}}{{if .Tag}} that <code>{{.Tag}}</code> has named{{end}}{{if $n}}, from <time datetime="{{.From.UTC.Format "2006-01-02T15:04:05Z07:00"}}">{{.From.UTC.Format "2006-01-02"}}</time> to <time datetime="{{.To.UTC.Format "2006-01-02T15:04:05Z07:00"}}">{{.To.UTC.Format "2006-01-02"}}</time>{{end}}.
+    {{if and .Tag (not .Ledger)}}The family's tag ledger could not be read, so this is the current build alone.{{end}}
+  </p>
+
+  {{with $chart := .Chart}}
+  <figure class="history">
+    <figcaption>Open findings by severity, per scan</figcaption>
+    <svg viewBox="0 0 {{.Width}} {{.Height}}" role="img" aria-label="Open findings per scan, stacked by severity; the table below has the numbers">
+      {{range .Ticks}}
+      <line class="grid" x1="{{$chart.Left}}" x2="{{$chart.Right}}" y1="{{.Y}}" y2="{{.Y}}"/>
+      <text class="tick" x="{{$chart.Left}}" y="{{.Y}}" dx="-6" dy="4" text-anchor="end">{{.Label}}</text>
+      {{end}}
+      {{range .Dates}}
+      <text class="tick" x="{{.X}}" y="{{$chart.Baseline}}" dy="16" text-anchor="middle">{{.Label}}</text>
+      {{end}}
+      {{range $bar := .Bars}}
+      <g class="bar">
+        <title>{{.Title}}</title>
+        <rect class="hit" x="{{.X}}" y="{{$chart.Top}}" width="{{.Width}}" height="{{$chart.PlotHeight}}"/>
+        {{if not .Segments}}<line class="clean" x1="{{.X}}" x2="{{.Right}}" y1="{{$chart.Baseline}}" y2="{{$chart.Baseline}}"/>{{end}}
+        {{range .Segments}}<rect class="band-{{.Class}}" x="{{$bar.X}}" y="{{.Y}}" width="{{$bar.Width}}" height="{{.Height}}"/>{{end}}
+      </g>
+      {{end}}
+    </svg>
+    <ul class="legend" aria-label="Severity bands, worst first">
+      {{range .Bands}}<li><span class="swatch band-{{.Class}}" aria-hidden="true"></span>{{.Name}}</li>{{end}}
+    </ul>
+  </figure>
+  {{end}}
+
+  {{if .Points}}
+  <div class="scroller" tabindex="0" role="region" aria-label="Scans">
+    <table id="history">
+      <thead>
+        <tr>
+          <th>Scanned</th>
+          <th title="When the vulnerability database the scan consulted was built">Database</th>
+          <th>Build</th>
+          <th class="number">Critical</th>
+          <th class="number">High</th>
+          <th class="number">Medium</th>
+          <th class="number" title="Low, negligible and unknown">Low</th>
+          <th class="number">Open</th>
+          <th class="number" title="Set aside by a VEX statement">Set aside</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Points}}
+        <tr class="point">
+          <td><time datetime="{{.Finished.UTC.Format "2006-01-02T15:04:05Z07:00"}}">{{.Finished.UTC.Format "2006-01-02"}}</time></td>
+          <td><time datetime="{{.Database.UTC.Format "2006-01-02T15:04:05Z07:00"}}">{{.Database.UTC.Format "2006-01-02"}}</time></td>
+          <td><a class="digest" href="{{.URL}}" title="The scan of this build as it stands today"><code>{{.Short}}</code></a></td>
+          {{range .Counts}}<td class="number">{{.}}</td>{{end}}
+          <td class="number">{{.Open}}</td>
+          <td class="number">{{.Suppressed}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+
+  <p class="footnote">Each point is one signed scan record: what one scanner, with one database, matched against the build's SBOM on that day, with today's VEX statements applied. {{if .Tag}}Which build the tag named on which day is the family's tag ledger, which is registry metadata rather than an attestation; the counts are read off the records themselves.{{end}} A build is re-scanned while it is current, about daily; its earlier scans are the same build against an older database.</p>
+</main>
+<script src="{{asset "directory.mjs"}}" type="module"></script>
+</body>
+</html>

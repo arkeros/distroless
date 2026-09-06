@@ -269,6 +269,14 @@ func TestShouldStrip(t *testing.T) {
 		"./usr/bin/localedef":        false,
 		"./usr/share/zoneinfo/UTC":   false,
 		"./etc/pki/ca-trust":         false,
+		// %doc, as `rpm --excludedocs` drops it.
+		"./usr/share/doc/bash/README":    true,
+		"./usr/share/doc":                true,
+		"./usr/share/man/man1/python3.1": true,
+		"./usr/share/info/grep.info.gz":  true,
+		"./usr/share/docs/x":             false, // prefix-match guard
+		// %license stays: it is what lets the binaries be redistributed.
+		"./usr/share/licenses/python3-libs/LICENSE": false,
 	}
 	for in, want := range cases {
 		if got := shouldStrip(in); got != want {

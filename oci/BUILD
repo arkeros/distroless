@@ -99,12 +99,6 @@ layer_unique_paths_test(
     ],
 )
 
-bzl_library(
-    name = "elf_needs",
-    srcs = ["elf_needs.bzl"],
-    visibility = ["//visibility:public"],
-)
-
 # The fixtures for image_elf_needs_test. Red: libstdc++ alone, which
 # links libgcc_s, libc and libm that no layer here carries — the shape of
 # the cc defect. Green: the static and cc layers, where every library
@@ -187,6 +181,12 @@ bzl_library(
 bzl_library(
     name = "crane_tag",
     srcs = ["crane_tag.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "elf_needs",
+    srcs = ["elf_needs.bzl"],
     visibility = ["//visibility:public"],
 )
 

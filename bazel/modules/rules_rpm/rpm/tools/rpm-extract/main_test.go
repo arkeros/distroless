@@ -347,6 +347,7 @@ type newcEntry struct {
 	ino   int
 	nlink int
 	data  string
+	dev   int
 }
 
 // newc writes entries in the SVR4 "newc" format rpm uses: a 110-byte
@@ -361,7 +362,7 @@ func newc(entries ...newcEntry) []byte {
 	}
 	write := func(e newcEntry) {
 		fmt.Fprintf(&buf, "070701%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x",
-			e.ino, 0o100644, 0, 0, e.nlink, 0, len(e.data), 0, 0, 0, 0, len(e.name)+1, 0)
+			e.ino, 0o100644, 0, 0, e.nlink, 0, len(e.data), e.dev, 0, 0, 0, len(e.name)+1, 0)
 		buf.WriteString(e.name)
 		buf.WriteByte(0)
 		pad()
@@ -484,5 +485,39 @@ func TestWritePayloadAsTar_StrippedPayloadMember(t *testing.T) {
 	}
 	if len(got) != len(want) {
 		t.Errorf("tar has %d entries, want %d: %v", len(got), len(want), got)
+	}
+}
+
+// TestWritePayloadAsTar_SameInodeDifferentDevice: cpio identifies a file by
+// (device, inode), not inode alone. Two sets that share an inode number on
+// different devices are two sets.
+func TestWritePayloadAsTar_SameInodeDifferentDevice(t *testing.T) {
+	stream := newc(
+		newcEntry{name: "./usr/share/a/first", ino: 7, nlink: 2, dev: 1},
+		newcEntry{name: "./usr/share/b/first", ino: 7, nlink: 2, dev: 2},
+		newcEntry{name: "./usr/share/a/last", ino: 7, nlink: 2, dev: 1, data: "A"},
+		newcEntry{name: "./usr/share/b/last", ino: 7, nlink: 2, dev: 2, data: "B"},
+	)
+
+	var out bytes.Buffer
+	tw := tar.NewWriter(&out)
+	if err := writePayloadAsTar(tw, cpio.NewReader(bytes.NewReader(stream))); err != nil {
+		t.Fatalf("writePayloadAsTar: %v", err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	got := readTar(t, out.Bytes())
+
+	want := map[string]tarEntry{
+		"./usr/share/a/last":  {typeflag: tar.TypeReg, data: "A"},
+		"./usr/share/a/first": {typeflag: tar.TypeLink, linkname: "./usr/share/a/last"},
+		"./usr/share/b/last":  {typeflag: tar.TypeReg, data: "B"},
+		"./usr/share/b/first": {typeflag: tar.TypeLink, linkname: "./usr/share/b/last"},
+	}
+	for name, w := range want {
+		if g := got[name]; g != w {
+			t.Errorf("%s = %+v, want %+v", name, g, w)
+		}
 	}
 }

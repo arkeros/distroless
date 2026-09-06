@@ -199,8 +199,8 @@ func Extract(rpmPath, contentTarPath, headerBlobPath string) (err error) {
 // tzdata is almost entirely hardlink sets (1113 of its 1801 files), and
 // copying the entries one by one shipped them empty.
 func writePayloadAsTar(tw *tar.Writer, payload *cpio.Reader) error {
-	pendingLinks := map[int][]pendingLink{}
-	var pendingOrder []int
+	pendingLinks := map[fileID][]pendingLink{}
+	var pendingOrder []fileID
 
 	for {
 		ent, err := payload.Next()
@@ -217,11 +217,11 @@ func writePayloadAsTar(tw *tar.Writer, payload *cpio.Reader) error {
 			// carries the set's bytes: hand them to the members we keep, or
 			// they would be written as an empty set at end of stream.
 			if isCpioRegular(ent) && ent.Nlink() > 1 && ent.Filesize() > 0 {
-				if links, ok := pendingLinks[ent.Ino()]; ok {
+				if links, ok := pendingLinks[identify(ent)]; ok {
 					if err := writeHardlinkSet(tw, ent, payload, links); err != nil {
 						return err
 					}
-					delete(pendingLinks, ent.Ino())
+					delete(pendingLinks, identify(ent))
 					continue
 				}
 			}
@@ -235,29 +235,31 @@ func writePayloadAsTar(tw *tar.Writer, payload *cpio.Reader) error {
 			continue
 		}
 		if isCpioRegular(ent) && ent.Nlink() > 1 && ent.Filesize() == 0 {
-			if _, seen := pendingLinks[ent.Ino()]; !seen {
-				pendingOrder = append(pendingOrder, ent.Ino())
+			id := identify(ent)
+			if _, seen := pendingLinks[id]; !seen {
+				pendingOrder = append(pendingOrder, id)
 			}
-			pendingLinks[ent.Ino()] = append(pendingLinks[ent.Ino()], pendingLink{name: rewritten, ent: ent})
+			pendingLinks[id] = append(pendingLinks[id], pendingLink{name: rewritten, ent: ent})
 			continue
 		}
 		if err := writeCpioEntryAsTar(tw, ent, payload, rewritten); err != nil {
 			return fmt.Errorf("write tar entry %q: %w", name, err)
 		}
 		if isCpioRegular(ent) && ent.Nlink() > 1 {
-			for _, link := range pendingLinks[ent.Ino()] {
+			id := identify(ent)
+			for _, link := range pendingLinks[id] {
 				if err := writeHardlinkAsTar(tw, link.ent, link.name, rewritten); err != nil {
 					return fmt.Errorf("write tar hardlink %q: %w", link.name, err)
 				}
 			}
-			delete(pendingLinks, ent.Ino())
+			delete(pendingLinks, id)
 		}
 	}
 
 	// Whatever is still pending is a set of empty files: every member had a
 	// zero filesize, and a stripped member carrying bytes was handled above.
-	for _, ino := range pendingOrder {
-		links, ok := pendingLinks[ino]
+	for _, id := range pendingOrder {
+		links, ok := pendingLinks[id]
 		if !ok {
 			continue
 		}
@@ -283,6 +285,17 @@ func writeHardlinkSet(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cpio.
 		}
 	}
 	return nil
+}
+
+// fileID is what cpio identifies a file by. An inode number alone is only
+// unique within a device; rpm payloads come from one, by convention, and
+// the key should not depend on it.
+type fileID struct {
+	devmajor, devminor, ino int
+}
+
+func identify(ent *cpio.Cpio_newc_header) fileID {
+	return fileID{devmajor: ent.Devmajor(), devminor: ent.Devminor(), ino: ent.Ino()}
 }
 
 // pendingLink is a hardlinked path seen before the entry carrying the

@@ -105,6 +105,7 @@ type Versions struct {
 	// would get, since a family-level page has no build of its own.
 	SBOM            string
 	Vulnerabilities string
+	History         string
 }
 
 // NewVersions groups tags by the build they name and orders both, newest

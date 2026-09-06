@@ -48,7 +48,9 @@ type Links struct {
 	// the family's list, the third view in the same navigation.
 	SBOM            string
 	Vulnerabilities string
-	Versions        string
+	// History is the vulnerabilities view over time, at the same reference.
+	History  string
+	Versions string
 	// Permalink is this same page addressed by Digest rather than by the tag
 	// the reader arrived on — the URL that will still show this exact build
 	// after the tag has moved. Empty when the reader is already at it.

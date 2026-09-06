@@ -113,6 +113,14 @@ type Source interface {
 	// Separate from Versions because a page that only needs the names should
 	// not pay for a digest lookup per tag: this is one registry call.
 	Tags(ctx context.Context, family string) ([]string, error)
+	// Moves reads the family's tag ledger: every tag move recorded for it,
+	// in the order recorded. Unverified like Versions, and empty rather
+	// than an error for a family with no ledger yet.
+	Moves(ctx context.Context, family string) ([]Move, error)
+	// Scans returns every verified scan attached to an image, oldest first,
+	// where Scan returns the newest: the build's history rather than its
+	// present.
+	Scans(ctx context.Context, family, ref string) (digest string, scans []*Scan, err error)
 }
 
 // defaultRef is what a reader gets when they name no reference. It is only
@@ -146,6 +154,9 @@ func validRef(ref string) bool {
 const (
 	viewSBOM            = "sbom"
 	viewVulnerabilities = "vulnerabilities"
+	// viewHistory is the vulnerabilities view over time: for a tag, across
+	// every build it has named.
+	viewHistory = "history"
 )
 
 // viewVersions is the third view, and the one that belongs to a family
@@ -189,10 +200,13 @@ func NewHandler(source Source, mirror string) http.Handler {
 			what: "vulnerability scan", contentType: "application/json", extension: ".vuln.json",
 		})
 	})
+	mux.HandleFunc("GET /directory/image/{family}/{ref}/history", func(w http.ResponseWriter, r *http.Request) {
+		serveHistory(w, r, source, mirror)
+	})
 	mux.HandleFunc("GET /directory/image/{family}/versions", func(w http.ResponseWriter, r *http.Request) {
 		serveVersions(w, r, source, mirror)
 	})
-	for _, resource := range []string{viewSBOM, viewSBOM + ".json", viewVulnerabilities, viewVulnerabilities + ".json"} {
+	for _, resource := range []string{viewSBOM, viewSBOM + ".json", viewVulnerabilities, viewVulnerabilities + ".json", viewHistory} {
 		mux.HandleFunc("GET /directory/image/{family}/"+resource, permanentRedirect(func(family string) string {
 			return resourceURL(family, defaultRef, resource)
 		}))
@@ -262,6 +276,7 @@ func serveVersions(w http.ResponseWriter, r *http.Request, source Source, mirror
 	versions.Topbar = topbar(mirror, viewVersions, "")
 	versions.SBOM = resourceURL(family, defaultRef, viewSBOM)
 	versions.Vulnerabilities = resourceURL(family, defaultRef, viewVulnerabilities)
+	versions.History = resourceURL(family, defaultRef, viewHistory)
 	for i, release := range versions.Releases {
 		versions.Releases[i].SBOM = resourceURL(family, release.Digest, viewSBOM)
 		for j, tag := range release.Tags {
@@ -359,6 +374,88 @@ func serveVulnerabilities(w http.ResponseWriter, r *http.Request, source Source,
 	if !revalidated(w, r, ref, digest+"-"+report.Arch+"-"+scan.Fingerprint()) {
 		writePage(w, "vulnerabilities.html", report, family, ref)
 	}
+}
+
+// serveHistory renders a tag's scans over time, across every build the
+// family's ledger says it has named; or, for a digest, that build's own.
+//
+// The current build is read first and is the page's floor: a ledger that
+// cannot be read, or an earlier build whose scans cannot, costs the page
+// its past rather than its present. A build with no scan at all is the
+// same 404 as the vulnerabilities page, for the same reason.
+func serveHistory(w http.ResponseWriter, r *http.Request, source Source, mirror string) {
+	family, ref := r.PathValue("family"), r.PathValue("ref")
+	if !validRef(ref) {
+		http.Error(w, "not an image reference: "+ref, http.StatusBadRequest)
+		return
+	}
+
+	digest, series, err := source.Scans(r.Context(), family, ref)
+	if err != nil {
+		slog.Warn("scan history lookup failed", "family", family, "ref", ref, "error", err)
+		http.Error(w, "no vulnerability scan published for "+pullName(mirror, family, ref), http.StatusNotFound)
+		return
+	}
+
+	eras := []Era{{Digest: digest, Scans: series}}
+	ledger := true
+	if !isDigest(ref) {
+		eras, ledger = tagEras(r, source, family, ref, digest, series)
+	}
+
+	arch := r.URL.Query().Get("arch")
+	history := NewHistory(pullName(mirror, family, ref), digest, arch, eras)
+	history.Tag = ref
+	if isDigest(ref) {
+		history.Tag = ""
+	}
+	history.Ledger = ledger
+	for i := range history.Points {
+		history.Points[i].URL = resourceURL(family, history.Points[i].Digest, viewVulnerabilities) + archQuery(arch)
+	}
+	history.Logo = logo(family)
+	history.Topbar = topbar(mirror, viewHistory, archQuery(arch))
+	history.Links = links(r, source, family, ref, digest, arch, viewHistory)
+
+	if !revalidated(w, r, ref, digest+"-"+history.Arch+"-"+history.Fingerprint()) {
+		writePage(w, "history.html", history, family, ref)
+	}
+}
+
+// tagEras reads the ledger and turns a tag's moves into eras, each with its
+// build's scans. The current build, already read, closes the list whether
+// or not the ledger has caught up with it.
+//
+// Reports false when the ledger could not be read, with the current build
+// as the only era; an earlier build whose scans cannot be read is skipped
+// with a warning, since a build published before scans were attested has
+// none and that is not the page's problem.
+func tagEras(r *http.Request, source Source, family, tag, digest string, series []*Scan) ([]Era, bool) {
+	moves, err := source.Moves(r.Context(), family)
+	if err != nil {
+		slog.Warn("tag ledger lookup failed", "family", family, "error", err)
+		return []Era{{Digest: digest, Scans: series}}, false
+	}
+
+	var eras []Era
+	for _, move := range moves {
+		if move.Tag != tag {
+			continue
+		}
+		era := Era{Digest: move.Digest, From: move.At}
+		if move.Digest == digest {
+			era.Scans = series
+		} else if _, scans, err := source.Scans(r.Context(), family, move.Digest); err != nil {
+			slog.Warn("skipping an earlier build of the tag", "family", family, "tag", tag, "digest", move.Digest, "error", err)
+		} else {
+			era.Scans = scans
+		}
+		eras = append(eras, era)
+	}
+	if len(eras) == 0 || eras[len(eras)-1].Digest != digest {
+		eras = append(eras, Era{Digest: digest, Scans: series})
+	}
+	return eras, true
 }
 
 // revalidated sets the validator and cache policy every page for one build
@@ -469,6 +566,7 @@ func links(r *http.Request, source Source, family, ref, digest, arch, view strin
 		Download:        resourceURL(family, ref, view+".json"),
 		SBOM:            resourceURL(family, ref, viewSBOM) + query,
 		Vulnerabilities: resourceURL(family, ref, viewVulnerabilities) + query,
+		History:         resourceURL(family, ref, viewHistory) + query,
 		Versions:        familyURL(family, viewVersions),
 		Showing:         ref,
 	}

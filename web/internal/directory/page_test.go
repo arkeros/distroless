@@ -37,10 +37,36 @@ type fakeSource struct {
 	scan         *directory.Scan
 	scanDocument []byte
 	scanErr      error
+	// moves is the family's tag ledger; series is every scan on a digest,
+	// oldest first. A digest missing from series has no scan, which is the
+	// absence scanErr stands for on the single-scan side.
+	moves      []directory.Move
+	movesErr   error
+	series     map[string][]*directory.Scan
+	movesAsked bool
 
 	// family and ref record what the handler asked for, so a test can check
 	// the handler passes the path through rather than re-deriving it.
 	family, ref string
+}
+
+func (f *fakeSource) Moves(_ context.Context, family string) ([]directory.Move, error) {
+	f.family = family
+	f.movesAsked = true
+	return f.moves, f.movesErr
+}
+
+func (f *fakeSource) Scans(_ context.Context, family, ref string) (string, []*directory.Scan, error) {
+	f.family, f.ref = family, ref
+	digest := ref
+	if !strings.Contains(ref, ":") {
+		digest = f.digest
+	}
+	series, ok := f.series[digest]
+	if !ok {
+		return "", nil, errors.New("no verified vulnerability scan attached to " + digest)
+	}
+	return digest, series, nil
 }
 
 func (f *fakeSource) SBOM(_ context.Context, family, ref string) (string, []directory.Component, error) {
@@ -1505,5 +1531,130 @@ func TestSearchBoxCarriesAMagnifier(t *testing.T) {
 	}
 	if icon > input {
 		t.Errorf("the magnifier at %d comes after the input at %d", icon, input)
+	}
+}
+
+func historySource() *fakeSource {
+	return &fakeSource{
+		digest: otherDigest,
+		tags:   []string{"latest", "1.29"},
+		moves: []directory.Move{
+			{At: day(1), Tag: "latest", Digest: testDigest, Run: "https://github.com/arkeros/distroless/actions/runs/1"},
+			{At: day(1), Tag: "1.29", Digest: testDigest, Run: "https://github.com/arkeros/distroless/actions/runs/1"},
+			{At: day(5), Tag: "latest", Digest: otherDigest, Run: "https://github.com/arkeros/distroless/actions/runs/2"},
+		},
+		series: map[string][]*directory.Scan{
+			testDigest:  {scanOn(1, "High"), scanOn(2, "High", "Medium"), scanOn(9, "Critical")},
+			otherDigest: {scanOn(5), scanOn(6, "Low")},
+		},
+	}
+}
+
+// A tag's history is the scans of every build the ledger says it named,
+// each only while it named it.
+func TestHistoryPageStitchesTheTagsBuildsTogether(t *testing.T) {
+	source := historySource()
+
+	response := get(t, source, "/directory/image/nginx/latest/history", nil)
+	body := response.Body.String()
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200:\n%s", response.Code, body)
+	}
+	if source.family != "nginx" {
+		t.Errorf("source asked about %q, want nginx", source.family)
+	}
+	if !strings.Contains(body, "<svg") {
+		t.Errorf("no chart drawn:\n%s", body)
+	}
+	// Four points: the earlier build's first two scans (its day-9 scan is
+	// after the tag moved), and both of the current build's.
+	if rows := strings.Count(body, `class="point"`); rows != 4 {
+		t.Errorf("got %d points, want 4:\n%s", rows, body)
+	}
+	for _, digest := range []string{testDigest, otherDigest} {
+		if !strings.Contains(body, "/directory/image/nginx/"+digest+"/vulnerabilities") {
+			t.Errorf("no link from a point to the scan of %s:\n%s", digest, body)
+		}
+	}
+	if !strings.Contains(body, `<a aria-current="page">History</a>`) {
+		t.Errorf("history is not the current view in the navigation:\n%s", body)
+	}
+}
+
+// A family released before ledgers existed has no moves yet. Its tag still
+// names a build, and that build's scans are the history there is.
+func TestHistoryPageFallsBackToTheCurrentBuildWithoutALedger(t *testing.T) {
+	source := historySource()
+	source.moves = nil
+
+	response := get(t, source, "/directory/image/nginx/latest/history", nil)
+	body := response.Body.String()
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200:\n%s", response.Code, body)
+	}
+	if rows := strings.Count(body, `class="point"`); rows != 2 {
+		t.Errorf("got %d points, want the current build's 2:\n%s", rows, body)
+	}
+}
+
+// The ledger says which build a tag named; a digest is a build already.
+func TestHistoryPageByDigestIsThatBuildsOwnHistory(t *testing.T) {
+	source := historySource()
+
+	response := get(t, source, "/directory/image/nginx/"+testDigest+"/history", nil)
+	body := response.Body.String()
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200:\n%s", response.Code, body)
+	}
+	if source.movesAsked {
+		t.Error("the ledger was read for a page about one digest")
+	}
+	if rows := strings.Count(body, `class="point"`); rows != 3 {
+		t.Errorf("got %d points, want all 3 scans of the build:\n%s", rows, body)
+	}
+}
+
+func TestHistoryPageIs404WhenNothingIsScanned(t *testing.T) {
+	source := historySource()
+	source.series = nil
+
+	response := get(t, source, "/directory/image/nginx/latest/history", nil)
+
+	if response.Code != http.StatusNotFound {
+		t.Errorf("status = %d, want 404 for a tag with no scanned build:\n%s", response.Code, response.Body.String())
+	}
+}
+
+// The ledger failing to read is not the page failing: the current build's
+// scans still tell most of the story, and the page says what is missing.
+func TestHistoryPageSurvivesAnUnreadableLedger(t *testing.T) {
+	source := historySource()
+	source.movesErr = errors.New("registry down")
+
+	response := get(t, source, "/directory/image/nginx/latest/history", nil)
+
+	if response.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200 from the current build alone:\n%s", response.Code, response.Body.String())
+	}
+}
+
+func TestEveryViewLinksToTheHistory(t *testing.T) {
+	source := historySource()
+	source.components = []directory.Component{{Name: "openssl", Version: "3.0.11"}}
+	source.scan = scanOn(1, "High")
+	source.versions = []directory.Version{{Tag: "latest", Digest: otherDigest}}
+
+	for _, target := range []string{
+		"/directory/image/nginx/latest/sbom",
+		"/directory/image/nginx/latest/vulnerabilities",
+		"/directory/image/nginx/versions",
+	} {
+		body := get(t, source, target, nil).Body.String()
+		if !strings.Contains(body, "/directory/image/nginx/latest/history") {
+			t.Errorf("%s does not link to the history:\n%s", target, body)
+		}
 	}
 }

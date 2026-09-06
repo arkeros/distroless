@@ -249,6 +249,17 @@ func TestRun_WritesBundleAndSymlinks(t *testing.T) {
 			t.Errorf("%s: want symlink to %s, got %+v", link, bundleTarget, hdr)
 		}
 	}
+	// No directory entries: the rpm ships every parent, and a second copy
+	// with other metadata survives flatten's dedupe as a duplicate path,
+	// which dockerd refuses to load.
+	for name, hdr := range entries {
+		if hdr.Typeflag == tar.TypeDir {
+			t.Errorf("%s: directory entry; parents belong to the rpm", name)
+		}
+	}
+	if len(entries) != 3 {
+		t.Errorf("tar has %d entries, want the bundle and two symlinks", len(entries))
+	}
 }
 
 // TestRun_MissingTrustSource: a content tar without the trust source is a

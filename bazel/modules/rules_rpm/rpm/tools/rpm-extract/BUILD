@@ -26,4 +26,5 @@ go_test(
         "//rpm/tools/rpm-extract/testdata:tzdata.rpm",
     ],
     embed = [":rpm-extract_lib"],
+    deps = ["@com_github_sassoftware_go_rpmutils//cpio"],
 )

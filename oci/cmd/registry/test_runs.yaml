@@ -1,0 +1,11 @@
+schemaVersion: 2.0.0
+# Runs the binary the image ships. `-h` is Go's flag package: usage to
+# stderr, exit 0. A binary that cannot start — its dynamic loader absent
+# from the base, as after static stopped carrying glibc — exits 127 or 126
+# here, which is what Cloud Run saw and no file test could.
+commandTests:
+  - name: 'registry starts on the static base'
+    command: '/_main/oci/cmd/registry/registry_/registry'
+    args: ['-h']
+    exitCode: 0
+    expectedError: ['Usage of']

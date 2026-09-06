@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sassoftware/go-rpmutils/cpio"
@@ -518,6 +519,33 @@ func TestWritePayloadAsTar_SameInodeDifferentDevice(t *testing.T) {
 	for name, w := range want {
 		if g := got[name]; g != w {
 			t.Errorf("%s = %+v, want %+v", name, g, w)
+		}
+	}
+}
+
+// TestWritePayloadAsTar_LinknameOverUSTARLimit: USTAR carries a hardlink
+// target in 100 bytes and the format is pinned, so a longer one cannot be
+// written. The longest today is 90 bytes, in python3.14-libs; when a re-pin
+// crosses the line the error must say what happened and how long the path
+// was, not "cannot encode header".
+func TestWritePayloadAsTar_LinknameOverUSTARLimit(t *testing.T) {
+	long := "./usr/lib64/python3.14/" + strings.Repeat("m", 101-len("./usr/lib64/python3.14/")-len("/x.py")) + "/x.py"
+	if len(long) != 101 {
+		t.Fatalf("fixture target is %d bytes, want 101", len(long))
+	}
+	stream := newc(
+		newcEntry{name: "./usr/lib64/python3.14/short.py", ino: 3, nlink: 2},
+		newcEntry{name: long, ino: 3, nlink: 2, data: "x"},
+	)
+
+	var out bytes.Buffer
+	err := writePayloadAsTar(tar.NewWriter(&out), cpio.NewReader(bytes.NewReader(stream)))
+	if err == nil {
+		t.Fatalf("writePayloadAsTar accepted a 101-byte hardlink target")
+	}
+	for _, want := range []string{"101 bytes", "USTAR", "100", long} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not mention %q", err, want)
 		}
 	}
 }

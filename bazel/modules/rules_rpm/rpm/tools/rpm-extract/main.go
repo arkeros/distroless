@@ -305,10 +305,25 @@ type pendingLink struct {
 	ent  *cpio.Cpio_newc_header
 }
 
+// ustarLinknameMax is the room a USTAR header has for a hardlink target.
+// The path field gets a 155-byte prefix on top of its 100; the link field
+// does not. The longest target in today's closure is 90 bytes, a
+// __pycache__ path in python3.14-libs.
+const ustarLinknameMax = 100
+
 // writeHardlinkAsTar emits `name` as a tar hardlink to `target`, which
 // must already be in the archive. Ownership and mtime come from the
 // path's own cpio entry, as for every other entry.
+//
+// A target longer than USTAR holds is refused here, by name and length,
+// rather than by archive/tar's "cannot encode header". When a re-pin
+// crosses the line, the fix is to ask for PAX on every header — Go still
+// writes plain ustar blocks for what fits, so today's tars would not
+// change — with a test that round-trips a long target.
 func writeHardlinkAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, name, target string) error {
+	if len(target) > ustarLinknameMax {
+		return fmt.Errorf("hardlink target %q is %d bytes; the content tar is USTAR, which holds %d", target, len(target), ustarLinknameMax)
+	}
 	return tw.WriteHeader(&tar.Header{
 		Name:     name,
 		Mode:     int64(ent.Mode() & 07777),

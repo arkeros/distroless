@@ -91,6 +91,7 @@ go_library(
         "templates/topbar.html",
         "templates/versions.html",
         "templates/vulnerabilities.html",
+        "static/logos/python.svg",
     ],
     importpath = "github.com/arkeros/distroless/web/internal/directory",
 )

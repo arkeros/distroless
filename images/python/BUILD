@@ -293,8 +293,8 @@ _LINE_LIBS = {
         name = "python{}_hummingbird_test".format(minor),
         size = "small",
         configs = [
-            "test_hummingbird.yaml",
             "test_amd64.yaml",
+            "test_hummingbird.yaml",
             "test_python{}.yaml".format(minor),
         ],
         driver = "docker",
@@ -316,8 +316,8 @@ _LINE_LIBS = {
         name = "python{}_arm64_hummingbird_test".format(minor),
         size = "small",
         configs = [
-            "test_hummingbird.yaml",
             "test_arm64.yaml",
+            "test_hummingbird.yaml",
             "test_python{}.yaml".format(minor),
         ],
         driver = "docker",

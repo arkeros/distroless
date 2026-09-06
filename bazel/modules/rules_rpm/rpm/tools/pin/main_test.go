@@ -36,6 +36,30 @@ func TestFormatEVR(t *testing.T) {
 	}
 }
 
+// TestCompareEVR locks the ordering that picks a candidate. An EVR is three
+// fields compared in turn, and rpmvercmp on the joined string is not the
+// same thing: it reads "2.42-7.1" and "2.42.2-3.4" as 2.42.7.1 and
+// 2.42.2.3.4, so the older libuuid won and the pin missed the fix for four
+// CVEs.
+func TestCompareEVR(t *testing.T) {
+	cases := []struct {
+		a, b string
+		want int
+	}{
+		{"2.42-7.1.hum1", "2.42.2-3.4.hum1", -1},
+		{"2.42.2-3.4.hum1", "2.42-7.1.hum1", 1},
+		{"1.0-2.hum1", "1.0-10.hum1", -1},
+		{"1:1.0-1.hum1", "2.0-1.hum1", 1},
+		{"2026c-1.hum1", "2026c-1.hum1", 0},
+		{"3.12.14-1.hum1", "3.12.13-6.hum1", 1},
+	}
+	for _, c := range cases {
+		if got := compareEVR(c.a, c.b); got != c.want {
+			t.Errorf("compareEVR(%q, %q) = %d, want %d", c.a, c.b, got, c.want)
+		}
+	}
+}
+
 func TestStripLabelPrefix(t *testing.T) {
 	cases := map[string]string{
 		"//:hummingbird_install.json":      "hummingbird_install.json",

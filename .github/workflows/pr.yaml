@@ -5,9 +5,11 @@
 # modules.yaml runs alongside this, for the workspaces under bazel/modules
 # that `bazel test //...` here does not reach.
 name: PR
+# Any base, not `main` alone: a stacked pull request, one whose base is the
+# branch of the pull request below it, is tested where it sits rather than
+# only once the one below merges and GitHub retargets it.
 on:
   pull_request:
-    branches: [main]
 
 # Both values come from `terraform output` in //infra. The read-only cache
 # account (`infra/cache.tf`) is bound to the repository, so any branch of it can

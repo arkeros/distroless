@@ -73,6 +73,24 @@
   --accent: light-dark(#1a7f37, #3fb950);
   /* One height for everything in the controls row. */
   --control: 2.25rem;
+  /* One colour per severity band, for the history chart. In OKLCH, the
+     one place on the page where the numbers carry design intent: L is how
+     light a band reads, C how saturated, H its hue, and each is that and
+     nothing else — unlike HSL, where a yellow and a blue at one "lightness"
+     are nothing alike. One chroma for every coloured band, 0.15, which is
+     the accent's and the most sRGB holds at these lightnesses; one hue per
+     band, kept across schemes; and lightness is the only thing that moves,
+     in even steps for the three warm bands, since lightness is all that
+     tells red from orange from yellow once red-green vision is reduced.
+     The ladder runs the same way on both schemes, red deepest and yellow
+     palest, and is only lifted on dark to clear the surface: a red lighter
+     than its orange reads as pink, not as worse. Both sets pass the
+     adjacent-pair checks under simulated deficiency and normal vision. */
+  --critical: light-dark(oklch(0.44 0.15 25), oklch(0.54 0.15 25));
+  --high: light-dark(oklch(0.60 0.15 50), oklch(0.68 0.15 50));
+  --medium: light-dark(oklch(0.76 0.15 90), oklch(0.82 0.15 90));
+  --low: light-dark(oklch(0.52 0.15 260), oklch(0.66 0.15 260));
+  --unknown: light-dark(oklch(0.68 0.02 255), oklch(0.58 0.02 255));
 }
 
 body {
@@ -872,11 +890,12 @@ td.id a:focus-visible {
   stroke-width: 2;
 }
 
-.band-critical { fill: light-dark(#a4111d, #ff8079); }
-.band-high     { fill: light-dark(#d4611a, #b85506); }
-.band-medium   { fill: light-dark(#d9ad00, #dfbd3f); }
-.band-low      { fill: light-dark(#1a63d6, #3b8cff); }
-.band-unknown  { fill: light-dark(#8c959f, #7d8590); }
+/* The bands' colours are the :root variables of the same names. */
+.band-critical { fill: var(--critical); }
+.band-high     { fill: var(--high); }
+.band-medium   { fill: var(--medium); }
+.band-low      { fill: var(--low); }
+.band-unknown  { fill: var(--unknown); }
 
 .legend {
   display: flex;
@@ -898,11 +917,11 @@ td.id a:focus-visible {
   vertical-align: -1px;
 }
 
-.legend .band-critical { background: light-dark(#a4111d, #ff8079); }
-.legend .band-high     { background: light-dark(#d4611a, #b85506); }
-.legend .band-medium   { background: light-dark(#d9ad00, #dfbd3f); }
-.legend .band-low      { background: light-dark(#1a63d6, #3b8cff); }
-.legend .band-unknown  { background: light-dark(#8c959f, #7d8590); }
+.legend .band-critical { background: var(--critical); }
+.legend .band-high     { background: var(--high); }
+.legend .band-medium   { background: var(--medium); }
+.legend .band-low      { background: var(--low); }
+.legend .band-unknown  { background: var(--unknown); }
 
 #history td.number,
 #history th.number {

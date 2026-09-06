@@ -1033,3 +1033,116 @@ func TestScanIsCachedWithinItsTTL(t *testing.T) {
 		t.Errorf("referrers listed %d times across two reads, want 1", got)
 	}
 }
+
+// pushLedger publishes a family's tag ledger the way the `release` job does
+// with oras: an artifact at history:<family> whose one layer is JSON Lines.
+func pushLedger(t *testing.T, server *ocitest.Server, family string, lines ...string) {
+	t.Helper()
+	ref, err := name.ParseReference(server.Listener.Addr().String()+"/history:"+family, name.Insecure)
+	if err != nil {
+		t.Fatal(err)
+	}
+	blob := []byte(strings.Join(lines, "\n") + "\n")
+	layer := static.NewLayer(blob, "application/vnd.distroless.tag-ledger.v1+jsonl")
+	image, err := mutate.AppendLayers(empty.Image, layer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	image = mutate.ConfigMediaType(mutate.MediaType(image, types.OCIManifestSchema1), "application/vnd.oci.empty.v1+json")
+	if err := remote.Write(ref, image); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMovesReadsTheFamilyLedgerInFileOrder(t *testing.T) {
+	server := ocitest.NewServer(t)
+	pushLedger(t, server, "nginx",
+		`{"at":"2026-09-01T10:00:00Z","tag":"latest","digest":"sha256:aaaa","run":"https://github.com/arkeros/distroless/actions/runs/1"}`,
+		`{"at":"2026-09-01T10:00:00Z","tag":"1.29","digest":"sha256:aaaa","run":"https://github.com/arkeros/distroless/actions/runs/1"}`,
+		`{"at":"2026-09-05T10:00:00Z","tag":"latest","digest":"sha256:bbbb","run":"https://github.com/arkeros/distroless/actions/runs/2"}`,
+	)
+
+	moves, err := newClient(t, server).Moves(context.Background(), "nginx")
+	if err != nil {
+		t.Fatalf("Moves: %v", err)
+	}
+	want := []directory.Move{
+		{At: time.Date(2026, 9, 1, 10, 0, 0, 0, time.UTC), Tag: "latest", Digest: "sha256:aaaa", Run: "https://github.com/arkeros/distroless/actions/runs/1"},
+		{At: time.Date(2026, 9, 1, 10, 0, 0, 0, time.UTC), Tag: "1.29", Digest: "sha256:aaaa", Run: "https://github.com/arkeros/distroless/actions/runs/1"},
+		{At: time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC), Tag: "latest", Digest: "sha256:bbbb", Run: "https://github.com/arkeros/distroless/actions/runs/2"},
+	}
+	if !reflect.DeepEqual(moves, want) {
+		t.Errorf("moves = %+v, want %+v", moves, want)
+	}
+}
+
+// A family published before ledgers existed has no history yet, which is not
+// an error: its pages still have the current build to show.
+func TestMovesIsEmptyForAFamilyWithoutALedger(t *testing.T) {
+	server := ocitest.NewServer(t)
+	pushIndex(t, server, "nginx", "latest")
+
+	moves, err := newClient(t, server).Moves(context.Background(), "nginx")
+	if err != nil {
+		t.Fatalf("Moves: %v", err)
+	}
+	if len(moves) != 0 {
+		t.Errorf("moves = %+v, want none", moves)
+	}
+}
+
+// A ledger that will not parse is refused whole rather than read up to the
+// bad line: a history with a hole in it would draw as a tag that never moved.
+func TestMovesRefusesAMalformedLedger(t *testing.T) {
+	server := ocitest.NewServer(t)
+	pushLedger(t, server, "nginx",
+		`{"at":"2026-09-01T10:00:00Z","tag":"latest","digest":"sha256:aaaa","run":"r"}`,
+		`{"at":"not a time","tag":"latest","digest":"sha256:bbbb","run":"r"}`,
+	)
+
+	if _, err := newClient(t, server).Moves(context.Background(), "nginx"); err == nil {
+		t.Error("Moves accepted a ledger with an unparseable event")
+	}
+}
+
+func TestScansReturnsEveryRecordOldestFirstWithTheVEXApplied(t *testing.T) {
+	server := ocitest.NewServer(t)
+	repository, subject := pushIndex(t, server, "nginx", "latest")
+	attest(t, repository, subject, attestation.Vuln, scanRecord("2026-09-10T00:00:00Z", map[string]any{
+		"matches": []any{
+			grypeMatch("CVE-2026-0002", "Critical", "zlib1g", "1.3-1", "amd64", nil, "not-fixed"),
+			grypeMatch("CVE-2013-0337", "Medium", "nginx", "1.30.4-1~trixie", "amd64", nil, "not-fixed"),
+		},
+		"descriptor": map[string]any{"name": "grype", "version": "0.119.0"},
+	}))
+	attest(t, repository, subject, attestation.Vuln, scanRecord("2026-09-03T21:12:53Z", grypeReport))
+	attest(t, repository, subject, attestation.OpenVEX, vexDocument(notAffected))
+
+	digest, scans, err := newClient(t, server).Scans(context.Background(), "nginx", subject.Digest.String())
+	if err != nil {
+		t.Fatalf("Scans: %v", err)
+	}
+	if digest != subject.Digest.String() {
+		t.Errorf("digest = %q, want %q", digest, subject.Digest)
+	}
+	if len(scans) != 2 {
+		t.Fatalf("got %d scans, want 2", len(scans))
+	}
+	if !scans[0].Finished.Before(scans[1].Finished) {
+		t.Errorf("scans finished %v then %v, want oldest first", scans[0].Finished, scans[1].Finished)
+	}
+	if scans[1].Scanner != "grype 0.119.0" {
+		t.Errorf("newest scanner = %q, want grype 0.119.0", scans[1].Scanner)
+	}
+	for i, scan := range scans {
+		var suppressed []string
+		for _, finding := range scan.Findings {
+			if finding.Suppressed != nil {
+				suppressed = append(suppressed, finding.ID)
+			}
+		}
+		if !slices.Equal(suppressed, []string{"CVE-2013-0337"}) {
+			t.Errorf("scan %d suppressed %v, want the VEX statement applied to CVE-2013-0337", i, suppressed)
+		}
+	}
+}

@@ -92,6 +92,16 @@ type Client struct {
 	// expiring, because a digest acquires newer scans. See defaultScanTTL.
 	scans   *expirable.LRU[string, *directory.Scan]
 	scanTTL time.Duration
+
+	// series is every scan on a Digest, oldest first, for a history page.
+	// Expiring like scans and for the same reason: the newest entry of a
+	// current build's series is still being added to.
+	series *expirable.LRU[string, []*directory.Scan]
+
+	// ledgers is a family's parsed tag ledger, keyed by the ledger artifact's
+	// own digest, which changes on every event — so an entry can never go
+	// stale, only be evicted.
+	ledgers *lru.Cache[string, []directory.Move]
 }
 
 // Option configures a Client.
@@ -136,11 +146,17 @@ func New(registry, repositoryPrefix string, verifier Verifier, options ...Option
 		panic(err)
 	}
 	c.builds = builds
+	ledgers, err := lru.New[string, []directory.Move](maxCachedImages)
+	if err != nil {
+		panic(err)
+	}
+	c.ledgers = ledgers
 	for _, option := range options {
 		option(c)
 	}
-	// After the options, so it carries the TTL they may have set.
+	// After the options, so they carry the TTL the options may have set.
 	c.scans = expirable.NewLRU[string, *directory.Scan](maxCachedImages, nil, c.scanTTL)
+	c.series = expirable.NewLRU[string, []*directory.Scan](maxCachedImages, nil, c.scanTTL)
 	// Built after the options, so it carries them. Only errors on malformed
 	// options, which would be a programming error here rather than a runtime
 	// condition.

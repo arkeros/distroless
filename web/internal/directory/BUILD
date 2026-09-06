@@ -7,6 +7,7 @@ package(default_visibility = ["//web:__subpackages__"])
 go_test(
     name = "directory_test",
     srcs = [
+        "history_test.go",
         "page_test.go",
         "sbom_test.go",
         "scan_test.go",
@@ -60,6 +61,7 @@ go_library(
     name = "directory",
     srcs = [
         "catalog.go",
+        "history.go",
         "page.go",
         "sbom.go",
         "scan.go",
@@ -83,6 +85,7 @@ go_library(
         "static/logos/java.svg",
         "static/logos/nginx.svg",
         "static/logos/node.svg",
+        "templates/history.html",
         "templates/index.html",
         "templates/sbom.html",
         "templates/topbar.html",

@@ -54,3 +54,15 @@ packages:
   - libreadline8
   - libtirpc3
   - libffi8
+  # python. `python3.NN-minimal` is what carries /usr/bin/python3.NN — the
+  # `python3.NN` package on top of it is only pdb/pydoc/pygettext, which a
+  # distroless image has no use for. `_gdbm` is the one extension module
+  # Debian splits out of the stdlib package; without it `import dbm.gnu`
+  # fails, which the Hummingbird lines do not. Every other library the
+  # stdlib links is already listed above; libgdbm arrives in the closure.
+  - python3.13-minimal
+  - libpython3.13-stdlib
+  - python3.13-gdbm
+  - python3.14-minimal
+  - libpython3.14-stdlib
+  - python3.14-gdbm

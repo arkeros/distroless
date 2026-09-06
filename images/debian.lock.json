@@ -1664,6 +1664,509 @@
 			"version": "3.8.0-2"
 		},
 		{
+			"arch": "amd64",
+			"dependencies": [
+				{
+					"key": "zlib1g_1-1.3.dfsg-p-really1.3.2-3_amd64",
+					"name": "zlib1g",
+					"version": "1:1.3.dfsg+really1.3.2-3"
+				},
+				{
+					"key": "libc6_2.43-5_amd64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_amd64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_amd64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_amd64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "libexpat1_2.8.4-1_amd64",
+					"name": "libexpat1",
+					"version": "2.8.4-1"
+				},
+				{
+					"key": "libpython3.13-minimal_3.13.15-1_amd64",
+					"name": "libpython3.13-minimal",
+					"version": "3.13.15-1"
+				},
+				{
+					"key": "libssl3t64_3.6.4-1_amd64",
+					"name": "libssl3t64",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "openssl-provider-legacy_3.6.4-1_amd64",
+					"name": "openssl-provider-legacy",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "libzstd1_1.5.7-p-dfsg-4_amd64",
+					"name": "libzstd1",
+					"version": "1.5.7+dfsg-4"
+				}
+			],
+			"key": "python3.13-minimal_3.13.15-1_amd64",
+			"name": "python3.13-minimal",
+			"sha256": "362b754d7d3149a418b8d21de6f7ef7a6a8288a31ff12892d4fe04c3ebdab8fc",
+			"source": "python3.13",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/python3.13-minimal_3.13.15-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/python3.13-minimal_3.13.15-1_amd64.deb"
+			],
+			"version": "3.13.15-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libpython3.13-minimal_3.13.15-1_amd64",
+			"name": "libpython3.13-minimal",
+			"sha256": "9d61b08b5afe505b17d9d4c3bc4e0addd48e5e33d6642a501836e4a91e152ec0",
+			"source": "python3.13",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/libpython3.13-minimal_3.13.15-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/libpython3.13-minimal_3.13.15-1_amd64.deb"
+			],
+			"version": "3.13.15-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [
+				{
+					"key": "libuuid1_2.42.3-1_amd64",
+					"name": "libuuid1",
+					"version": "2.42.3-1"
+				},
+				{
+					"key": "libc6_2.43-5_amd64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_amd64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_amd64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_amd64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "libtinfo6_6.6-p-20260608-2_amd64",
+					"name": "libtinfo6",
+					"version": "6.6+20260608-2"
+				},
+				{
+					"key": "libsqlite3-0_3.53.4-2_amd64",
+					"name": "libsqlite3-0",
+					"version": "3.53.4-2"
+				},
+				{
+					"key": "libreadline8t64_8.3-4_amd64",
+					"name": "libreadline8t64",
+					"version": "8.3-4"
+				},
+				{
+					"key": "readline-common_8.3-4_amd64",
+					"name": "readline-common",
+					"version": "8.3-4"
+				},
+				{
+					"key": "libncursesw6_6.6-p-20260608-2_amd64",
+					"name": "libncursesw6",
+					"version": "6.6+20260608-2"
+				},
+				{
+					"key": "liblzma5_5.8.3-1_amd64",
+					"name": "liblzma5",
+					"version": "5.8.3-1"
+				},
+				{
+					"key": "libffi8_3.8.0-2_amd64",
+					"name": "libffi8",
+					"version": "3.8.0-2"
+				},
+				{
+					"key": "libdb5.3t64_5.3.28-p-dfsg2-11-p-b1_amd64",
+					"name": "libdb5.3t64",
+					"version": "5.3.28+dfsg2-11+b1"
+				},
+				{
+					"key": "libbz2-1.0_1.0.8-6-p-b2_amd64",
+					"name": "libbz2-1.0",
+					"version": "1.0.8-6+b2"
+				},
+				{
+					"key": "tzdata_2026c-1_amd64",
+					"name": "tzdata",
+					"version": "2026c-1"
+				},
+				{
+					"key": "debconf_1.5.92_amd64",
+					"name": "debconf",
+					"version": "1.5.92"
+				},
+				{
+					"key": "netbase_6.6_amd64",
+					"name": "netbase",
+					"version": "6.6"
+				},
+				{
+					"key": "media-types_14.0.0_amd64",
+					"name": "media-types",
+					"version": "14.0.0"
+				},
+				{
+					"key": "libpython3.13-minimal_3.13.15-1_amd64",
+					"name": "libpython3.13-minimal",
+					"version": "3.13.15-1"
+				},
+				{
+					"key": "libssl3t64_3.6.4-1_amd64",
+					"name": "libssl3t64",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "openssl-provider-legacy_3.6.4-1_amd64",
+					"name": "openssl-provider-legacy",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "zlib1g_1-1.3.dfsg-p-really1.3.2-3_amd64",
+					"name": "zlib1g",
+					"version": "1:1.3.dfsg+really1.3.2-3"
+				},
+				{
+					"key": "libzstd1_1.5.7-p-dfsg-4_amd64",
+					"name": "libzstd1",
+					"version": "1.5.7+dfsg-4"
+				}
+			],
+			"key": "libpython3.13-stdlib_3.13.15-1_amd64",
+			"name": "libpython3.13-stdlib",
+			"sha256": "aef0330455c5f87932b757962267bc2550cdd00bee95525ffb5392f38b1e6191",
+			"source": "python3.13",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/libpython3.13-stdlib_3.13.15-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/libpython3.13-stdlib_3.13.15-1_amd64.deb"
+			],
+			"version": "3.13.15-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [
+				{
+					"key": "libgdbm6t64_1.26-1-p-b2_amd64",
+					"name": "libgdbm6t64",
+					"version": "1.26-1+b2"
+				},
+				{
+					"key": "libc6_2.43-5_amd64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_amd64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_amd64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_amd64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				}
+			],
+			"key": "python3.13-gdbm_3.13.15-1_amd64",
+			"name": "python3.13-gdbm",
+			"sha256": "70bab05b9a81fad076eadfdd048c4dc1faf03568dddaad0f3fe4952811e3f5df",
+			"source": "python3.13",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/python3.13-gdbm_3.13.15-1_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/python3.13-gdbm_3.13.15-1_amd64.deb"
+			],
+			"version": "3.13.15-1"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libgdbm6t64_1.26-1-p-b2_amd64",
+			"name": "libgdbm6t64",
+			"sha256": "613613e51bb5bdb5a72e87be5f3a06fdf449b1ff39e205784642ae6ce7a02f13",
+			"source": "gdbm",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/g/gdbm/libgdbm6t64_1.26-1+b2_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/g/gdbm/libgdbm6t64_1.26-1+b2_amd64.deb"
+			],
+			"version": "1.26-1+b2"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [
+				{
+					"key": "zlib1g_1-1.3.dfsg-p-really1.3.2-3_amd64",
+					"name": "zlib1g",
+					"version": "1:1.3.dfsg+really1.3.2-3"
+				},
+				{
+					"key": "libc6_2.43-5_amd64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_amd64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_amd64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_amd64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "libexpat1_2.8.4-1_amd64",
+					"name": "libexpat1",
+					"version": "2.8.4-1"
+				},
+				{
+					"key": "libpython3.14-minimal_3.14.7-3_amd64",
+					"name": "libpython3.14-minimal",
+					"version": "3.14.7-3"
+				},
+				{
+					"key": "libssl3t64_3.6.4-1_amd64",
+					"name": "libssl3t64",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "openssl-provider-legacy_3.6.4-1_amd64",
+					"name": "openssl-provider-legacy",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "libzstd1_1.5.7-p-dfsg-4_amd64",
+					"name": "libzstd1",
+					"version": "1.5.7+dfsg-4"
+				}
+			],
+			"key": "python3.14-minimal_3.14.7-3_amd64",
+			"name": "python3.14-minimal",
+			"sha256": "dd32a759888c5d856d88fa0bdebdaaaa838f3e47004af25e60b28379528aa26a",
+			"source": "python3.14",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/python3.14-minimal_3.14.7-3_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/python3.14-minimal_3.14.7-3_amd64.deb"
+			],
+			"version": "3.14.7-3"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [],
+			"key": "libpython3.14-minimal_3.14.7-3_amd64",
+			"name": "libpython3.14-minimal",
+			"sha256": "b489df1c70674ac474a717873750030766a305823203a45ac9926858aedfa705",
+			"source": "python3.14",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/libpython3.14-minimal_3.14.7-3_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/libpython3.14-minimal_3.14.7-3_amd64.deb"
+			],
+			"version": "3.14.7-3"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [
+				{
+					"key": "libzstd1_1.5.7-p-dfsg-4_amd64",
+					"name": "libzstd1",
+					"version": "1.5.7+dfsg-4"
+				},
+				{
+					"key": "libc6_2.43-5_amd64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_amd64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_amd64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_amd64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "libuuid1_2.42.3-1_amd64",
+					"name": "libuuid1",
+					"version": "2.42.3-1"
+				},
+				{
+					"key": "libtinfo6_6.6-p-20260608-2_amd64",
+					"name": "libtinfo6",
+					"version": "6.6+20260608-2"
+				},
+				{
+					"key": "libsqlite3-0_3.53.4-2_amd64",
+					"name": "libsqlite3-0",
+					"version": "3.53.4-2"
+				},
+				{
+					"key": "libreadline8t64_8.3-4_amd64",
+					"name": "libreadline8t64",
+					"version": "8.3-4"
+				},
+				{
+					"key": "readline-common_8.3-4_amd64",
+					"name": "readline-common",
+					"version": "8.3-4"
+				},
+				{
+					"key": "libncursesw6_6.6-p-20260608-2_amd64",
+					"name": "libncursesw6",
+					"version": "6.6+20260608-2"
+				},
+				{
+					"key": "liblzma5_5.8.3-1_amd64",
+					"name": "liblzma5",
+					"version": "5.8.3-1"
+				},
+				{
+					"key": "libffi8_3.8.0-2_amd64",
+					"name": "libffi8",
+					"version": "3.8.0-2"
+				},
+				{
+					"key": "libdb5.3t64_5.3.28-p-dfsg2-11-p-b1_amd64",
+					"name": "libdb5.3t64",
+					"version": "5.3.28+dfsg2-11+b1"
+				},
+				{
+					"key": "libbz2-1.0_1.0.8-6-p-b2_amd64",
+					"name": "libbz2-1.0",
+					"version": "1.0.8-6+b2"
+				},
+				{
+					"key": "tzdata_2026c-1_amd64",
+					"name": "tzdata",
+					"version": "2026c-1"
+				},
+				{
+					"key": "debconf_1.5.92_amd64",
+					"name": "debconf",
+					"version": "1.5.92"
+				},
+				{
+					"key": "netbase_6.6_amd64",
+					"name": "netbase",
+					"version": "6.6"
+				},
+				{
+					"key": "media-types_14.0.0_amd64",
+					"name": "media-types",
+					"version": "14.0.0"
+				},
+				{
+					"key": "libpython3.14-minimal_3.14.7-3_amd64",
+					"name": "libpython3.14-minimal",
+					"version": "3.14.7-3"
+				},
+				{
+					"key": "libssl3t64_3.6.4-1_amd64",
+					"name": "libssl3t64",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "openssl-provider-legacy_3.6.4-1_amd64",
+					"name": "openssl-provider-legacy",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "zlib1g_1-1.3.dfsg-p-really1.3.2-3_amd64",
+					"name": "zlib1g",
+					"version": "1:1.3.dfsg+really1.3.2-3"
+				}
+			],
+			"key": "libpython3.14-stdlib_3.14.7-3_amd64",
+			"name": "libpython3.14-stdlib",
+			"sha256": "7ef6bcc0978be0b8201f473cc99414968de0a89010543289da03d3cc542d6d36",
+			"source": "python3.14",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/libpython3.14-stdlib_3.14.7-3_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/libpython3.14-stdlib_3.14.7-3_amd64.deb"
+			],
+			"version": "3.14.7-3"
+		},
+		{
+			"arch": "amd64",
+			"dependencies": [
+				{
+					"key": "libgdbm6t64_1.26-1-p-b2_amd64",
+					"name": "libgdbm6t64",
+					"version": "1.26-1+b2"
+				},
+				{
+					"key": "libc6_2.43-5_amd64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_amd64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_amd64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_amd64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				}
+			],
+			"key": "python3.14-gdbm_3.14.7-3_amd64",
+			"name": "python3.14-gdbm",
+			"sha256": "29bf1f6e94e12bf9c1b9c12f615ace8314bdea90b445e766adb903bf153adf6a",
+			"source": "python3.14",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/python3.14-gdbm_3.14.7-3_amd64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/python3.14-gdbm_3.14.7-3_amd64.deb"
+			],
+			"version": "3.14.7-3"
+		},
+		{
 			"arch": "arm64",
 			"dependencies": [
 				{
@@ -3325,6 +3828,509 @@
 				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/libf/libffi/libffi8_3.8.0-2_arm64.deb"
 			],
 			"version": "3.8.0-2"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [
+				{
+					"key": "zlib1g_1-1.3.dfsg-p-really1.3.2-3_arm64",
+					"name": "zlib1g",
+					"version": "1:1.3.dfsg+really1.3.2-3"
+				},
+				{
+					"key": "libc6_2.43-5_arm64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_arm64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_arm64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_arm64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "libexpat1_2.8.4-1_arm64",
+					"name": "libexpat1",
+					"version": "2.8.4-1"
+				},
+				{
+					"key": "libpython3.13-minimal_3.13.15-1_arm64",
+					"name": "libpython3.13-minimal",
+					"version": "3.13.15-1"
+				},
+				{
+					"key": "libssl3t64_3.6.4-1_arm64",
+					"name": "libssl3t64",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "openssl-provider-legacy_3.6.4-1_arm64",
+					"name": "openssl-provider-legacy",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "libzstd1_1.5.7-p-dfsg-4_arm64",
+					"name": "libzstd1",
+					"version": "1.5.7+dfsg-4"
+				}
+			],
+			"key": "python3.13-minimal_3.13.15-1_arm64",
+			"name": "python3.13-minimal",
+			"sha256": "a8998e97d648c7f93fadad311466e034d74c3805c647fd4107485daa22ec4a70",
+			"source": "python3.13",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/python3.13-minimal_3.13.15-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/python3.13-minimal_3.13.15-1_arm64.deb"
+			],
+			"version": "3.13.15-1"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [],
+			"key": "libpython3.13-minimal_3.13.15-1_arm64",
+			"name": "libpython3.13-minimal",
+			"sha256": "bc3efb212542c537bac8a32eb76a1a5f7538ec0b1ef86f0e3a8ee3e272d1b61b",
+			"source": "python3.13",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/libpython3.13-minimal_3.13.15-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/libpython3.13-minimal_3.13.15-1_arm64.deb"
+			],
+			"version": "3.13.15-1"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [
+				{
+					"key": "libuuid1_2.42.3-1_arm64",
+					"name": "libuuid1",
+					"version": "2.42.3-1"
+				},
+				{
+					"key": "libc6_2.43-5_arm64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_arm64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_arm64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_arm64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "libtinfo6_6.6-p-20260608-2_arm64",
+					"name": "libtinfo6",
+					"version": "6.6+20260608-2"
+				},
+				{
+					"key": "libsqlite3-0_3.53.4-2_arm64",
+					"name": "libsqlite3-0",
+					"version": "3.53.4-2"
+				},
+				{
+					"key": "libreadline8t64_8.3-4_arm64",
+					"name": "libreadline8t64",
+					"version": "8.3-4"
+				},
+				{
+					"key": "readline-common_8.3-4_arm64",
+					"name": "readline-common",
+					"version": "8.3-4"
+				},
+				{
+					"key": "libncursesw6_6.6-p-20260608-2_arm64",
+					"name": "libncursesw6",
+					"version": "6.6+20260608-2"
+				},
+				{
+					"key": "liblzma5_5.8.3-1_arm64",
+					"name": "liblzma5",
+					"version": "5.8.3-1"
+				},
+				{
+					"key": "libffi8_3.8.0-2_arm64",
+					"name": "libffi8",
+					"version": "3.8.0-2"
+				},
+				{
+					"key": "libdb5.3t64_5.3.28-p-dfsg2-11-p-b1_arm64",
+					"name": "libdb5.3t64",
+					"version": "5.3.28+dfsg2-11+b1"
+				},
+				{
+					"key": "libbz2-1.0_1.0.8-6-p-b2_arm64",
+					"name": "libbz2-1.0",
+					"version": "1.0.8-6+b2"
+				},
+				{
+					"key": "tzdata_2026c-1_arm64",
+					"name": "tzdata",
+					"version": "2026c-1"
+				},
+				{
+					"key": "debconf_1.5.92_arm64",
+					"name": "debconf",
+					"version": "1.5.92"
+				},
+				{
+					"key": "netbase_6.6_arm64",
+					"name": "netbase",
+					"version": "6.6"
+				},
+				{
+					"key": "media-types_14.0.0_arm64",
+					"name": "media-types",
+					"version": "14.0.0"
+				},
+				{
+					"key": "libpython3.13-minimal_3.13.15-1_arm64",
+					"name": "libpython3.13-minimal",
+					"version": "3.13.15-1"
+				},
+				{
+					"key": "libssl3t64_3.6.4-1_arm64",
+					"name": "libssl3t64",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "openssl-provider-legacy_3.6.4-1_arm64",
+					"name": "openssl-provider-legacy",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "zlib1g_1-1.3.dfsg-p-really1.3.2-3_arm64",
+					"name": "zlib1g",
+					"version": "1:1.3.dfsg+really1.3.2-3"
+				},
+				{
+					"key": "libzstd1_1.5.7-p-dfsg-4_arm64",
+					"name": "libzstd1",
+					"version": "1.5.7+dfsg-4"
+				}
+			],
+			"key": "libpython3.13-stdlib_3.13.15-1_arm64",
+			"name": "libpython3.13-stdlib",
+			"sha256": "edc711c63660d4fc578fc5150540015b5070f9eebf5b2e749595860212bc38ad",
+			"source": "python3.13",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/libpython3.13-stdlib_3.13.15-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/libpython3.13-stdlib_3.13.15-1_arm64.deb"
+			],
+			"version": "3.13.15-1"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [
+				{
+					"key": "libgdbm6t64_1.26-1-p-b2_arm64",
+					"name": "libgdbm6t64",
+					"version": "1.26-1+b2"
+				},
+				{
+					"key": "libc6_2.43-5_arm64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_arm64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_arm64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_arm64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				}
+			],
+			"key": "python3.13-gdbm_3.13.15-1_arm64",
+			"name": "python3.13-gdbm",
+			"sha256": "5c49ab18219a38a531198e911a6cf6932a62278b90b2a8a7272486457aa602af",
+			"source": "python3.13",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/python3.13-gdbm_3.13.15-1_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.13/python3.13-gdbm_3.13.15-1_arm64.deb"
+			],
+			"version": "3.13.15-1"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [],
+			"key": "libgdbm6t64_1.26-1-p-b2_arm64",
+			"name": "libgdbm6t64",
+			"sha256": "30bee3177745c58b02ffdda3ef366738a3a90c01515fc9d31fdb9df25bdf23b4",
+			"source": "gdbm",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/g/gdbm/libgdbm6t64_1.26-1+b2_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/g/gdbm/libgdbm6t64_1.26-1+b2_arm64.deb"
+			],
+			"version": "1.26-1+b2"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [
+				{
+					"key": "zlib1g_1-1.3.dfsg-p-really1.3.2-3_arm64",
+					"name": "zlib1g",
+					"version": "1:1.3.dfsg+really1.3.2-3"
+				},
+				{
+					"key": "libc6_2.43-5_arm64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_arm64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_arm64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_arm64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "libexpat1_2.8.4-1_arm64",
+					"name": "libexpat1",
+					"version": "2.8.4-1"
+				},
+				{
+					"key": "libpython3.14-minimal_3.14.7-3_arm64",
+					"name": "libpython3.14-minimal",
+					"version": "3.14.7-3"
+				},
+				{
+					"key": "libssl3t64_3.6.4-1_arm64",
+					"name": "libssl3t64",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "openssl-provider-legacy_3.6.4-1_arm64",
+					"name": "openssl-provider-legacy",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "libzstd1_1.5.7-p-dfsg-4_arm64",
+					"name": "libzstd1",
+					"version": "1.5.7+dfsg-4"
+				}
+			],
+			"key": "python3.14-minimal_3.14.7-3_arm64",
+			"name": "python3.14-minimal",
+			"sha256": "1282170b159bcb2dfbd513a8ccf428a3b8fea4d2a1196c69c9d8eba255741592",
+			"source": "python3.14",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/python3.14-minimal_3.14.7-3_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/python3.14-minimal_3.14.7-3_arm64.deb"
+			],
+			"version": "3.14.7-3"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [],
+			"key": "libpython3.14-minimal_3.14.7-3_arm64",
+			"name": "libpython3.14-minimal",
+			"sha256": "a56187bbfd6270a7be199152baa2e96ea6444a731e08f39f42b248fdd38ef0ff",
+			"source": "python3.14",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/libpython3.14-minimal_3.14.7-3_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/libpython3.14-minimal_3.14.7-3_arm64.deb"
+			],
+			"version": "3.14.7-3"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [
+				{
+					"key": "libzstd1_1.5.7-p-dfsg-4_arm64",
+					"name": "libzstd1",
+					"version": "1.5.7+dfsg-4"
+				},
+				{
+					"key": "libc6_2.43-5_arm64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_arm64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_arm64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_arm64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "libuuid1_2.42.3-1_arm64",
+					"name": "libuuid1",
+					"version": "2.42.3-1"
+				},
+				{
+					"key": "libtinfo6_6.6-p-20260608-2_arm64",
+					"name": "libtinfo6",
+					"version": "6.6+20260608-2"
+				},
+				{
+					"key": "libsqlite3-0_3.53.4-2_arm64",
+					"name": "libsqlite3-0",
+					"version": "3.53.4-2"
+				},
+				{
+					"key": "libreadline8t64_8.3-4_arm64",
+					"name": "libreadline8t64",
+					"version": "8.3-4"
+				},
+				{
+					"key": "readline-common_8.3-4_arm64",
+					"name": "readline-common",
+					"version": "8.3-4"
+				},
+				{
+					"key": "libncursesw6_6.6-p-20260608-2_arm64",
+					"name": "libncursesw6",
+					"version": "6.6+20260608-2"
+				},
+				{
+					"key": "liblzma5_5.8.3-1_arm64",
+					"name": "liblzma5",
+					"version": "5.8.3-1"
+				},
+				{
+					"key": "libffi8_3.8.0-2_arm64",
+					"name": "libffi8",
+					"version": "3.8.0-2"
+				},
+				{
+					"key": "libdb5.3t64_5.3.28-p-dfsg2-11-p-b1_arm64",
+					"name": "libdb5.3t64",
+					"version": "5.3.28+dfsg2-11+b1"
+				},
+				{
+					"key": "libbz2-1.0_1.0.8-6-p-b2_arm64",
+					"name": "libbz2-1.0",
+					"version": "1.0.8-6+b2"
+				},
+				{
+					"key": "tzdata_2026c-1_arm64",
+					"name": "tzdata",
+					"version": "2026c-1"
+				},
+				{
+					"key": "debconf_1.5.92_arm64",
+					"name": "debconf",
+					"version": "1.5.92"
+				},
+				{
+					"key": "netbase_6.6_arm64",
+					"name": "netbase",
+					"version": "6.6"
+				},
+				{
+					"key": "media-types_14.0.0_arm64",
+					"name": "media-types",
+					"version": "14.0.0"
+				},
+				{
+					"key": "libpython3.14-minimal_3.14.7-3_arm64",
+					"name": "libpython3.14-minimal",
+					"version": "3.14.7-3"
+				},
+				{
+					"key": "libssl3t64_3.6.4-1_arm64",
+					"name": "libssl3t64",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "openssl-provider-legacy_3.6.4-1_arm64",
+					"name": "openssl-provider-legacy",
+					"version": "3.6.4-1"
+				},
+				{
+					"key": "zlib1g_1-1.3.dfsg-p-really1.3.2-3_arm64",
+					"name": "zlib1g",
+					"version": "1:1.3.dfsg+really1.3.2-3"
+				}
+			],
+			"key": "libpython3.14-stdlib_3.14.7-3_arm64",
+			"name": "libpython3.14-stdlib",
+			"sha256": "dfe530ad7afe966a1d775075a95b71bf45ed2842c61c837c5f78b7ca501a2c42",
+			"source": "python3.14",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/libpython3.14-stdlib_3.14.7-3_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/libpython3.14-stdlib_3.14.7-3_arm64.deb"
+			],
+			"version": "3.14.7-3"
+		},
+		{
+			"arch": "arm64",
+			"dependencies": [
+				{
+					"key": "libgdbm6t64_1.26-1-p-b2_arm64",
+					"name": "libgdbm6t64",
+					"version": "1.26-1+b2"
+				},
+				{
+					"key": "libc6_2.43-5_arm64",
+					"name": "libc6",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libc-gconv-modules-extra_2.43-5_arm64",
+					"name": "libc-gconv-modules-extra",
+					"version": "2.43-5"
+				},
+				{
+					"key": "libgcc-s1_16.2.0-2_arm64",
+					"name": "libgcc-s1",
+					"version": "16.2.0-2"
+				},
+				{
+					"key": "gcc-16-base_16.2.0-2_arm64",
+					"name": "gcc-16-base",
+					"version": "16.2.0-2"
+				}
+			],
+			"key": "python3.14-gdbm_3.14.7-3_arm64",
+			"name": "python3.14-gdbm",
+			"sha256": "ee8436d1e3a646f02a3ecb30c6994fc89926ea4383a3d96c3e0ec812aea253b3",
+			"source": "python3.14",
+			"urls": [
+				"https://snapshot.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/python3.14-gdbm_3.14.7-3_arm64.deb",
+				"https://snapshot-cloudflare.debian.org/archive/debian/20260906T083521Z/pool/main/p/python3.14/python3.14-gdbm_3.14.7-3_arm64.deb"
+			],
+			"version": "3.14.7-3"
 		}
 	],
 	"version": 1

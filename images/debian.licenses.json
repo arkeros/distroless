@@ -66,6 +66,10 @@
       "name": "Expat"
     },
     "libgcc-s1": {},
+    "libgdbm6t64": {
+      "spdx": "GPL-3.0-or-later",
+      "name": "GPL-3+"
+    },
     "libgssapi-krb5-2": {},
     "libk5crypto3": {},
     "libkeyutils1": {
@@ -83,6 +87,10 @@
     "libpcre2-8-0": {
       "name": "BSD-3-clause-Cambridge with BINARY LIBRARY-LIKE PACKAGES exception"
     },
+    "libpython3.13-minimal": {},
+    "libpython3.13-stdlib": {},
+    "libpython3.14-minimal": {},
+    "libpython3.14-stdlib": {},
     "libreadline8t64": {
       "spdx": "GPL-3.0-or-later",
       "name": "GPL-3+"
@@ -145,6 +153,10 @@
       "spdx": "Apache-2.0",
       "name": "Apache-2.0"
     },
+    "python3.13-gdbm": {},
+    "python3.13-minimal": {},
+    "python3.14-gdbm": {},
+    "python3.14-minimal": {},
     "readline-common": {
       "spdx": "GPL-3.0-or-later",
       "name": "GPL-3+"

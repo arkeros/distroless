@@ -277,6 +277,10 @@ func TestShouldStrip(t *testing.T) {
 		"./usr/share/docs/x":             false, // prefix-match guard
 		// %license stays: it is what lets the binaries be redistributed.
 		"./usr/share/licenses/python3-libs/LICENSE": false,
+		// PAM modules: no PAM on a distroless image loads them.
+		"./usr/lib64/security/pam_cap.so": true,
+		"./usr/lib/security/pam_cap.so":   true,
+		"./usr/lib64/securityx/keep":      false, // prefix-match guard
 	}
 	for in, want := range cases {
 		if got := shouldStrip(in); got != want {

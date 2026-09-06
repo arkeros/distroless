@@ -348,11 +348,20 @@ func writeHardlinkAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, name, target
 //     drops: nothing reads a man page or a README on an image with no
 //     shell. `/usr/share/licenses` stays, as it does under --excludedocs:
 //     the licence text is what lets the binaries be redistributed.
+//   - `/usr/lib64/security/**`, `/usr/lib/security/**` — PAM modules,
+//     which libcap and friends ship beside their libraries. There is no
+//     PAM on a distroless image to load them, and each links libpam,
+//     which the image does not carry either; the elf_needs test found
+//     pam_cap.so that way.
 //
 // Same posture as Wolfi/Chainguard distroless.
 func shouldStrip(filename string) bool {
 	clean := strings.TrimPrefix(filename, "./")
-	for _, prefix := range []string{"usr/lib/.build-id", "usr/share/doc", "usr/share/man", "usr/share/info"} {
+	for _, prefix := range []string{
+		"usr/lib/.build-id",
+		"usr/share/doc", "usr/share/man", "usr/share/info",
+		"usr/lib64/security", "usr/lib/security",
+	} {
 		if clean == prefix || strings.HasPrefix(clean, prefix+"/") {
 			return true
 		}

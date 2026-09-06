@@ -39,3 +39,37 @@ diff_test(
     file1 = ":stale_test_expected",
     file2 = ":stale_test_failures",
 )
+
+# The rule the `release` job applies to decide which of the tags it just
+# applied are moves worth an event in the family's tag ledger. Same shape as
+# stale.jq, for the same reasons. See ADR 0017.
+exports_files(["ledger.jq"])
+
+jq(
+    name = "ledger_test_failures",
+    srcs = ["ledger_test_cases.json"],
+    out = "ledger_test_failures.json",
+    args = [
+        "-L",
+        package_name(),
+    ],
+    data = ["ledger.jq"],
+    filter_file = "ledger_test.jq",
+)
+
+write_file(
+    name = "ledger_test_expected",
+    out = "ledger_test_expected.json",
+    content = [
+        "[]",
+        "",
+    ],
+)
+
+diff_test(
+    name = "ledger_test",
+    size = "small",
+    failure_message = "ledger.jq answered a case in ledger_test_cases.json differently from what the case wants; the list of such cases is the actual file.",
+    file1 = ":ledger_test_expected",
+    file2 = ":ledger_test_failures",
+)

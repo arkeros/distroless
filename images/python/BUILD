@@ -201,6 +201,22 @@ _LINE_LIBS = {
     for arch in PYTHON_ARCHITECTURES["hummingbird"]
 ]
 
+# The nis module on 3.11 and 3.12 links libnsl, whose chain (libtirpc,
+# krb5) is deliberately not shipped; see the BUILD comment above. The
+# elf_needs test knows, so that it can hold every other ELF to account.
+_ELF_NEEDS_ALLOW = {
+    minor: {
+        "/usr/lib64/python{}/lib-dynload/nis.cpython-{}-*-linux-gnu.so".format(
+            minor,
+            minor.replace(".", ""),
+        ): "nis is deprecated and gone in 3.13; its libnsl -> libtirpc -> krb5 chain is not shipped on purpose",
+    }
+    for minor in [
+        "3.11",
+        "3.12",
+    ]
+}
+
 [
     distroless_matrix(
         name = "python" + minor,
@@ -211,6 +227,7 @@ _LINE_LIBS = {
         debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro],
         debug_layers = python_layers(minor),
         distro = distro,
+        elf_needs_allow = _ELF_NEEDS_ALLOW.get(minor, {}),
         entrypoint = ["/usr/bin/python3"],
         env = DEFAULT_ENV,
         ignore_cves = [],

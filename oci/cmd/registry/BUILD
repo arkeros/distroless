@@ -11,6 +11,7 @@ load(
     "OCI_REGISTRY",
     "OCI_REPOSITORY_PREFIX",
 )
+load("//oci:elf_needs.bzl", "image_elf_needs_test")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:supply_chain.bzl", "image_supply_chain")
 
@@ -152,4 +153,16 @@ container_structure_test(
     },
     image = ":image_amd64.oci_layout",
     tags = ["requires-docker"],
+)
+
+# The binary finds what it loads on the static base, read off the ELF: no
+# docker, and it would have failed before the binaries went static.
+image_elf_needs_test(
+    name = "image_elf_needs_test",
+    size = "small",
+    layers = [
+        "//images/static:static_amd64_debian_layer",
+        ":image.layer",
+    ],
+    platform = "//bazel/platforms:linux_amd64",
 )

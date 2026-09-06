@@ -4,6 +4,7 @@ load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@tar.bzl", "tar")
 load(":cosign_policy.bzl", "CERTIFICATE_IDENTITY_REGEXP", "CERTIFICATE_OIDC_ISSUER", "PROVENANCE_BUILDER_ID", "PROVENANCE_SOURCE_URI")
+load(":elf_needs.bzl", "image_elf_needs_test")
 load(":layer_paths.bzl", "layer_unique_paths_test")
 
 bzl_library(
@@ -99,10 +100,39 @@ layer_unique_paths_test(
 )
 
 bzl_library(
+    name = "elf_needs",
+    srcs = ["elf_needs.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+# The fixtures for image_elf_needs_test. Red: libstdc++ alone, which
+# links libgcc_s, libc and libm that no layer here carries — the shape of
+# the cc defect. Green: the static and cc layers, where every library
+# they ship resolves.
+image_elf_needs_test(
+    name = "image_elf_needs_finds_missing_test",
+    size = "small",
+    expect_missing = True,
+    layers = ["@debian//libstdc++6/amd64:own"],
+    platform = "//bazel/platforms:linux_amd64",
+)
+
+image_elf_needs_test(
+    name = "image_elf_needs_passes_resolved_test",
+    size = "small",
+    layers = [
+        "//images/static:static_amd64_debian_layer",
+        "//images/cc:cc_amd64_debian_layer",
+    ],
+    platform = "//bazel/platforms:linux_amd64",
+)
+
+bzl_library(
     name = "oci_image",
     srcs = ["oci_image.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        ":elf_needs",
         ":layer_paths",
         ":supply_chain",
         "@rules_img//img:image",

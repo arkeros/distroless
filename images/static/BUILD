@@ -84,10 +84,12 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 # Hummingbird flatten: ADR 0007's static composition. Three Hummingbird
 # packages (tzdata, ca-certificates, mailcap — all noarch) + the distroless-
 # synthesized rootfs/passwd/home/group/tmp + ID=hummingbird os-release.
-# No distroless-side `cacerts` extractor needed: Hummingbird's ca-certificates
-# rpm already ships /etc/ssl/certs/ca-certificates.crt as a Debian-compat
-# symlink alongside its native /etc/pki/ca-trust layout, so the existing
-# SSL_CERT_FILE env in the matrix call resolves correctly.
+# Hummingbird's ca-certificates rpm ships /etc/ssl/certs/ca-certificates.crt
+# as a Debian-compat symlink into its /etc/pki/ca-trust layout, but the PEM
+# bundle it points at is written by the rpm's %post script, which
+# rpm-extract never runs; //images/common:cacerts_hummingbird is that
+# bundle, built from the rpm's p11-kit trust source, so SSL_CERT_FILE in
+# the matrix call resolves to certificates rather than a dangling link.
 [
     flatten(
         name = "static_" + arch + "_hummingbird_layer",
@@ -97,6 +99,7 @@ _DEFAULT_PATH = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
             "@hummingbird//ca-certificates/noarch",
             "@hummingbird//mailcap/noarch",
             "@hummingbird//tzdata/noarch",
+            "//images/common:cacerts_hummingbird",
             "//images/common:rootfs",
             "//images/common:passwd",
             "//images/common:home",

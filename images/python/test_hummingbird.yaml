@@ -1,0 +1,83 @@
+schemaVersion: 2.0.0
+metadataTest:
+  entrypoint: ['/usr/bin/python3']
+  workdir: '/home/nonroot'
+  user: '65532'
+  envVars:
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-certificates.crt
+fileExistenceTests:
+  - name: 'python3'
+    path: '/usr/bin/python3'
+    shouldExist: true
+  # Distroless: no shell, no package manager, no pip.
+  - name: 'no shell'
+    path: '/bin/sh'
+    shouldExist: false
+  - name: 'no pip'
+    path: '/usr/bin/pip3'
+    shouldExist: false
+  # Inherited cc/static surface. Re-checked here so a regression in any
+  # composed layer fails this image's tests too.
+  - name: 'glibc dynamic linker'
+    path: '/usr/lib64/ld-linux-x86-64.so.2'
+    shouldExist: true
+  - name: 'os-release canonical'
+    path: '/usr/lib/os-release'
+    shouldExist: true
+  - name: 'rpmdb sqlite'
+    path: '/usr/lib/sysimage/rpm/rpmdb.sqlite'
+    shouldExist: true
+fileContentTests:
+  - name: 'os-release has ID=hummingbird'
+    path: '/usr/lib/os-release'
+    expectedContents: ['(?m)^ID="hummingbird"$']
+commandTests:
+  - name: 'python executes'
+    command: '/usr/bin/python3'
+    args: ['-c', 'print("ok")']
+    expectedOutput: ['^ok']
+  # Every extension module whose library the layer ships. A file-existence
+  # test cannot tell a present .so from a loadable one; a library missing
+  # from the layer fails here with ImportError before the first line of an
+  # application runs.
+  - name: 'stdlib extension modules load their libraries'
+    command: '/usr/bin/python3'
+    args:
+      - '-c'
+      - |
+        import bz2, ctypes, curses, curses.panel, dbm.gnu, decimal, hashlib
+        import lzma, readline, sqlite3, ssl, uuid, zlib
+        import xml.parsers.expat
+        print("loaded")
+    expectedOutput: ['^loaded']
+  # ssl and hashlib come from cc's openssl-libs, not a copy of OpenSSL
+  # inside libpython — that is the point of building against the distro.
+  - name: 'ssl links the distro OpenSSL 3'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import ssl; print(ssl.OPENSSL_VERSION)']
+    expectedOutput: ['^OpenSSL 3\.']
+  - name: 'hashlib blake2b'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import hashlib; print(hashlib.blake2b(b"distroless").hexdigest()[:16])']
+    expectedOutput: ['^[0-9a-f]{16}']
+  - name: 'sqlite3 opens an in-memory database'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import sqlite3; print(sqlite3.connect(":memory:").execute("select sqlite_version()").fetchone()[0])']
+    expectedOutput: ['^3\.']
+  - name: 'decimal uses libmpdec'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import decimal; print(decimal.__libmpdec_version__)']
+    expectedOutput: ['^[0-9]']
+  - name: 'ctypes loads libc through libffi'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import ctypes; print(ctypes.CDLL("libc.so.6").strlen(b"ok"))']
+    expectedOutput: ['^2']
+  - name: 'time zones resolve from tzdata'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import zoneinfo; print(zoneinfo.ZoneInfo("Europe/Madrid").key)']
+    expectedOutput: ['^Europe/Madrid']
+  - name: 'nonroot cannot write to the stdlib'
+    command: '/usr/bin/python3'
+    args: ['-c', 'import os, sys; print(os.access(os.path.dirname(os.__file__), os.W_OK))']
+    expectedOutput: ['^False']

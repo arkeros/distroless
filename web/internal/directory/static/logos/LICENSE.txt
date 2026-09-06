@@ -9,6 +9,7 @@ and draw in the page's own, so that it reads in both colour schemes.
   java.svg   OpenJDK    https://simpleicons.org/?q=openjdk
   node.svg   Node.js    https://simpleicons.org/?q=nodedotjs
   nginx.svg  NGINX      https://simpleicons.org/?q=nginx
+  python.svg Python     https://simpleicons.org/?q=python
 
 The CC0 release covers the drawings only. Each mark remains the trademark of
 its owner and is shown here to identify the software an image contains, not

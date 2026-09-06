@@ -1,0 +1,14 @@
+schemaVersion: 2.0.0
+fileExistenceTests:
+  - name: 'versioned interpreter'
+    path: '/usr/bin/python3.13'
+    shouldExist: true
+commandTests:
+  - name: 'python3 --version reports 3.13'
+    command: '/usr/bin/python3'
+    args: ['--version']
+    expectedOutput: ['^Python 3\.13\.']
+  - name: 'python3.13 is the same interpreter'
+    command: '/usr/bin/python3.13'
+    args: ['-c', 'import sys; print(sys.version_info[:2])']
+    expectedOutput: ['^\(3, 13\)']

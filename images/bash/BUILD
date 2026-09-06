@@ -79,22 +79,41 @@ _VEX = {
     for distro in BASH_DISTROS
 ]
 
-# Debian bash layer: rust-coreutils + symlinks (to avoid libsystemd0).
+# Debian bash layer. Each package as `:own`, its payload and status entry
+# alone: the closures shipped glibc, libssl, zlib and zstd a second time
+# on top of cc, 22 of the layer's 52 MB. The libraries listed after the
+# tools are what their binaries link (`DT_NEEDED`, read off the .debs)
+# that neither cc nor static carries; the lockfile still resolves each
+# tool's closure, so a library dropped from cc turns up here as a listing
+# to add, not as a loader failure in production.
 [
     flatten(
         name = arch + "_debian_layer",
         compress = COMPRESSION,
         deduplicate = True,
         tars = [
-            "@debian//{}/{}".format("bash", arch),
+            "@debian//{}/{}:own".format("bash", arch),
             # for runfiles we need: env, sed, grep & awk
-            # rust-coreutils provides /usr/bin/env without libsystemd0 dependency
-            "@debian//{}/{}".format("rust-coreutils", arch),
+            "@debian//{}/{}:own".format("rust-coreutils", arch),
             "//images/common:coreutils_links",
-            "@debian//{}/{}".format("sed", arch),
-            "@debian//{}/{}".format("grep", arch),
-            "@debian//{}/{}".format("mawk", arch),
+            "@debian//{}/{}:own".format("sed", arch),
+            "@debian//{}/{}:own".format("grep", arch),
+            "@debian//{}/{}:own".format("mawk", arch),
             "//images/common:awk",
+            # which, run-parts, tempfile: bash depends on it and scripts
+            # reach for `which`.
+            "@debian//{}/{}:own".format("debianutils", arch),
+            #   bash          -> libtinfo.so.6
+            #   grep          -> libpcre2-8.so.0; libselinux links it too
+            #   sed           -> libacl.so.1, libselinux.so.1
+            #   coreutils     -> libselinux.so.1, libsystemd.so.0 (it does
+            #                    link libsystemd, whatever the earlier
+            #                    comment here believed), libssl from cc
+            "@debian//{}/{}".format("libtinfo6", arch),
+            "@debian//{}/{}".format("libpcre2-8-0", arch),
+            "@debian//{}/{}".format("libselinux1", arch),
+            "@debian//{}/{}".format("libacl1", arch),
+            "@debian//{}/{}".format("libsystemd0", arch),
         ],
     )
     for arch in BASH_ARCHITECTURES["debian"]

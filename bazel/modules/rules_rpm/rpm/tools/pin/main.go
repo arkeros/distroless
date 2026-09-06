@@ -572,7 +572,8 @@ func validate(best map[string]map[string]lockEntry, declaredArches, declaredPkgs
 // epoch-prefixed (`<E>:<V>-<R>`) when epoch is non-zero/non-empty, else
 // just `<V>-<R>`. Mirrors what dnf/rpm print as the public version.
 // compareEVR orders two EVR strings in formatEVR's shape as rpm does:
-// epoch, then version, then release, each by rpmvercmp. Returns -1, 0 or 1.
+// epoch, then version, then release, each by rpmutils.Vercmp, whose
+// -1, 0 or 1 this returns.
 func compareEVR(a, b string) int {
 	ea, va, ra := splitEVR(a)
 	eb, vb, rb := splitEVR(b)

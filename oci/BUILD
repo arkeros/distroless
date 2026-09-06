@@ -1,7 +1,10 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("@rules_distroless//distroless:defs.bzl", "flatten")
+load("@tar.bzl", "tar")
 load(":cosign_policy.bzl", "CERTIFICATE_IDENTITY_REGEXP", "CERTIFICATE_OIDC_ISSUER", "PROVENANCE_BUILDER_ID", "PROVENANCE_SOURCE_URI")
+load(":layer_paths.bzl", "layer_unique_paths_test")
 
 bzl_library(
     name = "aspects",
@@ -58,10 +61,55 @@ bzl_library(
 )
 
 bzl_library(
+    name = "layer_paths",
+    srcs = ["layer_paths.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+# The fixture for layer_unique_paths_test, the shape of the real defect:
+# an rpm content tar, whose directories rpm-extract names without a
+# trailing slash, beside a bsdtar-written tar naming one of the same
+# directories with it. flatten keeps both, since it deduplicates the two
+# strings, and dockerd refuses the layer. The tar alone must pass.
+tar(
+    name = "zoneinfo_dir",
+    testonly = True,
+    mtree = ["./usr/share/zoneinfo uid=0 gid=0 mode=0755 time=0.0 type=dir"],
+)
+
+flatten(
+    name = "duplicate_paths_fixture",
+    testonly = True,
+    compress = "zstd",
+    deduplicate = True,
+    tars = [
+        "@hummingbird//tzdata/noarch",
+        ":zoneinfo_dir",
+    ],
+)
+
+layer_unique_paths_test(
+    name = "layer_unique_paths_finds_duplicates_test",
+    size = "small",
+    expect_duplicates = True,
+    layers = [":duplicate_paths_fixture"],
+)
+
+layer_unique_paths_test(
+    name = "layer_unique_paths_passes_unique_test",
+    size = "small",
+    layers = [
+        "@hummingbird//tzdata/noarch",
+        ":zoneinfo_dir",
+    ],
+)
+
+bzl_library(
     name = "oci_image",
     srcs = ["oci_image.bzl"],
     visibility = ["//visibility:public"],
     deps = [
+        ":layer_paths",
         ":supply_chain",
         "@rules_img//img:image",
         "@rules_img//img:load",

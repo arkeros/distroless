@@ -1156,7 +1156,7 @@
     "@@rules_rpm+//rpm:extensions.bzl%rpm": {
       "general": {
         "bzlTransitiveDigest": "Ejfjy33K5VpYVQEZSw2Gsdzop00Gz4CvTAQ9F6nlFQk=",
-        "usagesDigest": "Qd5wiSqesG2NRqkqc4T1thUien4x2Z3hHiGjL65Y60s=",
+        "usagesDigest": "Z2SQlaz/7d3bNMDLd1ezK0cWHwQUEjNzRFZeq5337Xo=",
         "recordedInputs": [
           "FILE:@@//images/hummingbird.lock.json 38391ffaafdf8db67eba5c8b257065749e0f0008fd3099d61e849ece0787959e",
           "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json 880e99b4e9d6e32726926d5e69ca714bcc3a5819c8b27dbdf380926d8f5be511",
@@ -3239,6 +3239,7 @@
                 "expat",
                 "gdbm-libs",
                 "glibc",
+                "gmp",
                 "grep",
                 "libacl",
                 "libatomic",
@@ -3271,6 +3272,7 @@
                 "readline",
                 "sed",
                 "sqlite-libs",
+                "systemd-libs",
                 "tzdata",
                 "xz-libs"
               ],

@@ -150,6 +150,11 @@ _VEX = {
             "@hummingbird//libsepol/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
             "@hummingbird//ncurses-libs/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
             "@hummingbird//pcre2/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            #   coreutils  -> libgmp.so.10 (basenc, expr, factor) and
+            #                 libsystemd.so.0 (pinky, users, who). Found by
+            #                 the elf_needs test; `expr` could not run.
+            "@hummingbird//gmp/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
+            "@hummingbird//systemd-libs/{}".format(HUMMINGBIRD_ARCH_MAP[arch]),
             "//images/common:awk",
         ],
     )

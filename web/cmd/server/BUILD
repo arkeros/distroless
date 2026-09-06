@@ -32,6 +32,8 @@ go_library(
 go_binary(
     name = "server",
     embed = [":server_lib"],
+    linkmode = "normal",
+    pure = "on",
     visibility = ["//visibility:public"],
 )
 

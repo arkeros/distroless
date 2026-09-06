@@ -34,6 +34,8 @@ go_library(
 go_binary(
     name = "registry",
     embed = [":registry_lib"],
+    linkmode = "normal",
+    pure = "on",
     visibility = ["//visibility:public"],
 )
 

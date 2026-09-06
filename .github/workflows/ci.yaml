@@ -709,10 +709,25 @@ jobs:
       && needs.verify.result == 'success'
     runs-on: ubuntu-latest
     permissions:
-      packages: write   # for `crane tag`
+      contents: read    # for //oci/publish:ledger.jq
+      packages: write   # for `crane tag` and `oras push`
+    # The tag ledger is read, appended to and written back, so two releases
+    # must not interleave: the later one would write over the earlier one's
+    # events. One group, nothing cancelled — a release that has applied its
+    # tags must get to record them.
+    concurrency:
+      group: release
+      cancel-in-progress: false
     env:
       PUBLISHED: ${{ needs.publish.outputs.published }}
     steps:
+      # Only the jq module that decides what goes in the ledger; the job
+      # otherwise runs without a checkout, as `verify` does.
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: oci/publish
+          sparse-checkout-cone-mode: false
+
       - name: Login to GHCR
         uses: docker/login-action@v4
         with:
@@ -761,6 +776,58 @@ jobs:
             cat "${RUNNER_TEMP}/failed.txt" >&2
             exit 1
           fi
+
+      # Which build each tag names is registry metadata that nothing records:
+      # once a tag moves, the digest it left is no longer listable, and when it
+      # moved is nowhere. Each family keeps a ledger of its tag moves — an OCI
+      # artifact of JSON Lines at <registry>/<prefix>/history:<family>, one
+      # event per move, appended here and never rewritten — which is what lets
+      # the Directory draw a tag's history from the scans on the digests it
+      # named. Every tag is re-applied on every run, so the ledger rule
+      # (//oci/publish:ledger.jq, with its test) is what turns "applied" into
+      # "moved". See ADR 0017.
+      - name: Record tag moves
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ARTIFACT_TYPE: application/vnd.distroless.tag-ledger.v1
+          LAYER_TYPE: application/vnd.distroless.tag-ledger.v1+jsonl
+        run: |
+          set -euo pipefail
+          AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          for REPOSITORY in $(jq -r '.[].ref | split("@")[0]' <<< "${PUBLISHED}" | sort -u); do
+            FAMILY=${REPOSITORY##*/}
+            LEDGER="${REPOSITORY%/*}/history:${FAMILY}"
+            APPLIED=$(jq -c --arg repository "${REPOSITORY}" \
+              '[.[] | select((.ref | split("@")[0]) == $repository) | (.ref | split("@")[1]) as $digest | .tags[] | {tag: ., digest: $digest}]' \
+              <<< "${PUBLISHED}")
+
+            WORK=$(mktemp -d)
+            # A ledger that does not exist yet is empty. A ledger that cannot
+            # be read is not, and appending to "empty" would write over it.
+            if ! oras pull -o "${WORK}" "${LEDGER}" > /dev/null 2> "${WORK}/err"; then
+              if ! grep -qE "not found|NAME_UNKNOWN|MANIFEST_UNKNOWN" "${WORK}/err"; then
+                echo "ERROR: could not read ${LEDGER}; refusing to guess what it holds." >&2
+                cat "${WORK}/err" >&2
+                exit 1
+              fi
+              : > "${WORK}/ledger.jsonl"
+            fi
+            if [[ ! -f "${WORK}/ledger.jsonl" ]]; then
+              echo "ERROR: ${LEDGER} carries no ledger.jsonl; not a tag ledger." >&2
+              exit 1
+            fi
+
+            jq -c -s -L oci/publish --argjson applied "${APPLIED}" --arg at "${AT}" --arg run "${RUN_URL}" \
+              'include "ledger"; moves($applied; $at; $run)[]' "${WORK}/ledger.jsonl" > "${WORK}/moves.jsonl"
+            if [[ ! -s "${WORK}/moves.jsonl" ]]; then
+              echo "${FAMILY}: no tag moved"
+              continue
+            fi
+            cat "${WORK}/moves.jsonl" >> "${WORK}/ledger.jsonl"
+            (cd "${WORK}" && oras push --artifact-type "${ARTIFACT_TYPE}" "${LEDGER}" "ledger.jsonl:${LAYER_TYPE}" > /dev/null)
+            echo "${FAMILY}: $(wc -l < "${WORK}/moves.jsonl" | tr -d ' ') tag move(s) recorded in ${LEDGER}"
+            sed 's/^/  /' "${WORK}/moves.jsonl"
+          done
 
   # ---------------------------------------------------------------------------
   # Cloud Run deploy.

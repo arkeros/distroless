@@ -86,9 +86,9 @@ func TestHistoryCountsOpenFindingsPerBandLikeTheReport(t *testing.T) {
 		t.Fatalf("got %d points, want 1", len(history.Points))
 	}
 	point := history.Points[0]
-	want := [5]int{1, 1, 1, 2, 1}
+	want := [6]int{1, 1, 1, 1, 1, 1}
 	if point.Counts != want {
-		t.Errorf("counts = %v, want %v (critical, high, medium, low with negligible, unknown; the arm64 copy left out)", point.Counts, want)
+		t.Errorf("counts = %v, want %v (critical, high, medium, low, negligible, unknown; the arm64 copy left out)", point.Counts, want)
 	}
 	if point.Open != 6 || point.Suppressed != 1 {
 		t.Errorf("open = %d, suppressed = %d, want 6 and 1", point.Open, point.Suppressed)

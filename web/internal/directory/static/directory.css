@@ -90,7 +90,11 @@
   --high: light-dark(oklch(0.60 0.15 50), oklch(0.68 0.15 50));
   --medium: light-dark(oklch(0.76 0.15 90), oklch(0.82 0.15 90));
   --low: light-dark(oklch(0.52 0.15 260), oklch(0.66 0.15 260));
-  --unknown: light-dark(oklch(0.68 0.02 255), oklch(0.58 0.02 255));
+  /* Negligible is low's hue at a lighter, fainter step: less than low, in
+     the same family. Unknown is the one grey, dark enough on a light scheme
+     to stay apart from it. */
+  --negligible: light-dark(oklch(0.72 0.10 260), oklch(0.82 0.10 260));
+  --unknown: light-dark(oklch(0.56 0.02 255), oklch(0.58 0.02 255));
 }
 
 body {
@@ -895,8 +899,9 @@ td.id a:focus-visible {
 .band-critical { fill: var(--critical); }
 .band-high     { fill: var(--high); }
 .band-medium   { fill: var(--medium); }
-.band-low      { fill: var(--low); }
-.band-unknown  { fill: var(--unknown); }
+.band-low        { fill: var(--low); }
+.band-negligible { fill: var(--negligible); }
+.band-unknown    { fill: var(--unknown); }
 
 .legend {
   display: flex;
@@ -921,8 +926,9 @@ td.id a:focus-visible {
 .legend .band-critical { background: var(--critical); }
 .legend .band-high     { background: var(--high); }
 .legend .band-medium   { background: var(--medium); }
-.legend .band-low      { background: var(--low); }
-.legend .band-unknown  { background: var(--unknown); }
+.legend .band-low        { background: var(--low); }
+.legend .band-negligible { background: var(--negligible); }
+.legend .band-unknown    { background: var(--unknown); }
 
 #history td.number,
 #history th.number {

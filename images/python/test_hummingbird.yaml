@@ -18,10 +18,8 @@ fileExistenceTests:
     path: '/usr/bin/pip3'
     shouldExist: false
   # Inherited cc/static surface. Re-checked here so a regression in any
-  # composed layer fails this image's tests too.
-  - name: 'glibc dynamic linker'
-    path: '/usr/lib64/ld-linux-x86-64.so.2'
-    shouldExist: true
+  # composed layer fails this image's tests too. The dynamic linker's path
+  # is the one arch-specific check and lives in test_<arch>.yaml.
   - name: 'os-release canonical'
     path: '/usr/lib/os-release'
     shouldExist: true

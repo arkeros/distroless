@@ -1,0 +1,7 @@
+schemaVersion: 2.0.0
+# The arch-specific half of test_hummingbird.yaml: glibc's dynamic linker
+# lives at /usr/lib64/ld-linux-x86-64.so.2 on amd64.
+fileExistenceTests:
+  - name: 'glibc dynamic linker'
+    path: '/usr/lib64/ld-linux-x86-64.so.2'
+    shouldExist: true

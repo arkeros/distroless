@@ -283,16 +283,18 @@ _LINE_LIBS = {
     for minor in PYTHON_MINOR_VERSIONS
 ]
 
-# One structure test per line: the shared checks plus the line's own
-# version assertion. Behavioural where it counts — every extension module
-# the library list above exists for is imported, so a library missing from
-# the layer fails here with an ImportError rather than in production.
+# One structure test per line and architecture: the shared checks, the
+# architecture's dynamic-linker path, and the line's own version assertion.
+# Behavioural where it counts — every extension module the library list
+# above exists for is imported, so a library missing from the layer fails
+# here with an ImportError rather than in production, on both arch tars.
 [
     container_structure_test(
         name = "python{}_hummingbird_test".format(minor),
         size = "small",
         configs = [
             "test_hummingbird.yaml",
+            "test_amd64.yaml",
             "test_python{}.yaml".format(minor),
         ],
         driver = "docker",
@@ -302,6 +304,33 @@ _LINE_LIBS = {
         },
         image = ":python{}_nonroot_amd64_hummingbird.oci_layout".format(minor),
         tags = ["requires-docker"],
+    )
+    for minor in PYTHON_MINOR_VERSIONS
+]
+
+# The same on the arm64 image. Tagged as java's arm64 test is: CI runs on
+# amd64 and does not emulate, so it skips these; on an arm64 host they run
+# natively with `--test_tag_filters=requires-native-arm64`.
+[
+    container_structure_test(
+        name = "python{}_arm64_hummingbird_test".format(minor),
+        size = "small",
+        configs = [
+            "test_hummingbird.yaml",
+            "test_arm64.yaml",
+            "test_python{}.yaml".format(minor),
+        ],
+        driver = "docker",
+        exec_properties = {
+            "test.workload-isolation-type": "firecracker",
+            "test.init-dockerd": "true",
+        },
+        image = ":python{}_nonroot_arm64_hummingbird.oci_layout".format(minor),
+        platform = "linux/arm64",
+        tags = [
+            "requires-docker",
+            "requires-native-arm64",
+        ],
     )
     for minor in PYTHON_MINOR_VERSIONS
 ]

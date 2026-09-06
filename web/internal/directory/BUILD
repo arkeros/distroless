@@ -72,6 +72,9 @@ go_library(
         # What the browser is sent: built above, so not where gazelle looks.
         "dist/directory.css",  # keep
         "dist/directory.mjs",  # keep
+        # The family marks, globbed by their own package: a new logo is a
+        # file, not a BUILD edit. Another package, so not where gazelle looks.
+        "//web/internal/directory/static/logos",  # keep
         "static/fonts/LICENSE.txt",
         "static/fonts/fira-mono-400-latin-ext.woff2",
         "static/fonts/fira-mono-400-latin.woff2",
@@ -79,19 +82,12 @@ go_library(
         "static/fonts/fira-sans-400-latin.woff2",
         "static/fonts/fira-sans-600-latin-ext.woff2",
         "static/fonts/fira-sans-600-latin.woff2",
-        "static/logos/LICENSE.txt",
-        "static/logos/bash.svg",
-        "static/logos/generic.svg",
-        "static/logos/java.svg",
-        "static/logos/nginx.svg",
-        "static/logos/node.svg",
         "templates/history.html",
         "templates/index.html",
         "templates/sbom.html",
         "templates/topbar.html",
         "templates/versions.html",
         "templates/vulnerabilities.html",
-        "static/logos/python.svg",
     ],
     importpath = "github.com/arkeros/distroless/web/internal/directory",
 )

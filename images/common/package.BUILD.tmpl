@@ -53,3 +53,14 @@ filegroup(
     srcs = {deps} + [":data"] + {statusd},
     visibility = ["//visibility:public"],
 )
+
+# The package alone: its payload and its dpkg status entry, none of its
+# dependencies. For a layer composed beside layers that already carry
+# them — static and cc — where the closure above would ship libc6 a second
+# time. The lockfile still resolves the closure, so a dependency that no
+# layer ships is a build-time listing to add, not a silent hole.
+filegroup(
+    name = "own",
+    srcs = [":data"] + {statusd},
+    visibility = ["//visibility:public"],
+)

@@ -3,10 +3,13 @@ package main
 import (
 	"archive/tar"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/sassoftware/go-rpmutils/cpio"
 )
 
 // TestExtract_TzdataContainsUTC drives the first end-to-end slice:
@@ -125,10 +128,10 @@ func TestMergedUsr(t *testing.T) {
 	}
 	cases := map[string]result{
 		// Legacy root-prefix files get rewritten under /usr.
-		"./lib64/libgcc_s.so.1":            {"./usr/lib64/libgcc_s.so.1", false},
-		"./lib/firmware/foo":               {"./usr/lib/firmware/foo", false},
-		"./bin/bash":                       {"./usr/bin/bash", false},
-		"./sbin/ldconfig":                  {"./usr/sbin/ldconfig", false},
+		"./lib64/libgcc_s.so.1": {"./usr/lib64/libgcc_s.so.1", false},
+		"./lib/firmware/foo":    {"./usr/lib/firmware/foo", false},
+		"./bin/bash":            {"./usr/bin/bash", false},
+		"./sbin/ldconfig":       {"./usr/sbin/ldconfig", false},
 		// The root symlink/dir entries themselves get dropped — the base
 		// layer synthesises /lib64 -> usr/lib64 etc.
 		"./lib64": {"", true},
@@ -137,12 +140,12 @@ func TestMergedUsr(t *testing.T) {
 		"./sbin":  {"", true},
 		"lib64":   {"", true},
 		// Already-canonical paths are untouched.
-		"./usr/lib64/libc.so.6":   {"./usr/lib64/libc.so.6", false},
-		"./usr/bin/localedef":     {"./usr/bin/localedef", false},
-		"./etc/pki/ca-trust":      {"./etc/pki/ca-trust", false},
+		"./usr/lib64/libc.so.6":    {"./usr/lib64/libc.so.6", false},
+		"./usr/bin/localedef":      {"./usr/bin/localedef", false},
+		"./etc/pki/ca-trust":       {"./etc/pki/ca-trust", false},
 		"./usr/share/zoneinfo/UTC": {"./usr/share/zoneinfo/UTC", false},
 		// Prefix-match guards: "libexec" must not match "lib".
-		"./libexec/foo":           {"./libexec/foo", false},
+		"./libexec/foo": {"./libexec/foo", false},
 	}
 	for in, want := range cases {
 		gotName, gotDrop := mergedUsr(in)
@@ -237,10 +240,10 @@ func TestMergedUsrLink(t *testing.T) {
 		"/usr/lib64/libc.so": "/usr/lib64/libc.so",
 		// Relative targets are untouched — they're location-relative
 		// and the path-side rewrite preserves resolution.
-		"libfoo.so.1":    "libfoo.so.1",
-		"../bin/sh":      "../bin/sh",
-		"../../lib/foo":  "../../lib/foo",
-		"./bashbug-64":   "./bashbug-64",
+		"libfoo.so.1":   "libfoo.so.1",
+		"../bin/sh":     "../bin/sh",
+		"../../lib/foo": "../../lib/foo",
+		"./bashbug-64":  "./bashbug-64",
 		// Prefix-match guards: longer paths that share a prefix with a
 		// legacy root must NOT be rewritten. /libexec is the canonical
 		// foot-gun for naive `strings.HasPrefix(target, "/lib")` checks.
@@ -257,18 +260,191 @@ func TestMergedUsrLink(t *testing.T) {
 
 func TestShouldStrip(t *testing.T) {
 	cases := map[string]bool{
-		"./usr/lib/.build-id/73":                    true,
-		"./usr/lib/.build-id/73/abc":                true,
-		"usr/lib/.build-id/0f/a568":                 true,
-		"./usr/lib/.build-id":                       true,
-		"./usr/lib/.build-idx/foo":                  false, // prefix-match guard
-		"./usr/bin/localedef":                       false,
-		"./usr/share/zoneinfo/UTC":                  false,
-		"./etc/pki/ca-trust":                        false,
+		"./usr/lib/.build-id/73":     true,
+		"./usr/lib/.build-id/73/abc": true,
+		"usr/lib/.build-id/0f/a568":  true,
+		"./usr/lib/.build-id":        true,
+		"./usr/lib/.build-idx/foo":   false, // prefix-match guard
+		"./usr/bin/localedef":        false,
+		"./usr/share/zoneinfo/UTC":   false,
+		"./etc/pki/ca-trust":         false,
 	}
 	for in, want := range cases {
 		if got := shouldStrip(in); got != want {
 			t.Errorf("shouldStrip(%q) = %v, want %v", in, got, want)
 		}
+	}
+}
+
+// TestExtract_HardlinksCarryContent locks the cpio hardlink contract. rpm's
+// cpio stores a set of hardlinked files as one entry per path with a zero
+// filesize, and the payload only once, on the last path of the set. tzdata
+// is almost entirely such sets (Europe/Madrid, UTC and Etc/UTC among them),
+// and an extractor that copies entries one by one ships them as empty files:
+// zoneinfo.ZoneInfo("Europe/Madrid") then fails with "Invalid TZif file".
+// Every regular file in the tar must carry its bytes, whether as data or as
+// a tar hardlink to an entry that does.
+func TestExtract_HardlinksCarryContent(t *testing.T) {
+	rpmPath := testdataPath(t, "tzdata.rpm")
+
+	tmp := t.TempDir()
+	contentTar := filepath.Join(tmp, "content.tar")
+	if err := Extract(rpmPath, contentTar, filepath.Join(tmp, "header.blob")); err != nil {
+		t.Fatalf("Extract: %v", err)
+	}
+
+	f, err := os.Open(contentTar)
+	if err != nil {
+		t.Fatalf("open content.tar: %v", err)
+	}
+	defer f.Close()
+
+	sizes := map[string]int64{}
+	links := map[string]string{}
+	var empty []string
+	tr := tar.NewReader(f)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("read content.tar: %v", err)
+		}
+		switch hdr.Typeflag {
+		case tar.TypeReg:
+			sizes[hdr.Name] = hdr.Size
+			if hdr.Size == 0 {
+				empty = append(empty, hdr.Name)
+			}
+		case tar.TypeLink:
+			links[hdr.Name] = hdr.Linkname
+		}
+	}
+
+	if len(empty) > 0 {
+		t.Errorf("%d regular files have no content, first: %v", len(empty), empty[:min(5, len(empty))])
+	}
+	for name, target := range links {
+		if sizes[target] == 0 {
+			t.Errorf("hardlink %s -> %s points at an entry with no content", name, target)
+		}
+	}
+	for _, zone := range []string{"./usr/share/zoneinfo/Europe/Madrid", "./usr/share/zoneinfo/UTC"} {
+		if _, isLink := links[zone]; !isLink && sizes[zone] == 0 {
+			t.Errorf("%s is neither a file with content nor a hardlink to one", zone)
+		}
+	}
+	if len(links) == 0 {
+		t.Errorf("tzdata's hardlink sets were not preserved as tar hardlinks")
+	}
+}
+
+// newcEntry is one file of a hand-built cpio stream: what rpm's payload
+// looks like before rpm-extract sees it.
+type newcEntry struct {
+	name  string
+	ino   int
+	nlink int
+	data  string
+}
+
+// newc writes entries in the SVR4 "newc" format rpm uses: a 110-byte
+// ASCII header, the NUL-terminated name, then the data, each padded to
+// four bytes, and the TRAILER!!! entry last.
+func newc(entries ...newcEntry) []byte {
+	var buf bytes.Buffer
+	pad := func() {
+		for buf.Len()%4 != 0 {
+			buf.WriteByte(0)
+		}
+	}
+	write := func(e newcEntry) {
+		fmt.Fprintf(&buf, "070701%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x%08x",
+			e.ino, 0o100644, 0, 0, e.nlink, 0, len(e.data), 0, 0, 0, 0, len(e.name)+1, 0)
+		buf.WriteString(e.name)
+		buf.WriteByte(0)
+		pad()
+		buf.WriteString(e.data)
+		pad()
+	}
+	for _, e := range entries {
+		write(e)
+	}
+	write(newcEntry{name: "TRAILER!!!", nlink: 1})
+	return buf.Bytes()
+}
+
+type tarEntry struct {
+	typeflag byte
+	linkname string
+	data     string
+}
+
+func readTar(t *testing.T, b []byte) map[string]tarEntry {
+	t.Helper()
+	out := map[string]tarEntry{}
+	tr := tar.NewReader(bytes.NewReader(b))
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			return out
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		data, err := io.ReadAll(tr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out[hdr.Name] = tarEntry{typeflag: hdr.Typeflag, linkname: hdr.Linkname, data: string(data)}
+	}
+}
+
+// TestWritePayloadAsTar_Hardlinks covers the two shapes a hardlink set
+// takes in rpm's cpio: content on the last member, and no content at all
+// because the file is empty — python3.13-libs and ca-certificates both
+// carry sets of empty files, which the first fix refused as truncated.
+func TestWritePayloadAsTar_Hardlinks(t *testing.T) {
+	stream := newc(
+		newcEntry{name: "./usr/share/zoneinfo/Etc/UTC", ino: 7, nlink: 3},
+		newcEntry{name: "./usr/share/zoneinfo/README", ino: 8, nlink: 1, data: "readme"},
+		newcEntry{name: "./usr/share/zoneinfo/Zulu", ino: 7, nlink: 3},
+		newcEntry{name: "./usr/lib64/python3.13/email/mime/__init__.py", ino: 9, nlink: 2},
+		newcEntry{name: "./usr/share/zoneinfo/UTC", ino: 7, nlink: 3, data: "TZif2"},
+		newcEntry{name: "./usr/lib64/python3.13/json/__init__.py", ino: 9, nlink: 2},
+	)
+
+	var out bytes.Buffer
+	tw := tar.NewWriter(&out)
+	if err := writePayloadAsTar(tw, cpio.NewReader(bytes.NewReader(stream))); err != nil {
+		t.Fatalf("writePayloadAsTar: %v", err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	got := readTar(t, out.Bytes())
+
+	want := map[string]tarEntry{
+		"./usr/share/zoneinfo/README":  {typeflag: tar.TypeReg, data: "readme"},
+		"./usr/share/zoneinfo/UTC":     {typeflag: tar.TypeReg, data: "TZif2"},
+		"./usr/share/zoneinfo/Etc/UTC": {typeflag: tar.TypeLink, linkname: "./usr/share/zoneinfo/UTC"},
+		"./usr/share/zoneinfo/Zulu":    {typeflag: tar.TypeLink, linkname: "./usr/share/zoneinfo/UTC"},
+		// An empty set: the first path is the file, the rest link to it.
+		"./usr/lib64/python3.13/email/mime/__init__.py": {typeflag: tar.TypeReg},
+		"./usr/lib64/python3.13/json/__init__.py":       {typeflag: tar.TypeLink, linkname: "./usr/lib64/python3.13/email/mime/__init__.py"},
+	}
+	for name, w := range want {
+		g, ok := got[name]
+		if !ok {
+			t.Errorf("%s missing from tar", name)
+			continue
+		}
+		if g != w {
+			t.Errorf("%s = %+v, want %+v", name, g, w)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("tar has %d entries, want %d: %v", len(got), len(want), got)
 	}
 }

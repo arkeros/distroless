@@ -184,6 +184,24 @@ func Extract(rpmPath, contentTarPath, headerBlobPath string) (err error) {
 		}
 	}()
 
+	return writePayloadAsTar(tw, payload)
+}
+
+// writePayloadAsTar walks a cpio payload and writes every entry we ship as
+// a tar entry.
+//
+// rpm's cpio writes a set of hardlinked paths as one entry per path with a
+// zero filesize and the payload once, on the set's last entry. The earlier
+// paths are held, keyed by inode, until that entry arrives; then it is
+// written with its bytes and they follow as tar hardlinks to it. A set of
+// empty files never has such an entry — every member is zero-sized — and
+// is written out at the end of the stream, one empty file and its links.
+// tzdata is almost entirely hardlink sets (1113 of its 1801 files), and
+// copying the entries one by one shipped them empty.
+func writePayloadAsTar(tw *tar.Writer, payload *cpio.Reader) error {
+	pendingLinks := map[int][]pendingLink{}
+	var pendingOrder []int
+
 	for {
 		ent, err := payload.Next()
 		if err == io.EOF {
@@ -207,11 +225,66 @@ func Extract(rpmPath, contentTarPath, headerBlobPath string) (err error) {
 		if drop {
 			continue
 		}
+		if isCpioRegular(ent) && ent.Nlink() > 1 && ent.Filesize() == 0 {
+			if _, seen := pendingLinks[ent.Ino()]; !seen {
+				pendingOrder = append(pendingOrder, ent.Ino())
+			}
+			pendingLinks[ent.Ino()] = append(pendingLinks[ent.Ino()], pendingLink{name: rewritten, ent: ent})
+			continue
+		}
 		if err := writeCpioEntryAsTar(tw, ent, payload, rewritten); err != nil {
 			return fmt.Errorf("write tar entry %q: %w", name, err)
 		}
+		if isCpioRegular(ent) && ent.Nlink() > 1 {
+			for _, link := range pendingLinks[ent.Ino()] {
+				if err := writeHardlinkAsTar(tw, link.ent, link.name, rewritten); err != nil {
+					return fmt.Errorf("write tar hardlink %q: %w", link.name, err)
+				}
+			}
+			delete(pendingLinks, ent.Ino())
+		}
+	}
+
+	// Whatever is still pending is a set of empty files.
+	for _, ino := range pendingOrder {
+		links, ok := pendingLinks[ino]
+		if !ok {
+			continue
+		}
+		first := links[0]
+		if err := writeCpioEntryAsTar(tw, first.ent, payload, first.name); err != nil {
+			return fmt.Errorf("write tar entry %q: %w", first.name, err)
+		}
+		for _, link := range links[1:] {
+			if err := writeHardlinkAsTar(tw, link.ent, link.name, first.name); err != nil {
+				return fmt.Errorf("write tar hardlink %q: %w", link.name, err)
+			}
+		}
 	}
 	return nil
+}
+
+// pendingLink is a hardlinked path seen before the entry carrying the
+// set's content.
+type pendingLink struct {
+	name string
+	ent  *cpio.Cpio_newc_header
+}
+
+// writeHardlinkAsTar emits `name` as a tar hardlink to `target`, which
+// must already be in the archive. Ownership and mtime come from the
+// path's own cpio entry, as for every other entry.
+func writeHardlinkAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, name, target string) error {
+	return tw.WriteHeader(&tar.Header{
+		Name:     name,
+		Mode:     int64(ent.Mode() & 07777),
+		Typeflag: tar.TypeLink,
+		Linkname: target,
+		ModTime:  time.Unix(int64(ent.Mtime()), 0),
+		Uid:      ent.Uid(),
+		Gid:      ent.Gid(),
+		Format:   tar.FormatUSTAR,
+	})
 }
 
 // shouldStrip drops cpio entries whose paths are useless on a distroless

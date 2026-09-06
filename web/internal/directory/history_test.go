@@ -120,6 +120,20 @@ func TestHistoryDrawsOneBarPerPointScaledToTheWorstScan(t *testing.T) {
 	if len(chart.Bars[1].Segments) != 4 {
 		t.Errorf("the worst scan drew %d segments, want one per band that occurs (critical, high, medium, low)", len(chart.Bars[1].Segments))
 	}
+	// Stacked worst on top: critical at the top of the bar, unknown at the
+	// bottom, so the top edge of the stack is the band to read first.
+	segments := chart.Bars[1].Segments
+	if top := segments[len(segments)-1]; top.Class != "critical" {
+		t.Errorf("topmost segment is %q, want critical", top.Class)
+	}
+	if bottom := segments[0]; bottom.Class != "low" {
+		t.Errorf("bottom segment is %q, want low, the lowest band that occurs", bottom.Class)
+	}
+	for i := 1; i < len(segments); i++ {
+		if segments[i].Y >= segments[i-1].Y {
+			t.Errorf("segment %d (%s) at y=%v is not above segment %d (%s) at y=%v", i, segments[i].Class, segments[i].Y, i-1, segments[i-1].Class, segments[i-1].Y)
+		}
+	}
 	if top := chart.Ticks[len(chart.Ticks)-1]; top.Value < 5 {
 		t.Errorf("top tick = %v, want at least the worst scan's 5 findings", top.Value)
 	}

@@ -2,6 +2,7 @@ load("@rules_img//img:image.bzl", "image_manifest")
 load("@rules_img//img:load.bzl", "image_load")
 load("@rules_img//img:push.bzl", "image_push")
 load("@tar.bzl", "tar")
+load(":elf_needs.bzl", "image_elf_needs_test")
 load(":layer_paths.bzl", "layer_unique_paths_test")
 load(":supply_chain.bzl", "image_supply_chain")
 
@@ -12,6 +13,7 @@ def oci_image(
         vex = None,
         created = None,
         gate = True,
+        elf_needs_allow = {},
         **kwargs):
     """Build an OCI container image with SBOM + CVE scanning.
 
@@ -34,6 +36,9 @@ def oci_image(
             CVE IDs are extracted at action time and added to the
             suppression set; a sibling `_stale_vex` test fires when a
             statement no longer corresponds to a scan match.
+        elf_needs_allow: ELFs in the image known not to find what they
+            link, path glob -> reason, for `<name>_elf_needs_test`. An
+            entry that silences nothing fails that test.
         created: Optional label of a one-file target whose contents are an
             RFC 3339 timestamp; emitted into `image.config.created`.
             Use //images/common:created_{debian,hummingbird}
@@ -57,6 +62,15 @@ def oci_image(
         name = name + "_unique_paths_test",
         size = "small",
         layers = kwargs.get("layers", []),
+    )
+
+    # Every ELF the image ships finds what it loads, on any machine.
+    image_elf_needs_test(
+        name = name + "_elf_needs_test",
+        size = "medium",
+        allow = elf_needs_allow,
+        layers = kwargs.get("layers", []),
+        platform = kwargs.get("platform"),
     )
 
     if gate:

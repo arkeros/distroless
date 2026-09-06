@@ -209,13 +209,21 @@ _LOCALE_CACERTS_DISTROS = ["debian"]
 # written: the anchors trusted for server authentication, as plain PEM,
 # plus OpenSSL's two /etc/pki/tls paths pointing at it. noarch, so one tar
 # serves both architectures. See @rules_rpm//rpm/tools/ca-bundle.
+# The build time it measures distrust dates against is the lockfile's
+# snapshot, the same anchor the images' `created` carries, so the bundle
+# is a function of the lockfile alone.
 run_binary(
     name = "cacerts_hummingbird",
-    srcs = ["@hummingbird//ca-certificates/noarch"],
+    srcs = [
+        ":created_hummingbird",
+        "@hummingbird//ca-certificates/noarch",
+    ],
     outs = ["cacerts_hummingbird.tar"],
     args = [
         "--content-tar",
         "$(execpath @hummingbird//ca-certificates/noarch)",
+        "--now-file",
+        "$(execpath :created_hummingbird)",
         "--out",
         "$(execpath cacerts_hummingbird.tar)",
     ],

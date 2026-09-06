@@ -82,6 +82,10 @@ func ekuValue(t *testing.T, oids ...asn1.ObjectIdentifier) string {
 	return p11Value(der)
 }
 
+// fixedNow is the build time the tests run at: 2026-09-06, the Hummingbird
+// snapshot the source was read from.
+var fixedNow = time.Date(2026, 9, 6, 0, 1, 19, 0, time.UTC)
+
 func certObject(label, attrs string, der []byte) string {
 	return "[p11-kit-object-v1]\nlabel: \"" + label + "\"\n" + attrs +
 		string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})) +
@@ -111,7 +115,7 @@ func TestExtractServerAnchors(t *testing.T) {
 		certObject("Unrestricted CA", "trusted: true\nmodifiable: false\n", plain) +
 		certObject("Present But Not Trusted CA", "modifiable: false\n", untrusted)
 
-	bundle, err := extractServerAnchors(strings.NewReader(source))
+	bundle, err := extractServerAnchors(strings.NewReader(source), fixedNow)
 	if err != nil {
 		t.Fatalf("extractServerAnchors: %v", err)
 	}
@@ -208,7 +212,7 @@ func TestRun_WritesBundleAndSymlinks(t *testing.T) {
 	f.Close()
 
 	out := filepath.Join(tmp, "cacerts.tar")
-	if err := run(contentTar, out); err != nil {
+	if err := run(contentTar, out, fixedNow); err != nil {
 		t.Fatalf("run: %v", err)
 	}
 
@@ -260,7 +264,52 @@ func TestRun_MissingTrustSource(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.Close()
-	if err := run(contentTar, filepath.Join(tmp, "out.tar")); err == nil {
+	if err := run(contentTar, filepath.Join(tmp, "out.tar"), fixedNow); err == nil {
 		t.Errorf("run accepted a content tar without %s", trustSourcePath)
+	}
+}
+
+// TestExtractServerAnchors_DistrustAfter: nss-server-distrust-after says
+// leaves issued after that date are distrusted, while earlier ones stay
+// valid until they expire. A PEM bundle cannot carry that rule, so the
+// bundle keeps such an anchor until no leaf a browser would accept can
+// still chain to it: the date plus the 398-day maximum leaf lifetime.
+func TestExtractServerAnchors_DistrustAfter(t *testing.T) {
+	dead, _ := selfSigned(t, "Distrust Date Over A Year Ago")
+	draining, _ := selfSigned(t, "Distrust Date Last Month")
+	future, _ := selfSigned(t, "Distrust Date Next Year")
+	unset, _ := selfSigned(t, "No Distrust Date")
+	generalized, _ := selfSigned(t, "Distrust Date In GeneralizedTime")
+
+	source := certObject("Distrust Date Over A Year Ago", "trusted: true\nnss-server-distrust-after: \"241130235959Z\"\n", dead) +
+		certObject("Distrust Date Last Month", "trusted: true\nnss-server-distrust-after: \"260801000000Z\"\n", draining) +
+		certObject("Distrust Date Next Year", "trusted: true\nnss-server-distrust-after: \"270101000000Z\"\n", future) +
+		certObject("No Distrust Date", "trusted: true\nnss-server-distrust-after: \"%00\"\n", unset) +
+		certObject("Distrust Date In GeneralizedTime", "trusted: true\nnss-server-distrust-after: \"20240630000000Z\"\n", generalized)
+
+	bundle, err := extractServerAnchors(strings.NewReader(source), fixedNow)
+	if err != nil {
+		t.Fatalf("extractServerAnchors: %v", err)
+	}
+	var got []string
+	for rest := bundle; len(rest) > 0; {
+		block, tail := pem.Decode(rest)
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, cert.Subject.CommonName)
+		rest = tail
+	}
+	want := []string{"Distrust Date Last Month", "Distrust Date Next Year", "No Distrust Date"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("bundle anchors %v, want %v", got, want)
+	}
+
+	for _, bad := range []string{`"2024-11-30"`, `"241130Z"`} {
+		_, err := extractServerAnchors(strings.NewReader(certObject("x", "trusted: true\nnss-server-distrust-after: "+bad+"\n", unset)), fixedNow)
+		if err == nil {
+			t.Errorf("distrust date %s was accepted", bad)
+		}
 	}
 }

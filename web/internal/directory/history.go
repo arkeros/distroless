@@ -320,7 +320,9 @@ func draw(points []Point) *Chart {
 	for _, point := range points {
 		bar := Bar{X: x(point.Finished) - width/2, Width: width, Right: x(point.Finished) + width/2, Title: title(point)}
 		y := chart.Baseline
-		for i := range bands {
+		// Stacked from the least band up, so critical is the top of the
+		// bar: the edge a reader's eye lands on is the band to read first.
+		for i := bands - 1; i >= 0; i-- {
 			count := point.Counts[i]
 			if count == 0 {
 				continue

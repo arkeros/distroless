@@ -60,6 +60,24 @@
         "upstream": "busybox-1.37.0-9.hum1.src.rpm"
       }
     },
+    "bzip2-libs": {
+      "aarch64": {
+        "version": "1.0.8-24.hum1",
+        "sha256": "c854a3d4e2ff9494d6813688820cf52d2b0c183744f92e0fbd46a94579ee5f56",
+        "path": "aarch64/Packages/b/bzip2-libs-1.0.8-24.hum1.aarch64.rpm",
+        "size": 48467,
+        "license": "BSD-4-Clause",
+        "upstream": "bzip2-1.0.8-24.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "1.0.8-24.hum1",
+        "sha256": "e9b25168f3d6df3283b3a16df281c32991cbb2059d9e1a2cf45819c770c5c723",
+        "path": "x86_64/Packages/b/bzip2-libs-1.0.8-24.hum1.x86_64.rpm",
+        "size": 50907,
+        "license": "BSD-4-Clause",
+        "upstream": "bzip2-1.0.8-24.hum1.src.rpm"
+      }
+    },
     "ca-certificates": {
       "noarch": {
         "version": "2025.2.80_v9.0.304-9.hum1",
@@ -126,6 +144,24 @@
         "upstream": "crypto-policies-20260731-1.git6488aef.hum1.src.rpm"
       }
     },
+    "expat": {
+      "aarch64": {
+        "version": "2.8.3-1.hum1",
+        "sha256": "a9cd27226a8b25a1f384a7bc4d6d62a637b5d394fa09a620e59cf3200da1d383",
+        "path": "aarch64/Packages/e/expat-2.8.3-1.hum1.aarch64.rpm",
+        "size": 135657,
+        "license": "MIT",
+        "upstream": "expat-2.8.3-1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "2.8.3-1.hum1",
+        "sha256": "bc4aa98f663aed70486cc40ab41705560579be77960cb4ff183b2c9020685184",
+        "path": "x86_64/Packages/e/expat-2.8.3-1.hum1.x86_64.rpm",
+        "size": 140632,
+        "license": "MIT",
+        "upstream": "expat-2.8.3-1.hum1.src.rpm"
+      }
+    },
     "filesystem": {
       "aarch64": {
         "version": "3.18-59.hum1",
@@ -152,6 +188,24 @@
         "size": 628899,
         "license": "GPL-3.0-or-later",
         "upstream": "findutils-4.11.0-1.1.hum1.src.rpm"
+      }
+    },
+    "gdbm-libs": {
+      "aarch64": {
+        "version": "1:1.23-12.hum1",
+        "sha256": "1c55cc80b28adf841366928d9f8b3250b21f3d32dda846d5399f32ab9a6c1e77",
+        "path": "aarch64/Packages/g/gdbm-libs-1.23-12.hum1.aarch64.rpm",
+        "size": 63935,
+        "license": "GPL-3.0-or-later",
+        "upstream": "gdbm-1.23-12.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "1:1.23-12.hum1",
+        "sha256": "adb051f6b098317485b5351d886e76bbf1df571b32c47e6819578d295f096fec",
+        "path": "x86_64/Packages/g/gdbm-libs-1.23-12.hum1.x86_64.rpm",
+        "size": 66359,
+        "license": "GPL-3.0-or-later",
+        "upstream": "gdbm-1.23-12.hum1.src.rpm"
       }
     },
     "glibc": {
@@ -284,6 +338,42 @@
         "upstream": "hummingbird-release-20251124-1.16.hum1.src.rpm"
       }
     },
+    "keyutils-libs": {
+      "aarch64": {
+        "version": "1.6.3-8.hum1",
+        "sha256": "2e6db3a8f0c4bc95d61dbd3844f15eeac786fca234415cfcd68cab4254e63ab0",
+        "path": "aarch64/Packages/k/keyutils-libs-1.6.3-8.hum1.aarch64.rpm",
+        "size": 38580,
+        "license": "GPL-2.0-or-later AND LGPL-2.1-or-later",
+        "upstream": "keyutils-1.6.3-8.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "1.6.3-8.hum1",
+        "sha256": "3188c0693d2e584454290bb1d49e9f5663c5b175ded852edcedd2ad433532c1c",
+        "path": "x86_64/Packages/k/keyutils-libs-1.6.3-8.hum1.x86_64.rpm",
+        "size": 38564,
+        "license": "GPL-2.0-or-later AND LGPL-2.1-or-later",
+        "upstream": "keyutils-1.6.3-8.hum1.src.rpm"
+      }
+    },
+    "krb5-libs": {
+      "aarch64": {
+        "version": "1.22.2-9.1.hum1",
+        "sha256": "76e6dd07076228d50e612229a5906fb4307fb2007f4ebd1be5fae510819622da",
+        "path": "aarch64/Packages/k/krb5-libs-1.22.2-9.1.hum1.aarch64.rpm",
+        "size": 789496,
+        "license": "Brian-Gladman-2-Clause AND BSD-2-Clause AND (BSD-2-Clause OR GPL-2.0-or-later) AND BSD-2-Clause-first-lines AND BSD-3-Clause AND BSD-4-Clause AND CMU-Mach-nodoc AND FSFULLRWD AND HPND AND HPND-export2-US AND HPND-export-US AND HPND-export-US-acknowledgement AND HPND-export-US-modify AND ISC AND MIT AND MIT-CMU AND OLDAP-2.8 AND OpenVision",
+        "upstream": "krb5-1.22.2-9.1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "1.22.2-9.1.hum1",
+        "sha256": "a468ea4e56fe777dfcada8085cba620f89854fd8adc0ba376f9fb33094b01365",
+        "path": "x86_64/Packages/k/krb5-libs-1.22.2-9.1.hum1.x86_64.rpm",
+        "size": 831253,
+        "license": "Brian-Gladman-2-Clause AND BSD-2-Clause AND (BSD-2-Clause OR GPL-2.0-or-later) AND BSD-2-Clause-first-lines AND BSD-3-Clause AND BSD-4-Clause AND CMU-Mach-nodoc AND FSFULLRWD AND HPND AND HPND-export2-US AND HPND-export-US AND HPND-export-US-acknowledgement AND HPND-export-US-modify AND ISC AND MIT AND MIT-CMU AND OLDAP-2.8 AND OpenVision",
+        "upstream": "krb5-1.22.2-9.1.hum1.src.rpm"
+      }
+    },
     "libacl": {
       "aarch64": {
         "version": "2.4.0-2.hum1",
@@ -338,6 +428,24 @@
         "upstream": "attr-2.6.0-9.1.hum1.src.rpm"
       }
     },
+    "libb2": {
+      "aarch64": {
+        "version": "0.98.1-16.hum1",
+        "sha256": "7e9fae3de6e0b682387276a62f0c00e462b13ea68a417f8d20187a1b8385eff9",
+        "path": "aarch64/Packages/l/libb2-0.98.1-16.hum1.aarch64.rpm",
+        "size": 32681,
+        "license": "CC0-1.0 OR Apache-1.0 OR Apache-2.0",
+        "upstream": "libb2-0.98.1-16.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "0.98.1-16.hum1",
+        "sha256": "eff2ad22d6e77b79a77534778f750e28ec2a5c6a8c6704fb5d10b0c7c392a8aa",
+        "path": "x86_64/Packages/l/libb2-0.98.1-16.hum1.x86_64.rpm",
+        "size": 32938,
+        "license": "CC0-1.0 OR Apache-1.0 OR Apache-2.0",
+        "upstream": "libb2-0.98.1-16.hum1.src.rpm"
+      }
+    },
     "libcap": {
       "aarch64": {
         "version": "2.78-2.hum1",
@@ -374,6 +482,24 @@
         "upstream": "libcap-ng-0.9.5-1.hum1.src.rpm"
       }
     },
+    "libcom_err": {
+      "aarch64": {
+        "version": "1.47.4-2.hum1",
+        "sha256": "44169d5ea7aef7a6068ccfb1366d78612db0fa04807946ff2fac2f5d74096dc9",
+        "path": "aarch64/Packages/l/libcom_err-1.47.4-2.hum1.aarch64.rpm",
+        "size": 33395,
+        "license": "MIT",
+        "upstream": "e2fsprogs-1.47.4-2.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "1.47.4-2.hum1",
+        "sha256": "e153010c101b791899975923ff77ba4b66d5115388089408b6393073ab6224aa",
+        "path": "x86_64/Packages/l/libcom_err-1.47.4-2.hum1.x86_64.rpm",
+        "size": 33499,
+        "license": "MIT",
+        "upstream": "e2fsprogs-1.47.4-2.hum1.src.rpm"
+      }
+    },
     "libeconf": {
       "aarch64": {
         "version": "0.7.9-4.1.hum1",
@@ -393,6 +519,14 @@
       }
     },
     "libffi": {
+      "aarch64": {
+        "version": "3.5.2-3.hum1",
+        "sha256": "1957a68eee05227bf2b375975fe6f7e44a1d9e52734f1dbbb196592fa465ab2f",
+        "path": "aarch64/Packages/l/libffi-3.5.2-3.hum1.aarch64.rpm",
+        "size": 46339,
+        "license": "MIT AND CC-PDDC AND (GPL-3.0-or-later WITH Texinfo-exception)",
+        "upstream": "libffi-3.5.2-3.hum1.src.rpm"
+      },
       "x86_64": {
         "version": "3.5.2-3.hum1",
         "sha256": "9d23617ea94f6d8b6a1434fb12e7f54d6793c27279589f001f56090710882515",
@@ -418,6 +552,42 @@
         "size": 145892,
         "license": "GPL-3.0-or-later AND LGPL-3.0-or-later AND (GPL-3.0-or-later WITH GCC-exception-3.1) AND (GPL-3.0-or-later WITH Texinfo-exception) AND (LGPL-2.1-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH GNU-compiler-exception) AND BSL-1.0 AND GFDL-1.3-or-later AND Linux-man-pages-copyleft-2-para AND SunPro AND BSD-1-Clause AND BSD-2-Clause AND BSD-2-Clause-Views AND BSD-3-Clause AND BSD-4-Clause AND BSD-Source-Code AND Zlib AND MIT AND Apache-2.0 AND (Apache-2.0 WITH LLVM-Exception) AND ZPL-2.1 AND ISC AND LicenseRef-Fedora-Public-Domain AND HP-1986 AND curl AND Martin-Birgmeier AND HPND-Markus-Kuhn AND dtoa AND SMLNJ AND AMD-newlib AND OAR AND HPND-merchantability-variant AND HPND-Intel",
         "upstream": "gcc-16.2.1-2.hum1.src.rpm"
+      }
+    },
+    "libgomp": {
+      "aarch64": {
+        "version": "16.2.1-2.hum1",
+        "sha256": "53098315796ed7186a3efd381ac386cf79f2e14300b9023c6c03921c663e7199",
+        "path": "aarch64/Packages/l/libgomp-16.2.1-2.hum1.aarch64.rpm",
+        "size": 395977,
+        "license": "GPL-3.0-or-later AND LGPL-3.0-or-later AND (GPL-3.0-or-later WITH GCC-exception-3.1) AND (GPL-3.0-or-later WITH Texinfo-exception) AND (LGPL-2.1-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH GNU-compiler-exception) AND BSL-1.0 AND GFDL-1.3-or-later AND Linux-man-pages-copyleft-2-para AND SunPro AND BSD-1-Clause AND BSD-2-Clause AND BSD-2-Clause-Views AND BSD-3-Clause AND BSD-4-Clause AND BSD-Source-Code AND Zlib AND MIT AND Apache-2.0 AND (Apache-2.0 WITH LLVM-Exception) AND ZPL-2.1 AND ISC AND LicenseRef-Fedora-Public-Domain AND HP-1986 AND curl AND Martin-Birgmeier AND HPND-Markus-Kuhn AND dtoa AND SMLNJ AND AMD-newlib AND OAR AND HPND-merchantability-variant AND HPND-Intel",
+        "upstream": "gcc-16.2.1-2.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "16.2.1-2.hum1",
+        "sha256": "47357222f9ed601c304590c04d9b5bad6a15aba8f1baa14353780a181efc68fd",
+        "path": "x86_64/Packages/l/libgomp-16.2.1-2.hum1.x86_64.rpm",
+        "size": 413534,
+        "license": "GPL-3.0-or-later AND LGPL-3.0-or-later AND (GPL-3.0-or-later WITH GCC-exception-3.1) AND (GPL-3.0-or-later WITH Texinfo-exception) AND (LGPL-2.1-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH GCC-exception-2.0) AND (GPL-2.0-or-later WITH GNU-compiler-exception) AND BSL-1.0 AND GFDL-1.3-or-later AND Linux-man-pages-copyleft-2-para AND SunPro AND BSD-1-Clause AND BSD-2-Clause AND BSD-2-Clause-Views AND BSD-3-Clause AND BSD-4-Clause AND BSD-Source-Code AND Zlib AND MIT AND Apache-2.0 AND (Apache-2.0 WITH LLVM-Exception) AND ZPL-2.1 AND ISC AND LicenseRef-Fedora-Public-Domain AND HP-1986 AND curl AND Martin-Birgmeier AND HPND-Markus-Kuhn AND dtoa AND SMLNJ AND AMD-newlib AND OAR AND HPND-merchantability-variant AND HPND-Intel",
+        "upstream": "gcc-16.2.1-2.hum1.src.rpm"
+      }
+    },
+    "libnsl2": {
+      "aarch64": {
+        "version": "2.0.1-6.hum1",
+        "sha256": "397a4a06f3b29525e64f49590997e42013be7ffadb9c3d1a09b3f51b04941009",
+        "path": "aarch64/Packages/l/libnsl2-2.0.1-6.hum1.aarch64.rpm",
+        "size": 36324,
+        "license": "BSD-3-Clause AND LGPL-2.1-or-later",
+        "upstream": "libnsl2-2.0.1-6.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "2.0.1-6.hum1",
+        "sha256": "e9820fc58ded61e131fabce8fbcca8f4791b90548db54ad34dcc78746f4b8d28",
+        "path": "x86_64/Packages/l/libnsl2-2.0.1-6.hum1.x86_64.rpm",
+        "size": 36736,
+        "license": "BSD-3-Clause AND LGPL-2.1-or-later",
+        "upstream": "libnsl2-2.0.1-6.hum1.src.rpm"
       }
     },
     "libselinux": {
@@ -484,6 +654,96 @@
         "upstream": "libtasn1-4.21.0-2.hum1.src.rpm"
       }
     },
+    "libtirpc": {
+      "aarch64": {
+        "version": "1.3.7-3.hum1",
+        "sha256": "5308362f7a66c97cfffc651914137ca459df0247587ec3d6044b2328ceca0a22",
+        "path": "aarch64/Packages/l/libtirpc-1.3.7-3.hum1.aarch64.rpm",
+        "size": 101777,
+        "license": "SISSL AND BSD-3-Clause",
+        "upstream": "libtirpc-1.3.7-3.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "1.3.7-3.hum1",
+        "sha256": "f34ac4efd734a6c23798e715e795e5adde8349c6c250fc780dbdb4e69159ee29",
+        "path": "x86_64/Packages/l/libtirpc-1.3.7-3.hum1.x86_64.rpm",
+        "size": 107985,
+        "license": "SISSL AND BSD-3-Clause",
+        "upstream": "libtirpc-1.3.7-3.hum1.src.rpm"
+      }
+    },
+    "libuuid": {
+      "aarch64": {
+        "version": "2.42.2-3.4.hum1",
+        "sha256": "6d78d95dc641590fe1917849b71a8fd88d2442d9bc0e9151f2ecd87ebb41b526",
+        "path": "aarch64/Packages/l/libuuid-2.42.2-3.4.hum1.aarch64.rpm",
+        "size": 32405,
+        "license": "BSD-3-Clause",
+        "upstream": "util-linux-2.42.2-3.4.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "2.42.2-3.4.hum1",
+        "sha256": "9f4fc90694ae8b0cee888fdb6a4c5a7bda200c67b2be21e05798d11af1207563",
+        "path": "x86_64/Packages/l/libuuid-2.42.2-3.4.hum1.x86_64.rpm",
+        "size": 32988,
+        "license": "BSD-3-Clause",
+        "upstream": "util-linux-2.42.2-3.4.hum1.src.rpm"
+      }
+    },
+    "libverto": {
+      "aarch64": {
+        "version": "0.3.2-13.hum1",
+        "sha256": "3bce73ff27972638ac25d162e180f82dbfdde2ced6caf575742f2c127b9f7edc",
+        "path": "aarch64/Packages/l/libverto-0.3.2-13.hum1.aarch64.rpm",
+        "size": 27209,
+        "license": "MIT",
+        "upstream": "libverto-0.3.2-13.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "0.3.2-13.hum1",
+        "sha256": "07af161ae71b17c3ddd3bdd423d249de93992d3d60edcdb90a889d5ad1de1df2",
+        "path": "x86_64/Packages/l/libverto-0.3.2-13.hum1.x86_64.rpm",
+        "size": 27766,
+        "license": "MIT",
+        "upstream": "libverto-0.3.2-13.hum1.src.rpm"
+      }
+    },
+    "libxcrypt": {
+      "aarch64": {
+        "version": "4.5.2-4.hum1",
+        "sha256": "f40a390d02e0118e51d701ee796ff29ef31af16ddb5d1a045e88d2f4fe3dace6",
+        "path": "aarch64/Packages/l/libxcrypt-4.5.2-4.hum1.aarch64.rpm",
+        "size": 135687,
+        "license": "LGPL-2.1-or-later AND BSD-3-Clause AND BSD-2-Clause AND BSD-2-Clause-FreeBSD AND 0BSD AND CC0-1.0 AND LicenseRef-Fedora-Public-Domain",
+        "upstream": "libxcrypt-4.5.2-4.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "4.5.2-4.hum1",
+        "sha256": "2a434fac4798d11fcd933b075d1ee3dc71ba09a3f61abfd7bf12f4bfb501c184",
+        "path": "x86_64/Packages/l/libxcrypt-4.5.2-4.hum1.x86_64.rpm",
+        "size": 141715,
+        "license": "LGPL-2.1-or-later AND BSD-3-Clause AND BSD-2-Clause AND BSD-2-Clause-FreeBSD AND 0BSD AND CC0-1.0 AND LicenseRef-Fedora-Public-Domain",
+        "upstream": "libxcrypt-4.5.2-4.hum1.src.rpm"
+      }
+    },
+    "libzstd": {
+      "aarch64": {
+        "version": "1.5.7-6.1.hum1",
+        "sha256": "fc6798305ebdd0f08b52b452b1124f79801db3af5a1ba8c307fca39d45eb60e9",
+        "path": "aarch64/Packages/l/libzstd-1.5.7-6.1.hum1.aarch64.rpm",
+        "size": 343913,
+        "license": "BSD-3-Clause OR GPL-2.0-only",
+        "upstream": "zstd-1.5.7-6.1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "1.5.7-6.1.hum1",
+        "sha256": "d5a2cf19140ccc0292a57a6e0e3baea9189f8366b3dbe9b9854600c95f018306",
+        "path": "x86_64/Packages/l/libzstd-1.5.7-6.1.hum1.x86_64.rpm",
+        "size": 378929,
+        "license": "BSD-3-Clause OR GPL-2.0-only",
+        "upstream": "zstd-1.5.7-6.1.hum1.src.rpm"
+      }
+    },
     "mailcap": {
       "noarch": {
         "version": "2.1.54-11.hum1",
@@ -510,6 +770,24 @@
         "size": 170306,
         "license": "GPL-2.0-only",
         "upstream": "mawk-1.3.4-8.20260302.hum1.src.rpm"
+      }
+    },
+    "mpdecimal": {
+      "aarch64": {
+        "version": "4.0.1-4.hum1",
+        "sha256": "f5eb89cbb17baca07bad65e1b77b7479e44dccc08a2624fd2627ef6c18204ec3",
+        "path": "aarch64/Packages/m/mpdecimal-4.0.1-4.hum1.aarch64.rpm",
+        "size": 102957,
+        "license": "BSD-2-Clause",
+        "upstream": "mpdecimal-4.0.1-4.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "4.0.1-4.hum1",
+        "sha256": "39f20a9da91ab24e3ee25848764dd2a8c682a2f8e9b4d133a1054eda0e65fc2a",
+        "path": "x86_64/Packages/m/mpdecimal-4.0.1-4.hum1.x86_64.rpm",
+        "size": 106246,
+        "license": "BSD-2-Clause",
+        "upstream": "mpdecimal-4.0.1-4.hum1.src.rpm"
       }
     },
     "ncurses-base": {
@@ -642,6 +920,188 @@
         "upstream": "pcre2-10.47-1.2.hum1.src.rpm"
       }
     },
+    "python-pip-wheel": {
+      "noarch": {
+        "version": "26.2-0.1.hum1",
+        "sha256": "f6fe5f889491c767c3289f7c42d7fb7a99a6aeb71e5f07f0fe361db26dd8552c",
+        "path": "x86_64/Packages/p/python-pip-wheel-26.2-0.1.hum1.noarch.rpm",
+        "size": 1252988,
+        "license": "MIT AND Python-2.0.1 AND Apache-2.0 AND BSD-2-Clause AND BSD-3-Clause AND ISC AND MPL-2.0 AND (Apache-2.0 OR BSD-2-Clause)",
+        "upstream": "python-pip-26.2-0.1.hum1.src.rpm"
+      }
+    },
+    "python-setuptools-wheel": {
+      "noarch": {
+        "version": "83.0.0-4.hum1",
+        "sha256": "7590bfdfe89c4dbb792f60c553ca49e2bf63131374a435c7b642f3ef35a7bc9f",
+        "path": "x86_64/Packages/p/python-setuptools-wheel-83.0.0-4.hum1.noarch.rpm",
+        "size": 912376,
+        "license": "MIT AND Apache-2.0 AND (BSD-2-Clause OR Apache-2.0) AND LGPL-3.0-only",
+        "upstream": "python-setuptools-83.0.0-4.hum1.src.rpm"
+      }
+    },
+    "python3": {
+      "aarch64": {
+        "version": "3.14.7-1.hum1",
+        "sha256": "c77824e37d1ea940e7249650fafb3160b3e14eba9273ef41519fb52571e895d1",
+        "path": "aarch64/Packages/p/python3-3.14.7-1.hum1.aarch64.rpm",
+        "size": 36280,
+        "license": "Python-2.0.1",
+        "upstream": "python3.14-3.14.7-1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.14.7-1.hum1",
+        "sha256": "357a1f94a99909b12ce6edd54663f7b5c66dae9b35d46311ac628a566566480a",
+        "path": "x86_64/Packages/p/python3-3.14.7-1.hum1.x86_64.rpm",
+        "size": 36039,
+        "license": "Python-2.0.1",
+        "upstream": "python3.14-3.14.7-1.hum1.src.rpm"
+      }
+    },
+    "python3-libs": {
+      "aarch64": {
+        "version": "3.14.7-1.hum1",
+        "sha256": "9dacce648687cff55718fdbfcb6ba89f41047bc3f55bed9f7e4c437240deb6c0",
+        "path": "aarch64/Packages/p/python3-libs-3.14.7-1.hum1.aarch64.rpm",
+        "size": 10476532,
+        "license": "Python-2.0.1 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
+        "upstream": "python3.14-3.14.7-1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.14.7-1.hum1",
+        "sha256": "6dacdbfff96a575e98b99dfe76a3d66e6f50af871f97756b9461785210c85e09",
+        "path": "x86_64/Packages/p/python3-libs-3.14.7-1.hum1.x86_64.rpm",
+        "size": 10733203,
+        "license": "Python-2.0.1 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
+        "upstream": "python3.14-3.14.7-1.hum1.src.rpm"
+      }
+    },
+    "python3.11": {
+      "aarch64": {
+        "version": "3.11.16-1.1.hum1",
+        "sha256": "5215abc93329cffa819a8b7a31420de29baf24a4850bc65a8bd6b26f48ec9302",
+        "path": "aarch64/Packages/p/python3.11-3.11.16-1.1.hum1.aarch64.rpm",
+        "size": 33100,
+        "license": "Python-2.0.1",
+        "upstream": "python3.11-3.11.16-1.1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.11.16-1.1.hum1",
+        "sha256": "8b6d5b1e01b545f5be5fe12f0f5b0a47cfbc40fdb0129dc5df8e6fe931d6609b",
+        "path": "x86_64/Packages/p/python3.11-3.11.16-1.1.hum1.x86_64.rpm",
+        "size": 32885,
+        "license": "Python-2.0.1",
+        "upstream": "python3.11-3.11.16-1.1.hum1.src.rpm"
+      }
+    },
+    "python3.11-libs": {
+      "aarch64": {
+        "version": "3.11.16-1.1.hum1",
+        "sha256": "12daade23c9a7738154aca33e45c496a6de22630722bdf09d9450956ddfba015",
+        "path": "aarch64/Packages/p/python3.11-libs-3.11.16-1.1.hum1.aarch64.rpm",
+        "size": 10192380,
+        "license": "Python-2.0.1 AND CC0-1.0",
+        "upstream": "python3.11-3.11.16-1.1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.11.16-1.1.hum1",
+        "sha256": "afdb9ec3fcc81cc159eb65c9b57d9079d68753d6ad12b09c321b70076b2a9de1",
+        "path": "x86_64/Packages/p/python3.11-libs-3.11.16-1.1.hum1.x86_64.rpm",
+        "size": 10410204,
+        "license": "Python-2.0.1 AND CC0-1.0",
+        "upstream": "python3.11-3.11.16-1.1.hum1.src.rpm"
+      }
+    },
+    "python3.12": {
+      "aarch64": {
+        "version": "3.12.14-1.hum1",
+        "sha256": "d40d0db7cd8f1cc41a622060299afa9483683bc48a630aa1dcfaf4527f8d84e5",
+        "path": "aarch64/Packages/p/python3.12-3.12.14-1.hum1.aarch64.rpm",
+        "size": 33262,
+        "license": "Python-2.0.1",
+        "upstream": "python3.12-3.12.14-1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.12.14-1.hum1",
+        "sha256": "1c4e1884cdc1bfa195cfa1372387b70d7ee2bedc564881492f0b2783d84a99f8",
+        "path": "x86_64/Packages/p/python3.12-3.12.14-1.hum1.x86_64.rpm",
+        "size": 33033,
+        "license": "Python-2.0.1",
+        "upstream": "python3.12-3.12.14-1.hum1.src.rpm"
+      }
+    },
+    "python3.12-libs": {
+      "aarch64": {
+        "version": "3.12.14-1.hum1",
+        "sha256": "62ca2d2ca31b1ddabeb5b715e3fff574421d849373be9dfeb5f87993db51f4ae",
+        "path": "aarch64/Packages/p/python3.12-libs-3.12.14-1.hum1.aarch64.rpm",
+        "size": 9683461,
+        "license": "Python-2.0.1 AND CC0-1.0",
+        "upstream": "python3.12-3.12.14-1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.12.14-1.hum1",
+        "sha256": "8d82e7a2a5971ffb0891fb142d25cf058113a1a91b69e5496178878c185acb88",
+        "path": "x86_64/Packages/p/python3.12-libs-3.12.14-1.hum1.x86_64.rpm",
+        "size": 9916220,
+        "license": "Python-2.0.1 AND CC0-1.0",
+        "upstream": "python3.12-3.12.14-1.hum1.src.rpm"
+      }
+    },
+    "python3.13": {
+      "aarch64": {
+        "version": "3.13.15-1.hum1",
+        "sha256": "4dea80dcc7eec0b935469ce8b3ac2e9219ffc3fa79da43671c69e5c01ea301d6",
+        "path": "aarch64/Packages/p/python3.13-3.13.15-1.hum1.aarch64.rpm",
+        "size": 35033,
+        "license": "Python-2.0.1",
+        "upstream": "python3.13-3.13.15-1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.13.15-1.hum1",
+        "sha256": "98e150c7743d834aa73afe5cb5125ed2c7d08368b428dda2a0d8b6ae03ca6242",
+        "path": "x86_64/Packages/p/python3.13-3.13.15-1.hum1.x86_64.rpm",
+        "size": 34808,
+        "license": "Python-2.0.1",
+        "upstream": "python3.13-3.13.15-1.hum1.src.rpm"
+      }
+    },
+    "python3.13-libs": {
+      "aarch64": {
+        "version": "3.13.15-1.hum1",
+        "sha256": "7f479b52db18aa715d497b221d52f873d0a3902df30c1cd5329b38193e9af130",
+        "path": "aarch64/Packages/p/python3.13-libs-3.13.15-1.hum1.aarch64.rpm",
+        "size": 9877290,
+        "license": "Python-2.0.1 AND CC0-1.0 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
+        "upstream": "python3.13-3.13.15-1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.13.15-1.hum1",
+        "sha256": "63eb20221f3ce817d8ad4f14b910ee80c2814b2c77eab07918202dd8e60fcd61",
+        "path": "x86_64/Packages/p/python3.13-libs-3.13.15-1.hum1.x86_64.rpm",
+        "size": 10126095,
+        "license": "Python-2.0.1 AND CC0-1.0 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
+        "upstream": "python3.13-3.13.15-1.hum1.src.rpm"
+      }
+    },
+    "readline": {
+      "aarch64": {
+        "version": "8.3-6.hum1",
+        "sha256": "e17b7d1ff99a747528a1197637d8bac88e16ab411bdd202ab4a079f4779e4530",
+        "path": "aarch64/Packages/r/readline-8.3-6.hum1.aarch64.rpm",
+        "size": 232867,
+        "license": "GPL-3.0-or-later AND GPL-2.0-or-later AND GFDL-1.3-no-invariants-or-later",
+        "upstream": "readline-8.3-6.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "8.3-6.hum1",
+        "sha256": "d50eec31cc36acf9dccb4c3283e0d687685a473a9c32c96d44724d2fcb7ca0fe",
+        "path": "x86_64/Packages/r/readline-8.3-6.hum1.x86_64.rpm",
+        "size": 241368,
+        "license": "GPL-3.0-or-later AND GPL-2.0-or-later AND GFDL-1.3-no-invariants-or-later",
+        "upstream": "readline-8.3-6.hum1.src.rpm"
+      }
+    },
     "sed": {
       "aarch64": {
         "version": "4.10-2.hum1",
@@ -670,6 +1130,24 @@
         "upstream": "setup-2.15.1-2.hum1.src.rpm"
       }
     },
+    "sqlite-libs": {
+      "aarch64": {
+        "version": "3.53.4-1.hum1",
+        "sha256": "3a2f101dd93fe5df1faf20bd99310151e0d26b97dbb8018636e5a18e2cfd943b",
+        "path": "aarch64/Packages/s/sqlite-libs-3.53.4-1.hum1.aarch64.rpm",
+        "size": 789397,
+        "license": "blessing",
+        "upstream": "sqlite-3.53.4-1.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "3.53.4-1.hum1",
+        "sha256": "83690d88a11b2df8b701341740f75f4ef507c95ff6a5ecf6a7815c46455ef41f",
+        "path": "x86_64/Packages/s/sqlite-libs-3.53.4-1.hum1.x86_64.rpm",
+        "size": 838235,
+        "license": "blessing",
+        "upstream": "sqlite-3.53.4-1.hum1.src.rpm"
+      }
+    },
     "systemd-libs": {
       "aarch64": {
         "version": "261.2-1.hum1",
@@ -696,6 +1174,24 @@
         "size": 861930,
         "license": "LicenseRef-Fedora-Public-Domain AND (GPL-2.0-only WITH ClassPath-exception-2.0)",
         "upstream": "tzdata-2026c-1.hum1.src.rpm"
+      }
+    },
+    "xz-libs": {
+      "aarch64": {
+        "version": "1:5.8.3-2.hum1",
+        "sha256": "182b933d379568c9e78a67812ab7feded8853c27d80a6f38e8165a6f45334741",
+        "path": "aarch64/Packages/x/xz-libs-5.8.3-2.hum1.aarch64.rpm",
+        "size": 120164,
+        "license": "0BSD",
+        "upstream": "xz-5.8.3-2.hum1.src.rpm"
+      },
+      "x86_64": {
+        "version": "1:5.8.3-2.hum1",
+        "sha256": "0db79cef177ed8d8bff585b36808c44153e637ca0a3a3bf07d8f029ce068edd8",
+        "path": "x86_64/Packages/x/xz-libs-5.8.3-2.hum1.x86_64.rpm",
+        "size": 125292,
+        "license": "0BSD",
+        "upstream": "xz-5.8.3-2.hum1.src.rpm"
       }
     },
     "zlib-ng-compat": {

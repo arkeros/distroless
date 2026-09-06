@@ -14,8 +14,8 @@
 # there, and the run only warms the cache.
 name: Modules
 on:
+  # Any base, as pr.yaml: stacked pull requests are tested where they sit.
   pull_request:
-    branches: [main]
   push:
     branches: [main]
     paths:

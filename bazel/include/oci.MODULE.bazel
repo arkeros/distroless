@@ -237,50 +237,6 @@ use_repo(rpm, "hummingbird", "nginx_mainline_rpm", "nginx_stable_rpm")
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
-# Upstream prebuilt runtime tarballs, one lockfile per image. Each line of
-# a lockfile becomes one http_archive per arch (and per JRE/JDK for Temurin)
-# named as the image BUILD references it, plus a hub repo exporting the
-# versions for the image's config.bzl. Refresh with
-#   knife tarballs update images/nodejs/nodejs.lock.json
-# which the Update Tarballs workflow runs daily; adding or dropping a
-# release line is a hand edit of the lockfile.
-tarballs = use_extension("//images:tarballs.bzl", "tarballs")
-
-# Node.js from nodejs.org (ADR 0007 step 6, the "marquee demo" distroless
-# node on Hummingbird's glibc). Only `bin/node` is shipped in the image;
-# npm/npx/corepack/headers/docs are left in the bazel-out tree and never
-# make it into the layer.
-tarballs.lock(
-    name = "nodejs_tarballs",
-    build_file_content = """\
-package(default_visibility = ["//visibility:public"])
-exports_files(["bin/node"])
-""",
-    lockfile = "//images/nodejs:nodejs.lock.json",
-)
-
-# Eclipse Temurin JRE + JDK from Adoptium's GitHub releases. Consumed by
-# //images/java — the headless JRE ships under /jre/, mirroring nodejs's
-# /nodejs/ prefix so the host distro's PATH never resolves to it; the
-# `_debug` variant ships the JDK at the same path for jstack/jcmd/jmap.
-# Versions are kept in lockstep across image types because mixing build
-# numbers would shift the CPE the SBOM declares between modes; the
-# updater refuses a release until all four assets are published.
-#
-# Policy: latest 3 LTS only, no non-LTS; see //images/java:config.bzl.
-tarballs.lock(
-    name = "temurin_tarballs",
-    build_file_content = """\
-package(default_visibility = ["//visibility:public"])
-filegroup(
-    name = "all",
-    srcs = glob(["**"], exclude = ["BUILD*", "REPO*", "WORKSPACE*", "MODULE*"], allow_empty = False),
-)
-""",
-    lockfile = "//images/java:temurin.lock.json",
-)
-use_repo(tarballs, "nodejs_24_amd64", "nodejs_24_arm64", "nodejs_26_amd64", "nodejs_26_arm64", "nodejs_tarballs", "temurin_jdk_17_amd64", "temurin_jdk_17_arm64", "temurin_jdk_21_amd64", "temurin_jdk_21_arm64", "temurin_jdk_25_amd64", "temurin_jdk_25_arm64", "temurin_jre_17_amd64", "temurin_jre_17_arm64", "temurin_jre_21_amd64", "temurin_jre_21_arm64", "temurin_jre_25_amd64", "temurin_jre_25_arm64", "temurin_tarballs")
-
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(
     name = "grype_database",

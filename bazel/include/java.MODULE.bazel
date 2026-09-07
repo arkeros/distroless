@@ -1,0 +1,31 @@
+"""Java configuration: the Eclipse Temurin runtime the java images ship.
+
+No Java is built here. Prebuilt linux tarballs from Adoptium's GitHub
+releases are pinned in //images/java:temurin.lock.json and refreshed by
+`knife tarballs update` (daily, via the Update Tarballs workflow). Adding or
+dropping a release line is a hand edit of that lockfile.
+"""
+
+tarballs = use_extension("//bazel/tarballs:extensions.bzl", "tarballs")
+
+# Eclipse Temurin JRE + JDK from Adoptium's GitHub releases. Consumed by
+# //images/java — the headless JRE ships under /jre/, mirroring nodejs's
+# /nodejs/ prefix so the host distro's PATH never resolves to it; the
+# `_debug` variant ships the JDK at the same path for jstack/jcmd/jmap.
+# Versions are kept in lockstep across image types because mixing build
+# numbers would shift the CPE the SBOM declares between modes; the
+# updater refuses a release until all four assets are published.
+#
+# Policy: latest 3 LTS only, no non-LTS; see //images/java:config.bzl.
+tarballs.lock(
+    name = "temurin_tarballs",
+    build_file_content = """\
+package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "all",
+    srcs = glob(["**"], exclude = ["BUILD*", "REPO*", "WORKSPACE*", "MODULE*"], allow_empty = False),
+)
+""",
+    lockfile = "//images/java:temurin.lock.json",
+)
+use_repo(tarballs, "temurin_jdk_17_amd64", "temurin_jdk_17_arm64", "temurin_jdk_21_amd64", "temurin_jdk_21_arm64", "temurin_jdk_25_amd64", "temurin_jdk_25_arm64", "temurin_jre_17_amd64", "temurin_jre_17_arm64", "temurin_jre_21_amd64", "temurin_jre_21_arm64", "temurin_jre_25_amd64", "temurin_jre_25_arm64", "temurin_tarballs")

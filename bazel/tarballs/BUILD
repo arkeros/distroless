@@ -5,6 +5,7 @@ go_library(
     name = "tarballs",
     srcs = [
         "lockfile.go",
+        "http.go",
         "nodejs.go",
         "temurin.go",
         "update.go",

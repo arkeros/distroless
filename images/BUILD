@@ -32,10 +32,3 @@ bzl_library(
     srcs = ["platforms.bzl"],
     visibility = ["//visibility:public"],
 )
-
-bzl_library(
-    name = "tarballs",
-    srcs = ["tarballs.bzl"],
-    visibility = ["//visibility:public"],
-    deps = ["@bazel_tools//tools/build_defs/repo:http.bzl"],
-)

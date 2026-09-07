@@ -1,6 +1,6 @@
 // Package tarballs pins upstream prebuilt runtime tarballs (nodejs.org,
 // Adoptium Temurin) in a JSON lockfile that the `tarballs` module
-// extension in //images:tarballs.bzl turns into http_archive repos.
+// extension in //bazel/tarballs:extensions.bzl turns into http_archive repos.
 //
 // Each lockfile covers one upstream (`source`) and lists the release
 // lines the images ship, one `Line` per major. Which majors appear is a

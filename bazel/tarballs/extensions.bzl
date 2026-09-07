@@ -89,13 +89,12 @@ def _tarballs_impl(mctx):
                 } for line in parsed["lines"]]),
             )
 
-    # Every repo is a direct dep of the root module (the image BUILD files
-    # reference them by name), so `bazel mod tidy` keeps use_repo complete.
-    return mctx.extension_metadata(
-        root_module_direct_deps = "all",
-        root_module_direct_dev_deps = [],
-        reproducible = True,
-    )
+    # No root_module_direct_deps: the extension is used from more than one
+    # MODULE include (js, java), each importing its own repos, and tidy
+    # cannot tell which include a repo belongs to. Adding a line to a
+    # lockfile means adding its repos to that include's use_repo by hand;
+    # Bazel names the missing repo if it is forgotten.
+    return mctx.extension_metadata(reproducible = True)
 
 tarballs = module_extension(
     implementation = _tarballs_impl,

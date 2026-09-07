@@ -78,75 +78,9 @@ common --aspects=//oci:aspects.bzl%mirror_push_enforcement_aspect
 common:lint --aspects=//tools/lint:linters.bzl%buildifier,//tools/lint:linters.bzl%shellcheck,//tools/lint:linters.bzl%oxlint
 common:lint --@aspect_rules_lint//lint:fail_on_violation
 
-# Remote cache (GCS).
-#
-# Cache only — there is no remote execution. Every action runs on the machine
-# that invoked Bazel; all that crosses the network is the action result store.
-# The bucket, its 30-day lifecycle rule, and the CI identities allowed to
-# read/write it are Terraform-managed in //infra (see infra/cache.tf).
-#
-# Opt-in, because it needs credentials: locally `gcloud auth
-# application-default login`, in CI the `google-github-actions/auth` step that
-# populates GOOGLE_APPLICATION_CREDENTIALS. `--config=ci` deliberately does
-# *not* imply this — a pull request opened from a fork gets no OIDC token, and
-# such a build should run cacheless rather than fail.
-#
-# Since 2026-09 no workflow uses this directly: CI goes through bazel-remote
-# (`bazel-remote` below), which reads and writes the same bucket under the
-# same keys. `gcs` and `gcs-readonly` are the developer path.
-common:gcs --remote_cache=https://storage.googleapis.com/senku-prod-bazel-cache
-common:gcs --google_default_credentials
-common:gcs --remote_cache_compression
-common:gcs --remote_cache_async
-
-# Read-only view of the same cache, for pull requests. Cache writes are
-# `main`-only (ADR 0014): a branch that could write an action result that
-# `main` later reads could have the platform sign an image it never built.
-# The identity pull requests hold is a viewer, so an upload would 403 anyway;
-# this keeps Bazel from attempting it.
-common:gcs-readonly --config=gcs
-common:gcs-readonly --remote_upload_local_results=false
-
-# The same cache through bazel-remote running on the CI runner
-# (.github/actions/setup-bazel-remote): same bucket, same `ac/` and `cas/`
-# keys, reached over gRPC on localhost instead of HTTPS to GCS. This is what
-# rules_img's lazy push needs, and gRPC to a local proxy is one connection
-# with batched lookups where the HTTP config is ~22k independent round trips.
-# No credentials flag: the proxy holds the GCS identity, Bazel talks to
-# localhost. Developers keep `gcs`; nothing here applies without the proxy.
-common:bazel-remote --remote_cache=grpc://127.0.0.1:9092
-
-# External downloads go through the proxy's remote asset API: Bazel sends the
-# URL and the expected sha256, the proxy fetches it once and keeps it in the
-# bucket under that hash, and every later job on any runner gets it from
-# there. This is what lets CI drop setup-bazel's repository cache — a 6 GB
-# Actions-cache restore and unpack in every job, mostly JDK, Node and LLVM
-# tarballs no quiet run reads. Local fallback so a URL the proxy cannot fetch
-# is downloaded by Bazel itself rather than failing the build.
-common:bazel-remote --experimental_remote_downloader=grpc://127.0.0.1:9092
-common:bazel-remote --experimental_remote_downloader_local_fallback
-
-# Lazy push: a push binary carries no layers in its runfiles. It asks the
-# registry which blobs are missing and, for those only, reads the blob from
-# the CAS over the proxy and pipes it into the registry upload — GCS to
-# bazel-remote to the pusher to GHCR as one stream, never a file on disk or in
-# bazel-out. On a quiet run nothing is read and nothing uploaded; before,
-# `publish` materialised every layer of every image to prove the registry
-# already had them. Needs sha256 digests (top of this file) and every layer in
-# the cache (the Tar note above). Executables run outside `bazel run` must
-# export IMG_REAPI_ENDPOINT themselves; ci.yaml does.
-common:bazel-remote --@rules_img//img/settings:push_strategy=lazy
-common:bazel-remote --@rules_img//img/settings:remote_cache=grpc://127.0.0.1:9092
-
-# Pull requests: read through the proxy, never upload (see `gcs-readonly`).
-common:bazel-remote-readonly --config=bazel-remote
-common:bazel-remote-readonly --remote_upload_local_results=false
-
 # Allow many actions in flight at once, rather than the default of one per
-# CPU core. CI builds are dominated by remote cache round trips (~22k actions
-# against the GCS HTTP cache with a critical path under 20s), and the 4-vCPU
-# runners throttled them to 4 concurrent lookups. Local execution is still
-# bounded by --local_resources, so this does not oversubscribe the CPU.
+# CPU core. Local execution is bounded by --local_resources, so this does not
+# oversubscribe the CPU; it only keeps Bazel's scheduler from serialising.
 common:ci --jobs=200
 
 # Skip tests that need real arm64 silicon. qemu-user can register linux/arm64

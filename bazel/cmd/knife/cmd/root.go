@@ -7,6 +7,7 @@ import (
 
 	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/apt"
 	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/grype"
+	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/tarballs"
 )
 
 var rootCmd = &cobra.Command{
@@ -18,6 +19,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(apt.NewCmdApt())
 	rootCmd.AddCommand(grype.NewCmdGrype())
+	rootCmd.AddCommand(tarballs.NewCmdTarballs())
 }
 
 func Execute(ctx context.Context) error {

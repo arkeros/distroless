@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "tarballs",
+    srcs = [
+        "lockfile.go",
+        "nodejs.go",
+        "temurin.go",
+        "update.go",
+    ],
+    importpath = "github.com/arkeros/distroless/bazel/tarballs",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "tarballs_test",
+    srcs = ["tarballs_test.go"],
+    embed = [":tarballs"],
+)

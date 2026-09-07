@@ -27,7 +27,9 @@ OXFMT_CHECK = ["--check"]
 
 OXFMT_FIX = ["--write"]
 
-GOFUMPT = "@aspect_rules_lint//format:gofumpt"
+# The gofumpt go.mod pins as a tool, like buildifier; rules_lint's lockfile
+# carries one too, under an older pin.
+GOFUMPT = "@cc_mvdan_gofumpt//:gofumpt"
 
 SHFMT = "@aspect_rules_lint//format:shfmt"
 

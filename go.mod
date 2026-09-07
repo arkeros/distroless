@@ -381,6 +381,7 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.56.0 // indirect
+	mvdan.cc/gofumpt v0.11.0 // indirect
 )
 
 tool (
@@ -390,4 +391,5 @@ tool (
 	github.com/google/go-containerregistry/cmd/gcrane
 	github.com/google/go-containerregistry/cmd/krane
 	github.com/mikefarah/yq/v4
+	mvdan.cc/gofumpt
 )

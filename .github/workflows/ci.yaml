@@ -79,7 +79,7 @@ jobs:
       # bazelisk is on PATH from setup-bazel above, so the action skips its
       # own, and its caches stay off: the remote cache is the cache here.
       - name: Set up Aspect CLI
-        uses: aspect-build/setup-aspect@2306377a61c45954ab2df7c7311698b109364352 # v2026.26.9
+        uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
         with:
           bazelisk-cache: false
           disk-cache: false

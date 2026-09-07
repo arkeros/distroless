@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLockRoundTrip(t *testing.T) {
@@ -214,5 +215,24 @@ func TestNewSource(t *testing.T) {
 	}
 	if _, err := NewSource("gopher"); err == nil {
 		t.Error("expected error for unknown source")
+	}
+}
+
+func TestStalledUpstreamTimesOut(t *testing.T) {
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-release // never answers within the client's timeout
+	}))
+	// Deferred in this order so the handler is released before Close waits
+	// for it; the other way round deadlocks the test.
+	defer srv.Close()
+	defer close(release)
+
+	old := httpClient.Timeout
+	httpClient.Timeout = 50 * time.Millisecond
+	defer func() { httpClient.Timeout = old }()
+
+	if _, err := (&NodeJS{BaseURL: srv.URL}).Latest(context.Background(), "24"); err == nil {
+		t.Error("expected a timeout error from a stalled upstream")
 	}
 }

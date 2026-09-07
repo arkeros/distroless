@@ -1,5 +1,7 @@
 "Configuration for java distroless images"
 
+load("@temurin_tarballs//:versions.bzl", "VERSIONS")
+
 JAVA_DISTROS = ["hummingbird"]
 
 JAVA_ARCHITECTURES = {
@@ -13,17 +15,14 @@ JAVA_ARCHITECTURES = {
 # the per-quarter CVE-rebuild promise on a one-maintainer repo. When 29
 # ships (~2027), 17 rolls off and 29 takes its place here.
 #
-# Refresh by bumping (version, build) plus the matching http_archive entries
-# in //bazel/include/oci.MODULE.bazel.
+# The pins live in temurin.lock.json, which the Update Tarballs workflow
+# moves to each line's newest Adoptium release daily; adding or dropping a
+# line is a hand edit of that file. Lines are listed oldest first.
 #
-# `version` is the Adoptium version triplet that appears in CPE strings;
-# `build` is Adoptium's build counter appended after the `+` in the release
-# name (e.g. `jdk-21.0.11+10`).
-JAVA_VERSIONS = {
-    "17": ("17.0.20", "8"),
-    "21": ("21.0.12", "8"),
-    "25": ("25.0.4.1", "1"),
-}
+# `version` is the Adoptium version that appears in CPE strings; `build` is
+# Adoptium's build counter appended after the `+` in the release name
+# (e.g. `jdk-21.0.11+10`).
+JAVA_VERSIONS = {line["major"]: (line["version"], line["build"]) for line in VERSIONS}
 
 JAVA_MAJOR_VERSIONS = list(JAVA_VERSIONS.keys())
 

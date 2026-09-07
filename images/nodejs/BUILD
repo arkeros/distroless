@@ -19,9 +19,8 @@ package(default_visibility = ["//visibility:public"])
 # stay in bazel-out and never reach the layer. That delta is what closes
 # the gap to Hummingbird's 134MB hi/nodejs.
 #
-# Versions track Node's LTS + Current lines as of ADR drafting: 20 (maint),
-# 24 (current LTS), 26 (current). Refresh by bumping the http_archive
-# entries in //bazel/include/oci.MODULE.bazel together with this file.
+# Versions track Node's LTS + Current lines: 24 (current LTS), 26
+# (current). The pins live in nodejs.lock.json; see config.bzl.
 
 # Hummingbird-derived node images would surface Node CVEs through syft's
 # nodejs-binary cataloger -> NVD-CPE matching (Node isn't in any rpm
@@ -129,8 +128,8 @@ vex_document(
         name = "nodejs" + major,
         architectures = NODEJS_ARCHITECTURES[distro],
         # NODEJS_DISTROS is currently hummingbird-only; the Node tarball
-        # version is pinned independently in MODULE.bazel and surfaces
-        # via the CPE on java_metadata_<major>. Image-level `created`
+        # version is pinned independently in nodejs.lock.json and surfaces
+        # via the CPE on node_metadata_<major>. Image-level `created`
         # tracks the Hummingbird base snapshot.
         created = "//images/common:created_" + distro,
         debug_entrypoint = ["/busybox/sh"],
@@ -196,4 +195,5 @@ vex_document(
 bzl_library(
     name = "config",
     srcs = ["config.bzl"],
+    deps = ["@nodejs_tarballs//:versions"],
 )

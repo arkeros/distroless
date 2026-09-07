@@ -18,8 +18,7 @@ State lives in `gs://senku-prod-terraform-state` under prefix `infra`.
 | Artifact Registry API + `containers` repo | The registry images are pushed to; exists before any deploy. |
 | `svc-registry` service account | Runtime identity the Cloud Run services run as. |
 | `allUsers` → `run.invoker`, per region | Durable policy. The LB's Serverless NEG calls without an OIDC identity, so the services must accept anonymous invokes; the ingress annotation in the Knative manifest is what keeps them off the open internet. |
-| WIF pool, provider, and the CI service accounts | The identities GitHub Actions deploys and caches as. |
-| `senku-prod-bazel-cache` bucket + lifecycle | Bazel's remote cache. Durable, and its retention policy is not something a build should be able to change. |
+| WIF pool, provider, and the CI service account | The identity GitHub Actions deploys as. |
 | `prod` environment + `main` rulesets (`repo.tf`) | GitHub validates the environment's branch policy before minting the OIDC token, so it is part of the identity gate — not a settings page. The rulesets are what make `main` deployable without a human. |
 
 The Cloud Run services themselves are **not** managed here. They are deployed
@@ -60,33 +59,23 @@ own `github-distroless` pool so that repo's infra cannot widen or revoke access
 here. The provider's `attribute_condition` pins `assertion.repository`, so no
 other repository can mint a credential in this pool at all.
 
-Inside that gate are three accounts, because the things CI does need
-different reach:
+Inside that gate is one account:
 
 | Account | Bound to | Can |
 | --- | --- | --- |
 | `github-actions-distroless` (`github.tf`) | `attribute.environment/prod` | Push to Artifact Registry, deploy Cloud Run, act as `svc-registry` |
-| `github-actions-cache` (`cache.tf`) | `attribute.environment/prod` | Read and write the Bazel cache bucket, and nothing else |
-| `github-actions-cache-ro` (`cache.tf`) | `attribute.repository` | Read the Bazel cache bucket |
 
-The two `prod` bindings are the narrow ones: GitHub issues an `environment`
-claim only after validating `prod`'s deployment branch policy, which names
-`main` and nothing else, so that gate lives in the identity layer rather than
-in workflow YAML any committer can edit. Cache *writes* sit behind it because
-the cache is on the path to a signed image: the mirror's provenance says which
-run of `main` produced a digest, not what that run read, so a branch that could
-write an action result `main` later trusts could get the platform to vouch for
-bytes it never built (ADR 0014). Pull requests hold the reader, which is bound
-to the repository — any branch can mint it, forks get no OIDC token at all —
-and can poison nothing.
+The `prod` binding is the narrow one: GitHub issues an `environment` claim
+only after validating `prod`'s deployment branch policy, which names `main`
+and nothing else, so that gate lives in the identity layer rather than in
+workflow YAML any committer can edit. Pull requests mint no Google Cloud
+credential at all.
 
 After `apply`, confirm the workflow's inputs match:
 
 ```sh
 terraform output github_workload_identity_provider
 terraform output github_service_account
-terraform output github_cache_service_account
-terraform output github_cache_readonly_service_account
 ```
 
 ## Why the deploy has no manual approval
@@ -148,22 +137,15 @@ gh api repos/arkeros/distroless/rulesets \
 
 ## Bazel remote cache
 
-`cache.tf` owns the bucket the `gcs` config in [`//.bazelrc`](../.bazelrc)
-points at. The two have to agree on the name, and `terraform output
-bazel_remote_cache_url` prints what the bazelrc should say.
+There isn't one. `senku-prod-bazel-cache` was a GCS bucket Bazel read action
+results and external downloads from, and it was removed in September 2026:
+serving ~210 GB/day to GitHub-hosted runners on Azure is internet egress, and
+at $0.12/GB that dwarfed every other line on the project's bill — storage
+itself was under $2/month. CI now restores the repository and external caches
+GitHub Actions provides, which are free.
 
-Cache only — there is no remote execution, so every action still runs on the
-machine that invoked Bazel. Entries expire after 30 days, which bounds growth
-without anyone having to prune; a still-warm entry that ages out costs one
-rebuild. CI reaches the bucket through bazel-remote started on each runner
-(`.github/actions/setup-bazel-remote`), which speaks gRPC to Bazel and stores
-under the same `ac/` and `cas/` keys, so it is one cache either way. To use it
-locally:
-
-```sh
-gcloud auth application-default login
-bazel build --config=gcs //...
-```
+If a remote cache comes back, the thing to price first is egress out of
+whatever region the runners are *not* in, not the bytes at rest.
 
 ## Provider lockfile
 

@@ -17,18 +17,3 @@ output "github_service_account" {
   description = "Email for `google-github-actions/auth`'s `service_account` input."
   value       = google_service_account.github_actions.email
 }
-
-output "github_cache_service_account" {
-  description = "Email for `google-github-actions/auth`'s `service_account` input in `main`-only jobs that read and write the Bazel remote cache (ci.yaml, under `environment: prod`)."
-  value       = google_service_account.github_actions_cache.email
-}
-
-output "github_cache_readonly_service_account" {
-  description = "Email for `google-github-actions/auth`'s `service_account` input in jobs that may run off `main` and only read the Bazel remote cache (pr.yaml, the update-* workflows)."
-  value       = google_service_account.github_actions_cache_ro.email
-}
-
-output "bazel_remote_cache_url" {
-  description = "Value for Bazel's `--remote_cache`. Must match `common:gcs --remote_cache` in //.bazelrc."
-  value       = "https://storage.googleapis.com/${google_storage_bucket.bazel_cache.name}"
-}

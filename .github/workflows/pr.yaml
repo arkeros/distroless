@@ -1,6 +1,6 @@
 ---
-# Pull requests: test, and nothing else. Everything here can only read the
-# Bazel cache; ci.yaml, on `main` alone, is what writes, publishes and deploys.
+# Pull requests: test, and nothing else. ci.yaml, on `main` alone, is what
+# publishes and deploys.
 # Why the split: docs/adr/0014-platform-provenance-slsa-github-generator.md.
 # modules.yaml runs alongside this, for the workspaces under bazel/modules
 # that `bazel test //...` here does not reach.
@@ -11,13 +11,6 @@ name: PR
 on:
   pull_request:
 
-# Both values come from `terraform output` in //infra. The read-only cache
-# account (`infra/cache.tf`) is bound to the repository, so any branch of it can
-# mint this credential; it holds `objectViewer` on one bucket and nothing else.
-env:
-  WIF_PROVIDER: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
-  CACHE_READONLY_SERVICE_ACCOUNT: github-actions-cache-ro@senku-prod.iam.gserviceaccount.com
-
 jobs:
   test:
     # `Test` is the check the `main-checks` ruleset in //infra requires.
@@ -26,55 +19,28 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # for the read-only cache's workload identity federation
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      # A pull request opened from a fork is not granted `id-token: write`, so
-      # it cannot mint even the read-only credential. Skip the step for those
-      # rather than fail on it — the build below then runs without a remote
-      # cache, which is slow but correct. `steps.auth.outcome` reads `skipped`
-      # there, and the bazelrc line keys off it.
-      - name: Authenticate to Google Cloud
-        id: auth
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.CACHE_READONLY_SERVICE_ACCOUNT }}
-
-      # gRPC cache proxy on this runner, read-only through the viewer identity
-      # minted above. Skipped with the auth step for forks, which then build
-      # without a remote cache.
-      - name: Set up bazel-remote
-        if: steps.auth.outcome == 'success'
-        uses: ./.github/actions/setup-bazel-remote
-        with:
-          bucket: senku-prod-bazel-cache
 
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          # No repository cache when the proxy is up (same-repo PRs): downloads
-          # come from the bucket through its asset API. Forks have no proxy and
-          # no cache; they download from upstream, which is slower but correct.
-          repository-cache: false
+          repository-cache: true
           external-cache: true
-          # The runner-local caches are not saved either: only `main` warms
-          # anything another run reads.
+          # Restore only: a pull request reads the caches `main` warmed and
+          # saves nothing another run would read.
           cache-save: false
           bazelrc: |
             common --config=ci
-            ${{ steps.auth.outcome == 'success' && 'common --config=bazel-remote-readonly' || '' }}
 
       - name: Test
         run: bazel test //...
 
       # The launcher only; .aspect/version.axl pins the CLI it fetches.
       # bazelisk is on PATH from setup-bazel above, so the action skips its
-      # own, and its caches stay off: the remote cache is the cache here.
+      # own, and its caches stay off: setup-bazel above owns them.
       - name: Set up Aspect CLI
         uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
         with:

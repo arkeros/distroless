@@ -1,11 +1,10 @@
 ---
 # Push to `main`, and only that. Pull requests run pr.yaml, which can only read.
 #
-# Every job here that touches Bazel declares `environment: prod`. The
-# environment's deployment branch policy names `main` and GitHub checks it
-# before minting the OIDC token, so the cache-write and deploy identities are
-# unreachable from any other ref regardless of what this file says (ADR 0014,
-# infra/cache.tf).
+# Every job here that deploys declares `environment: prod`. The environment's
+# deployment branch policy names `main` and GitHub checks it before minting
+# the OIDC token, so the deploy identity is unreachable from any other ref
+# regardless of what this file says (ADR 0014).
 #
 # The mirror publishes in four steps — publish, provenance, verify, release —
 # because provenance is written by the build platform rather than by us, tags
@@ -16,13 +15,10 @@ on:
   push:
     branches: [main]
 
-# Both values come from `terraform output` in //infra. The cache account is
-# separate from the deploy account in github.tf and deliberately weaker: it can
-# read and write one GCS bucket and nothing else, which is why every job here
-# can hold it while only `push-gar`/`deploy` hold the deploy identity.
+# From `terraform output` in //infra. Only `push-gar` and the deploy jobs
+# authenticate to Google Cloud, for Artifact Registry and Cloud Run.
 env:
   WIF_PROVIDER: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
-  CACHE_SERVICE_ACCOUNT: github-actions-cache@senku-prod.iam.gserviceaccount.com
 
 jobs:
   test:
@@ -31,7 +27,6 @@ jobs:
     environment: prod
     permissions:
       contents: read
-      id-token: write # for the remote cache's workload identity federation
     outputs:
       # `{target: digest}` for every mirror image, as built on this runner.
       # `publish` builds them again on its own runner and pushes nothing if
@@ -44,40 +39,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
-
-      # gRPC cache proxy on this runner, in front of the same bucket; must
-      # follow the Google Cloud auth step (it uses those credentials) and
-      # precede Bazel's first invocation.
-      - name: Set up bazel-remote
-        uses: ./.github/actions/setup-bazel-remote
-        with:
-          bucket: senku-prod-bazel-cache
-
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          # No repository cache: external downloads come through bazel-remote's
-          # asset API from the bucket (see .bazelrc). The external cache stays;
-          # it holds extracted repositories, which is work, not downloads.
-          repository-cache: false
+          repository-cache: true
           external-cache: true
           cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=bazel-remote
 
       - name: Test
         run: bazel test //...
 
       # The launcher only; .aspect/version.axl pins the CLI it fetches.
       # bazelisk is on PATH from setup-bazel above, so the action skips its
-      # own, and its caches stay off: the remote cache is the cache here.
+      # own, and its caches stay off: setup-bazel above owns them.
       - name: Set up Aspect CLI
         uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
         with:
@@ -127,7 +104,7 @@ jobs:
     environment: prod
     permissions:
       contents: read
-      id-token: write # for cosign keyless OIDC (Fulcio + Rekor) and the cache
+      id-token: write # for cosign keyless OIDC (Fulcio + Rekor)
       packages: write # for GHCR push + cosign sig/attest artifacts
     outputs:
       # JSON list of `{target, ref, tags}` for everything pushed: the
@@ -161,35 +138,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Only reaches the Bazel cache bucket; pushing to GHCR below is
-      # authenticated separately with GITHUB_TOKEN.
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.CACHE_SERVICE_ACCOUNT }}
-
-      # gRPC cache proxy on this runner, in front of the same bucket; must
-      # follow the Google Cloud auth step (it uses those credentials) and
-      # precede Bazel's first invocation.
-      - name: Set up bazel-remote
-        uses: ./.github/actions/setup-bazel-remote
-        with:
-          bucket: senku-prod-bazel-cache
-
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          # No repository cache: external downloads come through bazel-remote's
-          # asset API from the bucket (see .bazelrc). The external cache stays;
-          # it holds extracted repositories, which is work, not downloads.
-          repository-cache: false
+          repository-cache: true
           external-cache: true
           cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=bazel-remote
             build --stamp
             # bazel/defaults.bazelrc turns runfiles trees off; this job runs
             # built executables from their trees. Set here for every Bazel
@@ -237,21 +194,15 @@ jobs:
       # is visible in the job timeline.
       #
       # Runfiles trees are on for this whole job (see the bazelrc above), so
-      # the executables can run from them rather than via `bazel run`.
-      # `--remote_download_outputs=toplevel`, not `all`: under
-      # lazy push (.bazelrc) the push binaries carry no layers, and `all` would
-      # download every layer of every image as an intermediate output anyway —
-      # the very thing lazy push exists to avoid. `toplevel` fetches the
-      # executables, their runfiles, the deploy manifests and the predicates:
-      # kilobytes to megabytes. One cquery then maps each target to its
-      # executable and, for pushes, its manifest; for attestations, its
-      # predicate — no per-image Bazel from here on.
+      # the executables can run from them rather than via `bazel run`. One
+      # cquery then maps each target to its executable and, for pushes, its
+      # manifest; for attestations, its predicate — no per-image Bazel from
+      # here on.
       - name: Build every mirror image's push, sign and attest targets
         run: |
           set -euo pipefail
           TARGETS=$(bazel query 'kind("cosign_sign rule", //...) + kind("cosign_attest rule", //...) + kind("crane_tag rule", //...) + attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
-          bazel build --remote_download_outputs=toplevel \
-              --output_groups=+deploy_manifest,+tags,+predicate ${TARGETS}
+          bazel build --output_groups=+deploy_manifest,+tags,+predicate ${TARGETS}
           # label <TAB> executable <TAB> deploy manifest (pushes) <TAB> expanded tag list (tags) <TAB> predicate (attestations)
           group() { echo "(getattr(providers(target)[\"OutputGroupInfo\"], \"$1\", None).to_list()[0].path if getattr(providers(target)[\"OutputGroupInfo\"], \"$1\", None) else \"\")"; }
           bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr="\"%s\\t%s\\t%s\\t%s\\t%s\" % (str(target.label).removeprefix(\"@@\"), target.files_to_run.executable.path, $(group deploy_manifest), $(group tags), $(group predicate))" \
@@ -352,14 +303,11 @@ jobs:
 
           # Runs a built executable the way `bazel run` would: from inside
           # its runfiles tree, with RUNFILES_DIR set. cosign's scripts resolve
-          # their inputs relative to that directory; rules_img's pusher reads
-          # the variable, and under lazy push streams missing layers from the
-          # CAS named by IMG_REAPI_ENDPOINT — which `bazel run` would have set
-          # from the .bazelrc setting and a direct execution must set itself.
+          # their inputs relative to that directory.
           run_built() {
             local exe=$1; shift
             local rf; rf=$(realpath "${exe}.runfiles")
-            ( cd "${rf}/_main" && RUNFILES_DIR="${rf}" IMG_REAPI_ENDPOINT=grpc://127.0.0.1:9092 "./${exe#bazel-out/*/bin/}" "$@" )
+            ( cd "${rf}/_main" && RUNFILES_DIR="${rf}" "./${exe#bazel-out/*/bin/}" "$@" )
           }
           exe_of() { awk -F'\t' -v l="$1" '$1==l{print $2}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
           manifest_of() { awk -F'\t' -v l="$1" '$1==l{print $3}' "${RUNNER_TEMP}/mirror_targets.tsv"; }
@@ -930,10 +878,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # One job gets one set of application-default credentials, so this
-      # single auth covers both Artifact Registry and the Bazel cache — which
-      # is why //infra grants the deploy account access to the cache bucket
-      # too. It has to precede `bazel`, or the first invocation runs cold.
+      # Artifact Registry credentials for the push below.
       - name: Authenticate to Google Cloud
         id: auth
         uses: google-github-actions/auth@v3
@@ -942,26 +887,16 @@ jobs:
           service_account: github-actions-distroless@senku-prod.iam.gserviceaccount.com
           token_format: access_token
 
-      # gRPC cache proxy on this runner, in front of the same bucket; must
-      # follow the Google Cloud auth step (it uses those credentials) and
-      # precede Bazel's first invocation.
-      - name: Set up bazel-remote
-        uses: ./.github/actions/setup-bazel-remote
-        with:
-          bucket: senku-prod-bazel-cache
-
       - name: Set up Bazel
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          # Same as the other jobs: archives from the bucket via the proxy,
-          # extracted repositories kept between runs.
-          repository-cache: false
+          # Same as the other jobs.
+          repository-cache: true
           external-cache: true
           cache-save: true
           bazelrc: |
             common --config=ci
-            common --config=bazel-remote
             build --stamp
 
       - name: Login to Artifact Registry

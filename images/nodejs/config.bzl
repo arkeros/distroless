@@ -1,5 +1,7 @@
 "Configuration for nodejs distroless images"
 
+load("@nodejs_tarballs//:versions.bzl", "VERSIONS")
+
 NODEJS_DISTROS = ["hummingbird"]
 
 NODEJS_ARCHITECTURES = {
@@ -7,18 +9,15 @@ NODEJS_ARCHITECTURES = {
 }
 
 # ADR 0007 step 6 ships 24/26 from nodejs.org tarballs on the cc-hummingbird
-# base. Refresh by bumping these majors plus the matching http_archive
-# entries in //bazel/include/oci.MODULE.bazel (versions + SHASUMS256 from
-# https://nodejs.org/dist/v<version>/SHASUMS256.txt).
+# base. The pins live in nodejs.lock.json, which the Update Tarballs workflow
+# moves to each line's newest release daily; adding or dropping a line is a
+# hand edit of that file. Lines are listed oldest first.
 #
 # Only lines still receiving upstream security releases belong here. The 20
 # line was dropped when it went EOL: its last release (20.20.2, 2026-03-24)
 # carries CVE-2026-58043 with no fix coming, and `_cve_test` has no honest
 # way to pass on a runtime nobody patches any more.
-NODEJS_VERSIONS = {
-    "24": "24.19.0",
-    "26": "26.6.0",
-}
+NODEJS_VERSIONS = {line["major"]: line["version"] for line in VERSIONS}
 
 NODEJS_MAJOR_VERSIONS = list(NODEJS_VERSIONS.keys())
 

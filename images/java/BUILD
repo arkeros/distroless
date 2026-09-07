@@ -21,8 +21,7 @@ package(default_visibility = ["//visibility:public"])
 # the cc base; jdk binaries (javac/jlink/etc.) are never downloaded.
 #
 # LTS-only policy (17 / 21 / 25). Version selection + provenance rationale
-# live in config.bzl. Refresh by bumping (version, build) there together
-# with the http_archive entries in //bazel/include/oci.MODULE.bazel.
+# live in config.bzl; the pins themselves live in temurin.lock.json.
 
 # Temurin tarballs are downloaded from GitHub — `pkg:generic/...` purls
 # have no built-in secdb routing in grype, same caveat as nodejs. CVEs
@@ -177,7 +176,7 @@ _ELF_NEEDS_ALLOW = {
         name = "java" + major,
         architectures = JAVA_ARCHITECTURES[distro],
         # JAVA_DISTROS is currently hummingbird-only; the Temurin tarball
-        # version is pinned independently in MODULE.bazel and surfaces
+        # version is pinned independently in temurin.lock.json and surfaces
         # via the CPE on java_metadata_<major>. Image-level `created`
         # tracks the Hummingbird base snapshot.
         created = "//images/common:created_" + distro,
@@ -338,4 +337,5 @@ _ELF_NEEDS_ALLOW = {
 bzl_library(
     name = "config",
     srcs = ["config.bzl"],
+    deps = ["@temurin_tarballs//:versions"],
 )

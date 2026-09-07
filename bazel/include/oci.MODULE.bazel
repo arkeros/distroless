@@ -237,167 +237,49 @@ use_repo(rpm, "hummingbird", "nginx_mainline_rpm", "nginx_stable_rpm")
 
 http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+# Upstream prebuilt runtime tarballs, one lockfile per image. Each line of
+# a lockfile becomes one http_archive per arch (and per JRE/JDK for Temurin)
+# named as the image BUILD references it, plus a hub repo exporting the
+# versions for the image's config.bzl. Refresh with
+#   knife tarballs update images/nodejs/nodejs.lock.json
+# which the Update Tarballs workflow runs daily; adding or dropping a
+# release line is a hand edit of the lockfile.
+tarballs = use_extension("//images:tarballs.bzl", "tarballs")
 
-# Node.js runtime tarballs from nodejs.org. Consumed by //images/nodejs
-# (ADR 0007 step 6, the "marquee demo" distroless node on Hummingbird's glibc).
-# Only `bin/node` is shipped in the image; npm/npx/corepack/headers/docs are
-# left in the bazel-out tree and never make it into the layer.
-#
-# To refresh:
-#   curl -fsSL https://nodejs.org/dist/index.json | jq '.[] | select(.version | startswith("v26."))[0]'
-#   curl -fsSL https://nodejs.org/dist/v<version>/SHASUMS256.txt | grep linux
-_NODEJS_TARBALL_BUILD_FILE_CONTENT = """\
+# Node.js from nodejs.org (ADR 0007 step 6, the "marquee demo" distroless
+# node on Hummingbird's glibc). Only `bin/node` is shipped in the image;
+# npm/npx/corepack/headers/docs are left in the bazel-out tree and never
+# make it into the layer.
+tarballs.lock(
+    name = "nodejs_tarballs",
+    build_file_content = """\
 package(default_visibility = ["//visibility:public"])
 exports_files(["bin/node"])
-"""
+""",
+    lockfile = "//images/nodejs:nodejs.lock.json",
+)
 
-[
-    http_archive(
-        name = "nodejs_{}_{}".format(major, arch),
-        build_file_content = _NODEJS_TARBALL_BUILD_FILE_CONTENT,
-        sha256 = sha,
-        strip_prefix = "node-v{}-linux-{}".format(
-            full_version,
-            "x64" if arch == "amd64" else "arm64",
-        ),
-        url = "https://nodejs.org/dist/v{}/node-v{}-linux-{}.tar.xz".format(
-            full_version,
-            full_version,
-            "x64" if arch == "amd64" else "arm64",
-        ),
-    )
-    for major, full_version, sha_by_arch in [
-        (
-            "24",
-            "24.19.0",
-            {
-                "amd64": "14b342e71204f811bde6153be8e04b62aef63c236fef92b55f9c83154b409647",
-                "arm64": "01443c1e1a29e531ccad5a46fefa6df490d2189c49f7955904aecdbb0fe86fdc",
-            },
-        ),
-        (
-            "26",
-            "26.6.0",
-            {
-                "amd64": "e53a8c8ca2ee7135de38e63859bd4f43002ae2d222f5b3a98ac1945db9f544bb",
-                "arm64": "974e6f0332fb26179b34d49c57f35339e089a89faf8b82a81e44c0e1164b7923",
-            },
-        ),
-    ]
-    for arch, sha in sha_by_arch.items()
-]
-
-# Eclipse Temurin JRE tarballs from Adoptium GitHub releases. Consumed by
-# //images/java — the headless JRE ships under /jre/, mirroring
-# nodejs's /nodejs/ prefix so the host distro's PATH never resolves to it.
-# The image entrypoint is the absolute path /jre/bin/java.
+# Eclipse Temurin JRE + JDK from Adoptium's GitHub releases. Consumed by
+# //images/java — the headless JRE ships under /jre/, mirroring nodejs's
+# /nodejs/ prefix so the host distro's PATH never resolves to it; the
+# `_debug` variant ships the JDK at the same path for jstack/jcmd/jmap.
+# Versions are kept in lockstep across image types because mixing build
+# numbers would shift the CPE the SBOM declares between modes; the
+# updater refuses a release until all four assets are published.
 #
-# Policy: latest 3 LTS only, no non-LTS. Auto-rolls — when 29 ships in
-# 2027, 17 rolls off and 29 lands here. Adoptium's LTS list is
-# [8, 11, 17, 21, 25]; we explicitly do NOT ship 8/11 (EOL trajectory,
-# tiny incremental users on new infra — same posture as Google Distroless).
-#
-# To refresh:
-#   curl -fsSL https://api.adoptium.net/v3/info/available_releases
-#   curl -fsSL "https://api.adoptium.net/v3/assets/latest/<V>/hotspot?architecture=x64&image_type=jre&os=linux&vendor=eclipse"
-_TEMURIN_BUILD_FILE_CONTENT = """\
+# Policy: latest 3 LTS only, no non-LTS; see //images/java:config.bzl.
+tarballs.lock(
+    name = "temurin_tarballs",
+    build_file_content = """\
 package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "all",
     srcs = glob(["**"], exclude = ["BUILD*", "REPO*", "WORKSPACE*", "MODULE*"], allow_empty = False),
 )
-"""
-
-# JRE (release variant) and JDK (debug variant) per (major, arch). The JDK
-# carries jstack/jcmd/jmap/javac for `kubectl exec`-style production
-# diagnostics — Google Distroless's `:debug` variant uses the same trick.
-# Versions are kept in lockstep across image_type because mixing build
-# numbers would shift the CPE component the SBOM declares between modes.
-[
-    http_archive(
-        name = "temurin_{}_{}_{}".format(image_type, major, arch),
-        build_file_content = _TEMURIN_BUILD_FILE_CONTENT,
-        sha256 = sha,
-        strip_prefix = "jdk-{}+{}{}".format(
-            version,
-            build,
-            "-jre" if image_type == "jre" else "",
-        ),
-        url = "https://github.com/adoptium/temurin{}-binaries/releases/download/jdk-{}%2B{}/OpenJDK{}U-{}_{}_linux_hotspot_{}_{}.tar.gz".format(
-            major,
-            version,
-            build,
-            major,
-            image_type,
-            "x64" if arch == "amd64" else "aarch64",
-            version,
-            build,
-        ),
-    )
-    for image_type, sha_by_major in [
-        (
-            "jre",
-            {
-                "17": (
-                    "17.0.20",
-                    "8",
-                    {
-                        "amd64": "ef491a51a46ef90cc47fbc4abb219fde32483ff91be5ec66ddc896df43524b27",
-                        "arm64": "9d14a95e07c44bc48666625162baf40db9da4dcb192bfc3e43047790693061a2",
-                    },
-                ),
-                "21": (
-                    "21.0.12",
-                    "8",
-                    {
-                        "amd64": "8a379a67c91a3ae61ffb33d46e0a40c7ba35e70713c4db31cfca30492f792eff",
-                        "arm64": "5f9c96b656827b9d14ebeda7739e25be554fa6d25669b03847c1df6e869c0679",
-                    },
-                ),
-                "25": (
-                    "25.0.4.1",
-                    "1",
-                    {
-                        "amd64": "1731a34baadec5479258ea0202e4d5d865d2efeee60cb0c7d7eb056fe96ca219",
-                        "arm64": "34828cbb93ed31c281c84ecb31ddab655d11a802f263c1fc019d42e9e0230fed",
-                    },
-                ),
-            },
-        ),
-        (
-            "jdk",
-            {
-                "17": (
-                    "17.0.20",
-                    "8",
-                    {
-                        "amd64": "be7668bc030d578b83d6d5ef9221d6d6729bbbca8cf94a7d52e16ac68b5a5a35",
-                        "arm64": "d143936f473a4cb24e3b0e247d6d0775769d55ec9775c339540e753059a8d77a",
-                    },
-                ),
-                "21": (
-                    "21.0.12",
-                    "8",
-                    {
-                        "amd64": "e4446ff06a276155697597cc0f1b15da004ff083f4964a35271ecee567177370",
-                        "arm64": "eba38e871b02d407897bfe017ea35352dfc1420ef6d2112425b0c67325ca509d",
-                    },
-                ),
-                "25": (
-                    "25.0.4.1",
-                    "1",
-                    {
-                        "amd64": "dbb698396d478e7fa2b1e50f4103324b2a99b90569ee27c33f2261f9215cf41e",
-                        "arm64": "69df11a02cfa3ef7d7ca645e03edce6778ec090e100f6ae2b42097865730ac52",
-                    },
-                ),
-            },
-        ),
-    ]
-    for major, (version, build, sha_by_arch) in sha_by_major.items()
-    for arch, sha in sha_by_arch.items()
-]
+""",
+    lockfile = "//images/java:temurin.lock.json",
+)
+use_repo(tarballs, "nodejs_24_amd64", "nodejs_24_arm64", "nodejs_26_amd64", "nodejs_26_arm64", "nodejs_tarballs", "temurin_jdk_17_amd64", "temurin_jdk_17_arm64", "temurin_jdk_21_amd64", "temurin_jdk_21_arm64", "temurin_jdk_25_amd64", "temurin_jdk_25_arm64", "temurin_jre_17_amd64", "temurin_jre_17_arm64", "temurin_jre_21_amd64", "temurin_jre_21_arm64", "temurin_jre_25_amd64", "temurin_jre_25_arm64", "temurin_tarballs")
 
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(

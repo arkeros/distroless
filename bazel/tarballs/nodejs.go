@@ -8,7 +8,14 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
+
+// httpClient bounds every upstream call. Without a timeout a stalled
+// connection would hang the daily update job until the runner's own
+// six-hour limit; a minute is generous for a JSON index or a checksum
+// file and small next to the job's schedule.
+var httpClient = &http.Client{Timeout: time.Minute}
 
 // NodeJS resolves release lines against nodejs.org/dist.
 type NodeJS struct {
@@ -87,7 +94,7 @@ func get(ctx context.Context, url string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

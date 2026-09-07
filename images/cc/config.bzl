@@ -17,6 +17,13 @@ def cc_layers(ctx):
     inheritance chain.
 
     Used for both release and debug variants — branches on `ctx.mode`.
+
+    Args:
+        ctx: the image being composed, with `arch`, `distro` and `mode`
+            (`""` or `"_debug"`) as //images:matrix.bzl passes them.
+
+    Returns:
+        The layer labels, bottom first.
     """
     layers = [
         "//images/static:static_{}_{}_layer".format(ctx.arch, ctx.distro),

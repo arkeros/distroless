@@ -1,3 +1,5 @@
+"""Frontend images: static files served by the nginx image, per architecture and as an index."""
+
 load("@rules_img//img:image.bzl", "image_index")
 load("@tar.bzl", "mutate", "tar")
 load("//images:platforms.bzl", "ARCHITECTURE_PLATFORMS")
@@ -141,7 +143,7 @@ def frontend_images_all_arch(name, srcs = None, statics_layer = None, base = Non
     else:
         layer = statics_layer
 
-    [
+    for arch in architectures:
         frontend_image(
             name = name,
             distro = distro,
@@ -150,8 +152,6 @@ def frontend_images_all_arch(name, srcs = None, statics_layer = None, base = Non
             base = base.get(arch) if base else None,
             **kwargs
         )
-        for arch in architectures
-    ]
 
     frontend_image_index(
         name = name,

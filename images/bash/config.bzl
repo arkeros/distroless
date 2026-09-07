@@ -1,3 +1,5 @@
+"""The bash image: the release it ships, its tags, distros, architectures and layers."""
+
 # The upstream bash release the images ship, verified against
 # //images:debian.lock.json by `bash_lock_version_test` — a lockfile bump that
 # moves bash turns that test red rather than silently mistagging an image.
@@ -20,7 +22,15 @@ BASH_ARCHITECTURES = {
 }
 
 def bash_layers(ctx):
-    """Composition: static + (busybox if debug) + cc + bash + one rpmdb."""
+    """Composition: static + (busybox if debug) + cc + bash + one rpmdb.
+
+    Args:
+        ctx: the image being composed, with `arch`, `distro` and `mode`
+            (`""` or `"_debug"`) as //images:matrix.bzl passes them.
+
+    Returns:
+        The layer labels, bottom first.
+    """
     layers = [
         "//images/static:static_{}_{}_layer".format(ctx.arch, ctx.distro),
     ]

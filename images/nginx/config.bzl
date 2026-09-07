@@ -1,3 +1,5 @@
+"""The nginx images: their channels, tags, distros, architectures and layers."""
+
 NGINX_VERSIONS = {
     "stable": "nginx_stable",
     "mainline": "nginx_mainline",

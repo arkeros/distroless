@@ -1,3 +1,5 @@
+"""The busybox layer of the debug images: the applets it links and the layer macro."""
+
 load("@rules_distroless//distroless:defs.bzl", "flatten")
 load("@tar.bzl", "tar")
 load("//images/common:variables.bzl", "COMPRESSION")

@@ -1,3 +1,5 @@
+"""Where images are pushed, and the distros, architectures and packages of the language images."""
+
 # rules_img requires registry and repository as separate values
 OCI_REGISTRY = "ghcr.io"
 OCI_REPOSITORY_PREFIX = "arkeros/distroless"

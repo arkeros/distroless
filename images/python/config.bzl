@@ -44,8 +44,11 @@ def python_minor_versions(distro):
     return list(PYTHON_VERSIONS[distro].keys())
 
 def python_latest(distro):
-    """What `latest` answers to on a distro: the newest line listed, so a
-    roll that appends the next one moves the tag with it."""
+    """What `latest` answers to on a distro.
+
+    The newest line listed, so a roll that appends the next one moves the
+    tag with it.
+    """
     return python_minor_versions(distro)[-1]
 
 def python_interpreter_package(distro, minor):

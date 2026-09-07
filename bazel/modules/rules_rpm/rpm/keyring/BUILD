@@ -3,8 +3,8 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "keyring",
     srcs = ["keyring.go"],
-    importpath = "github.com/arkeros/distroless/bazel/modules/rules_rpm/rpm/tools/internal/keyring",
-    visibility = ["//rpm/tools:__subpackages__"],
+    importpath = "github.com/arkeros/distroless/bazel/modules/rules_rpm/rpm/keyring",
+    visibility = ["//visibility:public"],
     deps = ["@com_github_protonmail_go_crypto//openpgp"],
 )
 

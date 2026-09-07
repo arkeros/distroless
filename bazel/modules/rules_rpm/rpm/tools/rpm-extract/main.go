@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/arkeros/distroless/bazel/modules/rules_rpm/rpm/tools/internal/keyring"
+	"github.com/arkeros/distroless/bazel/modules/rules_rpm/rpm/keyring"
 	"github.com/sassoftware/go-rpmutils"
 	"github.com/sassoftware/go-rpmutils/cpio"
 )

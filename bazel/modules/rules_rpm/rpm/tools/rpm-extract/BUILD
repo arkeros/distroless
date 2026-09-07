@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/arkeros/distroless/bazel/modules/rules_rpm/rpm/tools/rpm-extract",
     visibility = ["//visibility:private"],
     deps = [
-        "//rpm/tools/internal/keyring",
+        "//rpm/keyring",
         "@com_github_sassoftware_go_rpmutils//:go-rpmutils",
         "@com_github_sassoftware_go_rpmutils//cpio",
     ],

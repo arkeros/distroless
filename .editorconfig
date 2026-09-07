@@ -1,0 +1,7 @@
+# https://editorconfig.org. shfmt (`bazel run //:format`) reads the shell
+# section: its default is tabs, the scripts here are indented with spaces.
+root = true
+
+[*.sh]
+indent_style = space
+indent_size = 4

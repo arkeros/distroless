@@ -35,10 +35,13 @@ jobs:
           cache-save: true
           bazelrc: |
             common --config=ci
+      # The published release, not a source build: knife pulls ~300 external
+      # repos (anchore/syft, the AWS SDK, the LLVM toolchain), and
+      # release-cli.yaml publishes one on every push to `main` that changes
+      # it. `version` unset resolves the latest `knife/*` tag. Bazel above
+      # stays: knife shells out to `bazel mod tidy` (bazel/mod/mod.go).
       - name: Install knife
         uses: ./.github/actions/setup-knife
-        with:
-          target: //bazel/cmd/knife
       - name: Update tarballs
         uses: ./.github/actions/update-tarballs
         with:

@@ -171,7 +171,7 @@ def vulnerability_attestation(base, scan, vex = None):
             filter = _VEX_MERGE_FILTER,
         )
 
-def image_sbom(image, licenses = None, licenses_format = None):
+def image_sbom(name, image, licenses = None, licenses_format = None):
     """Attach a CycloneDX SBOM to an OCI image, without CVE scanning or gating.
 
     Lighter-weight counterpart to `image_supply_chain` for cases where the SBOM
@@ -179,15 +179,19 @@ def image_sbom(image, licenses = None, licenses_format = None):
     multi-arch image, where per-arch CVE testing already happens via `oci_image`
     and the index just needs a unified SBOM for `mirror_push`'s SBOM attestation).
 
-    Generates `<base>_sbom` (CycloneDX 1.6 JSON) named after `image`'s base label.
+    Generates `name` (CycloneDX 1.6 JSON), with `<name>_raw`, `<name>_predupe`
+    and `<name>_clean` as the steps on the way.
 
     Args:
+      name: The SBOM target.
       image: Label of the OCI image. Same reachability requirements as
         `image_supply_chain` — transitive deps must carry `PackageMetadataInfo`.
+      licenses: Optional lockfile-derived licence source, joined into the
+        SBOM's components by package name.
+      licenses_format: "deb" or "rpm", the shape of `licenses`.
     """
-    base = image.rsplit(":", 1)[-1]
-    sbom(name = base + "_sbom_raw", target = image)
-    cyclonedx(name = base + "_sbom_predupe", sbom = ":" + base + "_sbom_raw")
+    sbom(name = name + "_raw", target = image)
+    cyclonedx(name = name + "_predupe", sbom = ":" + name + "_raw")
 
     # supply_chain_tools' cyclonedx tool emits one component per
     # `PackageMetadataInfo`-bearing target it walks, deduping only by metadata
@@ -215,60 +219,61 @@ def image_sbom(image, licenses = None, licenses_format = None):
     # `gather_metadata` is taught to skip them via
     # //bazel/patches:supply_chain_tools_rule_filters_rpm.patch.
     jq(
-        name = base + "_sbom_clean",
-        srcs = [":" + base + "_sbom_predupe"],
-        out = base + "_sbom_clean.json",
+        name = name + "_clean",
+        srcs = [":" + name + "_predupe"],
+        out = name + "_clean.json",
         filter = '.components |= (map(if (.purl // "") | test("^pkg:(rpm|deb)/") then .name |= sub("^[^/]+/"; "") else . end) | unique_by(.purl))',
     )
 
     if not licenses:
         native.alias(
-            name = base + "_sbom",
-            actual = ":" + base + "_sbom_clean",
+            name = name,
+            actual = ":" + name + "_clean",
         )
         return
 
     jq(
-        name = base + "_sbom",
+        name = name,
         srcs = [
-            ":" + base + "_sbom_clean",
+            ":" + name + "_clean",
             licenses,
         ],
-        out = base + "_sbom.json",
+        out = name + ".json",
         args = ["--slurp"],
         filter = _LICENSE_FILTERS[licenses_format],
     )
 
-def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database", licenses = None, licenses_format = None, image_scans = None):
+def image_supply_chain(name, image, fail_on_severity = "high", ignore_cves = None, vex = None, database = "@grype_database", licenses = None, licenses_format = None, image_scans = None):
     """Attach SBOM + CVE scan + policy test to an OCI image.
 
-    Generates the following targets, named after `image`'s base label:
-        <base>_sbom               — CycloneDX 1.6 JSON, sourced from the build graph.
-        <base>_cve_scan           — grype JSON report of the SBOM (artifact only).
-        <base>_image_scan_<i>     — grype JSON report of each `image_scans`
+    Generates the following targets:
+        <name>_sbom               — CycloneDX 1.6 JSON, sourced from the build graph.
+        <name>_cve_scan           — grype JSON report of the SBOM (artifact only).
+        <name>_image_scan_<i>     — grype JSON report of each `image_scans`
                                     entry, scanned as a consumer would.
-        <base>_gate_scan (only when `image_scans` is non-empty)
+        <name>_gate_scan (only when `image_scans` is non-empty)
                                   — the matches of every scan above in one
                                     report; what the gates read.
-        <base>_cve_test           — gates on `fail_on_severity`.
-        <base>_cve_test_stale_ignores
+        <name>_cve_test           — gates on `fail_on_severity`.
+        <name>_cve_test_stale_ignores
                                   — fails when an `ignore_cves` entry no
                                     longer matches a scan CVE.
-        <base>_cve_test_stale_vex (only when `vex` is non-empty)
+        <name>_cve_test_stale_vex (only when `vex` is non-empty)
                                   — fails when a VEX statement targets a
                                     CVE the scanner doesn't flag.
-        <base>_vuln               — the scan as cosign's vulnerability scan
+        <name>_vuln               — the scan as cosign's vulnerability scan
                                     record, for `mirror_push`.
-        <base>_vex (only when `vex` is non-empty)
+        <name>_vex (only when `vex` is non-empty)
                                   — the VEX documents merged into one, for
                                     `mirror_push`.
 
     Args:
+      name: Prefix of every generated target; by convention the image's name.
       image: Label of the OCI image. Must be reachable from supply_chain_tools'
         gather_metadata aspect — its transitive deps must carry
         `PackageMetadataInfo` (Go modules via gazelle, .deb via rules_distroless's
         package_metadata patch).
-      fail_on_severity: Threshold for `<base>_cve_test`. Default "high".
+      fail_on_severity: Threshold for `<name>_cve_test`. Default "high".
       ignore_cves: List of CVE IDs to allow-list (flat). Prefer `vex` for
         anything with a defensible justification.
       vex: List of OpenVEX 0.2.0 document labels (see //oci:vex.bzl).
@@ -282,13 +287,12 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
         `tarball` output group (an `image_load` target), each scanned as a
         consumer would scan the published image. See below.
     """
-    base = image.rsplit(":", 1)[-1]
 
-    image_sbom(image = image, licenses = licenses, licenses_format = licenses_format)
+    image_sbom(name = name + "_sbom", image = image, licenses = licenses, licenses_format = licenses_format)
     grype_scan(
-        name = base + "_cve_scan",
+        name = name + "_cve_scan",
         database = database,
-        sbom = ":" + base + "_sbom",
+        sbom = ":" + name + "_sbom",
     )
 
     # Two audiences see two scans. The SBOM scan is this project's: its
@@ -302,30 +306,30 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
     # rather than the consumer finding out. The attested record stays the
     # SBOM scan: it says what the scanner found in what was attested (ADR
     # 0015).
-    gate_scan = ":" + base + "_cve_scan"
+    gate_scan = ":" + name + "_cve_scan"
     if image_scans:
         for i, scanned in enumerate(image_scans):
             grype_scan(
-                name = base + "_image_scan_%d" % i,
+                name = name + "_image_scan_%d" % i,
                 database = database,
                 image = scanned,
             )
         jq(
-            name = base + "_gate_scan",
-            srcs = [":" + base + "_cve_scan"] + [":" + base + "_image_scan_%d" % i for i in range(len(image_scans))],
-            out = base + "_gate_scan.json",
+            name = name + "_gate_scan",
+            srcs = [":" + name + "_cve_scan"] + [":" + name + "_image_scan_%d" % i for i in range(len(image_scans))],
+            out = name + "_gate_scan.json",
             args = ["--slurp"],
             filter = "{matches: [.[].matches[]?]}",
         )
-        gate_scan = ":" + base + "_gate_scan"
+        gate_scan = ":" + name + "_gate_scan"
     grype_test(
-        name = base + "_cve_test",
+        name = name + "_cve_test",
         fail_on_severity = fail_on_severity,
         ignore_cves = ignore_cves,
         scan_result = gate_scan,
         vex = vex,
     )
-    vulnerability_attestation(base, ":" + base + "_cve_scan", vex)
+    vulnerability_attestation(name, ":" + name + "_cve_scan", vex)
 
     # Silent-zero gate. Fails when the SBOM carries components that grype
     # has no matcher for — see _SILENT_ZERO_FILTER above for the rationale.
@@ -339,21 +343,21 @@ def image_supply_chain(image, fail_on_severity = "high", ignore_cves = None, vex
     # error-message templating breaks on filters containing `""` and `(`,
     # which any non-trivial routability check inevitably has.
     jq(
-        name = base + "_silent_zero_violations",
-        srcs = [":" + base + "_sbom"],
-        out = base + "_silent_zero_violations.json",
+        name = name + "_silent_zero_violations",
+        srcs = [":" + name + "_sbom"],
+        out = name + "_silent_zero_violations.json",
         filter = _SILENT_ZERO_FILTER,
     )
     write_file(
-        name = base + "_silent_zero_expected",
-        out = base + "_silent_zero_expected.json",
+        name = name + "_silent_zero_expected",
+        out = name + "_silent_zero_expected.json",
         # Trailing empty string forces a final newline so diff_test matches
         # jq's default trailing-newline output.
         content = ["[]", ""],
     )
     diff_test(
-        name = base + "_cve_test_silent_zero",
-        file1 = ":" + base + "_silent_zero_expected",
-        file2 = ":" + base + "_silent_zero_violations",
+        name = name + "_cve_test_silent_zero",
+        file1 = ":" + name + "_silent_zero_expected",
+        file2 = ":" + name + "_silent_zero_violations",
         failure_message = "SBOM contains components with neither a secdb-routable purl (pkg:rpm|deb|apk) nor a `cpe` field. See //bazel/patches:package_metadata_cpe.patch for how to attach `cpe=...` to a `package_metadata` target.",
     )

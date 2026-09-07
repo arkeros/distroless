@@ -232,6 +232,7 @@ def distroless_matrix(
             if consumer_scan:
                 image_scans = [":" + _image_name(name, mode, user, architectures[0], distro) + "_load"]
             image_supply_chain(
+                name = index_name,
                 image = ":" + index_name,
                 image_scans = image_scans,
                 licenses = licenses,

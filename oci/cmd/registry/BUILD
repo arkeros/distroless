@@ -57,6 +57,7 @@ go_binary(
 
 [
     image_supply_chain(
+        name = "image" + mode,
         ignore_cves = DEBIAN_WONTFIX_CVES + (BUSYBOX_WONTFIX_CVES["debian"] if mode == "_debug" else []),
         image = ":image" + mode,
     )

@@ -1,3 +1,5 @@
+"""`oci_image`: a rules_img manifest with its load target, sidecar tarballs and supply-chain gates."""
+
 load("@rules_img//img:image.bzl", "image_manifest")
 load("@rules_img//img:load.bzl", "image_load")
 load("@rules_img//img:push.bzl", "image_push")
@@ -75,6 +77,7 @@ def oci_image(
 
     if gate:
         image_supply_chain(
+            name = name,
             fail_on_severity = fail_on_severity,
             ignore_cves = ignore_cves,
             vex = vex,

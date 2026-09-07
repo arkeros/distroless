@@ -184,6 +184,13 @@ lines and `main` test runs appearing in the deployments log.
 
 ### Cache writes are `main`-only
 
+  **Obsolete as of 2026-09-07.** The remote cache was removed — egress to
+  GitHub-hosted runners cost roughly $750/month against under $2/month of
+  storage — so there is no cache to poison, and `--config=gcs-readonly`,
+  the two cache accounts and `infra/cache.tf` no longer exist. The reasoning
+  below stands and should govern any cache that replaces it. Kept as written
+  for the record.
+
 Cache poisoning is the textbook way to defeat platform provenance: a branch
 writes a bad action result, `main` reads it, the generator signs the outcome.
 Until now any branch in the repository could write the cache. The cache-write

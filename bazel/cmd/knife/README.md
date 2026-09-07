@@ -58,16 +58,35 @@ This command:
 2. Updates `bazel/include/oci.MODULE.bazel` with the new URL and SHA256
 3. Runs `bazel mod tidy` to update the lockfile
 
+### tarballs update
+
+Move every release line in an upstream tarball lockfile to its newest release:
+
+```bash
+knife tarballs update images/nodejs/nodejs.lock.json
+knife tarballs update images/java/temurin.lock.json
+```
+
+This command:
+
+1. Asks the lockfile's upstream (nodejs.org or the Adoptium API) for the newest release of every major line the file lists
+2. Rewrites the lockfile with the new versions, URLs and checksums
+3. Runs `bazel mod tidy` to update the lockfile
+
+Which majors a lockfile lists is a policy decision made by hand in that file; the command never adds or drops a line. For Temurin, a line only moves once the JRE and JDK for both architectures are published at the same release.
+
 ## Architecture
 
 Commands use a noun-based package structure:
 
 - `cmd/apt/` - `apt` noun (verbs: `update`, `versions`)
 - `cmd/grype/` - `grype` noun (verbs: `update`)
+- `cmd/tarballs/` - `tarballs` noun (verbs: `update`)
 
 Shared libraries:
 
 - `bazel/grypedb` - grype database MODULE.bazel updater (via buildtools AST)
 - `bazel/mod` - `bazel mod tidy` helper
+- `bazel/tarballs` - upstream tarball lockfile and its nodejs.org / Adoptium resolvers; `extensions.bzl` there is the module extension that consumes the lockfile
 - `oci/debian/lockfile` - apt lock file parsing
 - `oci/debian/snapshot` - manifest parsing and snapshot fetching

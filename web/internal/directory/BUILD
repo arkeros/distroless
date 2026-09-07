@@ -1,5 +1,5 @@
 load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
-load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
 load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 package(default_visibility = ["//web:__subpackages__"])
@@ -18,12 +18,20 @@ go_test(
     deps = [":directory"],
 )
 
+# The behaviour the page runs, as a library rather than a bare file in the
+# test's data: Bazel instruments a test's dependencies, never the test
+# target itself, so this is what makes `aspect coverage` see directory.mjs.
+js_library(
+    name = "directory_js",
+    srcs = ["static/directory.mjs"],
+)
+
 # The Go tests render the templates but never run the script they reference,
 # so this is the only thing that would notice directory.mjs breaking.
 js_test(
     name = "directory_js_test",
     size = "small",
-    data = ["static/directory.mjs"],
+    data = [":directory_js"],
     entry_point = "directory_test.mjs",
 )
 

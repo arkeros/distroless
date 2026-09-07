@@ -6,6 +6,8 @@ use red green TDD
 
 `aspect format` formats the files a change touched (`--scope=all` for everything): Starlark, Go, shell, Terraform, and JavaScript, JSON, CSS and YAML through oxfmt (no npm). `aspect lint //...` runs buildifier, shellcheck and oxlint and prints the findings; `aspect gazelle` updates BUILD files. CI runs lint with `--strategy=hard` and format with `--scope=all`, so run both before committing. Without the Aspect CLI: `bazel run //:format`, `bazel build --config=lint //...`, `bazel run //:gazelle`.
 
+`aspect coverage [targets]` (.aspect/coverage.axl) runs the Go and JS tests with coverage and prints a per-file table and the coverage of the lines the change added, with an HTML report under bazel-coverage/; it needs lcov and genhtml on PATH (`brew install lcov`). `--fail-under=N` gates on the changed lines.
+
 # git
 
 for commits use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format:

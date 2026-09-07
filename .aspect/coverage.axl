@@ -1,0 +1,199 @@
+"""`aspect coverage`: run the tests with coverage and present the result.
+
+Bazel's own `coverage` command stops at a merged LCOV file. This task is the
+presenting half, which Aspect's "outside of Bazel" post argues belongs in a
+task runner: a per-file table, coverage of the lines a change touched, and
+an HTML report. lcov and genhtml render the tables and the HTML; they come
+from the host (`brew install lcov`, `apt-get install lcov`), the one place
+this repo runs a tool Bazel did not fetch, because the LCOV toolchain is a
+set of Perl scripts with no single-binary release to pin.
+
+Only `go_test` and `js_test` targets run: the others here (container
+structure tests, diff tests, grype gates) report no coverage, and there are
+seven hundred of them. rules_js reports a js_test's coverage for the
+libraries it depends on, never for files in the test's own `data`.
+
+Bazel's own merged report (`--combined_report=lcov`) is not used: when the
+tests are cache hits it is left stale, or missing, so the task merges each
+test's coverage.dat with `lcov -a` instead, which cached tests keep too.
+
+Changed-line coverage is computed here, not by lcov: the LCOV `DA` records
+of every file the diff against `--base-ref` touched, intersected with the
+lines the diff added. `--fail-under` turns it into a gate.
+
+Everything lands under bazel-coverage/ in the workspace root, which the
+`/bazel-*` rule in .gitignore already covers.
+"""
+
+def _sh(ctx: TaskContext, argv: list[str], cwd: str) -> tuple:
+    """Run argv in cwd, returning (exit code, stdout, stderr)."""
+    result = ctx.std.process.command(argv[0]).args(argv[1:]) \
+        .current_dir(cwd).stdout("piped").stderr("piped").spawn().wait_with_output()
+    return result.status.code, result.stdout, result.stderr
+
+def _on_path(ctx: TaskContext, tool: str) -> bool:
+    code, _, _ = _sh(ctx, ["sh", "-c", "command -v " + tool], ctx.std.env.aspect_root_dir())
+    return code == 0
+
+def _parse_lcov(text: str) -> dict:
+    """Per source file, execution count by line, from LCOV `SF`/`DA` records."""
+    files = {}
+    current = None
+    for line in text.splitlines():
+        if line.startswith("SF:"):
+            current = {}
+            files[line[3:]] = current
+        elif line.startswith("DA:") and current != None:
+            fields = line[3:].split(",")
+            current[int(fields[0])] = int(fields[1])
+    return files
+
+def _added_lines(ctx: TaskContext, base_ref: str, root: str) -> tuple:
+    """Lines the working tree adds over the merge base with base_ref, by file."""
+    code, base, err = _sh(ctx, ["git", "merge-base", "HEAD", base_ref], root)
+    if code != 0:
+        return {}, "git merge-base HEAD %s failed: %s" % (base_ref, err.strip())
+    base = base.strip()
+    code, diff, err = _sh(ctx, ["git", "diff", "-U0", "--no-color", base, "--", "."], root)
+    if code != 0:
+        return {}, "git diff %s failed: %s" % (base, err.strip())
+    added = {}
+    current = None
+    for line in diff.splitlines():
+        if line.startswith("+++ b/"):
+            current = []
+            added[line[6:]] = current
+        elif line.startswith("+++ "):
+            current = None
+        elif line.startswith("@@") and current != None:
+            # @@ -a[,b] +c[,d] @@
+            new = line.split(" ")[2][1:].split(",")
+            start = int(new[0])
+            count = int(new[1]) if len(new) > 1 else 1
+            current.extend(range(start, start + count))
+    return added, "merge-base %s of HEAD and %s" % (base[:12], base_ref)
+
+def _rjust(text: str, width: int) -> str:
+    return " " * (width - len(text)) + text
+
+def _ljust(text: str, width: int) -> str:
+    return text + " " * (width - len(text))
+
+def _pct(hit: int, total: int) -> str:
+    """Percentage with one decimal, right-aligned to six columns; `-` when nothing to count."""
+    if not total:
+        return _rjust("-", 6)
+    tenths = (1000 * hit + total // 2) // total
+    return _rjust("%d.%d%%" % (tenths // 10, tenths % 10), 6)
+
+def _impl(ctx: TaskContext) -> int | TaskConclusion:
+    out = ctx.std.io.stdout
+    root = ctx.std.env.aspect_root_dir()
+    out_dir = ctx.args.out or root + "/bazel-coverage"
+    for tool in ["lcov", "genhtml"]:
+        if not _on_path(ctx, tool):
+            return TaskConclusion(
+                exit_code = 1,
+                text = "%s is not on PATH. Install lcov: `brew install lcov` or `apt-get install lcov`." % tool,
+            )
+
+    ctx.task.phase("test", description = "Run the tests with coverage")
+    # Only the tests that can report coverage run (Go, JS); the container
+    # tests and the like are never worth a coverage run. The instrumentation
+    # filter is pinned to the whole repository rather than left to Bazel to
+    # derive from the targets, so the coverage configuration is the same on
+    # every run and the analysis cache is kept between them.
+    status = ctx.bazel.test(
+        flags = [
+            "--collect_code_coverage",
+            "--instrumentation_filter=^//",
+            "--test_lang_filters=" + ",".join(ctx.args.langs),
+        ],
+        *ctx.args.targets
+    ).wait()
+
+    ctx.task.phase("collect", description = "Merge each test's coverage.dat")
+    testlogs = ctx.bazel.info(keys = ["bazel-testlogs"])["bazel-testlogs"]
+    tracefiles = []
+    kinds = "|".join([lang + "_test" for lang in ctx.args.langs])
+    for target in ctx.bazel.query('kind("(%s) rule", tests(set(%s)))' % (kinds, " ".join(ctx.args.targets))):
+        label = str(target.name).lstrip("@").lstrip("/")
+        path = testlogs + "/" + label.replace(":", "/") + "/coverage.dat"
+        if ctx.std.fs.exists(path) and ctx.std.fs.read_to_string(path).strip():
+            tracefiles.append(path)
+    if not tracefiles:
+        return TaskConclusion(exit_code = status.code or 1, text = "No test wrote a coverage.dat; nothing to report")
+    ctx.std.fs.create_dir_all(out_dir)
+    lcov_path = out_dir + "/coverage.lcov"
+    if ctx.std.fs.exists(lcov_path):
+        ctx.std.fs.remove_file(lcov_path)
+    # `empty`: Go coverage has line records only; lcov 2 otherwise refuses
+    # the missing function data.
+    merge = ["lcov", "--quiet", "--ignore-errors", "empty", "--output-file", lcov_path]
+    for path in tracefiles:
+        merge.extend(["--add-tracefile", path])
+    code, _, err = _sh(ctx, merge, root)
+    if code != 0:
+        return TaskConclusion(exit_code = code, text = "lcov merge failed: " + err.strip())
+    out.write("Merged %d coverage.dat files into %s\n" % (len(tracefiles), lcov_path))
+
+    ctx.task.phase("summary", description = "Coverage by file")
+    code, listing, err = _sh(ctx, ["lcov", "--list-full-path", "--list", lcov_path], root)
+    if code != 0:
+        return TaskConclusion(exit_code = code, text = "lcov --list failed: " + err.strip())
+    out.write(listing)
+
+    ctx.task.phase("changed", description = "Coverage of the lines this change added")
+    added, source = _added_lines(ctx, ctx.args.base_ref, root)
+    coverage = _parse_lcov(ctx.std.fs.read_to_string(lcov_path))
+    rows = []
+    hit_total = 0
+    lines_total = 0
+    for path in sorted(added.keys()):
+        counts = coverage.get(path)
+        if counts == None:
+            continue  # not instrumented: not Go, or not reached by the tested targets
+        instrumented = [n for n in added[path] if n in counts]
+        if not instrumented:
+            continue
+        hit = len([n for n in instrumented if counts[n] > 0])
+        rows.append((path, hit, len(instrumented), [n for n in instrumented if counts[n] == 0]))
+        hit_total += hit
+        lines_total += len(instrumented)
+    out.write("\nChanged lines (%s)\n" % source)
+    if not rows:
+        out.write("  no instrumented lines among the added ones\n")
+    for path, hit, total, missed in rows:
+        out.write("  %s %s/%s %s\n" % (_pct(hit, total), _rjust(str(hit), 4), _ljust(str(total), 4), path))
+        if missed:
+            shown = ", ".join([str(n) for n in missed[:12]])
+            out.write("         missed: %s%s\n" % (shown, ", ..." if len(missed) > 12 else ""))
+    out.write("  %s %s/%s total\n" % (_pct(hit_total, lines_total), _rjust(str(hit_total), 4), _ljust(str(lines_total), 4)))
+
+    ctx.task.phase("html", description = "Render the HTML report")
+    html_dir = out_dir + "/html"
+    code, _, err = _sh(ctx, ["genhtml", "--quiet", "--ignore-errors", "empty", "--output-directory", html_dir, lcov_path], root)
+    if code != 0:
+        return TaskConclusion(exit_code = code, text = "genhtml failed: " + err.strip())
+    out.write("\nHTML report: %s/index.html\n" % html_dir)
+
+    if not status.success:
+        return TaskConclusion(exit_code = status.code, text = "Tests failed; coverage reported for what ran")
+    if ctx.args.fail_under and lines_total and 100 * hit_total < ctx.args.fail_under * lines_total:
+        return TaskConclusion(
+            exit_code = 1,
+            text = "Changed lines are %s covered, below --fail-under=%d" % (_pct(hit_total, lines_total).strip(), ctx.args.fail_under),
+        )
+    return 0
+
+coverage = task(
+    implementation = _impl,
+    summary = "Run tests with coverage: per-file table, coverage of the changed lines, and an HTML report via lcov/genhtml.",
+    args = {
+        "targets": args.positional(default = ["//..."], maximum = 512, description = "Test targets to run with coverage; only the `<lang>_test` rules among them run."),
+        "langs": args.string_list(default = ["go", "js"], long = "lang", description = "Test rule languages that report coverage, as `<lang>_test` kinds and Bazel's --test_lang_filters. Repeat to add."),
+        "base_ref": args.string(default = "origin/main", description = "Ref whose merge-base with HEAD defines the changed lines."),
+        "fail_under": args.int(default = 0, description = "Fail when the added lines are covered below this percentage. 0 disables the gate."),
+        "out": args.string(default = "", description = "Where coverage.lcov and html/ are written. Default: bazel-coverage/ in the workspace root."),
+    },
+)

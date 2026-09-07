@@ -21,7 +21,14 @@ jobs:
         with:
           repository-cache: true
           external-cache: true
-          cache-save: true
+          # Restore only, like pr.yaml. This job exists to rewrite
+          # MODULE.bazel.lock, and setup-bazel keys its caches on that
+          # content — so every successful run would mint a *new* ~6 GB
+          # repository entry rather than replace the old one. Two of those
+          # exceed the repository's 10 GB Actions cache budget and evict
+          # whatever ci.yaml warmed, which since the remote cache was
+          # removed is the only cache there is.
+          cache-save: false
           bazelrc: |
             common --config=ci
       # The published release, not a source build: knife pulls ~300 external

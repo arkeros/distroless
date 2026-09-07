@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	timestampRegex          = regexp.MustCompile(`\d{8}T\d{6}Z`)
-	debianURLRegex          = regexp.MustCompile(`(/archive/debian/)\d{8}T\d{6}Z`)
-	debianSecurityURLRegex  = regexp.MustCompile(`(/archive/debian-security/)\d{8}T\d{6}Z`)
+	timestampRegex         = regexp.MustCompile(`\d{8}T\d{6}Z`)
+	debianURLRegex         = regexp.MustCompile(`(/archive/debian/)\d{8}T\d{6}Z`)
+	debianSecurityURLRegex = regexp.MustCompile(`(/archive/debian-security/)\d{8}T\d{6}Z`)
 )
 
 type Source struct {

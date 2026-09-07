@@ -18,8 +18,11 @@ def verify_detached(rctx, gpg_tool, signature, data, keyring):
     res = rctx.execute([
         gpg_tool,
         "--verify-detached",
-        "--keyring", keyring,
-        "--signature", signature,
-        "--data", data,
+        "--keyring",
+        keyring,
+        "--signature",
+        signature,
+        "--data",
+        data,
     ])
     return (res.return_code == 0, res.stderr)

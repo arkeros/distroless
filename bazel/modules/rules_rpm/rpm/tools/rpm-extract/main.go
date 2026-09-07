@@ -326,7 +326,7 @@ func writeHardlinkAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, name, target
 	}
 	return tw.WriteHeader(&tar.Header{
 		Name:     name,
-		Mode:     int64(ent.Mode() & 07777),
+		Mode:     int64(ent.Mode() & 0o7777),
 		Typeflag: tar.TypeLink,
 		Linkname: target,
 		ModTime:  time.Unix(int64(ent.Mtime()), 0),
@@ -428,7 +428,7 @@ func mergedUsrLink(target string) string {
 }
 
 func isCpioRegular(ent *cpio.Cpio_newc_header) bool {
-	t := ent.Mode() &^ 07777
+	t := ent.Mode() &^ 0o7777
 	return t == 0 || t == cpio.S_ISREG
 }
 
@@ -443,7 +443,7 @@ func writeCpioEntryAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cp
 	mode := ent.Mode()
 	typeflag := byte(tar.TypeReg)
 	var linkname string
-	switch mode &^ 07777 {
+	switch mode &^ 0o7777 {
 	case cpio.S_ISDIR:
 		typeflag = tar.TypeDir
 	case cpio.S_ISLNK:
@@ -460,7 +460,7 @@ func writeCpioEntryAsTar(tw *tar.Writer, ent *cpio.Cpio_newc_header, payload *cp
 
 	hdr := &tar.Header{
 		Name:     name,
-		Mode:     int64(mode & 07777),
+		Mode:     int64(mode & 0o7777),
 		Size:     int64(ent.Filesize()),
 		Typeflag: typeflag,
 		Linkname: linkname,

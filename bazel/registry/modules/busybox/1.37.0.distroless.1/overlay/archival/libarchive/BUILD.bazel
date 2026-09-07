@@ -8,14 +8,23 @@ package(default_visibility = ["//visibility:public"])
 # at root don't cross package boundaries, so subpackages must re-export.
 exports_files(glob(["**"]))
 
-filegroup(name = "_srcs", srcs = glob(["**"]))
+filegroup(
+    name = "_srcs",
+    srcs = glob(["**"]),
+)
 
 # `bz/` and `unxz/` are not separate kbuild packages; their .c files exist
 # only to be `#include`d textually by sibling .c (decompress_unxz.c includes
 # unxz/xz_dec_*.c; archival/bzip2.c includes libarchive/bz/*.c across the
 # package boundary). Glob them explicitly so consumers see what's exposed.
 _TEXTUAL = glob(
-    ["bz/*.c", "bz/*.h", "unxz/*.c", "unxz/*.h", "lzo1x_c.c"],
+    [
+        "bz/*.c",
+        "bz/*.h",
+        "unxz/*.c",
+        "unxz/*.h",
+        "lzo1x_c.c",
+    ],
 )
 
 kbuild_lib(

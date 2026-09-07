@@ -3,22 +3,32 @@
     "name": "empty ledger: every applied tag is a move",
     "ledger": [],
     "applied": [
-      {"tag": "latest", "digest": "sha256:aaaa"},
-      {"tag": "1.29", "digest": "sha256:aaaa"}
+      { "tag": "latest", "digest": "sha256:aaaa" },
+      { "tag": "1.29", "digest": "sha256:aaaa" }
     ],
     "at": "2026-09-06T11:14:02Z",
     "run": "https://github.com/arkeros/distroless/actions/runs/1",
     "want": [
-      {"at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:aaaa", "run": "https://github.com/arkeros/distroless/actions/runs/1"},
-      {"at": "2026-09-06T11:14:02Z", "tag": "1.29", "digest": "sha256:aaaa", "run": "https://github.com/arkeros/distroless/actions/runs/1"}
+      {
+        "at": "2026-09-06T11:14:02Z",
+        "tag": "latest",
+        "digest": "sha256:aaaa",
+        "run": "https://github.com/arkeros/distroless/actions/runs/1"
+      },
+      {
+        "at": "2026-09-06T11:14:02Z",
+        "tag": "1.29",
+        "digest": "sha256:aaaa",
+        "run": "https://github.com/arkeros/distroless/actions/runs/1"
+      }
     ]
   },
   {
     "name": "same digest as last recorded: not a move",
     "ledger": [
-      {"at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r"}
+      { "at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r" }
     ],
-    "applied": [{"tag": "latest", "digest": "sha256:aaaa"}],
+    "applied": [{ "tag": "latest", "digest": "sha256:aaaa" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": []
@@ -26,35 +36,35 @@
   {
     "name": "different digest from last recorded: a move",
     "ledger": [
-      {"at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r"}
+      { "at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r" }
     ],
-    "applied": [{"tag": "latest", "digest": "sha256:bbbb"}],
+    "applied": [{ "tag": "latest", "digest": "sha256:bbbb" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": [
-      {"at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r2"}
+      { "at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r2" }
     ]
   },
   {
     "name": "the last event counts, not any event: a tag rolled back is a move",
     "ledger": [
-      {"at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r"},
-      {"at": "2026-09-03T00:00:00Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r"}
+      { "at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r" },
+      { "at": "2026-09-03T00:00:00Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r" }
     ],
-    "applied": [{"tag": "latest", "digest": "sha256:aaaa"}],
+    "applied": [{ "tag": "latest", "digest": "sha256:aaaa" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": [
-      {"at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r2"}
+      { "at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r2" }
     ]
   },
   {
     "name": "file order decides, not the at field",
     "ledger": [
-      {"at": "2026-09-03T00:00:00Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r"},
-      {"at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r"}
+      { "at": "2026-09-03T00:00:00Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r" },
+      { "at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r" }
     ],
-    "applied": [{"tag": "latest", "digest": "sha256:aaaa"}],
+    "applied": [{ "tag": "latest", "digest": "sha256:aaaa" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": []
@@ -62,52 +72,48 @@
   {
     "name": "only the tags that moved are events, in applied order",
     "ledger": [
-      {"at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r"},
-      {"at": "2026-09-01T00:00:00Z", "tag": "mainline", "digest": "sha256:aaaa", "run": "r"},
-      {"at": "2026-09-01T00:00:00Z", "tag": "1.28", "digest": "sha256:0000", "run": "r"}
+      { "at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "sha256:aaaa", "run": "r" },
+      { "at": "2026-09-01T00:00:00Z", "tag": "mainline", "digest": "sha256:aaaa", "run": "r" },
+      { "at": "2026-09-01T00:00:00Z", "tag": "1.28", "digest": "sha256:0000", "run": "r" }
     ],
     "applied": [
-      {"tag": "1.28", "digest": "sha256:0000"},
-      {"tag": "latest", "digest": "sha256:bbbb"},
-      {"tag": "mainline", "digest": "sha256:bbbb"},
-      {"tag": "1.30", "digest": "sha256:bbbb"}
+      { "tag": "1.28", "digest": "sha256:0000" },
+      { "tag": "latest", "digest": "sha256:bbbb" },
+      { "tag": "mainline", "digest": "sha256:bbbb" },
+      { "tag": "1.30", "digest": "sha256:bbbb" }
     ],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": [
-      {"at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r2"},
-      {"at": "2026-09-06T11:14:02Z", "tag": "mainline", "digest": "sha256:bbbb", "run": "r2"},
-      {"at": "2026-09-06T11:14:02Z", "tag": "1.30", "digest": "sha256:bbbb", "run": "r2"}
+      { "at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r2" },
+      { "at": "2026-09-06T11:14:02Z", "tag": "mainline", "digest": "sha256:bbbb", "run": "r2" },
+      { "at": "2026-09-06T11:14:02Z", "tag": "1.30", "digest": "sha256:bbbb", "run": "r2" }
     ]
   },
   {
     "name": "a ledger tag the release did not apply is left alone",
     "ledger": [
-      {"at": "2026-09-01T00:00:00Z", "tag": "1.27", "digest": "sha256:0000", "run": "r"}
+      { "at": "2026-09-01T00:00:00Z", "tag": "1.27", "digest": "sha256:0000", "run": "r" }
     ],
-    "applied": [{"tag": "latest", "digest": "sha256:bbbb"}],
+    "applied": [{ "tag": "latest", "digest": "sha256:bbbb" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": [
-      {"at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r2"}
+      { "at": "2026-09-06T11:14:02Z", "tag": "latest", "digest": "sha256:bbbb", "run": "r2" }
     ]
   },
   {
     "name": "an event without a digest is not a ledger",
-    "ledger": [
-      {"at": "2026-09-01T00:00:00Z", "tag": "latest", "run": "r"}
-    ],
-    "applied": [{"tag": "latest", "digest": "sha256:bbbb"}],
+    "ledger": [{ "at": "2026-09-01T00:00:00Z", "tag": "latest", "run": "r" }],
+    "applied": [{ "tag": "latest", "digest": "sha256:bbbb" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": "error"
   },
   {
     "name": "an event with a digest that is not sha256 is not a ledger",
-    "ledger": [
-      {"at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "aaaa", "run": "r"}
-    ],
-    "applied": [{"tag": "latest", "digest": "sha256:bbbb"}],
+    "ledger": [{ "at": "2026-09-01T00:00:00Z", "tag": "latest", "digest": "aaaa", "run": "r" }],
+    "applied": [{ "tag": "latest", "digest": "sha256:bbbb" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": "error"
@@ -115,7 +121,7 @@
   {
     "name": "a line that is not an object is not a ledger",
     "ledger": ["latest sha256:aaaa"],
-    "applied": [{"tag": "latest", "digest": "sha256:bbbb"}],
+    "applied": [{ "tag": "latest", "digest": "sha256:bbbb" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": "error"
@@ -123,7 +129,7 @@
   {
     "name": "an applied entry without a tag is not a list of applied tags",
     "ledger": [],
-    "applied": [{"digest": "sha256:bbbb"}],
+    "applied": [{ "digest": "sha256:bbbb" }],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",
     "want": "error"
@@ -132,8 +138,8 @@
     "name": "a tag applied twice in one release is an error",
     "ledger": [],
     "applied": [
-      {"tag": "latest", "digest": "sha256:aaaa"},
-      {"tag": "latest", "digest": "sha256:bbbb"}
+      { "tag": "latest", "digest": "sha256:aaaa" },
+      { "tag": "latest", "digest": "sha256:bbbb" }
     ],
     "at": "2026-09-06T11:14:02Z",
     "run": "r2",

@@ -22,5 +22,11 @@ commandTests:
   - name: 'crypt links libxcrypt'
     command: '/usr/bin/python3'
     # The runner expands `$name` in args, so the salt comes from mksalt.
-    args: ['-W', 'ignore', '-c', 'import crypt; print(crypt.crypt("distroless", crypt.mksalt(crypt.METHOD_SHA512))[:3])']
+    args:
+      [
+        '-W',
+        'ignore',
+        '-c',
+        'import crypt; print(crypt.crypt("distroless", crypt.mksalt(crypt.METHOD_SHA512))[:3])',
+      ]
     expectedOutput: ['^\$6\$']

@@ -52,14 +52,14 @@ extract_rule_defs() {
 WORK=$(mktemp -d)
 trap 'rm -rf "${WORK}"' EXIT
 
-extract_reexports "${ROOT_FILE}" | sort > "${WORK}/root.txt"
+extract_reexports "${ROOT_FILE}" | sort >"${WORK}/root.txt"
 
 # defs.bzl re-exports rules from cosign/private/*.bzl.
-extract_reexports "${DEFS_FILE}" > "${WORK}/expected.txt"
+extract_reexports "${DEFS_FILE}" >"${WORK}/expected.txt"
 
 # toolchain.bzl defines `cosign_toolchain` directly as a rule (no re-export
 # pattern there since it's all in one file). Pick it up from the rule def.
-extract_rule_defs "${TOOLCHAIN_FILE}" >> "${WORK}/expected.txt"
+extract_rule_defs "${TOOLCHAIN_FILE}" >>"${WORK}/expected.txt"
 
 sort -o "${WORK}/expected.txt" "${WORK}/expected.txt"
 
@@ -81,4 +81,4 @@ EOF
     exit 1
 fi
 
-echo "OK: cosign.bzl re-export shim covers $(wc -l < "${WORK}/root.txt" | tr -d ' ') public symbol(s)."
+echo "OK: cosign.bzl re-export shim covers $(wc -l <"${WORK}/root.txt" | tr -d ' ') public symbol(s)."

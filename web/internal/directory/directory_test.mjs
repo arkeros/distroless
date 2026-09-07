@@ -183,7 +183,11 @@ describe('copy button', () => {
 
   it('copies the command verbatim and says so in words', async () => {
     let written = null;
-    const { box, button } = copyFixture({ writeText: async (text) => { written = text; } });
+    const { box, button } = copyFixture({
+      writeText: async (text) => {
+        written = text;
+      },
+    });
 
     await box.handlers.click();
 
@@ -201,7 +205,9 @@ describe('copy button', () => {
     // dragging the box sideways to scroll it from copying.
     let written = null;
     const { box, button } = copyFixture({
-      writeText: async (text) => { written = text; },
+      writeText: async (text) => {
+        written = text;
+      },
       selectionCollapsed: false,
     });
 
@@ -215,7 +221,9 @@ describe('copy button', () => {
   it('claims nothing when the clipboard refuses', async () => {
     // Reporting a copy that never happened is worse than not copying.
     const { box, button } = copyFixture({
-      writeText: async () => { throw new Error('denied'); },
+      writeText: async () => {
+        throw new Error('denied');
+      },
     });
 
     await box.handlers.click();
@@ -228,7 +236,11 @@ describe('copy button', () => {
 describe('switcher dismissal', () => {
   function openSwitcher() {
     const state = { focused: false };
-    const summary = { focus() { state.focused = true; } };
+    const summary = {
+      focus() {
+        state.focused = true;
+      },
+    };
     const inside = {};
     const switcher = {
       open: true,
@@ -239,7 +251,7 @@ describe('switcher dismissal', () => {
     // way the real selector would.
     const document = fakeDocument();
     document.querySelectorAll = (selector) =>
-      (selector === 'details.switcher[open]' && switcher.open ? [switcher] : []);
+      selector === 'details.switcher[open]' && switcher.open ? [switcher] : [];
     dismissSwitchers(document);
     return { document, switcher, inside, state };
   }
@@ -278,11 +290,14 @@ describe('sorting', () => {
   it('sorts a size column as a number', () => {
     // Rendered "9.4 MB" and "180.2 MB". Sorted as text, 180.2 lands above 9.4
     // — so the server hands the browser the byte count to sort on instead.
-    const t = fakeTable(['tags', 'created', 'size'], [
-      [['latest'], ['2026-09-02'], ['23.9 MB', 23867899]],
-      [['slim'], ['2026-09-02'], ['9.4 MB', 9400000]],
-      [['big'], ['2026-05-02'], ['180.2 MB', 180200000]],
-    ]);
+    const t = fakeTable(
+      ['tags', 'created', 'size'],
+      [
+        [['latest'], ['2026-09-02'], ['23.9 MB', 23867899]],
+        [['slim'], ['2026-09-02'], ['9.4 MB', 9400000]],
+        [['big'], ['2026-05-02'], ['180.2 MB', 180200000]],
+      ],
+    );
     sortable(t.table);
 
     t.click(2);
@@ -293,7 +308,13 @@ describe('sorting', () => {
   });
 
   it('marks only the column it sorted', () => {
-    const t = fakeTable(['tags', 'size'], [[['a'], ['1 B', 1]], [['b'], ['2 B', 2]]]);
+    const t = fakeTable(
+      ['tags', 'size'],
+      [
+        [['a'], ['1 B', 1]],
+        [['b'], ['2 B', 2]],
+      ],
+    );
     sortable(t.table);
 
     t.click(1);
@@ -306,11 +327,14 @@ describe('sorting', () => {
     // dpkg order: 1.9 is below 1.10, and no string comparison gets there. It
     // rides the same per-cell key the size column uses, so the script needs no
     // branch naming either page.
-    const t = fakeTable(['name', 'version'], [
-      [['a'], ['1.10', 1]],
-      [['b'], ['1.9', 0]],
-      [['c'], ['2.0', 2]],
-    ]);
+    const t = fakeTable(
+      ['name', 'version'],
+      [
+        [['a'], ['1.10', 1]],
+        [['b'], ['1.9', 0]],
+        [['c'], ['2.0', 2]],
+      ],
+    );
     sortable(t.table);
 
     t.click(1);
@@ -334,8 +358,9 @@ describe('filter', () => {
   function filterFixture({ noun = 'components' } = {}) {
     const filter = node({ value: '' });
     const count = node({ dataset: { noun } });
-    const t = fakeTable(['name'], [[['libc6']], [['openssl']], [['zlib1g']]],
-      { elements: { filter, count } });
+    const t = fakeTable(['name'], [[['libc6']], [['openssl']], [['zlib1g']]], {
+      elements: { filter, count },
+    });
     sortable(t.table);
     return { t, filter, count };
   }
@@ -389,7 +414,13 @@ describe('image search', () => {
   // stylesheet shows the list while the input has focus, so all the script
   // owns is which of them are hidden and what Enter does.
   function searchFixture(names = ['bash', 'java', 'node', 'nginx']) {
-    const input = node({ value: '', blurred: false, blur() { this.blurred = true; } });
+    const input = node({
+      value: '',
+      blurred: false,
+      blur() {
+        this.blurred = true;
+      },
+    });
     const options = names.map((name) => {
       const item = { hidden: false };
       // The link holds the logo as well, whose title — "OpenJDK" — is in its
@@ -399,7 +430,9 @@ describe('image search', () => {
         querySelector: () => ({ textContent: name }),
         parentElement: item,
         clicked: false,
-        click() { this.clicked = true; },
+        click() {
+          this.clicked = true;
+        },
       };
       return { item, link };
     });
@@ -410,12 +443,20 @@ describe('image search', () => {
       input.handlers.input();
     };
     const press = (key) => {
-      const event = { key, prevented: false, preventDefault() { this.prevented = true; } };
+      const event = {
+        key,
+        prevented: false,
+        preventDefault() {
+          this.prevented = true;
+        },
+      };
       input.handlers.keydown(event);
       return event;
     };
     return {
-      input, type, press,
+      input,
+      type,
+      press,
       hidden: () => options.map((option) => option.item.hidden),
       clicked: () => options.map((option) => option.link.clicked),
     };
@@ -494,7 +535,12 @@ describe('image search', () => {
     const list = node({ querySelectorAll: () => [] });
     searchable(list, input);
 
-    const event = { prevented: false, preventDefault() { this.prevented = true; } };
+    const event = {
+      prevented: false,
+      preventDefault() {
+        this.prevented = true;
+      },
+    };
     list.handlers.mousedown(event);
 
     assert.equal(event.prevented, true);

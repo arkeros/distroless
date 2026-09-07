@@ -8,7 +8,10 @@ package(default_visibility = ["//visibility:public"])
 # at root don't cross package boundaries, so subpackages must re-export.
 exports_files(glob(["**"]))
 
-filegroup(name = "_srcs", srcs = glob(["**"]))
+filegroup(
+    name = "_srcs",
+    srcs = glob(["**"]),
+)
 
 kbuild_lib(
     name = "e2fsprogs",

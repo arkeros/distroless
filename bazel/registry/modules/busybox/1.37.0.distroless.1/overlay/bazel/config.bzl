@@ -22,6 +22,7 @@ def _busybox_config_impl(ctx):
         overlay_lines.append("CONFIG_%s=y" % sym)
     for sym in ctx.attr.disable:
         overlay_lines.append("# CONFIG_%s is not set" % sym)
+
     # `set` covers symbols that take a value (numbers, quoted strings, etc.)
     # rather than just `y`/not-set. Sorted for deterministic output.
     for sym in sorted(ctx.attr.set.keys()):

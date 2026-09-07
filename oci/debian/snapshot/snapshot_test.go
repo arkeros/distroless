@@ -11,32 +11,32 @@ func TestUpdateSnapshotURL(t *testing.T) {
 	tests := []struct {
 		name         string
 		url          string
-		newTimestamp  string
+		newTimestamp string
 		want         string
 	}{
 		{
-			name:        "standard debian URL",
-			url:         "https://snapshot.debian.org/archive/debian/20260320T143128Z",
+			name:         "standard debian URL",
+			url:          "https://snapshot.debian.org/archive/debian/20260320T143128Z",
 			newTimestamp: "20260401T120000Z",
-			want:        "https://snapshot.debian.org/archive/debian/20260401T120000Z",
+			want:         "https://snapshot.debian.org/archive/debian/20260401T120000Z",
 		},
 		{
-			name:        "cloudflare mirror URL",
-			url:         "https://snapshot-cloudflare.debian.org/archive/debian/20260320T143128Z",
+			name:         "cloudflare mirror URL",
+			url:          "https://snapshot-cloudflare.debian.org/archive/debian/20260320T143128Z",
 			newTimestamp: "20260401T120000Z",
-			want:        "https://snapshot-cloudflare.debian.org/archive/debian/20260401T120000Z",
+			want:         "https://snapshot-cloudflare.debian.org/archive/debian/20260401T120000Z",
 		},
 		{
-			name:        "security URL",
-			url:         "https://snapshot-cloudflare.debian.org/archive/debian-security/20260320T001422Z",
+			name:         "security URL",
+			url:          "https://snapshot-cloudflare.debian.org/archive/debian-security/20260320T001422Z",
 			newTimestamp: "20260401T120000Z",
-			want:        "https://snapshot-cloudflare.debian.org/archive/debian-security/20260401T120000Z",
+			want:         "https://snapshot-cloudflare.debian.org/archive/debian-security/20260401T120000Z",
 		},
 		{
-			name:        "URL with trailing slash",
-			url:         "https://snapshot.debian.org/archive/debian/20260320T143128Z/",
+			name:         "URL with trailing slash",
+			url:          "https://snapshot.debian.org/archive/debian/20260320T143128Z/",
 			newTimestamp: "20260401T120000Z",
-			want:        "https://snapshot.debian.org/archive/debian/20260401T120000Z/",
+			want:         "https://snapshot.debian.org/archive/debian/20260401T120000Z/",
 		},
 	}
 
@@ -214,4 +214,3 @@ func TestParseManifestValidation(t *testing.T) {
 		})
 	}
 }
-

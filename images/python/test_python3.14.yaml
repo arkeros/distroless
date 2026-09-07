@@ -14,5 +14,6 @@ commandTests:
     expectedOutput: ['^\(3, 14\)']
   - name: 'compression.zstd links libzstd'
     command: '/usr/bin/python3'
-    args: ['-c', 'from compression import zstd; print(zstd.decompress(zstd.compress(b"ok")).decode())']
+    args:
+      ['-c', 'from compression import zstd; print(zstd.decompress(zstd.compress(b"ok")).decode())']
     expectedOutput: ['^ok']

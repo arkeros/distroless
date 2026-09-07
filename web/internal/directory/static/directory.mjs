@@ -152,9 +152,8 @@ export function sortable(table) {
         row.element.hidden = !matches;
         if (matches) shown += 1;
       }
-      count.textContent = needle === ''
-        ? `${rows.length} ${noun}`
-        : `${shown} of ${rows.length} ${noun}`;
+      count.textContent =
+        needle === '' ? `${rows.length} ${noun}` : `${shown} of ${rows.length} ${noun}`;
     });
   }
 

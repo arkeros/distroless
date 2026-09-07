@@ -31,7 +31,7 @@ jobs:
     environment: prod
     permissions:
       contents: read
-      id-token: write   # for the remote cache's workload identity federation
+      id-token: write # for the remote cache's workload identity federation
     outputs:
       # `{target: digest}` for every mirror image, as built on this runner.
       # `publish` builds them again on its own runner and pushes nothing if
@@ -107,8 +107,8 @@ jobs:
     environment: prod
     permissions:
       contents: read
-      id-token: write   # for cosign keyless OIDC (Fulcio + Rekor) and the cache
-      packages: write   # for GHCR push + cosign sig/attest artifacts
+      id-token: write # for cosign keyless OIDC (Fulcio + Rekor) and the cache
+      packages: write # for GHCR push + cosign sig/attest artifacts
     outputs:
       # JSON list of `{target, ref, tags}` for everything pushed: the
       # mirror_push base label, `<registry>/<repository>@<digest>`, and the
@@ -484,9 +484,9 @@ jobs:
     needs: publish
     if: needs.publish.outputs.pending != '[]'
     permissions:
-      actions: read     # the generator reads the run that called it
-      id-token: write   # the generator's own keyless signing
-      packages: write   # to attach the attestation to ghcr.io
+      actions: read # the generator reads the run that called it
+      id-token: write # the generator's own keyless signing
+      packages: write # to attach the attestation to ghcr.io
     strategy:
       fail-fast: false
       matrix:
@@ -715,8 +715,8 @@ jobs:
       && needs.verify.result == 'success'
     runs-on: ubuntu-latest
     permissions:
-      contents: read    # for //oci/publish:ledger.jq
-      packages: write   # for `crane tag` and `oras push`
+      contents: read # for //oci/publish:ledger.jq
+      packages: write # for `crane tag` and `oras push`
     # The tag ledger is read, appended to and written back, so two releases
     # must not interleave: the later one would write over the earlier one's
     # events. One group, nothing cancelled — a release that has applied its

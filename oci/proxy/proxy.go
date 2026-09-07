@@ -10,10 +10,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/hashicorp/golang-lru/v2"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
+	"github.com/hashicorp/golang-lru/v2"
 )
 
 const MaxCacheEntries = 100

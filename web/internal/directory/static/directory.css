@@ -11,7 +11,9 @@
   font-weight: 400;
   font-display: swap;
   src: url('/directory/static/fonts/fira-sans-400-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -20,7 +22,10 @@
   font-weight: 400;
   font-display: swap;
   src: url('/directory/static/fonts/fira-sans-400-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 @font-face {
@@ -29,7 +34,9 @@
   font-weight: 600;
   font-display: swap;
   src: url('/directory/static/fonts/fira-sans-600-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -38,7 +45,10 @@
   font-weight: 600;
   font-display: swap;
   src: url('/directory/static/fonts/fira-sans-600-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 @font-face {
@@ -47,7 +57,9 @@
   font-weight: 400;
   font-display: swap;
   src: url('/directory/static/fonts/fira-mono-400-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -56,7 +68,10 @@
   font-weight: 400;
   font-display: swap;
   src: url('/directory/static/fonts/fira-mono-400-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 :root {
@@ -87,19 +102,23 @@
      than its orange reads as pink, not as worse. Both sets pass the
      adjacent-pair checks under simulated deficiency and normal vision. */
   --critical: light-dark(oklch(0.44 0.15 25), oklch(0.54 0.15 25));
-  --high: light-dark(oklch(0.60 0.15 50), oklch(0.68 0.15 50));
+  --high: light-dark(oklch(0.6 0.15 50), oklch(0.68 0.15 50));
   --medium: light-dark(oklch(0.76 0.15 90), oklch(0.82 0.15 90));
   --low: light-dark(oklch(0.52 0.15 260), oklch(0.66 0.15 260));
   /* Negligible is low's hue at a lighter, fainter step: less than low, in
      the same family. Unknown is the one grey, dark enough on a light scheme
      to stay apart from it. */
-  --negligible: light-dark(oklch(0.72 0.10 260), oklch(0.82 0.10 260));
+  --negligible: light-dark(oklch(0.72 0.1 260), oklch(0.82 0.1 260));
   --unknown: light-dark(oklch(0.56 0.02 255), oklch(0.58 0.02 255));
 }
 
 body {
   margin: 0;
-  font: 15px/1.5 'Fira Sans', ui-sans-serif, system-ui, sans-serif;
+  font:
+    15px/1.5 'Fira Sans',
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
 }
 
 /* One colour for a link whether or not it has been followed: a directory is
@@ -349,7 +368,11 @@ h1 {
     radial-gradient(farthest-side at 0 50%, var(--edge), transparent) 0 0,
     radial-gradient(farthest-side at 100% 50%, var(--edge), transparent) 100% 0;
   background-repeat: no-repeat;
-  background-size: 2rem 100%, 2rem 100%, 0.75rem 100%, 0.75rem 100%;
+  background-size:
+    2rem 100%,
+    2rem 100%,
+    0.75rem 100%,
+    0.75rem 100%;
   background-attachment: local, local, scroll, scroll;
 }
 
@@ -358,7 +381,8 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
   padding: 0.4rem 0.75rem 0.4rem 0;
   text-align: left;
   border-bottom: 1px solid var(--line);
@@ -378,7 +402,8 @@ td.license {
    are set in the mono face the digest already uses. Named rather than
    positional: the vulnerabilities table has two version columns and its
    identifier leads, so no one position would do for both pages. */
-td.version, td.id {
+td.version,
+td.id {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
 }
@@ -419,8 +444,13 @@ th button::after {
   color: var(--muted);
 }
 
-th[aria-sort="ascending"] button::after { visibility: visible; }
-th[aria-sort="descending"] button::after { content: '\00A0\25BC'; visibility: visible; }
+th[aria-sort='ascending'] button::after {
+  visibility: visible;
+}
+th[aria-sort='descending'] button::after {
+  content: '\00A0\25BC';
+  visibility: visible;
+}
 
 tbody tr:hover {
   background: color-mix(in srgb, currentColor 4%, transparent);
@@ -523,7 +553,9 @@ tbody tr:hover {
   border: 1px solid transparent;
   border-radius: 0.375rem;
   cursor: pointer;
-  transition: color 150ms ease, border-color 150ms ease;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .copy:hover {
@@ -543,7 +575,8 @@ tbody tr:hover {
   border-radius: 3px;
 }
 
-.unknown, .footnote {
+.unknown,
+.footnote {
   color: var(--muted);
 }
 
@@ -601,7 +634,9 @@ tbody tr:hover {
   border-bottom: 1.5px solid var(--muted);
   transform: rotate(45deg);
   /* Both, or the lift jumps while the turn animates. */
-  transition: transform 150ms ease, margin-top 150ms ease;
+  transition:
+    transform 150ms ease,
+    margin-top 150ms ease;
 }
 
 .switcher[open] summary::after {
@@ -669,7 +704,7 @@ tbody tr:hover {
   background: color-mix(in srgb, currentColor 8%, transparent);
 }
 
-.switcher a[aria-current="page"] {
+.switcher a[aria-current='page'] {
   background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
@@ -723,7 +758,7 @@ tbody tr:hover {
   color: inherit;
 }
 
-.views a[aria-current="page"] {
+.views a[aria-current='page'] {
   color: inherit;
   font-weight: 600;
   border-bottom-color: var(--accent);
@@ -898,12 +933,24 @@ td.id a:focus-visible {
 }
 
 /* The bands' colours are the :root variables of the same names. */
-.band-critical { fill: var(--critical); }
-.band-high     { fill: var(--high); }
-.band-medium   { fill: var(--medium); }
-.band-low        { fill: var(--low); }
-.band-negligible { fill: var(--negligible); }
-.band-unknown    { fill: var(--unknown); }
+.band-critical {
+  fill: var(--critical);
+}
+.band-high {
+  fill: var(--high);
+}
+.band-medium {
+  fill: var(--medium);
+}
+.band-low {
+  fill: var(--low);
+}
+.band-negligible {
+  fill: var(--negligible);
+}
+.band-unknown {
+  fill: var(--unknown);
+}
 
 .legend {
   display: flex;
@@ -925,12 +972,24 @@ td.id a:focus-visible {
   vertical-align: -1px;
 }
 
-.legend .band-critical { background: var(--critical); }
-.legend .band-high     { background: var(--high); }
-.legend .band-medium   { background: var(--medium); }
-.legend .band-low        { background: var(--low); }
-.legend .band-negligible { background: var(--negligible); }
-.legend .band-unknown    { background: var(--unknown); }
+.legend .band-critical {
+  background: var(--critical);
+}
+.legend .band-high {
+  background: var(--high);
+}
+.legend .band-medium {
+  background: var(--medium);
+}
+.legend .band-low {
+  background: var(--low);
+}
+.legend .band-negligible {
+  background: var(--negligible);
+}
+.legend .band-unknown {
+  background: var(--unknown);
+}
 
 #history td.number,
 #history th.number {

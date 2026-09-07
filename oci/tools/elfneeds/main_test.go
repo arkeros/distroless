@@ -122,9 +122,9 @@ func minimalELF(machine elf.Machine, interp string, needed []string, runpath str
 		binary.Write(&b, le, entsize)
 	}
 	shdr(0, elf.SHT_NULL, 0, 0, 0, 0)
-	shdr(1, elf.SHT_STRTAB, dynstrOff, uint64(dynstr.Len()), 0, 0)   // .dynstr
+	shdr(1, elf.SHT_STRTAB, dynstrOff, uint64(dynstr.Len()), 0, 0)     // .dynstr
 	shdr(9, elf.SHT_DYNAMIC, dynamicOff, uint64(dynamic.Len()), 1, 16) // .dynamic -> .dynstr
-	shdr(18, elf.SHT_STRTAB, shstrOff, uint64(len(shstrtab)), 0, 0)  // .shstrtab
+	shdr(18, elf.SHT_STRTAB, shstrOff, uint64(len(shstrtab)), 0, 0)    // .shstrtab
 	return b.Bytes()
 }
 
@@ -194,11 +194,11 @@ func TestCheck(t *testing.T) {
 			name: "resolves through default dirs, a symlinked interpreter and RUNPATH $ORIGIN",
 			image: image{
 				files: map[string][]byte{
-					"/opt/app/bin/app":                      minimalELF(x86, "/lib64/ld-linux-x86-64.so.2", []string{"libc.so.6", "libapp.so.1"}, "$ORIGIN/../lib"),
-					"/usr/lib/x86_64-linux-gnu/libc.so.6":   lib(x86),
+					"/opt/app/bin/app":                               minimalELF(x86, "/lib64/ld-linux-x86-64.so.2", []string{"libc.so.6", "libapp.so.1"}, "$ORIGIN/../lib"),
+					"/usr/lib/x86_64-linux-gnu/libc.so.6":            lib(x86),
 					"/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2": lib(x86),
-					"/opt/app/lib/libapp.so.1":              lib(x86),
-					"/usr/share/zoneinfo/UTC":               []byte("TZif2 not an ELF"),
+					"/opt/app/lib/libapp.so.1":                       lib(x86),
+					"/usr/share/zoneinfo/UTC":                        []byte("TZif2 not an ELF"),
 				},
 				links: map[string]string{"/lib64/ld-linux-x86-64.so.2": "/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"},
 			},
@@ -222,7 +222,7 @@ func TestCheck(t *testing.T) {
 		{
 			name: "a library for another machine does not count",
 			image: image{files: map[string][]byte{
-				"/usr/bin/tool":     minimalELF(x86, "", []string{"libz.so.1"}, ""),
+				"/usr/bin/tool":      minimalELF(x86, "", []string{"libz.so.1"}, ""),
 				"/usr/lib/libz.so.1": lib(elf.EM_AARCH64),
 			}},
 			wantOK: false,
@@ -231,7 +231,7 @@ func TestCheck(t *testing.T) {
 		{
 			name: "ld.so.conf.d adds search directories",
 			image: image{files: map[string][]byte{
-				"/usr/bin/tool":           minimalELF(x86, "", []string{"libextra.so.1"}, ""),
+				"/usr/bin/tool":            minimalELF(x86, "", []string{"libextra.so.1"}, ""),
 				"/opt/extra/libextra.so.1": lib(x86),
 				"/etc/ld.so.conf":          []byte("include /etc/ld.so.conf.d/*.conf\n"),
 				"/etc/ld.so.conf.d/x.conf": []byte("# extra\n/opt/extra\n"),

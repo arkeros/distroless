@@ -1,17 +1,13 @@
 {
-    "homepage": "https://busybox.net",
-    "maintainers": [
-        {
-            "email": "rafael@arquero.cat",
-            "github": "arkeros",
-            "name": "Rafael Arquero Gimeno"
-        }
-    ],
-    "repository": [
-        "https://git.busybox.net/busybox/"
-    ],
-    "versions": [
-        "1.37.0.distroless.1"
-    ],
-    "yanked_versions": {}
+  "homepage": "https://busybox.net",
+  "maintainers": [
+    {
+      "email": "rafael@arquero.cat",
+      "github": "arkeros",
+      "name": "Rafael Arquero Gimeno"
+    }
+  ],
+  "repository": ["https://git.busybox.net/busybox/"],
+  "versions": ["1.37.0.distroless.1"],
+  "yanked_versions": {}
 }

@@ -2,8 +2,8 @@ load("@rules_img//img:image.bzl", "image_index")
 load("@tar.bzl", "mutate", "tar")
 load("//images:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//images/common:variables.bzl", "NONROOT")
-load(":oci_image.bzl", "oci_image")
 load("//images/nginx:config.bzl", "NGINX_ARCHITECTURES")
+load(":oci_image.bzl", "oci_image")
 
 NGINX_FRONTEND_DEFAULT_CHANNEL = "stable"
 

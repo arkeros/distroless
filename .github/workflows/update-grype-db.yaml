@@ -2,7 +2,7 @@ name: Update Grype Database
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 6 * * *"
+    - cron: '0 6 * * *'
 concurrency:
   group: update-grype-db
   cancel-in-progress: false
@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write   # for the remote cache's workload identity federation
+      id-token: write # for the remote cache's workload identity federation
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7

@@ -86,7 +86,11 @@ commandTests:
     expectedOutput: ['^[0-9a-f]{16}']
   - name: 'sqlite3 opens an in-memory database'
     command: '/usr/bin/python3'
-    args: ['-c', 'import sqlite3; print(sqlite3.connect(":memory:").execute("select sqlite_version()").fetchone()[0])']
+    args:
+      [
+        '-c',
+        'import sqlite3; print(sqlite3.connect(":memory:").execute("select sqlite_version()").fetchone()[0])',
+      ]
     expectedOutput: ['^3\.']
   - name: 'decimal uses libmpdec'
     command: '/usr/bin/python3'

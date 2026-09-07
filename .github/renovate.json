@@ -1,8 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
+  "extends": ["config:recommended"],
   "timezone": "Europe/Madrid",
   "branchConcurrentLimit": 10,
   "prHourlyLimit": 10,
@@ -15,102 +13,57 @@
   "osvVulnerabilityAlerts": true,
   "commitMessagePrefix": "chore(deps):",
   "recreateWhen": "always",
-  "ignorePaths": [
-    ".github/renovate.json"
-  ],
+  "ignorePaths": [".github/renovate.json"],
   "packageRules": [
     {
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ],
+      "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
     },
     {
       "description": "The slsa-github-generator is the trust root of the L3 provenance claim (ADR 0014); it only accepts vX.Y.Z tags, so a human sees every bump.",
-      "matchManagers": [
-        "github-actions"
-      ],
-      "matchPackageNames": [
-        "slsa-framework/slsa-github-generator"
-      ],
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["slsa-framework/slsa-github-generator"],
       "automerge": false,
       "pinDigests": false
     },
     {
-      "matchManagers": [
-        "bazel"
-      ],
+      "matchManagers": ["bazel"],
       "postUpgradeTasks": {
-        "commands": [
-          "bazel mod deps --lockfile_mode=update",
-          "bazel mod tidy"
-        ],
-        "fileFilters": [
-          "MODULE.bazel.lock"
-        ],
+        "commands": ["bazel mod deps --lockfile_mode=update", "bazel mod tidy"],
+        "fileFilters": ["MODULE.bazel.lock"],
         "executionMode": "update"
       }
     },
     {
-      "matchManagers": [
-        "bazelisk"
-      ],
+      "matchManagers": ["bazelisk"],
       "postUpgradeTasks": {
-        "commands": [
-          "bazel mod deps --lockfile_mode=update",
-          "bazel mod tidy"
-        ],
-        "fileFilters": [
-          "MODULE.bazel.lock"
-        ],
+        "commands": ["bazel mod deps --lockfile_mode=update", "bazel mod tidy"],
+        "fileFilters": ["MODULE.bazel.lock"],
         "executionMode": "update"
       }
     },
     {
-      "matchManagers": [
-        "bazel-module"
-      ],
+      "matchManagers": ["bazel-module"],
       "postUpgradeTasks": {
-        "commands": [
-          "bazel mod deps --lockfile_mode=update",
-          "bazel mod tidy"
-        ],
-        "fileFilters": [
-          "MODULE.bazel.lock",
-          "bazel/modules/*/MODULE.bazel.lock"
-        ],
+        "commands": ["bazel mod deps --lockfile_mode=update", "bazel mod tidy"],
+        "fileFilters": ["MODULE.bazel.lock", "bazel/modules/*/MODULE.bazel.lock"],
         "executionMode": "update"
       }
     },
     {
-      "matchDepNames": [
-        "go"
-      ],
-      "matchManagers": [
-        "gomod"
-      ],
+      "matchDepNames": ["go"],
+      "matchManagers": ["gomod"],
       "rangeStrategy": "bump"
     },
     {
       "description": "Indirect deps are disabled by default, but these get linked into the binaries we ship and are where the CVEs that fail the cve_tests keep landing. golang.org/x/exp is excluded: it has no semver tags, so it would only ever produce digest churn.",
-      "matchManagers": [
-        "gomod"
-      ],
-      "matchDepTypes": [
-        "indirect"
-      ],
-      "matchPackageNames": [
-        "golang.org/x/**",
-        "!golang.org/x/exp",
-        "github.com/ulikunitz/xz"
-      ],
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["indirect"],
+      "matchPackageNames": ["golang.org/x/**", "!golang.org/x/exp", "github.com/ulikunitz/xz"],
       "enabled": true
     },
     {
-      "matchManagers": [
-        "gomod"
-      ],
+      "matchManagers": ["gomod"],
       "postUpgradeTasks": {
         "commands": [
           "bazel run @rules_go//go -- mod tidy",
@@ -127,49 +80,27 @@
         ],
         "executionMode": "branch"
       },
-      "postUpdateOptions": [
-        "goModTidy"
-      ]
+      "postUpdateOptions": ["goModTidy"]
     },
     {
-      "matchManagers": [
-        "terraform",
-        "terraform-lockfile"
-      ],
+      "matchManagers": ["terraform", "terraform-lockfile"],
       "postUpgradeTasks": {
-        "commands": [
-          "bazel mod deps --lockfile_mode=update",
-          "bazel mod tidy"
-        ],
-        "fileFilters": [
-          "infra/.terraform.lock.hcl",
-          "MODULE.bazel.lock"
-        ],
+        "commands": ["bazel mod deps --lockfile_mode=update", "bazel mod tidy"],
+        "fileFilters": ["infra/.terraform.lock.hcl", "MODULE.bazel.lock"],
         "executionMode": "update"
       }
     },
     {
-      "matchDepNames": [
-        "rules_img",
-        "rules_img_tool"
-      ],
+      "matchDepNames": ["rules_img", "rules_img_tool"],
       "groupName": "rules_img",
       "groupSlug": "rules_img"
     },
     {
-      "matchManagers": [
-        "custom.regex"
-      ],
-      "matchFileNames": [
-        "tools/tools.lock.json"
-      ],
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["tools/tools.lock.json"],
       "postUpgradeTasks": {
-        "commands": [
-          "./tools/repin --tool {{{depName}}}"
-        ],
-        "fileFilters": [
-          "tools/tools.lock.json"
-        ],
+        "commands": ["./tools/repin --tool {{{depName}}}"],
+        "fileFilters": ["tools/tools.lock.json"],
         "executionMode": "update"
       }
     }
@@ -178,9 +109,7 @@
     {
       "customType": "regex",
       "description": "rules_multitool lockfile: tools published as GitHub Releases. The postUpgradeTask below re-runs multitool, which is what actually rewrites the URLs and sha256s for the bumped tool. kubectl and terraform are deliberately absent: multitool only understands GitHub Releases, so bumping their URLs here would leave a stale sha256 and break the build.",
-      "managerFilePatterns": [
-        "tools/tools.lock.json"
-      ],
+      "managerFilePatterns": ["tools/tools.lock.json"],
       "matchStrings": [
         "https://github\\.com/(?<packageScope>[^/\"]+)/(?<depName>[^/\"]+)/releases/download/(?<currentValue>v[^/\"]+)/"
       ],

@@ -59,6 +59,7 @@ format_multirun(
 
 format_test(
     name = "format_test",
+    size = "small",
     css = OXFMT,
     css_check_args = OXFMT_CHECK,
     fix_target = ":format",
@@ -67,7 +68,6 @@ format_test(
     javascript_check_args = OXFMT_CHECK,
     no_sandbox = True,
     shell = SHFMT,
-    size = "small",
     starlark = BUILDIFIER,
     terraform = TERRAFORM,
     workspace = "//:MODULE.bazel",

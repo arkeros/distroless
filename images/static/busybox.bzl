@@ -1,5 +1,5 @@
-load("@tar.bzl", "tar")
 load("@rules_distroless//distroless:defs.bzl", "flatten")
+load("@tar.bzl", "tar")
 load("//images/common:variables.bzl", "COMPRESSION")
 
 BUSYBOX_COMMANDS = [

@@ -4,7 +4,7 @@ on:
   schedule:
     # 30 min offset from the Debian cron so the two package-update PRs don't
     # land on top of each other.
-    - cron: "30 16 * * *"
+    - cron: '30 16 * * *'
 concurrency:
   group: update-rpm-packages
   cancel-in-progress: false
@@ -15,7 +15,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write   # for the remote cache's workload identity federation
+      id-token: write # for the remote cache's workload identity federation
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7

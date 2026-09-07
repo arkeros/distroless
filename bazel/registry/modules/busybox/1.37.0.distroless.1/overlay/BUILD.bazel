@@ -1,7 +1,7 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//bazel:codegen.bzl", "GENERATED_HEADERS", "busybox_codegen")
 load("//bazel:config.bzl", "busybox_config")
 load("//bazel:kconfig_base.bzl", "BASE_DISABLE", "BASE_ENABLE", "BASE_SET")
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -53,9 +53,21 @@ cc_library(
     name = "headers",
     # `allow_empty` because the root busybox dir has no .h or .c of its own
     # (everything is either in `include/` or in a kbuild subpackage).
-    hdrs = glob(["*.h", "include/**/*.h"], allow_empty = True),
-    textual_hdrs = glob(["*.c"], allow_empty = True),
-    includes = [".", "include"],
+    hdrs = glob(
+        [
+            "*.h",
+            "include/**/*.h",
+        ],
+        allow_empty = True,
+    ),
+    includes = [
+        ".",
+        "include",
+    ],
+    textual_hdrs = glob(
+        ["*.c"],
+        allow_empty = True,
+    ),
 )
 
 # Project-specific deltas applied on top of BASE_* from kconfig_base.bzl.
@@ -76,8 +88,8 @@ _OVERRIDES = {
 # project-specific deltas on top. No vendored kconfig dump.
 busybox_config(
     name = "busyboxconfig",
-    enable = BASE_ENABLE,
     disable = [sym for sym in BASE_DISABLE if sym not in _OVERRIDES],
+    enable = BASE_ENABLE,
     set = BASE_SET | _OVERRIDES,
 )
 
@@ -91,7 +103,10 @@ cc_library(
     hdrs = GENERATED_HEADERS,
     # `.` so `-include include/autoconf.h` (added by kbuild_lib copts)
     # resolves; `include` so source files can `#include "autoconf.h"` plain.
-    includes = [".", "include"],
+    includes = [
+        ".",
+        "include",
+    ],
 )
 
 # Header aggregator: every kbuild_lib pulls this in via deps so the right -I
@@ -99,14 +114,13 @@ cc_library(
 cc_library(
     name = "kbuild_headers",
     deps = [
-        "//:headers",
         ":generated_headers",
+        "//:headers",
     ],
 )
 
 cc_binary(
     name = "busybox",
-    deps = ["//" + d for d in _KBUILD_SUBDIRS],
     linkopts = [
         "-Wl,--gc-sections",
         "-lm",
@@ -114,4 +128,5 @@ cc_binary(
     ],
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
+    deps = ["//" + d for d in _KBUILD_SUBDIRS],
 )

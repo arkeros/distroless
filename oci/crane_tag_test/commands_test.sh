@@ -7,7 +7,7 @@ set -o errexit -o nounset -o pipefail
 WORK=$(mktemp -d)
 trap 'rm -rf "${WORK}"' EXIT
 
-cat > "${WORK}/crane" <<'EOF'
+cat >"${WORK}/crane" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "${CRANE_LOG}"
 EOF
@@ -19,4 +19,4 @@ if ! diff -u "${EXPECTED}" "${WORK}/log"; then
     echo "ERROR: crane_tag issued different commands than expected (see diff above)." >&2
     exit 1
 fi
-echo "OK: $(wc -l < "${WORK}/log" | tr -d ' ') tag command(s) as expected."
+echo "OK: $(wc -l <"${WORK}/log" | tr -d ' ') tag command(s) as expected."

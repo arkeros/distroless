@@ -1,0 +1,20 @@
+"""Aspect CLI configuration: `aspect lint` and `aspect format`.
+
+Both tasks drive what the Bazel graph already has, the aspects in
+//tools/lint:linters.bzl and the //:format multirun, so `bazel build
+--config=lint` and `bazel run //:format` keep working without the CLI.
+What the CLI adds is the reporting: findings as warnings in the terminal
+rather than a failed build, `--fix` for the linters that produce patches,
+and a format run that touches only the files a change touched.
+
+The CLI version is pinned in version.axl; the launcher fetches it.
+"""
+
+def config(ctx: ConfigContext):
+    ctx.tasks["lint"].args.aspects = [
+        "//tools/lint:linters.bzl%buildifier",
+        "//tools/lint:linters.bzl%shellcheck",
+        "//tools/lint:linters.bzl%oxlint",
+    ]
+    ctx.tasks["format"].args.formatter_target = "//:format"
+    ctx.tasks["gazelle"].args.gazelle_target = "//:gazelle"

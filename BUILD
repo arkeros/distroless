@@ -49,8 +49,6 @@ alias(
 
 exports_files(
     [
-        # Where //tools/format:format_test finds the checkout.
-        "MODULE.bazel",
         ".oxlintrc.json",
         ".shellcheckrc",
     ],

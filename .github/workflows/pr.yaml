@@ -69,6 +69,26 @@ jobs:
             common --config=ci
             ${{ steps.auth.outcome == 'success' && 'common --config=bazel-remote-readonly' || '' }}
 
-      # `--config=lint`: the linter aspects in //tools/lint, see .bazelrc.
       - name: Test
-        run: bazel test --config=lint //...
+        run: bazel test //...
+
+      # The launcher only; .aspect/version.axl pins the CLI it fetches.
+      # bazelisk is on PATH from setup-bazel above, so the action skips its
+      # own, and its caches stay off: the remote cache is the cache here.
+      - name: Set up Aspect CLI
+        uses: aspect-build/setup-aspect@2306377a61c45954ab2df7c7311698b109364352 # v2026.26.9
+        with:
+          bazelisk-cache: false
+          disk-cache: false
+          repository-cache: false
+
+      # The linters in //tools/lint over every target. `hard`: any finding
+      # fails the check. The tree is clean, and hold-the-line would need a
+      # diff base this shallow checkout does not have.
+      - name: Lint
+        run: aspect lint --strategy=hard -- //...
+
+      # Every file the formatters in //tools/format know, failing when any
+      # came back changed.
+      - name: Format
+        run: aspect format --scope=all --severity=fail

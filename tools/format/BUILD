@@ -9,14 +9,13 @@ from a subdirectory too. Markdown and HTML are not formatted: rules_lint
 formats those with prettier only, and the HTML files here are Go templates.
 
 `bazel run //:format` rewrites files in place, over the whole checkout or
-over the paths given after `--`. `format_test` is the check, run by
-`bazel test //...`: it walks the checkout with `git ls-files` rather than
-listing sources, which makes it a test Bazel can neither cache nor sandbox,
-and it is tagged as such. The two targets must name the same languages and
-tools; a BUILD file cannot share them with `**kwargs`.
+over the paths given after `--`. `aspect format` runs the same target over
+the files a change touched, and CI runs it over every file and fails when
+any came back changed; that is the check, so there is no `format_test`,
+which would have to walk the checkout outside the sandbox on every run.
 """
 
-load("@aspect_rules_lint//format:defs.bzl", "format_multirun", "format_test")
+load("@aspect_rules_lint//format:defs.bzl", "format_multirun")
 
 package(default_visibility = ["//:__subpackages__"])
 
@@ -55,22 +54,4 @@ format_multirun(
     yaml = OXFMT,
     yaml_check_args = OXFMT_CHECK,
     yaml_fix_args = OXFMT_FIX,
-)
-
-format_test(
-    name = "format_test",
-    size = "small",
-    css = OXFMT,
-    css_check_args = OXFMT_CHECK,
-    fix_target = ":format",
-    go = GOFUMPT,
-    javascript = OXFMT,
-    javascript_check_args = OXFMT_CHECK,
-    no_sandbox = True,
-    shell = SHFMT,
-    starlark = BUILDIFIER,
-    terraform = TERRAFORM,
-    workspace = "//:MODULE.bazel",
-    yaml = OXFMT,
-    yaml_check_args = OXFMT_CHECK,
 )

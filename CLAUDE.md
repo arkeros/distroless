@@ -4,7 +4,7 @@ use red green TDD
 
 # formatting and linting
 
-`bazel run //:format` formats everything: Starlark, Go, shell, Terraform, and JavaScript, JSON, CSS and YAML through oxfmt (no npm). `bazel test //tools/format:format_test` checks without writing. `bazel build --config=lint //...` runs buildifier, shellcheck and oxlint and fails on any finding. CI runs both; run them before committing.
+`aspect format` formats the files a change touched (`--scope=all` for everything): Starlark, Go, shell, Terraform, and JavaScript, JSON, CSS and YAML through oxfmt (no npm). `aspect lint //...` runs buildifier, shellcheck and oxlint and prints the findings; `aspect gazelle` updates BUILD files. CI runs lint with `--strategy=hard` and format with `--scope=all`, so run both before committing. Without the Aspect CLI: `bazel run //:format`, `bazel build --config=lint //...`, `bazel run //:gazelle`.
 
 # git
 

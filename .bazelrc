@@ -70,9 +70,11 @@ common --repo_env=ANDROID_HOME=
 common --aspects=//oci:aspects.bzl%mirror_push_enforcement_aspect
 
 # Linters, as aspects (//tools/lint:linters.bzl), over every target on the
-# command line. A finding fails the build: in vanilla Bazel that is the only
-# way it reaches the terminal, as the aspects otherwise write their reports
-# under bazel-out and exit zero. CI runs `bazel test --config=lint //...`.
+# command line, for plain Bazel. A finding fails the build: without the
+# Aspect CLI that is the only way it reaches the terminal, as the aspects
+# otherwise write their reports under bazel-out and exit zero. `aspect lint`
+# runs the same aspects (.aspect/config.axl) and prints the reports instead;
+# CI runs that.
 common:lint --aspects=//tools/lint:linters.bzl%buildifier,//tools/lint:linters.bzl%shellcheck,//tools/lint:linters.bzl%oxlint
 common:lint --@aspect_rules_lint//lint:fail_on_violation
 

@@ -1,10 +1,11 @@
-"""Linter aspects, one per language, for `bazel build --config=lint //...`.
+"""Linter aspects, one per language, for `aspect lint` and `--config=lint`.
 
 Each is a rules_lint aspect factory bound to the tool Bazel fetches for it.
-The `lint` config in .bazelrc applies all of them to every target on the
-command line and fails the build on a finding, which in vanilla Bazel is the
-only way a finding reaches the terminal: without it the aspects write their
-reports under bazel-out and exit zero.
+`aspect lint` (.aspect/config.axl) runs them and prints the findings; the
+`lint` config in .bazelrc applies the same aspects under plain Bazel and
+fails the build on a finding, which without the CLI is the only way one
+reaches the terminal, as the aspects otherwise write their reports under
+bazel-out and exit zero.
 
 Buildifier visits `bzl_library` targets, so every .bzl file gazelle knows
 about, and any filegroup tagged `starlark`: //:starlark and

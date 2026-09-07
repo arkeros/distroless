@@ -19,7 +19,6 @@ lazy_bazel_env(
         # https://github.com/bazelbuild/rules_go/blob/master/docs/go/core/bzlmod.md#using-a-go-sdk
         "go": "@rules_go//go",
         "gazelle": "//:gazelle",
-        # "prettier": "//tools/format:prettier",
         "knife": "//bazel/cmd/knife",
     } | {
         t: "@multitool//tools/" + t

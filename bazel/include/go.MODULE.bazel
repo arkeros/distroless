@@ -23,6 +23,15 @@ go_deps.module_override(
     ],
     path = "github.com/bazelbuild/buildtools",
 )
+
+# buildifier (a buildtools dependency) pulls in safeopen, which ships a
+# WORKSPACE-era BUILD file naming `@go_sys` and `@io_bazel_rules_go`, names
+# no bzlmod repository has. Generating its BUILD file from scratch resolves
+# golang.org/x/sys the way every other module here is.
+go_deps.gazelle_override(
+    build_file_generation = "clean",
+    path = "github.com/google/safeopen",
+)
 go_deps.module_override(
     patch_strip = 1,
     patches = [

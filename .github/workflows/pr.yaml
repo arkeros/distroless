@@ -69,5 +69,6 @@ jobs:
             common --config=ci
             ${{ steps.auth.outcome == 'success' && 'common --config=bazel-remote-readonly' || '' }}
 
+      # `--config=lint`: the linter aspects in //tools/lint, see .bazelrc.
       - name: Test
-        run: bazel test //...
+        run: bazel test --config=lint //...

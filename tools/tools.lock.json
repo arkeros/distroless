@@ -157,6 +157,78 @@
       }
     ]
   },
+  "oxfmt": {
+    "binaries": [
+      {
+        "kind": "archive",
+        "url": "https://github.com/oxc-project/oxc/releases/download/apps_v1.82.0/oxfmt-x86_64-unknown-linux-gnu.tar.gz",
+        "file": "oxfmt-x86_64-unknown-linux-gnu",
+        "sha256": "7fcda58499e25a261069022f3c6b9827da4bcc729a6181214c0645b3e30d1603",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/oxc-project/oxc/releases/download/apps_v1.82.0/oxfmt-aarch64-unknown-linux-gnu.tar.gz",
+        "file": "oxfmt-aarch64-unknown-linux-gnu",
+        "sha256": "b738733446781432fc6874b9e9328def0c5cd1c69335bcf258078e429e4887e1",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/oxc-project/oxc/releases/download/apps_v1.82.0/oxfmt-aarch64-apple-darwin.tar.gz",
+        "file": "oxfmt-aarch64-apple-darwin",
+        "sha256": "2c0a483844922828a8b9b78684cb01e9283242250cad5d7303eb2cce0e027175",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/oxc-project/oxc/releases/download/apps_v1.82.0/oxfmt-x86_64-apple-darwin.tar.gz",
+        "file": "oxfmt-x86_64-apple-darwin",
+        "sha256": "20e82289d7f41399a4d9670a0d78135e14dbe04f421163be2cc0c120d3ad4fa1",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
+  },
+  "oxlint": {
+    "binaries": [
+      {
+        "kind": "archive",
+        "url": "https://github.com/oxc-project/oxc/releases/download/apps_v1.82.0/oxlint-x86_64-unknown-linux-gnu.tar.gz",
+        "file": "oxlint-x86_64-unknown-linux-gnu",
+        "sha256": "2284a516360c42166b9f0b1c1aa6920322d3385d93a7ff7061d2d8ed77ec1e35",
+        "os": "linux",
+        "cpu": "x86_64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/oxc-project/oxc/releases/download/apps_v1.82.0/oxlint-aarch64-unknown-linux-gnu.tar.gz",
+        "file": "oxlint-aarch64-unknown-linux-gnu",
+        "sha256": "0c59db096ce59b5d690b3e7c75d5b729e565e730634f067d352ce7eb857d944a",
+        "os": "linux",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/oxc-project/oxc/releases/download/apps_v1.82.0/oxlint-aarch64-apple-darwin.tar.gz",
+        "file": "oxlint-aarch64-apple-darwin",
+        "sha256": "e420b7f67fc1ec5426c932a7e5b07e546c67c661c9b7116ba6c8c9648ff96074",
+        "os": "macos",
+        "cpu": "arm64"
+      },
+      {
+        "kind": "archive",
+        "url": "https://github.com/oxc-project/oxc/releases/download/apps_v1.82.0/oxlint-x86_64-apple-darwin.tar.gz",
+        "file": "oxlint-x86_64-apple-darwin",
+        "sha256": "42206a631be5a65e4f32de5983e9e8991197ef2756870c257a5db2e6f493a86f",
+        "os": "macos",
+        "cpu": "x86_64"
+      }
+    ]
+  },
   "prek": {
     "binaries": [
       {

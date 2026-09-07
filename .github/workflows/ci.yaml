@@ -72,8 +72,9 @@ jobs:
             common --config=ci
             common --config=bazel-remote
 
+      # `--config=lint`: the linter aspects in //tools/lint, see .bazelrc.
       - name: Test
-        run: bazel test //...
+        run: bazel test --config=lint //...
 
       # The deploy manifests name each image's index digest; everything behind
       # them is a cache hit after the tests above, and `toplevel` keeps the

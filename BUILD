@@ -39,6 +39,35 @@ load("@gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary", "ga
 # gazelle:resolve bzl @supply_chain_tools//sbom:cyclonedx.bzl @supply_chain_tools//sbom
 # gazelle:resolve bzl @supply_chain_tools//sbom:sbom.bzl @supply_chain_tools//sbom
 
+# `bazel run //:format` rewrites every source file the formatters in
+# //tools/format know; `bazel build --config=lint //...` runs the linters in
+# //tools/lint over the targets they know.
+alias(
+    name = "format",
+    actual = "//tools/format",
+)
+
+exports_files(
+    [
+        # Where //tools/format:format_test finds the checkout.
+        "MODULE.bazel",
+        ".oxlintrc.json",
+        ".shellcheckrc",
+    ],
+    visibility = ["//tools:__subpackages__"],
+)
+
+# Starlark that is in no bzl_library, for buildifier's lint; the `starlark`
+# tag is what the aspect in //tools/lint:linters.bzl looks for.
+filegroup(
+    name = "starlark",
+    srcs = [
+        "BUILD",
+        "MODULE.bazel",
+    ],
+    tags = ["starlark"],
+)
+
 gazelle_binary(
     name = "gazelle_bin",
     languages = DEFAULT_LANGUAGES + [

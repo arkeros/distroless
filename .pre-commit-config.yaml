@@ -2,11 +2,19 @@
 repos:
   - repo: local
     hooks:
-      # - id: format
-      #   name: Format
-      #   language: system
-      #   entry: bazel run //:format --
-      #   files: .*
+      # Rewrites the staged files in place; pre-commit fails the commit when a
+      # hook changes a file, so the fix is staged for the next attempt.
+      - id: format
+        name: Format
+        language: system
+        entry: bazel run //:format --
+        files: .*
+      - id: lint
+        name: Lint
+        language: system
+        entry: bazel build --config=lint //...
+        files: .*
+        pass_filenames: false
       - id: gazelle
         name: Gazelle
         language: system

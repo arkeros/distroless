@@ -69,6 +69,13 @@ common --repo_env=ANDROID_HOME=
 # that bypasses it. See `//oci:aspects.bzl`.
 common --aspects=//oci:aspects.bzl%mirror_push_enforcement_aspect
 
+# Linters, as aspects (//tools/lint:linters.bzl), over every target on the
+# command line. A finding fails the build: in vanilla Bazel that is the only
+# way it reaches the terminal, as the aspects otherwise write their reports
+# under bazel-out and exit zero. CI runs `bazel test --config=lint //...`.
+common:lint --aspects=//tools/lint:linters.bzl%buildifier,//tools/lint:linters.bzl%shellcheck,//tools/lint:linters.bzl%oxlint
+common:lint --@aspect_rules_lint//lint:fail_on_violation
+
 # Remote cache (GCS).
 #
 # Cache only — there is no remote execution. Every action runs on the machine
@@ -156,7 +163,7 @@ common --incompatible_python_disallow_native_rules
 # Should be at the end of this file so that users can override anything above.
 try-import %workspace%/.bazelrc.user
 
-# rules_esbuild carries Aspect's ruleset telemetry, which reports the module
+# rules_esbuild and rules_lint carry Aspect's ruleset telemetry, which reports the module
 # graph to Aspect from the machine evaluating it. Off, with the variable the
 # module documents honouring, so neither CI nor a laptop reports anywhere.
 common --repo_env=DO_NOT_TRACK=1

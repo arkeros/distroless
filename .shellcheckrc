@@ -1,0 +1,5 @@
+# ShellCheck configuration, read by the shellcheck aspect in
+# //tools/lint:linters.bzl (`bazel build --config=lint //...`) and by
+# editors. https://github.com/koalaman/shellcheck/wiki/Directive#rc-files
+#
+# Empty on purpose: the defaults are the policy.

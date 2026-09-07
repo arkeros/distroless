@@ -2,6 +2,10 @@ This is a monorepo with bazel. Use `bazel run` and `bazel build` and `bazel test
 
 use red green TDD
 
+# formatting and linting
+
+`bazel run //:format` formats everything: Starlark, Go, shell, Terraform, and JavaScript, JSON, CSS and YAML through oxfmt (no npm). `bazel test //tools/format:format_test` checks without writing. `bazel build --config=lint //...` runs buildifier, shellcheck and oxlint and fails on any finding. CI runs both; run them before committing.
+
 # git
 
 for commits use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format:

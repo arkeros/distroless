@@ -24,8 +24,9 @@ func newCmdUpdate() *cobra.Command {
 		Use:   "update <lockfile>",
 		Short: "Move every release line in a tarball lockfile to its newest upstream release",
 		Long: `Updates a tarball lockfile consumed by the tarballs module extension by:
-  1. Asking the lockfile's upstream (nodejs.org or the Adoptium API) for the
-     newest release of every major line already listed
+  1. Asking the lockfile's upstream (nodejs.org, the Adoptium API or
+     envoyproxy's GitHub releases) for the newest release of every major
+     line already listed
   2. Rewriting the lockfile with the new versions, URLs and checksums
   3. Running bazel mod tidy to refresh MODULE.bazel.lock
 
@@ -34,7 +35,8 @@ adds or drops a line.
 
 Examples:
   knife tarballs update images/nodejs/nodejs.lock.json
-  knife tarballs update images/java/temurin.lock.json`,
+  knife tarballs update images/java/temurin.lock.json
+  knife tarballs update images/envoy/envoy.lock.json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			o.LockFile = args[0]

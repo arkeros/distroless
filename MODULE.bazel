@@ -78,6 +78,7 @@ include("//bazel/include:go.MODULE.bazel")
 include("//bazel/include:multitool.MODULE.bazel")
 include("//bazel/include:js.MODULE.bazel")
 include("//bazel/include:java.MODULE.bazel")
+include("//bazel/include:envoy.MODULE.bazel")
 
 # FIXME: drop archive_override after https://github.com/bazel-contrib/supply-chain/pull/158 is merged and released
 # FIXME: drop supply_chain_tools_rule_filters_rpm.patch after a follow-up upstream PR adds rules_rpm's `rpm_package`/`rpmdb_merge` to the default filter list, or surfaces the `user_filtered_rule_kinds.bzl` extension point the rule_filters.bzl docstring promises.

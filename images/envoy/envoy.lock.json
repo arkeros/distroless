@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "source": "envoy",
+  "lines": [
+    {
+      "major": "1.36",
+      "version": "1.36.10",
+      "archives": {
+        "envoy_136_amd64": {
+          "url": "https://github.com/envoyproxy/envoy/releases/download/v1.36.10/envoy-1.36.10-linux-x86_64",
+          "sha256": "dc0fd761371be3bd2d00822e761ee7b5e891f5dcfa6e70b6231f858a4f6fb66e",
+          "file": "envoy"
+        },
+        "envoy_136_arm64": {
+          "url": "https://github.com/envoyproxy/envoy/releases/download/v1.36.10/envoy-1.36.10-linux-aarch_64",
+          "sha256": "dfb83c4a547ab28a30d825f3d7af811884b60b2aa67e06595bd8e1d8d190aba9",
+          "file": "envoy"
+        }
+      }
+    },
+    {
+      "major": "1.37",
+      "version": "1.37.6",
+      "archives": {
+        "envoy_137_amd64": {
+          "url": "https://github.com/envoyproxy/envoy/releases/download/v1.37.6/envoy-1.37.6-linux-x86_64",
+          "sha256": "8105918a01f968c6cfc7d108938c5080462e291332af1781d0d114b6a064f94f",
+          "file": "envoy"
+        },
+        "envoy_137_arm64": {
+          "url": "https://github.com/envoyproxy/envoy/releases/download/v1.37.6/envoy-1.37.6-linux-aarch_64",
+          "sha256": "757fe187a8083f0345eb1eeae694b7fb4f5be78b00542c42cb849f5a168c4818",
+          "file": "envoy"
+        }
+      }
+    },
+    {
+      "major": "1.38",
+      "version": "1.38.4",
+      "archives": {
+        "envoy_138_amd64": {
+          "url": "https://github.com/envoyproxy/envoy/releases/download/v1.38.4/envoy-1.38.4-linux-x86_64",
+          "sha256": "c994c452de131f59c9ec9f4a2fffcc65039f250a38b6279870bb95dac21db0fa",
+          "file": "envoy"
+        },
+        "envoy_138_arm64": {
+          "url": "https://github.com/envoyproxy/envoy/releases/download/v1.38.4/envoy-1.38.4-linux-aarch_64",
+          "sha256": "847bdd681e78f2bfd5e3f84fbfc6afe20a9b41b5453a6bb8d4b6fae9dab3376f",
+          "file": "envoy"
+        }
+      }
+    },
+    {
+      "major": "1.39",
+      "version": "1.39.1",
+      "archives": {
+        "envoy_139_amd64": {
+          "url": "https://github.com/envoyproxy/envoy/releases/download/v1.39.1/envoy-1.39.1-linux-x86_64",
+          "sha256": "002c6e1c69ed0fa0ea381887247cadadfaec9481375fa8d8d2b1731eeabf40b8",
+          "file": "envoy"
+        },
+        "envoy_139_arm64": {
+          "url": "https://github.com/envoyproxy/envoy/releases/download/v1.39.1/envoy-1.39.1-linux-aarch_64",
+          "sha256": "8565ad0af4b1d1d3c986e5165c027add3073579182f398dd7f4d728d25e9ec62",
+          "file": "envoy"
+        }
+      }
+    }
+  ]
+}

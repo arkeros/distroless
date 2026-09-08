@@ -314,11 +314,20 @@ jobs:
       # cquery then maps each target to its executable and, for pushes, its
       # manifest; for attestations, its predicate — no per-image Bazel from
       # here on.
+      #
+      # `--remote_download_outputs=toplevel` because the loop below reads these
+      # files off the disk: the deploy manifest with jq, the scripts out of
+      # their runfiles trees. `--config=ci` asks for `minimal`, and Bazel counts
+      # `--disk_cache` as a remote cache, so once this job started restoring one
+      # (565768b) every cached action left its outputs unwritten and the first
+      # `jq` of the loop failed on a path cquery had just printed (run
+      # 34199088113). 0a8688b dropped this flag when the remote cache went away,
+      # which was safe only while nothing was lazy.
       - name: Build every mirror image's push, sign and attest targets
         run: |
           set -euo pipefail
           TARGETS=$(bazel query 'kind("cosign_sign rule", //...) + kind("cosign_attest rule", //...) + kind("crane_tag rule", //...) + attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
-          bazel build --output_groups=+deploy_manifest,+tags,+predicate ${TARGETS}
+          bazel build --remote_download_outputs=toplevel --output_groups=+deploy_manifest,+tags,+predicate ${TARGETS}
           # label <TAB> executable <TAB> deploy manifest (pushes) <TAB> expanded tag list (tags) <TAB> predicate (attestations)
           group() { echo "(getattr(providers(target)[\"OutputGroupInfo\"], \"$1\", None).to_list()[0].path if getattr(providers(target)[\"OutputGroupInfo\"], \"$1\", None) else \"\")"; }
           bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr="\"%s\\t%s\\t%s\\t%s\\t%s\" % (str(target.label).removeprefix(\"@@\"), target.files_to_run.executable.path, $(group deploy_manifest), $(group tags), $(group predicate))" \

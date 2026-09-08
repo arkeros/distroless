@@ -136,6 +136,11 @@ rpm.install(
         "expat",
         "gdbm-libs",
         "glibc",
+        # en_US.utf8, for the postgres family. Hummingbird splits glibc's
+        # locales into per-language rpms; this is the only one either
+        # distro can supply without shipping all of them. Debian has no
+        # equivalent — see plans/0002.
+        "glibc-langpack-en",
         "gmp",
         "grep",
         "libacl",
@@ -158,6 +163,20 @@ rpm.install(
         "ncurses-libs",
         "openssl-libs",
         "pcre2",
+        # postgres. Two lines: Hummingbird packages 18 as the unsuffixed
+        # `postgresql*` and 17 as flat `postgresql17*`, the same shape as
+        # its python lines. `-server` carries postgres/initdb/pg_ctl,
+        # the unsuffixed package the client tools, `-contrib` the
+        # extensions. Their closures bring libicu, krb5, openldap, pam,
+        # libxml2 and util-linux; the layer lists in //images/postgres
+        # take `:own` and name what they need, so a scriptlet-only
+        # require does not put bash in the image.
+        "postgresql",
+        "postgresql-contrib",
+        "postgresql-server",
+        "postgresql17",
+        "postgresql17-contrib",
+        "postgresql17-server",
         "python3",
         "python3.11",
         "python3.11-libs",

@@ -1,0 +1,55 @@
+# The debug image has busybox, so this is where the whole cluster lifecycle
+# can be proved in one shell: initialise, start, write, read back, dump,
+# stop. The release image cannot run this — no shell — and that is the
+# point of the variant rather than a gap in the test.
+#
+# A shell is not only a debugging convenience for postgres: `archive_command`
+# and `restore_command` are run through system(), so continuous WAL
+# archiving needs /bin/sh. That is why the wal-g channel is built on this
+# variant. See plans/0002.
+schemaVersion: 2.0.0
+metadataTest:
+  entrypoint: ['/busybox/sh']
+  user: '65532'
+commandTests:
+  - name: 'a cluster initialises, starts, round-trips a row and dumps'
+    command: '/busybox/sh'
+    # No $VARS the image already sets: container-structure-test expands them
+    # from the image env before the shell runs.
+    args:
+      - -ec
+      - |
+        export PGDATA=/tmp/pgdata PGHOST=/tmp PGUSER=postgres
+        initdb --username=postgres --locale=en_US.utf8 --encoding=UTF8 >/dev/null
+        pg_ctl -w -o "-c listen_addresses='' -c unix_socket_directories=/tmp" -l /tmp/pg.log start >/dev/null
+        pg_isready
+        psql -v ON_ERROR_STOP=1 -c 'create table t (v text)' -c "insert into t values ('round-trip')" >/dev/null
+        psql -At -c 'select v from t'
+        pg_dump --schema-only | grep -c 'CREATE TABLE public.t' >/dev/null
+        pg_ctl -m fast stop >/dev/null
+    exitCode: 0
+    expectedOutput: ['round-trip']
+  # The contrib extensions are shipped, so at least one must actually load.
+  # pg_stat_statements is the one nearly every consumer turns on, and it is
+  # a shared_preload_library, which is the loading path most likely to break.
+  - name: 'a contrib extension loads'
+    command: '/busybox/sh'
+    args:
+      - -ec
+      - |
+        export PGDATA=/tmp/pgdata2 PGHOST=/tmp PGUSER=postgres
+        initdb --username=postgres --locale=en_US.utf8 --encoding=UTF8 >/dev/null
+        pg_ctl -w -o "-c listen_addresses='' -c unix_socket_directories=/tmp -c shared_preload_libraries=pg_stat_statements" -l /tmp/pg2.log start >/dev/null
+        psql -v ON_ERROR_STOP=1 -c 'create extension pg_stat_statements' >/dev/null
+        psql -At -c 'select count(*) >= 0 from pg_stat_statements'
+        pg_ctl -m fast stop >/dev/null
+    exitCode: 0
+    # (?m) because Go's `$` is end-of-text, and psql -At still emits a newline.
+    expectedOutput: ['(?m)^t$']
+fileExistenceTests:
+  # The symlink the two tests above depend on. It is what the release image
+  # deliberately lacks, so assert it here rather than leaving the difference
+  # between the variants to a comment.
+  - name: '/bin/sh, which postgres calls absolutely'
+    path: '/bin/sh'
+    shouldExist: true

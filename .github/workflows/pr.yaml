@@ -27,13 +27,34 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
+          # Action results rather than downloaded archives; ci.yaml's `test`
+          # job carries the reasoning. Set on setup-bazel and not on
+          # setup-aspect below because setup-aspect runs *after* the `Test`
+          # step: a `--disk_cache` it wrote would arrive too late for the
+          # command that needed it.
+          disk-cache: true
           # Restore only: a pull request reads the caches `main` warmed and
           # saves nothing another run would read.
           cache-save: false
           bazelrc: |
             common --config=ci
+
+      # Measurement, not correctness. `bazel test //...` below fetches
+      # anything this misses, so deleting this step changes nothing but the
+      # timings. It is here because 4c0d345 traded the repository and external
+      # caches for a disk cache, and this step's wall time is the number that
+      # decides whether that was right: it is what those caches used to save.
+      #
+      # It is not network time. The repo rules here do real work — the Debian
+      # apt resolve, gazelle's go_deps, rpm extraction — and this counts that
+      # and the loading and analysis with it. It also under-counts: a repo
+      # reached only through a lazily evaluated extension, a transition or an
+      # aspect is fetched later, by the command that first needs it.
+      #
+      # Free in job time: the same Bazel server serves both commands, so the
+      # analysis this does is warm for the test run rather than repeated.
+      - name: Fetch
+        run: bazel fetch //...
 
       - name: Test
         run: bazel test //...
@@ -54,7 +75,116 @@ jobs:
       - name: Lint
         run: aspect lint --strategy=hard -- //...
 
+  # Its own job, where `Lint` above is not. `aspect lint` is
+  # `bazel build --config=lint //...`: it needs the whole graph loaded and
+  # analysed, which is warm in `Test` only because `bazel test //...` just ran
+  # there, and which no cache can carry between jobs. `aspect format` needs
+  # none of it — //tools/format is five formatter binaries walking the
+  # checkout — so it is cheap to run in parallel and, being the failure most
+  # changes actually hit, worth not queueing behind the tests.
+  format:
+    # `Format` is a required check in the `main-checks` ruleset (infra/repo.tf)
+    # because it stopped riding on `Test`'s result when it moved out. Renaming
+    # this job silently disables that rule.
+    name: Format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          # Its own key. This job builds //tools/format and nothing else, so
+          # it has no use for the `disk` cache the full build writes and no
+          # reason to pay to download it.
+          disk-cache: format
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+
+      - name: Set up Aspect CLI
+        uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
+        with:
+          bazelisk-cache: false
+          disk-cache: false
+          repository-cache: false
+
       # Every file the formatters in //tools/format know, failing when any
       # came back changed.
       - name: Format
         run: aspect format --scope=all --severity=fail
+
+  # Separate from `Test`, not a step inside it. `--collect_code_coverage` is a
+  # different Bazel configuration, so nothing here could reuse that job's
+  # analysis cache anyway, and this way the two run in parallel. In ci.yaml the
+  # same split matters for a second reason: `publish` is `needs: test`, and
+  # coverage has no business upstream of the digests it signs.
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # octocov's comment
+      actions: read # octocov reads the report artifact `main` stored
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # `aspect coverage` diffs against the merge base with `origin/main`
+          # to find the added lines; the depth-1 checkout `test` uses has none.
+          fetch-depth: 0
+
+      # The one thing .aspect/coverage.axl expects from the host, because the
+      # LCOV toolchain is Perl scripts with no binary release to pin.
+      # ubuntu-latest does not ship them.
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          disk-cache: true
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+
+      - name: Set up Aspect CLI
+        uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
+        with:
+          bazelisk-cache: false
+          disk-cache: false
+          repository-cache: false
+
+      # Only the go_test and js_test targets run. `--fail-under` gates the
+      # lines this change added; the per-file table, the changed-line rows and
+      # the misses all go to the job summary.
+      - name: Coverage
+        shell: bash # -eo pipefail, or `tee` swallows the gate's exit code
+        run: |
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+          aspect coverage --fail-under=80 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+
+      # Comments the overall number and its movement against `main`. Runs even
+      # when the gate above failed: that is exactly when the comment is worth
+      # reading. `version` and `checksum` pin the binary by content — this is a
+      # single-maintainer tool, so it is pinned like one.
+      - name: Report coverage
+        if: ${{ !cancelled() }}
+        uses: k1LoW/octocov-action@a167dc0dee441b7ffc45e1b862ab55ec0d87f278 # v1.5.2
+        with:
+          config: .octocov.yml
+          version: v0.77.0
+          checksum: 2f9032c0484f719cf773a9b6d479e4b6ab4689388fa4b0c84be89a9eb35d60b4
+
+      - name: Upload the HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: bazel-coverage/html

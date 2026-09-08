@@ -98,6 +98,7 @@ def _impl(ctx: TaskContext) -> int | TaskConclusion:
             )
 
     ctx.task.phase("test", description = "Run the tests with coverage")
+
     # Only the tests that can report coverage run (Go, JS); the container
     # tests and the like are never worth a coverage run. The instrumentation
     # filter is pinned to the whole repository rather than left to Bazel to
@@ -127,6 +128,7 @@ def _impl(ctx: TaskContext) -> int | TaskConclusion:
     lcov_path = out_dir + "/coverage.lcov"
     if ctx.std.fs.exists(lcov_path):
         ctx.std.fs.remove_file(lcov_path)
+
     # `empty`: Go coverage has line records only; lcov 2 otherwise refuses
     # the missing function data.
     merge = ["lcov", "--quiet", "--ignore-errors", "empty", "--output-file", lcov_path]

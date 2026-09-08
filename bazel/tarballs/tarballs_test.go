@@ -236,3 +236,38 @@ func TestStalledUpstreamTimesOut(t *testing.T) {
 		t.Error("expected a timeout error from a stalled upstream")
 	}
 }
+
+// A bare-file entry pins one downloaded file rather than an archive to
+// unpack, so `file` is written and `strip_prefix` must not appear — the
+// extension dispatches on which of the two is set.
+func TestLockRoundTripBinaryEntry(t *testing.T) {
+	lock := &Lock{
+		SchemaVersion: 1,
+		Source:        "envoy",
+		Lines: []Line{{
+			Major:   "1.39",
+			Version: "1.39.1",
+			Archives: map[string]Archive{
+				"envoy_139_amd64": {URL: "https://example.test/envoy-1.39.1-linux-x86_64", SHA256: "aa", File: "envoy"},
+			},
+		}},
+	}
+	path := filepath.Join(t.TempDir(), "envoy.lock.json")
+	if err := lock.Write(path); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), `"strip_prefix"`) {
+		t.Errorf("empty strip_prefix must be omitted, got:\n%s", raw)
+	}
+	got, err := ReadLock(path)
+	if err != nil {
+		t.Fatalf("ReadLock: %v", err)
+	}
+	if archive := got.Lines[0].Archives["envoy_139_amd64"]; archive.File != "envoy" || archive.StripPrefix != "" {
+		t.Errorf("binary entry lost in round trip: %+v", archive)
+	}
+}

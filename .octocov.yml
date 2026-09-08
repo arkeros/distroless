@@ -1,0 +1,44 @@
+---
+# octocov reports the LCOV that `aspect coverage` merges into bazel-coverage/:
+# a pull request comment carrying the overall number and its movement against
+# `main`, and the same table in the job summary.
+#
+# The division of labour with .aspect/coverage.axl is deliberate. The task owns
+# the gate, because it is the half that knows which lines the change *added* —
+# the number worth blocking on — so `coverage.acceptable:` is left unset here.
+# Two gates on one number is one too many; the looser one is the one that gets
+# ignored.
+#
+# Why octocov and not Codecov or Coveralls: the history lives in this
+# repository's own Actions artifacts. No account, no upload token, and no
+# coverage data leaving GitHub — the same boundary ADR 0014 draws around the
+# build.
+
+coverage:
+  paths:
+    - bazel-coverage/coverage.lcov
+
+comment:
+  if: is_pull_request
+  # Edit the existing comment rather than appending one per push.
+  updatePrevious: true
+  hideFooterLink: true
+  # Linked values open octocov.dev, which reads the stored artifact back. The
+  # data is public either way, but a coverage table does not justify an
+  # outbound dependency; render plain numbers.
+  hideCoverageLink: true
+
+summary:
+  if: true
+
+# `main` alone writes the baseline; a pull request reads it for the comparison
+# and stores nothing of its own. Same shape as the Bazel caches (19f0bb7): the
+# branch everything inherits from is the branch that writes.
+report:
+  if: is_default_branch
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}
+
+diff:
+  datastores:
+    - artifact://${GITHUB_REPOSITORY}

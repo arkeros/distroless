@@ -32,8 +32,7 @@ jobs:
       - name: Set up Bazelisk
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
-          repository-cache: true
-          external-cache: true
+          disk-cache: true
           # Restore only, like pr.yaml. This job exists to rewrite
           # MODULE.bazel.lock, and setup-bazel keys its caches on that
           # content — so every successful run would mint a *new* ~6 GB

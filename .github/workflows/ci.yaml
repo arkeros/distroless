@@ -43,11 +43,33 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
+          # Outputs, not inputs. `repository-cache` and `external-cache` held
+          # the downloaded archives and the materialised `external/` dirs —
+          # 8.07 of the 10 GB Actions budget spent caching bytes that
+          # re-download for free, while every action still re-executed. The
+          # disk cache holds action *results*: compiled Go, image layers, and
+          # the test results that let a cached test not run at all. Since the
+          # GCS remote cache was removed (plans/0001) this is the only output
+          # cache that stays inside the GitHub trust boundary.
+          #
+          # Deliberately not keyed on `github.workflow`, which is the pattern
+          # setup-bazel's README suggests: that would give `PR` a key of its
+          # own, and pr.yaml never saves, so pull requests would restore
+          # nothing. One shared `disk` key is what lets them read what `main`
+          # wrote — the same mistake `external-cache` was already making with
+          # its per-job manifest.
+          disk-cache: true
           cache-save: true
           bazelrc: |
             common --config=ci
+
+      # Measurement, not correctness; pr.yaml's copy carries the reasoning.
+      # `bazel test //...` below fetches anything this misses, so deleting
+      # this step changes nothing but the timings. This is the run whose
+      # number matters: `main` is where the caches are written, so it is the
+      # warm case that decides whether 4c0d345 was right.
+      - name: Fetch
+        run: bazel fetch //...
 
       - name: Test
         run: bazel test //...
@@ -68,11 +90,6 @@ jobs:
       - name: Lint
         run: aspect lint --strategy=hard -- //...
 
-      # Every file the formatters in //tools/format know, failing when any
-      # came back changed.
-      - name: Format
-        run: aspect format --scope=all --severity=fail
-
       # The deploy manifests name each image's index digest; everything behind
       # them is a cache hit after the tests above, and `toplevel` keeps the
       # layers where they are.
@@ -87,6 +104,106 @@ jobs:
                 jq -c -n --arg t "${LABEL%_push}" --arg d "$(jq -r '.operations[0].root.digest' "${MANIFEST}")" '{($t): $d}'
               done | jq -c -s 'add' > "${RUNNER_TEMP}/digests.json"
           echo "digests=$(cat "${RUNNER_TEMP}/digests.json")" | tee -a "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # Format.
+  #
+  # Split out of `Test` for the reason pr.yaml records: `aspect format` needs
+  # only //tools/format's binaries, where `aspect lint` needs the whole graph
+  # analysed and so stays where the analysis is warm.
+  #
+  # A consequence worth naming: `publish` is `needs: test`, so a formatting
+  # error used to hold the mirror. It no longer does. That is the intended
+  # trade — a stray blank line should not delay a security-patched image — and
+  # the ruleset still keeps unformatted code from reaching `main` at all.
+  # ---------------------------------------------------------------------------
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          # Its own small key; see pr.yaml. Saved here, restored there.
+          disk-cache: format
+          cache-save: true
+          bazelrc: |
+            common --config=ci
+
+      - name: Set up Aspect CLI
+        uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
+        with:
+          bazelisk-cache: false
+          disk-cache: false
+          repository-cache: false
+
+      - name: Format
+        run: aspect format --scope=all --severity=fail
+
+  # ---------------------------------------------------------------------------
+  # Coverage.
+  #
+  # Nothing is `needs:` this job, and nothing here is allowed to become a
+  # dependency of `publish`: it exists to write the baseline report that pull
+  # requests compare against, and a coverage tool must not sit upstream of the
+  # digests this workflow signs. Its failure leaves the mirror unaffected.
+  # ---------------------------------------------------------------------------
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write # octocov stores the report as an artifact
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          disk-cache: true
+          # Restore only. This job runs the same actions under
+          # `--collect_code_coverage`, so its results are a configuration the
+          # `test` job's cache does not hold and does not want; saving them
+          # would spend the budget on a second copy of the build.
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+
+      - name: Set up Aspect CLI
+        uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
+        with:
+          bazelisk-cache: false
+          disk-cache: false
+          repository-cache: false
+
+      # No `--fail-under` here: on `main` the merge base with `origin/main` is
+      # HEAD, so there are no added lines to gate. pr.yaml is where that runs.
+      - name: Coverage
+        shell: bash
+        run: |
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+          aspect coverage | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+
+      # `report.if: is_default_branch` in .octocov.yml makes this the write:
+      # the artifact every pull request comment diffs against.
+      - name: Store the coverage report
+        uses: k1LoW/octocov-action@a167dc0dee441b7ffc45e1b862ab55ec0d87f278 # v1.5.2
+        with:
+          config: .octocov.yml
+          version: v0.77.0
+          checksum: 2f9032c0484f719cf773a9b6d479e4b6ab4689388fa4b0c84be89a9eb35d60b4
 
   # ---------------------------------------------------------------------------
   # Mirror publish.
@@ -142,8 +259,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
+          disk-cache: true
           cache-save: true
           bazelrc: |
             common --config=ci
@@ -892,8 +1008,7 @@ jobs:
         with:
           bazelisk-version: v1.27.0
           # Same as the other jobs.
-          repository-cache: true
-          external-cache: true
+          disk-cache: true
           cache-save: true
           bazelrc: |
             common --config=ci

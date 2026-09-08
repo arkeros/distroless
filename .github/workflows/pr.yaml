@@ -58,3 +58,75 @@ jobs:
       # came back changed.
       - name: Format
         run: aspect format --scope=all --severity=fail
+
+  # Separate from `Test`, not a step inside it. `--collect_code_coverage` is a
+  # different Bazel configuration, so nothing here could reuse that job's
+  # analysis cache anyway, and this way the two run in parallel. In ci.yaml the
+  # same split matters for a second reason: `publish` is `needs: test`, and
+  # coverage has no business upstream of the digests it signs.
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # octocov's comment
+      actions: read # octocov reads the report artifact `main` stored
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # `aspect coverage` diffs against the merge base with `origin/main`
+          # to find the added lines; the depth-1 checkout `test` uses has none.
+          fetch-depth: 0
+
+      # The one thing .aspect/coverage.axl expects from the host, because the
+      # LCOV toolchain is Perl scripts with no binary release to pin.
+      # ubuntu-latest does not ship them.
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          repository-cache: true
+          external-cache: true
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+
+      - name: Set up Aspect CLI
+        uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
+        with:
+          bazelisk-cache: false
+          disk-cache: false
+          repository-cache: false
+
+      # Only the go_test and js_test targets run. `--fail-under` gates the
+      # lines this change added; the per-file table, the changed-line rows and
+      # the misses all go to the job summary.
+      - name: Coverage
+        shell: bash # -eo pipefail, or `tee` swallows the gate's exit code
+        run: |
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+          aspect coverage --fail-under=80 | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+
+      # Comments the overall number and its movement against `main`. Runs even
+      # when the gate above failed: that is exactly when the comment is worth
+      # reading. `version` and `checksum` pin the binary by content — this is a
+      # single-maintainer tool, so it is pinned like one.
+      - name: Report coverage
+        if: ${{ !cancelled() }}
+        uses: k1LoW/octocov-action@a167dc0dee441b7ffc45e1b862ab55ec0d87f278 # v1.5.2
+        with:
+          config: .octocov.yml
+          version: v0.77.0
+          checksum: 2f9032c0484f719cf773a9b6d479e4b6ab4689388fa4b0c84be89a9eb35d60b4
+
+      - name: Upload the HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: bazel-coverage/html

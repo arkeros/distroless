@@ -89,6 +89,65 @@ jobs:
           echo "digests=$(cat "${RUNNER_TEMP}/digests.json")" | tee -a "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------------------------
+  # Coverage.
+  #
+  # Nothing is `needs:` this job, and nothing here is allowed to become a
+  # dependency of `publish`: it exists to write the baseline report that pull
+  # requests compare against, and a coverage tool must not sit upstream of the
+  # digests this workflow signs. Its failure leaves the mirror unaffected.
+  # ---------------------------------------------------------------------------
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write # octocov stores the report as an artifact
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          repository-cache: true
+          external-cache: true
+          # Restore only. The `test` job above warms these from the same
+          # MODULE.bazel.lock, so a save here would write a duplicate key
+          # against a budget that is already at 8.67 of 10 GB (19f0bb7).
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+
+      - name: Set up Aspect CLI
+        uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
+        with:
+          bazelisk-cache: false
+          disk-cache: false
+          repository-cache: false
+
+      # No `--fail-under` here: on `main` the merge base with `origin/main` is
+      # HEAD, so there are no added lines to gate. pr.yaml is where that runs.
+      - name: Coverage
+        shell: bash
+        run: |
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+          aspect coverage | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+
+      # `report.if: is_default_branch` in .octocov.yml makes this the write:
+      # the artifact every pull request comment diffs against.
+      - name: Store the coverage report
+        uses: k1LoW/octocov-action@a167dc0dee441b7ffc45e1b862ab55ec0d87f278 # v1.5.2
+        with:
+          config: .octocov.yml
+          version: v0.77.0
+          checksum: 2f9032c0484f719cf773a9b6d479e4b6ab4689388fa4b0c84be89a9eb35d60b4
+
+  # ---------------------------------------------------------------------------
   # Mirror publish.
   #
   # `publish` pushes every mirror image *by digest* — no tag names it yet —

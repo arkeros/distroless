@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -271,3 +272,126 @@ func TestLockRoundTripBinaryEntry(t *testing.T) {
 		t.Errorf("binary entry lost in round trip: %+v", archive)
 	}
 }
+
+// envoyReleases is what the fake API publishes, in the order GitHub
+// returns them: newest created first. v1.39.0 is listed before v1.39.1 on
+// purpose — the resolver must pick the highest patch of the line, not the
+// first one it sees — and the 1.36 line is far enough down to fall on a
+// later page.
+var envoyReleases = []string{
+	"v1.39.0",
+	"v1.39.1",
+	"v1.40.0-rc1",
+	"v1.38.4",
+	"v1.39.0-nightly",
+	"v1.36.9",
+}
+
+// fakeGitHub answers envoyproxy/envoy's releases API and serves its
+// assets. It honours `page`/`per_page` so paging is exercised for real,
+// and records the Authorization header of the last API request.
+type fakeGitHub struct {
+	URL string
+	// Auth is the Authorization header of the last API request.
+	Auth string
+}
+
+func newFakeGitHub(t *testing.T) *fakeGitHub {
+	t.Helper()
+	fake := &fakeGitHub{}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/repos/envoyproxy/envoy/releases", func(w http.ResponseWriter, r *http.Request) {
+		fake.Auth = r.Header.Get("Authorization")
+		perPage, _ := strconv.Atoi(r.URL.Query().Get("per_page"))
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if perPage == 0 || page == 0 {
+			t.Errorf("releases request without paging: %s", r.URL)
+		}
+		start := min((page-1)*perPage, len(envoyReleases))
+		end := min(start+perPage, len(envoyReleases))
+		out := []map[string]any{}
+		for _, tag := range envoyReleases[start:end] {
+			version := strings.TrimPrefix(tag, "v")
+			assets := []map[string]any{}
+			for _, name := range []string{
+				"checksums.txt.asc",
+				"envoy-" + version + "-linux-x86_64",
+				"envoy-" + version + "-linux-aarch_64",
+				"envoy-contrib-" + version + "-linux-x86_64",
+			} {
+				assets = append(assets, map[string]any{
+					"name":                 name,
+					"browser_download_url": fake.URL + "/assets/" + version + "/" + name,
+				})
+			}
+			out = append(out, map[string]any{
+				"tag_name":   tag,
+				"draft":      false,
+				"prerelease": strings.Contains(tag, "-rc"),
+				"assets":     assets,
+			})
+		}
+		json.NewEncoder(w).Encode(out)
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	fake.URL = srv.URL
+	return fake
+}
+
+// client is the helper under test, pointed at the fake.
+func (f *fakeGitHub) client() *GitHub {
+	return &GitHub{BaseURL: f.URL, Owner: "envoyproxy", Repo: "envoy"}
+}
+
+func TestGitHubLatestReleasePagesAndPicksHighestPatch(t *testing.T) {
+	gh := newFakeGitHub(t).client()
+	gh.PerPage = 2 // three pages, so the 1.36 line is not on the first
+
+	release, err := gh.LatestRelease(context.Background(), "v1.39.")
+	if err != nil {
+		t.Fatalf("LatestRelease: %v", err)
+	}
+	if release.TagName != "v1.39.1" {
+		t.Errorf("expected the highest patch of the line, got %q", release.TagName)
+	}
+	// v1.36.9 is on the last page: reaching it proves the paging.
+	old, err := gh.LatestRelease(context.Background(), "v1.36.")
+	if err != nil {
+		t.Fatalf("LatestRelease(1.36): %v", err)
+	}
+	if old.TagName != "v1.36.9" {
+		t.Errorf("expected v1.36.9 from a later page, got %q", old.TagName)
+	}
+	if _, err := gh.LatestRelease(context.Background(), "v1.37."); err == nil {
+		t.Error("expected an error for a line with no release")
+	}
+}
+
+// A release candidate is not something to pin, and neither is a tag whose
+// remainder past the line is not a plain patch number.
+func TestGitHubLatestReleaseSkipsPrereleases(t *testing.T) {
+	if _, err := newFakeGitHub(t).client().LatestRelease(context.Background(), "v1.40."); err == nil {
+		t.Error("expected no release for a line that has only a prerelease")
+	}
+}
+
+func TestGitHubSendsTokenWhenSet(t *testing.T) {
+	fake := newFakeGitHub(t)
+	gh := fake.client()
+	if _, err := gh.LatestRelease(context.Background(), "v1.39."); err != nil {
+		t.Fatalf("LatestRelease: %v", err)
+	}
+	if fake.Auth != "" {
+		t.Errorf("unauthenticated run should send no Authorization header, got %q", fake.Auth)
+	}
+
+	t.Setenv("GITHUB_TOKEN", "ghs_secret")
+	if _, err := gh.LatestRelease(context.Background(), "v1.39."); err != nil {
+		t.Fatalf("LatestRelease: %v", err)
+	}
+	if fake.Auth != "Bearer ghs_secret" {
+		t.Errorf("expected a bearer token, got %q", fake.Auth)
+	}
+}
+

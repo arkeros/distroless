@@ -209,7 +209,7 @@ func TestUpdateReplacesOnlyChangedLines(t *testing.T) {
 }
 
 func TestNewSource(t *testing.T) {
-	for _, name := range []string{"nodejs", "temurin"} {
+	for _, name := range []string{"nodejs", "temurin", "envoy"} {
 		if _, err := NewSource(name); err != nil {
 			t.Errorf("NewSource(%q): %v", name, err)
 		}
@@ -287,13 +287,24 @@ var envoyReleases = []string{
 	"v1.36.9",
 }
 
+// envoyAssetSums are keyed by asset arch suffix; the file the fake serves
+// keys them by the builder's absolute path, as upstream's does.
+var envoyAssetSums = map[string]string{
+	"x86_64":   "1111111111111111111111111111111111111111111111111111111111111111",
+	"aarch_64": "2222222222222222222222222222222222222222222222222222222222222222",
+	"contrib":  "3333333333333333333333333333333333333333333333333333333333333333",
+}
+
 // fakeGitHub answers envoyproxy/envoy's releases API and serves its
 // assets. It honours `page`/`per_page` so paging is exercised for real,
-// and records the Authorization header of the last API request.
+// records the Authorization header of the last API request, and can be
+// told to drop the checksums asset.
 type fakeGitHub struct {
 	URL string
 	// Auth is the Authorization header of the last API request.
 	Auth string
+	// NoChecksums makes every release's checksums asset 404.
+	NoChecksums bool
 }
 
 func newFakeGitHub(t *testing.T) *fakeGitHub {
@@ -332,6 +343,20 @@ func newFakeGitHub(t *testing.T) *fakeGitHub {
 			})
 		}
 		json.NewEncoder(w).Encode(out)
+	})
+	// The clearsigned checksums, keyed by the builder's own absolute
+	// paths, wrapped in the PGP armor upstream ships.
+	mux.HandleFunc("/assets/", func(w http.ResponseWriter, r *http.Request) {
+		if fake.NoChecksums || !strings.HasSuffix(r.URL.Path, "checksums.txt.asc") {
+			http.NotFound(w, r)
+			return
+		}
+		version := strings.Split(strings.TrimPrefix(r.URL.Path, "/assets/"), "/")[0]
+		w.Write([]byte("-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\n" +
+			envoyAssetSums["x86_64"] + "  /tmp/tmp.Xj4/envoy-" + version + "-linux-x86_64\n" +
+			envoyAssetSums["aarch_64"] + "  /tmp/tmp.Xj4/envoy-" + version + "-linux-aarch_64\n" +
+			envoyAssetSums["contrib"] + "  /tmp/tmp.Xj4/envoy-contrib-" + version + "-linux-x86_64\n" +
+			"-----BEGIN PGP SIGNATURE-----\n\nc2lnbmF0dXJl\n-----END PGP SIGNATURE-----\n"))
 	})
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
@@ -395,3 +420,42 @@ func TestGitHubSendsTokenWhenSet(t *testing.T) {
 	}
 }
 
+// The checksum file keys its entries by the builder's absolute paths and
+// lists the contrib build beside the core one, so a lookup matching on a
+// suffix would pin contrib's bytes as the core binary's.
+func TestEnvoyLatest(t *testing.T) {
+	fake := newFakeGitHub(t)
+
+	line, err := (&Envoy{GitHub: *fake.client()}).Latest(context.Background(), "1.39")
+	if err != nil {
+		t.Fatalf("Latest: %v", err)
+	}
+	if line.Major != "1.39" || line.Version != "1.39.1" || line.Build != "" {
+		t.Errorf("unexpected line: %+v", line)
+	}
+	if len(line.Archives) != 2 {
+		t.Fatalf("expected 2 archives, got %v", line.Archives)
+	}
+	amd := line.Archives["envoy_139_amd64"]
+	if amd.SHA256 != envoyAssetSums["x86_64"] || amd.File != "envoy" || amd.StripPrefix != "" ||
+		amd.URL != fake.URL+"/assets/1.39.1/envoy-1.39.1-linux-x86_64" {
+		t.Errorf("unexpected amd64 archive: %+v", amd)
+	}
+	// aarch_64, with the underscore upstream's asset name carries.
+	arm := line.Archives["envoy_139_arm64"]
+	if arm.SHA256 != envoyAssetSums["aarch_64"] || arm.File != "envoy" ||
+		arm.URL != fake.URL+"/assets/1.39.1/envoy-1.39.1-linux-aarch_64" {
+		t.Errorf("unexpected arm64 archive: %+v", arm)
+	}
+}
+
+// An asset without a checksum is not a pin: Bazel would have nothing to
+// enforce on the fetch, so the run fails and the previous pin stands.
+func TestEnvoyLatestMissingChecksum(t *testing.T) {
+	fake := newFakeGitHub(t)
+	fake.NoChecksums = true
+
+	if _, err := (&Envoy{GitHub: *fake.client()}).Latest(context.Background(), "1.39"); err == nil {
+		t.Error("expected an error when the checksums asset cannot be read")
+	}
+}

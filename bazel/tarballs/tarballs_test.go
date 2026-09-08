@@ -3,9 +3,11 @@ package tarballs
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -208,7 +210,7 @@ func TestUpdateReplacesOnlyChangedLines(t *testing.T) {
 }
 
 func TestNewSource(t *testing.T) {
-	for _, name := range []string{"nodejs", "temurin"} {
+	for _, name := range []string{"nodejs", "temurin", "walg"} {
 		if _, err := NewSource(name); err != nil {
 			t.Errorf("NewSource(%q): %v", name, err)
 		}
@@ -234,5 +236,102 @@ func TestStalledUpstreamTimesOut(t *testing.T) {
 
 	if _, err := (&NodeJS{BaseURL: srv.URL}).Latest(context.Background(), "24"); err == nil {
 		t.Error("expected a timeout error from a stalled upstream")
+	}
+}
+
+// walgServer answers the GitHub releases API for wal-g/wal-g and serves the
+// checksum assets. `browser_download_url` points back at the test server, the
+// way the real API points at github.com — the resolver follows whatever URL
+// the API gives rather than composing one.
+func walgServer(t *testing.T, releases []map[string]any) *httptest.Server {
+	t.Helper()
+	mux := http.NewServeMux()
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	for _, rel := range releases {
+		assets := []map[string]any{}
+		for _, name := range rel["assets"].([]string) {
+			assets = append(assets, map[string]any{
+				"name":                 name,
+				"browser_download_url": srv.URL + "/download/" + rel["tag_name"].(string) + "/" + name,
+			})
+		}
+		rel["assets"] = assets
+	}
+	mux.HandleFunc("/releases", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(releases)
+	})
+	mux.HandleFunc("/download/", func(w http.ResponseWriter, r *http.Request) {
+		name := path.Base(r.URL.Path)
+		if !strings.HasSuffix(name, ".sha256") {
+			http.NotFound(w, r)
+			return
+		}
+		fmt.Fprintf(w, "sha-%s  %s\n", strings.TrimSuffix(name, ".tar.gz.sha256"), strings.TrimSuffix(name, ".sha256"))
+	})
+	return srv
+}
+
+func walgRelease(tag string, prerelease bool) map[string]any {
+	return map[string]any{
+		"tag_name":   tag,
+		"prerelease": prerelease,
+		"draft":      false,
+		"assets": []string{
+			"wal-g-pg-24.04-amd64.tar.gz", "wal-g-pg-24.04-amd64.tar.gz.sha256",
+			"wal-g-pg-24.04-aarch64.tar.gz", "wal-g-pg-24.04-aarch64.tar.gz.sha256",
+			"wal-g-mysql-24.04-amd64.tar.gz", "wal-g-mysql-24.04-amd64.tar.gz.sha256",
+		},
+	}
+}
+
+func TestWalGLatest(t *testing.T) {
+	srv := walgServer(t, []map[string]any{
+		walgRelease("v4.0.0-beta1", true), // a prerelease of the next major must not win
+		walgRelease("v3.0.9", false),
+		walgRelease("v3.0.8", false),
+	})
+
+	line, err := (&WalG{BaseURL: srv.URL}).Latest(context.Background(), "3")
+	if err != nil {
+		t.Fatalf("Latest: %v", err)
+	}
+	if line.Major != "3" || line.Version != "3.0.9" || line.Build != "" {
+		t.Errorf("unexpected line: %+v", line)
+	}
+	if len(line.Archives) != 2 {
+		t.Fatalf("expected 2 archives (one per arch), got %v", line.Archives)
+	}
+	amd := line.Archives["walg_3_amd64"]
+	if amd.SHA256 != "sha-wal-g-pg-24.04-amd64" ||
+		amd.URL != srv.URL+"/download/v3.0.9/wal-g-pg-24.04-amd64.tar.gz" {
+		t.Errorf("unexpected amd64 archive: %+v", amd)
+	}
+	// The archive holds the bare binary, no directory to strip.
+	if amd.StripPrefix != "" {
+		t.Errorf("expected no strip_prefix, got %q", amd.StripPrefix)
+	}
+	arm := line.Archives["walg_3_arm64"]
+	if arm.SHA256 != "sha-wal-g-pg-24.04-aarch64" ||
+		arm.URL != srv.URL+"/download/v3.0.9/wal-g-pg-24.04-aarch64.tar.gz" {
+		t.Errorf("unexpected arm64 archive: %+v", arm)
+	}
+}
+
+func TestWalGLatestRejectsReleaseMissingAnArch(t *testing.T) {
+	rel := walgRelease("v3.0.9", false)
+	rel["assets"] = []string{"wal-g-pg-24.04-amd64.tar.gz", "wal-g-pg-24.04-amd64.tar.gz.sha256"}
+	srv := walgServer(t, []map[string]any{rel})
+
+	if _, err := (&WalG{BaseURL: srv.URL}).Latest(context.Background(), "3"); err == nil {
+		t.Error("expected an error when a release publishes only one architecture")
+	}
+}
+
+func TestWalGLatestUnknownMajor(t *testing.T) {
+	srv := walgServer(t, []map[string]any{walgRelease("v3.0.9", false)})
+
+	if _, err := (&WalG{BaseURL: srv.URL}).Latest(context.Background(), "2"); err == nil {
+		t.Error("expected an error for a major with no release")
 	}
 }

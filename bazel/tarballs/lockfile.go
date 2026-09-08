@@ -1,5 +1,5 @@
-// Package tarballs pins upstream prebuilt runtime tarballs (nodejs.org,
-// Adoptium Temurin) in a JSON lockfile that the `tarballs` module
+// Package tarballs pins upstream prebuilt binaries published as tarballs
+// (nodejs.org, Adoptium Temurin, wal-g) in a JSON lockfile that the `tarballs` module
 // extension in //bazel/tarballs:extensions.bzl turns into http_archive repos.
 //
 // Each lockfile covers one upstream (`source`) and lists the release

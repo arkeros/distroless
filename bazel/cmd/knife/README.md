@@ -65,15 +65,16 @@ Move every release line in an upstream tarball lockfile to its newest release:
 ```bash
 knife tarballs update images/nodejs/nodejs.lock.json
 knife tarballs update images/java/temurin.lock.json
+knife tarballs update images/postgres/walg.lock.json
 ```
 
 This command:
 
-1. Asks the lockfile's upstream (nodejs.org or the Adoptium API) for the newest release of every major line the file lists
+1. Asks the lockfile's upstream (nodejs.org, the Adoptium API or the wal-g releases API) for the newest release of every major line the file lists
 2. Rewrites the lockfile with the new versions, URLs and checksums
 3. Runs `bazel mod tidy` to update the lockfile
 
-Which majors a lockfile lists is a policy decision made by hand in that file; the command never adds or drops a line. For Temurin, a line only moves once the JRE and JDK for both architectures are published at the same release.
+Which majors a lockfile lists is a policy decision made by hand in that file; the command never adds or drops a line. For Temurin, a line only moves once the JRE and JDK for both architectures are published at the same release. For wal-g, drafts and prereleases are skipped and the highest version on the line wins, not the most recently created release.
 
 ## Architecture
 

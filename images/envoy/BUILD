@@ -31,7 +31,11 @@ exports_files(["envoy.lock.json"])
 # the dot — `envoy1.39`, as //images/python names `python3.11` — but the
 # tarball repos cannot, so the layers below are keyed by the stripped form.
 _LINES = [
-    (line, envoy_repo_line(line), version)
+    (
+        line,
+        envoy_repo_line(line),
+        version,
+    )
     for line, version in ENVOY_VERSIONS.items()
 ]
 

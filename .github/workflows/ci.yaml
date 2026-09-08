@@ -82,11 +82,6 @@ jobs:
       - name: Lint
         run: aspect lint --strategy=hard -- //...
 
-      # Every file the formatters in //tools/format know, failing when any
-      # came back changed.
-      - name: Format
-        run: aspect format --scope=all --severity=fail
-
       # The deploy manifests name each image's index digest; everything behind
       # them is a cache hit after the tests above, and `toplevel` keeps the
       # layers where they are.
@@ -101,6 +96,47 @@ jobs:
                 jq -c -n --arg t "${LABEL%_push}" --arg d "$(jq -r '.operations[0].root.digest' "${MANIFEST}")" '{($t): $d}'
               done | jq -c -s 'add' > "${RUNNER_TEMP}/digests.json"
           echo "digests=$(cat "${RUNNER_TEMP}/digests.json")" | tee -a "$GITHUB_OUTPUT"
+
+  # ---------------------------------------------------------------------------
+  # Format.
+  #
+  # Split out of `Test` for the reason pr.yaml records: `aspect format` needs
+  # only //tools/format's binaries, where `aspect lint` needs the whole graph
+  # analysed and so stays where the analysis is warm.
+  #
+  # A consequence worth naming: `publish` is `needs: test`, so a formatting
+  # error used to hold the mirror. It no longer does. That is the intended
+  # trade — a stray blank line should not delay a security-patched image — and
+  # the ruleset still keeps unformatted code from reaching `main` at all.
+  # ---------------------------------------------------------------------------
+  format:
+    name: Format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          # Its own small key; see pr.yaml. Saved here, restored there.
+          disk-cache: format
+          cache-save: true
+          bazelrc: |
+            common --config=ci
+
+      - name: Set up Aspect CLI
+        uses: aspect-build/setup-aspect@1ccd1e095c68556648eb5482231283e445e3dc5e # 2026.34
+        with:
+          bazelisk-cache: false
+          disk-cache: false
+          repository-cache: false
+
+      - name: Format
+        run: aspect format --scope=all --severity=fail
 
   # ---------------------------------------------------------------------------
   # Coverage.

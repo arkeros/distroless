@@ -99,14 +99,22 @@ resource "github_repository_ruleset" "main_checks" {
     required_linear_history = true
 
     required_status_checks {
-      # `Test` is the `name:` of the one job in pr.yaml; `Modules` is the
+      # `Test` and `Format` are `name:`s of jobs in pr.yaml; `Modules` is the
       # fan-in job in modules.yaml, which runs each module under
       # bazel/modules in its own workspace, since `bazel test //...` at the
       # root cannot reach them. Both workflows run on every `pull_request`;
-      # ci.yaml runs on push to `main` alone. Renaming either job silently
-      # disables its rule, so each pair of names has to move together.
+      # ci.yaml runs on push to `main` alone. Renaming any of these jobs
+      # silently disables its rule, so each pair of names has to move together.
+      #
+      # `Format` is listed because it used to ride on `Test`: it was a step in
+      # that job, so a formatting error failed the check that was already
+      # required. Splitting it into its own job for the parallelism took that
+      # away, and without this line unformatted code would merge.
       required_check {
         context = "Test"
+      }
+      required_check {
+        context = "Format"
       }
       required_check {
         context = "Modules"

@@ -33,8 +33,7 @@ jobs:
           # SDK, the LLVM toolchain) are downloaded from upstream and kept in
           # the repository cache; the external cache keeps their extracted
           # form. Both are keyed per job, so this job has its own entry.
-          repository-cache: true
-          external-cache: true
+          disk-cache: release-cli
           cache-save: true
           bazelrc: |
             common --config=ci

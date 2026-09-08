@@ -64,8 +64,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
+          disk-cache: modules
           cache-save: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Test

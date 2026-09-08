@@ -27,8 +27,12 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
+          # Action results rather than downloaded archives; ci.yaml's `test`
+          # job carries the reasoning. Set on setup-bazel and not on
+          # setup-aspect below because setup-aspect runs *after* the `Test`
+          # step: a `--disk_cache` it wrote would arrive too late for the
+          # command that needed it.
+          disk-cache: true
           # Restore only: a pull request reads the caches `main` warmed and
           # saves nothing another run would read.
           cache-save: false
@@ -89,8 +93,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          repository-cache: true
-          external-cache: true
+          disk-cache: true
           cache-save: false
           bazelrc: |
             common --config=ci

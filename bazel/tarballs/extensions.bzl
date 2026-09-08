@@ -11,7 +11,7 @@ Lockfile schema (`<runtime>.lock.json`):
 
     {
       "schema_version": 1,
-      "source": "nodejs" | "temurin",   # resolver knife uses to refresh it
+      "source": "nodejs" | "temurin" | "walg",  # resolver knife uses to refresh it
       "lines": [
         {
           "major": "24",

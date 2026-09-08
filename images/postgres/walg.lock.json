@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "source": "walg",
+  "lines": [
+    {
+      "major": "3",
+      "version": "3.0.9",
+      "archives": {
+        "walg_3_amd64": {
+          "url": "https://github.com/wal-g/wal-g/releases/download/v3.0.9/wal-g-pg-24.04-amd64.tar.gz",
+          "sha256": "444ce216230c254edef803e098a59a1746806da3e0d55671d7b0f0082db14ef4",
+          "strip_prefix": ""
+        },
+        "walg_3_arm64": {
+          "url": "https://github.com/wal-g/wal-g/releases/download/v3.0.9/wal-g-pg-24.04-aarch64.tar.gz",
+          "sha256": "cb37c5f8391bd8ef2efceeb9c6995059c0abf2fa74b9b717b42a16a7c93cfde1",
+          "strip_prefix": ""
+        }
+      }
+    }
+  ]
+}

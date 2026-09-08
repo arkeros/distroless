@@ -9,6 +9,7 @@ go_library(
         "nodejs.go",
         "temurin.go",
         "update.go",
+        "walg.go",
     ],
     importpath = "github.com/arkeros/distroless/bazel/tarballs",
     visibility = ["//visibility:public"],

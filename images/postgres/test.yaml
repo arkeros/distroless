@@ -1,0 +1,47 @@
+# The release image: no shell, so every command here is one exec.
+#
+# What that costs is specific and worth stating: `initdb` and `pg_ctl` run
+# helpers through popen()/system(), so they need /bin/sh and do not work
+# here — `initdb` fails with `program "postgres" is needed by initdb but was
+# not found`, even though `/usr/bin/postgres -V` runs fine one line above.
+# The server itself needs no shell, so this image runs a cluster somebody
+# else initialised; `archive_command` is likewise a system() call, so
+# continuous WAL archiving needs the debug variant too. The cluster
+# lifecycle is proved there, on layers identical to these plus busybox.
+schemaVersion: 2.0.0
+metadataTest:
+  entrypoint: ['/usr/bin/postgres']
+  user: '65532'
+  envVars:
+    - key: PGDATA
+      value: /var/lib/postgresql/data
+    - key: LANG
+      value: en_US.utf8
+commandTests:
+  - name: 'postgres is the line this image is tagged for'
+    command: '/usr/bin/postgres'
+    args: ['--version']
+    expectedOutput: ['postgres \(PostgreSQL\) 18\.']
+  - name: 'the client tools are here, at the same line'
+    command: '/usr/bin/psql'
+    args: ['--version']
+    expectedOutput: ['psql \(PostgreSQL\) 18\.']
+  # Exit 2 is "no response", which is pg_isready having looked and found no
+  # server — as opposed to exit 3, which is pg_isready failing to run at all.
+  - name: 'pg_isready reports no server, rather than failing to look'
+    command: '/usr/bin/pg_isready'
+    args: ['--timeout=1']
+    exitCode: 2
+    expectedOutput: ['no response']
+fileExistenceTests:
+  # The characteristic above, asserted rather than only written down: if a
+  # shell ever appears in the release image this test fails and the comment
+  # gets revisited, instead of the limitation quietly ceasing to be true.
+  - name: 'no shell in the release image'
+    path: '/bin/sh'
+    shouldExist: false
+  # Without an rpmdb, syft's rpm cataloger returns zero packages and every
+  # Hummingbird CVE becomes a silent zero.
+  - name: 'the rpmdb a scanner reads'
+    path: '/usr/lib/sysimage/rpm/rpmdb.sqlite'
+    shouldExist: true

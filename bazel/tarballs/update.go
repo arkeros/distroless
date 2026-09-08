@@ -18,6 +18,8 @@ func NewSource(name string) (Source, error) {
 		return &NodeJS{BaseURL: "https://nodejs.org/dist"}, nil
 	case "temurin":
 		return &Temurin{BaseURL: "https://api.adoptium.net/v3"}, nil
+	case "walg":
+		return &WalG{BaseURL: "https://api.github.com/repos/wal-g/wal-g"}, nil
 	}
 	return nil, fmt.Errorf("unknown tarball source %q", name)
 }

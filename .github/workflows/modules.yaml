@@ -64,7 +64,22 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-version: v1.27.0
-          disk-cache: modules
+          # One cache per module, not one for the matrix. Every leg runs on its
+          # own runner with its own ~/.cache/bazel-disk holding only its
+          # module's actions, so under a shared key they all save to it, GitHub
+          # accepts the first and 409s the rest, and one arbitrary module's
+          # cache is what gets stored. Worse, the next run is an *exact* key
+          # hit for every leg, which suppresses the save (post.js), so the
+          # cache stays frozen on that one module until a BUILD file moves the
+          # hash. The other legs download it and get nothing.
+          disk-cache: modules-${{ matrix.module }}
+          # And scope the key's hash to the module. `module-root` feeds only
+          # the `files:` globs (config.js:154) — MODULE.bazel and **/BUILD* —
+          # so at its `.` default every module's key rotates on any root BUILD
+          # change, which is most commits here. These workspaces are reached
+          # through local_path_override and their outputs do not depend on the
+          # root, so the root has no business invalidating them.
+          module-root: bazel/modules/${{ matrix.module }}
           cache-save: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Test

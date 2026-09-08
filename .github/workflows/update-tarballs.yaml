@@ -2,8 +2,8 @@ name: Update Tarballs
 on:
   workflow_dispatch:
   schedule:
-    # Node and Temurin both cut security releases on their own calendars;
-    # a daily check keeps the lag under a day. Offset from the Grype DB
+    # Node, Temurin and Envoy all cut security releases on their own
+    # calendars; a daily check keeps the lag under a day. Offset from the Grype DB
     # job at 06:00 so the two PRs don't race on MODULE.bazel.lock.
     - cron: '0 7 * * *'
 concurrency:
@@ -24,6 +24,8 @@ jobs:
             lockfile: images/nodejs/nodejs.lock.json
           - image: java
             lockfile: images/java/temurin.lock.json
+          - image: envoy
+            lockfile: images/envoy/envoy.lock.json
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7

@@ -39,6 +39,23 @@ jobs:
           bazelrc: |
             common --config=ci
 
+      # Measurement, not correctness. `bazel test //...` below fetches
+      # anything this misses, so deleting this step changes nothing but the
+      # timings. It is here because 4c0d345 traded the repository and external
+      # caches for a disk cache, and this step's wall time is the number that
+      # decides whether that was right: it is what those caches used to save.
+      #
+      # It is not network time. The repo rules here do real work — the Debian
+      # apt resolve, gazelle's go_deps, rpm extraction — and this counts that
+      # and the loading and analysis with it. It also under-counts: a repo
+      # reached only through a lazily evaluated extension, a transition or an
+      # aspect is fetched later, by the command that first needs it.
+      #
+      # Free in job time: the same Bazel server serves both commands, so the
+      # analysis this does is warm for the test run rather than repeated.
+      - name: Fetch
+        run: bazel fetch //...
+
       - name: Test
         run: bazel test //...
 

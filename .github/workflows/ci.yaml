@@ -63,6 +63,14 @@ jobs:
           bazelrc: |
             common --config=ci
 
+      # Measurement, not correctness; pr.yaml's copy carries the reasoning.
+      # `bazel test //...` below fetches anything this misses, so deleting
+      # this step changes nothing but the timings. This is the run whose
+      # number matters: `main` is where the caches are written, so it is the
+      # warm case that decides whether 4c0d345 was right.
+      - name: Fetch
+        run: bazel fetch //...
+
       - name: Test
         run: bazel test //...
 

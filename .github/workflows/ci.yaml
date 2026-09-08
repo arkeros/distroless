@@ -492,10 +492,20 @@ jobs:
             fi
           }
 
-          : > "${RUNNER_TEMP}/published.jsonl"
-          : > "${RUNNER_TEMP}/pending.jsonl"
-          for SIGN_TARGET in $(awk -F'\t' '$1 ~ /_sign$/{print $1}' "${RUNNER_TEMP}/mirror_targets.tsv"); do
-            BASE=${SIGN_TARGET%_sign}
+          # One image, start to finish. A function rather than a loop body
+          # because //oci/publish:parallel.sh runs these concurrently, one
+          # process each: nothing here is CPU work, it is ~8 round trips to
+          # GHCR, Fulcio and Rekor per image, so serially the 38 images cost
+          # ~25 s each — the 15m51s this step took in run 34259093980.
+          #
+          # The `exit 1` in `needs_artifact` and `stale` still stops the
+          # release. It ends the worker, and `parallel.sh` fails this step
+          # naming any worker that did not exit 0 — or that recorded no exit
+          # status at all. That is the property its test pins down; without
+          # it, "refusing to guess" would quietly become "skip this image",
+          # and `release` would tag a digest nothing had proven.
+          publish_one() {
+            local BASE=$1
             echo "::group::${BASE}"
 
             # The digest comes from the build, not from the registry: the push
@@ -557,10 +567,33 @@ jobs:
                 >> "${RUNNER_TEMP}/pending.jsonl"
             fi
             echo "::endgroup::"
-          done
+          }
+          export -f publish_one needs_artifact attested stale same_digest_as_test \
+            run_built exe_of manifest_of tags_of predicate_of
+          export TEST_DIGESTS
+
+          # Eight at a time. Not the runner's core count — the work is latency,
+          # not CPU — but the width at which this step stops being the job's
+          # bottleneck: ~2 min, under the Bazel build above it, and past that
+          # the only thing gained is more load on Rekor, a shared public
+          # instance. Same width `release` runs `crane tag` at.
+          #
+          # The two `.jsonl` files are appended to by all eight workers at
+          # once. That is safe as written and only as written: each line is a
+          # single short `jq` write to a file opened O_APPEND, which POSIX
+          # makes atomic. A line long enough to need two writes could tear, so
+          # if either record ever grows, give the workers separate files.
+          : > "${RUNNER_TEMP}/published.jsonl"
+          : > "${RUNNER_TEMP}/pending.jsonl"
+          awk -F'\t' '$1 ~ /_sign$/ { sub(/_sign$/, "", $1); print $1 }' "${RUNNER_TEMP}/mirror_targets.tsv" \
+            | oci/publish/parallel.sh -P 8 -- bash -c 'set -euo pipefail; publish_one "$1"' publish-worker
+
+          # Sorted, so the same set of images gives the same output whichever
+          # order the workers happened to finish in and two runs can be
+          # diffed. Nothing downstream depends on the order.
           {
-            echo "published=$(jq -c -s . "${RUNNER_TEMP}/published.jsonl")"
-            echo "pending=$(jq -c -s . "${RUNNER_TEMP}/pending.jsonl")"
+            echo "published=$(sort "${RUNNER_TEMP}/published.jsonl" | jq -c -s .)"
+            echo "pending=$(sort "${RUNNER_TEMP}/pending.jsonl" | jq -c -s .)"
           } | tee -a "$GITHUB_OUTPUT"
 
   # The build platform writes provenance, not us: the generator is a reusable

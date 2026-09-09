@@ -19,6 +19,12 @@ on:
 # authenticate to Google Cloud, for Artifact Registry and Cloud Run.
 env:
   WIF_PROVIDER: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
+  # A real image whose provenance the SLSA generator produced for another
+  # repository. `publish` probes slsa-verifier with it and `verify` proves the
+  # source policy rejects it; both expect exactly one answer, a source
+  # mismatch, so a deleted or re-tagged fixture fails loudly, not vacuously.
+  # A digest, not a tag, because slsa-verifier refuses tag references.
+  FOREIGN_PROVENANCE_IMAGE: ghcr.io/kyverno/kyverno@sha256:fc3db61bb81c7c8283b9bbab5d92ceb375f1ac35c26027485f7f13605e75ef97
 
 jobs:
   test:
@@ -559,6 +565,11 @@ jobs:
             jq -c -n --arg target "${BASE}" --arg ref "${REF}" --argjson tags "${TAGS}" --argjson types "${ATTESTED}" \
               '{$target, $ref, $tags, $types}' >> "${RUNNER_TEMP}/published.jsonl"
 
+            # A private copy of the TUF cache, so no two workers open the
+            # same database (see the warm-up below). It is small.
+            TUF_ROOT=$(mktemp -d "${RUNNER_TEMP}/tuf-worker.XXXXXX")
+            cp -R "${TUF_CACHE}/." "${TUF_ROOT}"
+            export TUF_ROOT
             if ! needs_artifact provenance "${REF}" \
                 "${SLSA_VERIFIER}" verify-image "${REF}" \
                   --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
@@ -571,6 +582,40 @@ jobs:
           export -f publish_one needs_artifact attested stale same_digest_as_test \
             run_built exe_of manifest_of tags_of predicate_of
           export TEST_DIGESTS
+
+          # slsa-verifier keeps the Sigstore trust roots in a TUF cache: a
+          # LevelDB under $TUF_ROOT, and LevelDB takes an exclusive,
+          # non-blocking lock on every open, warm or cold. Eight workers
+          # starting cold on a fresh runner raced for it, and three lost with
+          # "creating cached local store: resource temporarily unavailable"
+          # (run 34349269584) — which needs_artifact rightly refuses to read
+          # as "no provenance". cosign is immune, --trusted-root keeps it off
+          # TUF altogether; slsa-verifier has no such flag.
+          #
+          # So the cache is filled once, here, and every worker gets a copy
+          # of its own. A warm cache holds a timestamp that stays valid for
+          # days, so the copies never touch the network, and no two
+          # processes ever open the same database. TUF is initialised before
+          # the registry is contacted, so any reference would fill the
+          # cache; the foreign fixture is used because it has exactly one
+          # right answer, which proves the verifier reached Rekor and back.
+          # Anything else is a Sigstore problem, and it surfaces here, once,
+          # rather than in whichever workers happen to hit it.
+          TUF_CACHE="${RUNNER_TEMP}/tuf"
+          STDERR=$(mktemp)
+          if TUF_ROOT="${TUF_CACHE}" "${SLSA_VERIFIER}" verify-image "${FOREIGN_PROVENANCE_IMAGE}" \
+              --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
+              --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}" > /dev/null 2> "${STDERR}"; then
+            echo "ERROR: slsa-verifier accepted ${FOREIGN_PROVENANCE_IMAGE}, whose provenance names another repository as its source; the policy is not being applied." >&2
+            exit 1
+          fi
+          if ! grep -q "source used to generate the binary does not match provenance" "${STDERR}"; then
+            echo "ERROR: could not fill slsa-verifier's TUF cache: the probe against ${FOREIGN_PROVENANCE_IMAGE} failed, but not for the source mismatch it should fail for. Every worker below would fail the same way." >&2
+            cat "${STDERR}" >&2
+            exit 1
+          fi
+          echo "slsa-verifier TUF cache filled at ${TUF_CACHE}"
+          export TUF_CACHE
 
           # Eight at a time. Not the runner's core count — the work is latency,
           # not CPU — but the width at which this step stops being the job's
@@ -778,9 +823,9 @@ jobs:
       #    another repository. The provenance signer is the generator's, the
       #    same for every project that uses it, so this is the check that
       #    stands between us and accepting anyone's provenance on our digest.
-      #    kyverno publishes with the same generator; the digest is pinned
-      #    because slsa-verifier refuses tag references. If kyverno ever
-      #    deletes it, the failure reason changes and this test fails loudly.
+      #    kyverno publishes with the same generator. If kyverno ever deletes
+      #    the pinned digest, the failure reason changes and this test fails
+      #    loudly.
       - name: Verify policy is strict (negative tests)
         run: |
           set -euo pipefail
@@ -802,7 +847,7 @@ jobs:
           fi
           echo "OK: signer policy rejects the signed-by-Google reference."
 
-          FOREIGN=ghcr.io/kyverno/kyverno@sha256:fc3db61bb81c7c8283b9bbab5d92ceb375f1ac35c26027485f7f13605e75ef97
+          FOREIGN=${FOREIGN_PROVENANCE_IMAGE}
           if "${SLSA_VERIFIER}" verify-image "${FOREIGN}" \
               --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
               --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}" 2> "${STDERR}"; then

@@ -240,8 +240,8 @@ http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(
     name = "grype_database",
-    sha256 = "3564b57fd65da3cba50174d9fdab8b4e8dab6f7f7b798ebd3cec3085ea10c7e6",
-    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-08T00:33:13Z_1788849010.tar.zst",
+    sha256 = "f842f2a17dd4934dca9e1f283ebd7ce397dfcf14cc8a08a8cebb2f5530c131e0",
+    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-09T00:33:07Z_1788935460.tar.zst",
 )
 use_repo(grype_db, "grype_database")
 

@@ -69,7 +69,13 @@ jobs:
       - name: Record every target's output digests
         run: |
           set -euo pipefail
-          KNIFE=$(realpath "$(bazel cquery //bazel/cmd/knife --output=files)")
+          # `config(..., target)`, not the bare label: the cross-compile
+          # wrappers (`knife-linux-arm64` and friends) transition this same
+          # target, so after a full build the bare label resolves to one path
+          # per configuration and `realpath` is handed five lines. The target
+          # configuration is the untransitioned one, and the only one that is
+          # certain to run on this runner.
+          KNIFE=$(realpath "$(bazel cquery 'config(//bazel/cmd/knife, target)' --output=files)")
           "${KNIFE}" bep digests "${RUNNER_TEMP}/bep.json" > "${RUNNER_TEMP}/output-digests.json"
 
       - name: Store the output digests

@@ -309,7 +309,7 @@ jobs:
 
       # This branch's stream, from the `Test` job of this same run.
       - name: Fetch this branch's build events
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         continue-on-error: true # `Test` may have failed before storing it
         with:
           name: build-events

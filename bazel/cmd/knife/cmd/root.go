@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/apt"
+	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/bep"
 	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/grype"
 	"github.com/arkeros/distroless/bazel/cmd/knife/cmd/tarballs"
 )
@@ -18,6 +19,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(apt.NewCmdApt())
+	rootCmd.AddCommand(bep.NewCmdBep())
 	rootCmd.AddCommand(grype.NewCmdGrype())
 	rootCmd.AddCommand(tarballs.NewCmdTarballs())
 }

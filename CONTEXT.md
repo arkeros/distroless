@@ -16,7 +16,8 @@ parent image
 
 **Family**:
 One kind of base image, addressed by name on the mirror — `static`, `cc`,
-`bash`, `nginx`, `java`, `node`, `python`. A family is what a consumer picks.
+`bash`, `nginx`, `envoy`, `java`, `node`, `python`. A family is what a consumer
+picks.
 _Avoid_: image (ambiguous between the family and one built artifact), flavor
 
 **Distro**:

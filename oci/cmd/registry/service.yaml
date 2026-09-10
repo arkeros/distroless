@@ -45,6 +45,7 @@ spec:
             - --repository-prefix=arkeros/distroless
             # TODO: keep sorted and up-to-date
             - --repo=bash
+            - --repo=envoy
             - --repo=nginx
           ports:
             - name: http1

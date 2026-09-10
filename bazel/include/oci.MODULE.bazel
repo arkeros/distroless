@@ -1,5 +1,5 @@
-bazel_dep(name = "rules_img", version = "0.3.20")
-bazel_dep(name = "rules_img_tool", version = "0.3.20")
+bazel_dep(name = "rules_img", version = "0.3.21")
+bazel_dep(name = "rules_img_tool", version = "0.3.21")
 bazel_dep(name = "rules_distroless", version = "0.6.2")
 bazel_dep(name = "tar.bzl", version = "0.10.8")
 bazel_dep(name = "grype.bzl", version = "0.1.0")
@@ -35,7 +35,7 @@ register_toolchains(
 
 git_override(
     module_name = "grype.bzl",
-    commit = "f4ca2e2e3ca7ed09154b445dbf7a1c04e7e3874d",
+    commit = "0525fb0e662143e00c76799e9cbf5037c9c8e610",
     remote = "https://github.com/arkeros/grype.bzl.git",
 )
 
@@ -240,8 +240,8 @@ http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_
 grype_db = use_extension("@grype.bzl//grype:extensions.bzl", "grype_database", dev_dependency = True)
 grype_db.database(
     name = "grype_database",
-    sha256 = "73fb33bdf73a355ff5d4e6d86cb3671ced44437d1579524d8d7874c93ba23a44",
-    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-07T00:35:55Z_1788763100.tar.zst",
+    sha256 = "ce7ae6d4f7fb81029fc3bd1891b6b441f96bac4e278519743e4768eebd805e69",
+    url = "https://grype.anchore.io/databases/v6/vulnerability-db_v6.1.9_2026-09-10T00:31:01Z_1789021824.tar.zst",
 )
 use_repo(grype_db, "grype_database")
 

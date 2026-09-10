@@ -4,33 +4,33 @@
   "lines": [
     {
       "major": "24",
-      "version": "24.20.0",
+      "version": "24.21.0",
       "archives": {
         "nodejs_24_amd64": {
-          "url": "https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-x64.tar.xz",
-          "sha256": "2f2c0da162318f0de47665410c7c8c2ed3d36c8f3105de4bbc61176c70a7cbf2",
-          "strip_prefix": "node-v24.20.0-linux-x64"
+          "url": "https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-x64.tar.xz",
+          "sha256": "fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6",
+          "strip_prefix": "node-v24.21.0-linux-x64"
         },
         "nodejs_24_arm64": {
-          "url": "https://nodejs.org/dist/v24.20.0/node-v24.20.0-linux-arm64.tar.xz",
-          "sha256": "5f4ddab610c1ab2016b3c227cebdbf6d9495161487e4739c7b90090595f465f7",
-          "strip_prefix": "node-v24.20.0-linux-arm64"
+          "url": "https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-arm64.tar.xz",
+          "sha256": "6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2",
+          "strip_prefix": "node-v24.21.0-linux-arm64"
         }
       }
     },
     {
       "major": "26",
-      "version": "26.8.1",
+      "version": "26.8.2",
       "archives": {
         "nodejs_26_amd64": {
-          "url": "https://nodejs.org/dist/v26.8.1/node-v26.8.1-linux-x64.tar.xz",
-          "sha256": "3e301118d7df53d563b7e96c1617545f26e2f76f9724be668d6cab65c15dda5d",
-          "strip_prefix": "node-v26.8.1-linux-x64"
+          "url": "https://nodejs.org/dist/v26.8.2/node-v26.8.2-linux-x64.tar.xz",
+          "sha256": "40e1d3225c1c9ae9a2671c98ecb9857e4d5555026394f348645676798840d5c5",
+          "strip_prefix": "node-v26.8.2-linux-x64"
         },
         "nodejs_26_arm64": {
-          "url": "https://nodejs.org/dist/v26.8.1/node-v26.8.1-linux-arm64.tar.xz",
-          "sha256": "23c1b4d19e2f12a7d06fe8aa3d6e0e4923cf77a47e13c5ccdf32fadaa33960f2",
-          "strip_prefix": "node-v26.8.1-linux-arm64"
+          "url": "https://nodejs.org/dist/v26.8.2/node-v26.8.2-linux-arm64.tar.xz",
+          "sha256": "81d8f0fdea9dcd3bfdcfeafc5f8359c151f097e9880b0007c0645ca670d07971",
+          "strip_prefix": "node-v26.8.2-linux-arm64"
         }
       }
     }

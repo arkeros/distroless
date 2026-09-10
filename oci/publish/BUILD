@@ -1,6 +1,8 @@
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@bazel_skylib//rules:write_file.bzl", "write_file")
 load("@jq.bzl//jq:jq.bzl", "jq")
+load("@rules_shell//shell:sh_library.bzl", "sh_library")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 # The rule the `publish` job applies before adding an attestation to a digest
 # that already carries one of the kind: a jq module, so it is the same program
@@ -72,4 +74,31 @@ diff_test(
     failure_message = "ledger.jq answered a case in ledger_test_cases.json differently from what the case wants; the list of such cases is the actual file.",
     file1 = ":ledger_test_expected",
     file2 = ":ledger_test_failures",
+)
+
+# The `publish` and `verify` jobs run one cosign/slsa-verifier pass per mirror
+# image, and both passes are network round trips end to end — 38 images at
+# ~25 s each is the 15m51s the publish loop took in run 34259093980. Running
+# them concurrently is the whole fix, but doing it with a bare `&` would lose
+# the two properties the jobs are built on: that each image's `::group::`
+# block is readable, and that a step which cannot tell what the registry holds
+# stops the release rather than being skipped past. This driver keeps both.
+# Its test is the specification.
+exports_files(["parallel.sh"])
+
+# Not a dependency of anything — `publish` runs the checked-out file. It
+# exists so the shellcheck aspect in //tools/lint sees the script at all:
+# `exports_files` alone leaves it invisible to the linters, and this is a
+# file CI runs unattended over every mirror image.
+sh_library(
+    name = "parallel",
+    srcs = ["parallel.sh"],
+)
+
+sh_test(
+    name = "parallel_test",
+    size = "small",
+    srcs = ["parallel_test.sh"],
+    data = ["parallel.sh"],
+    env = {"PARALLEL_SH": "$(rootpath parallel.sh)"},
 )

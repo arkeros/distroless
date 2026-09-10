@@ -19,6 +19,12 @@ on:
 # authenticate to Google Cloud, for Artifact Registry and Cloud Run.
 env:
   WIF_PROVIDER: projects/874944788122/locations/global/workloadIdentityPools/github-distroless/providers/github-oidc
+  # A real image whose provenance the SLSA generator produced for another
+  # repository. `publish` probes slsa-verifier with it and `verify` proves the
+  # source policy rejects it; both expect exactly one answer, a source
+  # mismatch, so a deleted or re-tagged fixture fails loudly, not vacuously.
+  # A digest, not a tag, because slsa-verifier refuses tag references.
+  FOREIGN_PROVENANCE_IMAGE: ghcr.io/kyverno/kyverno@sha256:fc3db61bb81c7c8283b9bbab5d92ceb375f1ac35c26027485f7f13605e75ef97
 
 jobs:
   test:
@@ -71,8 +77,13 @@ jobs:
       - name: Fetch
         run: bazel fetch //...
 
+      # `--build_event_json_file`: the stream carries the sha256 of every
+      # output this build produced, and a pull request reduces it to one hash
+      # per target to say which of its own outputs actually differ from
+      # `main`'s (pr.yaml's `affected` job). Metadata Bazel emits anyway, so
+      # the flag costs the write and nothing else.
       - name: Test
-        run: bazel test //...
+        run: bazel test //... --build_event_json_file="${RUNNER_TEMP}/bep.json"
 
       # The launcher only; .aspect/version.axl pins the CLI it fetches.
       # bazelisk is on PATH from setup-bazel above, so the action skips its
@@ -104,6 +115,25 @@ jobs:
                 jq -c -n --arg t "${LABEL%_push}" --arg d "$(jq -r '.operations[0].root.digest' "${MANIFEST}")" '{($t): $d}'
               done | jq -c -s 'add' > "${RUNNER_TEMP}/digests.json"
           echo "digests=$(cat "${RUNNER_TEMP}/digests.json")" | tee -a "$GITHUB_OUTPUT"
+
+      # The stream a pull request diffs its own build against, to say which
+      # targets' bytes it actually changes rather than which Bazel would
+      # rebuild (pr.yaml's `affected` job). The stream and not a map reduced
+      # from it, so that both sides of that comparison are reduced by one
+      # binary — the pull request's — and a change to how a target is hashed
+      # cannot make every target differ from a baseline in the old format.
+      #
+      # It carries more than that one reader takes: test durations, flaky
+      # retries, buildMetrics, per-target timing.
+      - name: Store the build event stream
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-events
+          path: ${{ runner.temp }}/bep.json
+          # Short on purpose. A pull request compares against the most recent
+          # `main`, so only the newest of these is ever read; the default
+          # ninety days would keep a quarter's worth for nobody.
+          retention-days: 14
 
   # ---------------------------------------------------------------------------
   # Format.
@@ -314,11 +344,20 @@ jobs:
       # cquery then maps each target to its executable and, for pushes, its
       # manifest; for attestations, its predicate — no per-image Bazel from
       # here on.
+      #
+      # `--remote_download_outputs=toplevel` because the loop below reads these
+      # files off the disk: the deploy manifest with jq, the scripts out of
+      # their runfiles trees. `--config=ci` asks for `minimal`, and Bazel counts
+      # `--disk_cache` as a remote cache, so once this job started restoring one
+      # (565768b) every cached action left its outputs unwritten and the first
+      # `jq` of the loop failed on a path cquery had just printed (run
+      # 34199088113). 0a8688b dropped this flag when the remote cache went away,
+      # which was safe only while nothing was lazy.
       - name: Build every mirror image's push, sign and attest targets
         run: |
           set -euo pipefail
           TARGETS=$(bazel query 'kind("cosign_sign rule", //...) + kind("cosign_attest rule", //...) + kind("crane_tag rule", //...) + attr(tags, mirror_push_managed, kind(image_push, //...))' --output=label | tr '\n' ' ')
-          bazel build --output_groups=+deploy_manifest,+tags,+predicate ${TARGETS}
+          bazel build --remote_download_outputs=toplevel --output_groups=+deploy_manifest,+tags,+predicate ${TARGETS}
           # label <TAB> executable <TAB> deploy manifest (pushes) <TAB> expanded tag list (tags) <TAB> predicate (attestations)
           group() { echo "(getattr(providers(target)[\"OutputGroupInfo\"], \"$1\", None).to_list()[0].path if getattr(providers(target)[\"OutputGroupInfo\"], \"$1\", None) else \"\")"; }
           bazel cquery "set(${TARGETS})" --output=starlark --starlark:expr="\"%s\\t%s\\t%s\\t%s\\t%s\" % (str(target.label).removeprefix(\"@@\"), target.files_to_run.executable.path, $(group deploy_manifest), $(group tags), $(group predicate))" \
@@ -483,10 +522,20 @@ jobs:
             fi
           }
 
-          : > "${RUNNER_TEMP}/published.jsonl"
-          : > "${RUNNER_TEMP}/pending.jsonl"
-          for SIGN_TARGET in $(awk -F'\t' '$1 ~ /_sign$/{print $1}' "${RUNNER_TEMP}/mirror_targets.tsv"); do
-            BASE=${SIGN_TARGET%_sign}
+          # One image, start to finish. A function rather than a loop body
+          # because //oci/publish:parallel.sh runs these concurrently, one
+          # process each: nothing here is CPU work, it is ~8 round trips to
+          # GHCR, Fulcio and Rekor per image, so serially the 38 images cost
+          # ~25 s each — the 15m51s this step took in run 34259093980.
+          #
+          # The `exit 1` in `needs_artifact` and `stale` still stops the
+          # release. It ends the worker, and `parallel.sh` fails this step
+          # naming any worker that did not exit 0 — or that recorded no exit
+          # status at all. That is the property its test pins down; without
+          # it, "refusing to guess" would quietly become "skip this image",
+          # and `release` would tag a digest nothing had proven.
+          publish_one() {
+            local BASE=$1
             echo "::group::${BASE}"
 
             # The digest comes from the build, not from the registry: the push
@@ -540,6 +589,11 @@ jobs:
             jq -c -n --arg target "${BASE}" --arg ref "${REF}" --argjson tags "${TAGS}" --argjson types "${ATTESTED}" \
               '{$target, $ref, $tags, $types}' >> "${RUNNER_TEMP}/published.jsonl"
 
+            # A private copy of the TUF cache, so no two workers open the
+            # same database (see the warm-up below). It is small.
+            TUF_ROOT=$(mktemp -d "${RUNNER_TEMP}/tuf-worker.XXXXXX")
+            cp -R "${TUF_CACHE}/." "${TUF_ROOT}"
+            export TUF_ROOT
             if ! needs_artifact provenance "${REF}" \
                 "${SLSA_VERIFIER}" verify-image "${REF}" \
                   --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
@@ -548,10 +602,67 @@ jobs:
                 >> "${RUNNER_TEMP}/pending.jsonl"
             fi
             echo "::endgroup::"
-          done
+          }
+          export -f publish_one needs_artifact attested stale same_digest_as_test \
+            run_built exe_of manifest_of tags_of predicate_of
+          export TEST_DIGESTS
+
+          # slsa-verifier keeps the Sigstore trust roots in a TUF cache: a
+          # LevelDB under $TUF_ROOT, and LevelDB takes an exclusive,
+          # non-blocking lock on every open, warm or cold. Eight workers
+          # starting cold on a fresh runner raced for it, and three lost with
+          # "creating cached local store: resource temporarily unavailable"
+          # (run 34349269584) — which needs_artifact rightly refuses to read
+          # as "no provenance". cosign is immune, --trusted-root keeps it off
+          # TUF altogether; slsa-verifier has no such flag.
+          #
+          # So the cache is filled once, here, and every worker gets a copy
+          # of its own. A warm cache holds a timestamp that stays valid for
+          # days, so the copies never touch the network, and no two
+          # processes ever open the same database. TUF is initialised before
+          # the registry is contacted, so any reference would fill the
+          # cache; the foreign fixture is used because it has exactly one
+          # right answer, which proves the verifier reached Rekor and back.
+          # Anything else is a Sigstore problem, and it surfaces here, once,
+          # rather than in whichever workers happen to hit it.
+          TUF_CACHE="${RUNNER_TEMP}/tuf"
+          STDERR=$(mktemp)
+          if TUF_ROOT="${TUF_CACHE}" "${SLSA_VERIFIER}" verify-image "${FOREIGN_PROVENANCE_IMAGE}" \
+              --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
+              --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}" > /dev/null 2> "${STDERR}"; then
+            echo "ERROR: slsa-verifier accepted ${FOREIGN_PROVENANCE_IMAGE}, whose provenance names another repository as its source; the policy is not being applied." >&2
+            exit 1
+          fi
+          if ! grep -q "source used to generate the binary does not match provenance" "${STDERR}"; then
+            echo "ERROR: could not fill slsa-verifier's TUF cache: the probe against ${FOREIGN_PROVENANCE_IMAGE} failed, but not for the source mismatch it should fail for. Every worker below would fail the same way." >&2
+            cat "${STDERR}" >&2
+            exit 1
+          fi
+          echo "slsa-verifier TUF cache filled at ${TUF_CACHE}"
+          export TUF_CACHE
+
+          # Eight at a time. Not the runner's core count — the work is latency,
+          # not CPU — but the width at which this step stops being the job's
+          # bottleneck: ~2 min, under the Bazel build above it, and past that
+          # the only thing gained is more load on Rekor, a shared public
+          # instance. Same width `release` runs `crane tag` at.
+          #
+          # The two `.jsonl` files are appended to by all eight workers at
+          # once. That is safe as written and only as written: each line is a
+          # single short `jq` write to a file opened O_APPEND, which POSIX
+          # makes atomic. A line long enough to need two writes could tear, so
+          # if either record ever grows, give the workers separate files.
+          : > "${RUNNER_TEMP}/published.jsonl"
+          : > "${RUNNER_TEMP}/pending.jsonl"
+          awk -F'\t' '$1 ~ /_sign$/ { sub(/_sign$/, "", $1); print $1 }' "${RUNNER_TEMP}/mirror_targets.tsv" \
+            | oci/publish/parallel.sh -P 8 -- bash -c 'set -euo pipefail; publish_one "$1"' publish-worker
+
+          # Sorted, so the same set of images gives the same output whichever
+          # order the workers happened to finish in and two runs can be
+          # diffed. Nothing downstream depends on the order.
           {
-            echo "published=$(jq -c -s . "${RUNNER_TEMP}/published.jsonl")"
-            echo "pending=$(jq -c -s . "${RUNNER_TEMP}/pending.jsonl")"
+            echo "published=$(sort "${RUNNER_TEMP}/published.jsonl" | jq -c -s .)"
+            echo "pending=$(sort "${RUNNER_TEMP}/pending.jsonl" | jq -c -s .)"
           } | tee -a "$GITHUB_OUTPUT"
 
   # The build platform writes provenance, not us: the generator is a reusable
@@ -736,9 +847,9 @@ jobs:
       #    another repository. The provenance signer is the generator's, the
       #    same for every project that uses it, so this is the check that
       #    stands between us and accepting anyone's provenance on our digest.
-      #    kyverno publishes with the same generator; the digest is pinned
-      #    because slsa-verifier refuses tag references. If kyverno ever
-      #    deletes it, the failure reason changes and this test fails loudly.
+      #    kyverno publishes with the same generator. If kyverno ever deletes
+      #    the pinned digest, the failure reason changes and this test fails
+      #    loudly.
       - name: Verify policy is strict (negative tests)
         run: |
           set -euo pipefail
@@ -760,7 +871,7 @@ jobs:
           fi
           echo "OK: signer policy rejects the signed-by-Google reference."
 
-          FOREIGN=ghcr.io/kyverno/kyverno@sha256:fc3db61bb81c7c8283b9bbab5d92ceb375f1ac35c26027485f7f13605e75ef97
+          FOREIGN=${FOREIGN_PROVENANCE_IMAGE}
           if "${SLSA_VERIFIER}" verify-image "${FOREIGN}" \
               --source-uri "${COSIGN_POLICY_PROVENANCE_SOURCE_URI}" \
               --builder-id "${COSIGN_POLICY_PROVENANCE_BUILDER_ID}" 2> "${STDERR}"; then

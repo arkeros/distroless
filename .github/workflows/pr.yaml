@@ -188,3 +188,56 @@ jobs:
         with:
           name: coverage-html
           path: bazel-coverage/html
+
+  # What this pull request changes, as Bazel sees it. Informational: it never
+  # gates a merge.
+  #
+  # Its own job, not a step in `Test`, for two reasons. `Test` is the required
+  # check in the `main-checks` ruleset, and a report nobody asked to be
+  # blocked by has no business failing it — hence `continue-on-error` below
+  # too. And target-determinator needs the merge base, which `Test`'s depth-1
+  # checkout deliberately does not have; the `coverage` job pays the same
+  # price for the same reason.
+  #
+  # It costs a second analysis of the graph, at the base revision, which no
+  # other job here has a use for. That is the price of the question: nothing
+  # cheaper than analysing both revisions can tell you that a three-line
+  # go.sum bump moved a published image.
+  affected:
+    name: Affected targets
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    # Two cold analyses of the whole graph, and nothing downstream waits on
+    # the answer. A bound so a hang costs an hour rather than the six the
+    # default would allow.
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # target-determinator checks the base revision out to analyse it, so
+          # the base commit has to be in the clone.
+          fetch-depth: 0
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-version: v1.27.0
+          disk-cache: true
+          cache-save: false
+          bazelrc: |
+            common --config=ci
+
+      # Resolved to a path and executed directly, the way ci.yaml resolves
+      # slsa-verifier, rather than run through `bazel run`: the binary's whole
+      # job is to drive Bazel in this workspace.
+      - name: Fetch target-determinator
+        run: |
+          set -euo pipefail
+          bazel build @multitool//tools/target-determinator
+          echo "TARGET_DETERMINATOR=$(realpath "$(bazel cquery @multitool//tools/target-determinator --output=files)")" >> "$GITHUB_ENV"
+
+      - name: Affected targets
+        run: ./.github/affected-targets.sh '${{ github.event.pull_request.base.sha }}' | tee -a "$GITHUB_STEP_SUMMARY"

@@ -278,9 +278,34 @@ jobs:
           echo "TARGET_DETERMINATOR=$(realpath "$(bazel cquery @multitool//tools/target-determinator --output=files)")" >> "$GITHUB_ENV"
           echo "KNIFE=$(realpath "$(bazel cquery 'config(//bazel/cmd/knife, target)' --output=files)")" >> "$GITHUB_ENV"
 
+      # `HEAD^1`, not `github.event.pull_request.base.sha`. On a pull request
+      # the checkout is GitHub's merge of this branch into the base, so the
+      # merge commit's first parent is the base tip as actually merged and
+      # cannot go stale. `base.sha` is the base as it stood when the pull
+      # request was opened: this one still reported 60db924 two commits after
+      # `main` had moved past it, which made target-determinator attribute
+      # everything `main` had done in between to this branch.
+      #
+      # It also puts both halves of the comment on one base. The digest half
+      # compares against `main`'s own build of that same tip, so a stale base
+      # here meant the two were answering about different pairs of revisions.
       - name: Affected targets
         shell: bash # -eo pipefail, or `tee` swallows the script's exit code
-        run: ./.github/affected-targets.sh '${{ github.event.pull_request.base.sha }}' > "$RUNNER_TEMP/affected.md"
+        env:
+          EVENT_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          # Guarded, because `HEAD^1` on a checkout that is *not* a merge is
+          # simply the previous commit — a base that is wrong rather than
+          # stale, and silently so. A second parent is what says this is
+          # GitHub's merge; without one, fall back to the stale-but-honest
+          # value.
+          if git rev-parse --verify --quiet HEAD^2 >/dev/null; then
+            BASE=$(git rev-parse HEAD^1)
+          else
+            BASE=${EVENT_BASE}
+          fi
+          ./.github/affected-targets.sh "${BASE}" > "$RUNNER_TEMP/affected.md"
 
       # This branch's stream, from the `Test` job of this same run.
       - name: Fetch this branch's build events

@@ -274,7 +274,7 @@ jobs:
       - name: Fetch target-determinator and knife
         run: |
           set -euo pipefail
-          bazel build @multitool//tools/target-determinator //bazel/cmd/knife
+          bazel build --remote_download_outputs=toplevel @multitool//tools/target-determinator //bazel/cmd/knife
           echo "TARGET_DETERMINATOR=$(realpath "$(bazel cquery @multitool//tools/target-determinator --output=files)")" >> "$GITHUB_ENV"
           echo "KNIFE=$(realpath "$(bazel cquery 'config(//bazel/cmd/knife, target)' --output=files)")" >> "$GITHUB_ENV"
 

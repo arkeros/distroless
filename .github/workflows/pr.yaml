@@ -290,10 +290,19 @@ jobs:
           name: build-events
           path: ${{ runner.temp }}/current
 
-      # `main`'s stream, from the last ci.yaml run that got far enough to
-      # store one. Absent on the first run after this lands, and after the
-      # fortnight an artifact lives; digest-diff.sh says so rather than
-      # reporting every target as new.
+      # `main`'s stream, from the most recent run that actually stored one.
+      #
+      # Not "the last successful run": the stream is written by `Test`, which
+      # finishes long before `publish` and the deploy jobs decide the run's
+      # conclusion. Keying on the run being green would hide a perfectly good
+      # baseline for the half hour those take, and hide it permanently
+      # whenever a deploy fails for reasons that have nothing to do with what
+      # the build produced. The artifact's own existence is the better signal:
+      # `upload-artifact` only runs when the steps before it passed.
+      #
+      # Absent on the first run after this lands, and after the fortnight an
+      # artifact lives; digest-diff.sh says so rather than reporting every
+      # target as new.
       - name: Fetch main's build events
         continue-on-error: true
         env:
@@ -301,13 +310,14 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "${RUNNER_TEMP}/baseline"
-          RUN=$(gh run list --workflow=ci.yaml --branch=main --status=success \
-              --limit 1 --json databaseId --jq '.[0].databaseId // empty')
-          if [[ -z "${RUN}" ]]; then
-            echo "no successful ci.yaml run on main yet"
-            exit 0
-          fi
-          gh run download "${RUN}" --name build-events --dir "${RUNNER_TEMP}/baseline"
+          for RUN in $(gh run list --workflow=ci.yaml --branch=main --limit 10 \
+              --json databaseId --jq '.[].databaseId'); do
+            if gh run download "${RUN}" --name build-events --dir "${RUNNER_TEMP}/baseline" 2>/dev/null; then
+              echo "baseline from run ${RUN}"
+              exit 0
+            fi
+          done
+          echo "no ci.yaml run on main has stored build events yet"
 
       # Both streams reduced by one binary, this branch's. That is the reason
       # the artifact is the stream and not a map: were `main` to store a map,

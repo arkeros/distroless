@@ -110,21 +110,23 @@ jobs:
               done | jq -c -s 'add' > "${RUNNER_TEMP}/digests.json"
           echo "digests=$(cat "${RUNNER_TEMP}/digests.json")" | tee -a "$GITHUB_OUTPUT"
 
-      # The map a pull request diffs its own build against, to say which
+      # The stream a pull request diffs its own build against, to say which
       # targets' bytes it actually changes rather than which Bazel would
-      # rebuild (pr.yaml's `affected` job). Stored, not just an output,
-      # because the reader is a different workflow on a different day.
+      # rebuild (pr.yaml's `affected` job). The stream and not a map reduced
+      # from it, so that both sides of that comparison are reduced by one
+      # binary — the pull request's — and a change to how a target is hashed
+      # cannot make every target differ from a baseline in the old format.
       #
-      # After `Test` above, so `knife` is already built and this is a path
-      # lookup rather than a build.
+      # It carries more than that one reader takes: test durations, flaky
+      # retries, buildMetrics, per-target timing.
       - name: Store the build event stream
         uses: actions/upload-artifact@v7
         with:
           name: build-events
           path: ${{ runner.temp }}/bep.json
-          # Short on purpose. A pull request compares against the most
-          # recent `main`, so only the newest of these is ever read; the
-          # default ninety days would keep a quarter's worth for nobody.
+          # Short on purpose. A pull request compares against the most recent
+          # `main`, so only the newest of these is ever read; the default
+          # ninety days would keep a quarter's worth for nobody.
           retention-days: 14
 
   # ---------------------------------------------------------------------------

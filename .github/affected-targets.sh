@@ -81,11 +81,9 @@ comm -12 "${WORK}/affected" "${WORK}/tests" >"${WORK}/affected-tests"
 
 count() { wc -l <"$1" | tr -d ' '; }
 
-# The marker is how the workflow finds this comment again on the next push,
-# rather than editing whichever comment the bot posted last — octocov posts as
-# the same bot on the same pull requests.
+# Content only: the workflow assembles the comment, marker and all, because
+# this section is no longer the whole of it.
 cat <<EOF
-<!-- affected-targets -->
 ## Affected targets
 
 Compared against \`${MERGE_BASE:0:12}\`, the merge base with \`${BASE}\`.
@@ -96,10 +94,11 @@ Compared against \`${MERGE_BASE:0:12}\`, the merge base with \`${BASE}\`.
 | Tests | $(count "${WORK}/affected-tests") | $(count "${WORK}/tests") |
 | All targets | $(count "${WORK}/affected") | $(count "${WORK}/rules") |
 
-Affected means Bazel will re-run the actions, not that the published digest
-moves. A change to a *build tool* — the \`img\` pusher every image layer goes
-through links half of go.mod — re-runs every image action and can still emit
-identical bytes. Only ci.yaml's digest record settles that.
+Affected means Bazel will re-run the actions, not that the bytes change. A
+change to a *build tool* — the \`img\` pusher every image layer goes through
+links half of go.mod — re-runs every action downstream of it and can still
+emit identical output. The section above is the one that settles that; this
+one is what to rebuild and retest.
 EOF
 
 # One markdown bullet per label. Double quotes with the backticks escaped: a

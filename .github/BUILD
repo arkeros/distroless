@@ -14,3 +14,10 @@ sh_library(
     name = "affected_targets",
     srcs = ["affected-targets.sh"],
 )
+
+# The digest half of the same report: two `knife bep digests` maps in,
+# markdown out. Bazel does not run it either.
+sh_library(
+    name = "digest_diff",
+    srcs = ["digest-diff.sh"],
+)

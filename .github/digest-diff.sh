@@ -62,8 +62,8 @@ fi
 
 # An empty baseline is not "every target is new"; it is no baseline.
 if [[ "$(get '.baseline')" == "0" ]]; then
-    printf "\`main\` has stored no digest map yet, so there is nothing to compare\n"
-    printf "against. The first \`main\` build after this merges will leave one.\n"
+    printf "\`main\` has stored no build events yet, so there is nothing to\n"
+    printf "compare against. The first \`main\` build after this merges leaves some.\n"
     exit 0
 fi
 

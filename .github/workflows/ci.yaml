@@ -72,9 +72,10 @@ jobs:
         run: bazel fetch //...
 
       # `--build_event_json_file`: the stream carries the sha256 of every
-      # output this build produced, which `knife bep digests` reduces to one
-      # hash per target below. It is metadata Bazel emits anyway, so the flag
-      # costs the write and nothing else.
+      # output this build produced, and a pull request reduces it to one hash
+      # per target to say which of its own outputs actually differ from
+      # `main`'s (pr.yaml's `affected` job). Metadata Bazel emits anyway, so
+      # the flag costs the write and nothing else.
       - name: Test
         run: bazel test //... --build_event_json_file="${RUNNER_TEMP}/bep.json"
 
@@ -116,23 +117,15 @@ jobs:
       #
       # After `Test` above, so `knife` is already built and this is a path
       # lookup rather than a build.
-      - name: Record every target's output digests
-        run: |
-          set -euo pipefail
-          # `config(..., target)`, not the bare label: the cross-compile
-          # wrappers (`knife-linux-arm64` and friends) transition this same
-          # target, so after a full build the bare label resolves to one path
-          # per configuration and `realpath` is handed five lines. The target
-          # configuration is the untransitioned one, and the only one that is
-          # certain to run on this runner.
-          KNIFE=$(realpath "$(bazel cquery 'config(//bazel/cmd/knife, target)' --output=files)")
-          "${KNIFE}" bep digests "${RUNNER_TEMP}/bep.json" > "${RUNNER_TEMP}/output-digests.json"
-
-      - name: Store the output digests
+      - name: Store the build event stream
         uses: actions/upload-artifact@v7
         with:
-          name: output-digests
-          path: ${{ runner.temp }}/output-digests.json
+          name: build-events
+          path: ${{ runner.temp }}/bep.json
+          # Short on purpose. A pull request compares against the most
+          # recent `main`, so only the newest of these is ever read; the
+          # default ninety days would keep a quarter's worth for nobody.
+          retention-days: 14
 
   # ---------------------------------------------------------------------------
   # Format.

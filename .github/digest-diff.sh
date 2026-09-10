@@ -25,9 +25,12 @@ set -o errexit -o nounset -o pipefail
 readonly BASELINE="${1:?usage: digest-diff.sh <baseline.json> <current.json>}"
 readonly CURRENT="${2:?usage: digest-diff.sh <baseline.json> <current.json>}"
 
-# Listed, not just counted, up to here. Past it the list has stopped being a
-# summary and the counts are what get read anyway.
-readonly LIST_LIMIT=25
+# Everything is listed. The truncation is a backstop, not an editorial
+# choice: a GitHub comment is capped at 65 536 characters and a body over it
+# is rejected outright, so a run that somehow moved thousands of targets would
+# post nothing at all rather than a long list. At roughly sixty characters a
+# line this leaves ample headroom, and the count says what was cut.
+readonly LIST_LIMIT=400
 
 DIFF="$(jq -n --slurpfile base "${BASELINE}" --slurpfile cur "${CURRENT}" '
     ($base[0] // {}) as $b | ($cur[0] // {}) as $c |

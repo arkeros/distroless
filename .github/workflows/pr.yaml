@@ -213,6 +213,7 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
+      pull-requests: write # the comment below
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -240,4 +241,36 @@ jobs:
           echo "TARGET_DETERMINATOR=$(realpath "$(bazel cquery @multitool//tools/target-determinator --output=files)")" >> "$GITHUB_ENV"
 
       - name: Affected targets
-        run: ./.github/affected-targets.sh '${{ github.event.pull_request.base.sha }}' | tee -a "$GITHUB_STEP_SUMMARY"
+        shell: bash # -eo pipefail, or `tee` swallows the script's exit code
+        run: ./.github/affected-targets.sh '${{ github.event.pull_request.base.sha }}' | tee -a "$GITHUB_STEP_SUMMARY" "$RUNNER_TEMP/affected.md"
+
+      # In the pull request, not only in the job summary: the summary is three
+      # clicks into the Actions tab, and a report you have to go looking for
+      # does not answer "what does this change?" for the person reading the
+      # diff.
+      #
+      # Edited in place rather than appended to, so a branch that is pushed
+      # five times carries one comment and not five. `--edit-last` is not
+      # enough to find it: octocov comments on these same pull requests as the
+      # same bot, and the last comment is as likely to be its coverage table
+      # as ours. The marker the script prints is what identifies it.
+      #
+      # Skipped for a pull request from a fork, where GITHUB_TOKEN is
+      # read-only and this could only fail.
+      - name: Comment
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # One id per line, last wins: `--jq` runs once per page under
+          # `--paginate`, so anything that reduces across the whole list (a
+          # `map`, a `last`) would answer per page instead.
+          ID=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --paginate \
+              --jq '.[] | select(.body | startswith("<!-- affected-targets -->")) | .id' | tail -1)
+          if [[ -n "${ID}" ]]; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${ID}" -F body=@"$RUNNER_TEMP/affected.md"
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" -F body=@"$RUNNER_TEMP/affected.md"
+          fi

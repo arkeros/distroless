@@ -81,7 +81,11 @@ comm -12 "${WORK}/affected" "${WORK}/tests" >"${WORK}/affected-tests"
 
 count() { wc -l <"$1" | tr -d ' '; }
 
+# The marker is how the workflow finds this comment again on the next push,
+# rather than editing whichever comment the bot posted last — octocov posts as
+# the same bot on the same pull requests.
 cat <<EOF
+<!-- affected-targets -->
 ## Affected targets
 
 Compared against \`${MERGE_BASE:0:12}\`, the merge base with \`${BASE}\`.
@@ -91,6 +95,11 @@ Compared against \`${MERGE_BASE:0:12}\`, the merge base with \`${BASE}\`.
 | Published images | $(count "${WORK}/affected-images") | $(count "${WORK}/images") |
 | Tests | $(count "${WORK}/affected-tests") | $(count "${WORK}/tests") |
 | All targets | $(count "${WORK}/affected") | $(count "${WORK}/rules") |
+
+Affected means Bazel will re-run the actions, not that the published digest
+moves. A change to a *build tool* — the \`img\` pusher every image layer goes
+through links half of go.mod — re-runs every image action and can still emit
+identical bytes. Only ci.yaml's digest record settles that.
 EOF
 
 # One markdown bullet per label. Double quotes with the backticks escaped: a
@@ -105,18 +114,26 @@ bullets() {
     done
 }
 
-# Listed in full: thirty-six is short enough to read, and "which published
-# images move" is the question this whole job exists to answer.
-if [[ -s "${WORK}/affected-images" ]]; then
+# Listed in full when it is a subset, because "which published images move" is
+# the question this whole job exists to answer and thirty-six is short enough
+# to read. Not listed when it is all of them: the first run of this job said
+# 36 of 36, and thirty-six labels conveying one bit is how a report starts
+# getting skipped.
+if [[ ! -s "${WORK}/affected-images" ]]; then
+    printf '\nNo published image changes.\n'
+elif [[ "$(count "${WORK}/affected-images")" == "$(count "${WORK}/images")" ]]; then
+    printf "\nEvery published image is affected — look for a change to something\n"
+    printf "they all share (a base image, the \`img\` tool, a toolchain) rather\n"
+    printf "than to any one of them.\n"
+else
     printf '\n### Published images that change\n\n'
     bullets <"${WORK}/affected-images"
-else
-    printf '\nNo published image changes.\n'
 fi
 
 # Capped: an indirect dependency bump reaches hundreds of tests, and a summary
-# nobody scrolls to the end of has failed at being a summary.
-readonly TEST_LIMIT=40
+# nobody scrolls to the end of has failed at being a summary. Twenty, not
+# forty, now that this is a pull request comment and not only a job summary.
+readonly TEST_LIMIT=20
 if [[ -s "${WORK}/affected-tests" ]]; then
     printf '\n### Tests that change\n\n'
     head -n "${TEST_LIMIT}" "${WORK}/affected-tests" | bullets

@@ -7,6 +7,7 @@ go_library(
     visibility = ["//bazel/cmd/knife:__pkg__"],
     deps = [
         "//bazel/cmd/knife/cmd/apt",
+        "//bazel/cmd/knife/cmd/bep",
         "//bazel/cmd/knife/cmd/grype",
         "//bazel/cmd/knife/cmd/tarballs",
         "@com_github_spf13_cobra//:cobra",

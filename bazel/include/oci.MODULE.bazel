@@ -35,7 +35,7 @@ register_toolchains(
 
 git_override(
     module_name = "grype.bzl",
-    commit = "ad58b7149f63fa0e13662d63e658984dc6d5b680",
+    commit = "0525fb0e662143e00c76799e9cbf5037c9c8e610",
     remote = "https://github.com/arkeros/grype.bzl.git",
 )
 

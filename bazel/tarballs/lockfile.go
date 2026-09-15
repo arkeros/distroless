@@ -1,6 +1,8 @@
-// Package tarballs pins upstream prebuilt runtime tarballs (nodejs.org,
-// Adoptium Temurin) in a JSON lockfile that the `tarballs` module
-// extension in //bazel/tarballs:extensions.bzl turns into http_archive repos.
+// Package tarballs pins upstream prebuilt runtimes (nodejs.org, Adoptium
+// Temurin, envoyproxy's release assets) in a JSON lockfile that the
+// `tarballs` module extension in //bazel/tarballs:extensions.bzl turns into
+// repos — an http_archive per archive entry, a downloaded executable per
+// bare-file entry.
 //
 // Each lockfile covers one upstream (`source`) and lists the release
 // lines the images ship, one `Line` per major. Which majors appear is a
@@ -14,12 +16,18 @@ import (
 	"os"
 )
 
-// Archive is one http_archive: the bytes Bazel downloads and the
-// directory it strips.
+// Archive is one upstream download Bazel pins. Exactly one of StripPrefix
+// and File decides what becomes of the bytes: StripPrefix unpacks them as
+// an archive and drops that leading directory, File keeps them as a single
+// executable of that name. The extension fails on an entry that sets both
+// or neither.
 type Archive struct {
 	URL         string `json:"url"`
 	SHA256      string `json:"sha256"`
-	StripPrefix string `json:"strip_prefix"`
+	StripPrefix string `json:"strip_prefix,omitempty"`
+	// File is the name to download to, for an upstream that publishes a
+	// bare binary rather than an archive (envoy's release assets).
+	File string `json:"file,omitempty"`
 }
 
 // Line is one release line (a major version) and its per-variant archives,

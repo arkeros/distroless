@@ -1,0 +1,29 @@
+"""Envoy configuration: the proxy binary the envoy images ship.
+
+No Envoy is built here. The bare linux binaries attached to envoyproxy's
+GitHub releases are pinned in //images/envoy:envoy.lock.json and refreshed by
+`knife tarballs update` (daily, via the Update Tarballs workflow). Adding or
+dropping a release line is a hand edit of that lockfile.
+
+The release asset is the same bytes as /usr/bin/envoy inside that release's
+deb, so nothing is lost by taking it; apt.envoyproxy.io could not be used
+either way, its index having stopped at 1.32.2 in December 2024.
+"""
+
+tarballs = use_extension("//bazel/tarballs:extensions.bzl", "tarballs")
+
+# Envoy from envoyproxy/envoy's release assets, one bare binary per line and
+# architecture — a `file` entry rather than an archive. Consumed by
+# //images/envoy, which lays it at /usr/bin/envoy: upstream's own path, and
+# the one syft's envoy-binary classifier looks for.
+#
+# Policy: every line upstream still patches; see //images/envoy:config.bzl.
+tarballs.lock(
+    name = "envoy_tarballs",
+    build_file_content = """\
+package(default_visibility = ["//visibility:public"])
+exports_files(["envoy"])
+""",
+    lockfile = "//images/envoy:envoy.lock.json",
+)
+use_repo(tarballs, "envoy_136_amd64", "envoy_136_arm64", "envoy_137_amd64", "envoy_137_arm64", "envoy_138_amd64", "envoy_138_arm64", "envoy_139_amd64", "envoy_139_arm64", "envoy_tarballs")

@@ -338,6 +338,48 @@ _IGNORE_CVES = {
     "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES,
 }
 
+# Suppressions that belong to one line rather than to the whole distro, so
+# that a line the CVE does not reach keeps a red gate. Merged onto
+# `_IGNORE_CVES[distro]` below; `_cve_test_stale_ignores` is per image, so
+# an entry listed against a line the scanner does not flag fails that line.
+#
+# No VEX statement for this one, on purpose. The tarfile module and its
+# extraction filters are in libpython3.13-stdlib, and a python image is
+# precisely the place where consumer code calls `extractall()` on an
+# archive we know nothing about — none of OpenVEX's `not_affected`
+# justifications is true here, and `affected` would silence the gate while
+# claiming the opposite. A bare ignore says what this is: a known-vulnerable
+# package we ship because the distro has nothing better yet.
+_LINE_IGNORE_CVES = {
+    "debian": {
+        # python3.13 3.13.15-1 — High, unfixed in sid, and no upstream
+        # release carries the fix either: tarfile's `data`/`tar` extraction
+        # filters mishandle a hard link pointing at a symlink, so a crafted
+        # archive can touch permissions and mtimes outside the destination
+        # directory. Landed on CPython's 3.13 branch on 2026-09-10, after
+        # 3.13.15 was tagged, so the next 3.13 point release is what clears
+        # it — Debian tracks it as unfixed for python3.13 alone.
+        #
+        # Scoped to 3.13 because that is the only line a scanner flags,
+        # which is not the same as the only line that carries the flaw:
+        # Debian's python3.14 3.14.7-4 ships the identical unpatched
+        # `os.link(tarinfo._link_target, ...)`, and so does Hummingbird's
+        # 3.14 rpm. Upstream backported to `main` and 3.13 only, and Debian
+        # filed against the python3.13 source package alone, so nothing
+        # routes it to 3.14. Listing it there would fail that line's
+        # `_cve_test_stale_ignores`; tracked in #145 instead.
+        #
+        # Hummingbird needs no entry on any line. Its 3.11, 3.12 and 3.13
+        # rpms carry the distro's backport — the patch names this CVE in
+        # `/usr/lib64/python3.NN/tarfile.py` — so those gates are green on
+        # merit, not for want of an advisory.
+        #
+        # `_cve_test_stale_ignores` turns red the day sid ships the fixed
+        # package, which is the signal to delete this.
+        "3.13": ["CVE-2026-82049"],
+    },
+}
+
 _MINOR_VERSIONS = {
     "hummingbird": _HUMMINGBIRD_MINOR_VERSIONS,
     "debian": _DEBIAN_MINOR_VERSIONS,
@@ -357,7 +399,7 @@ _MINOR_VERSIONS = {
         elf_needs_allow = _ELF_NEEDS_ALLOW.get(minor, {}),
         entrypoint = ["/usr/bin/python3"],
         env = DEFAULT_ENV,
-        ignore_cves = _IGNORE_CVES[distro],
+        ignore_cves = _IGNORE_CVES[distro] + _LINE_IGNORE_CVES.get(distro, {}).get(minor, []),
         index_annotations = {
             "org.opencontainers.image.description": "Distroless Python {} image".format(minor),
             "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/python/BUILD",

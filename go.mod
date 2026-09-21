@@ -13,7 +13,7 @@ require (
 	github.com/klauspost/compress v1.20.0
 	github.com/sigstore/sigstore-go v1.3.0
 	github.com/spf13/cobra v1.10.2
-	github.com/ulikunitz/xz v0.5.16
+	github.com/ulikunitz/xz v0.5.17
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	golang.org/x/text v0.42.0
 )

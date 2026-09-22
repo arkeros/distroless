@@ -20,17 +20,17 @@
     },
     {
       "major": "26",
-      "version": "26.9.0",
+      "version": "26.10.0",
       "archives": {
         "nodejs_26_amd64": {
-          "url": "https://nodejs.org/dist/v26.9.0/node-v26.9.0-linux-x64.tar.xz",
-          "sha256": "c6ecd8efc1c1d395265891675319da7a7b3785c6be174bd78933cf4f057624d1",
-          "strip_prefix": "node-v26.9.0-linux-x64"
+          "url": "https://nodejs.org/dist/v26.10.0/node-v26.10.0-linux-x64.tar.xz",
+          "sha256": "ca70e9e349de048b9522abb3adc05b3bd6f43c5ffd3ec57916c7da292f59f022",
+          "strip_prefix": "node-v26.10.0-linux-x64"
         },
         "nodejs_26_arm64": {
-          "url": "https://nodejs.org/dist/v26.9.0/node-v26.9.0-linux-arm64.tar.xz",
-          "sha256": "686d07ed3bc5d68d9f7bd4939b7e8849a87d0664ac19c8c5474474f44cc956db",
-          "strip_prefix": "node-v26.9.0-linux-arm64"
+          "url": "https://nodejs.org/dist/v26.10.0/node-v26.10.0-linux-arm64.tar.xz",
+          "sha256": "7a6353f63eb3d04765004b4adf172616243e4522434635cb1d26288658b04ab5",
+          "strip_prefix": "node-v26.10.0-linux-arm64"
         }
       }
     }

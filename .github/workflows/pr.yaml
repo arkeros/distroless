@@ -81,7 +81,7 @@ jobs:
       # bazelisk is on PATH from setup-bazel above, so the action skips its
       # own, and its caches stay off: setup-bazel above owns them.
       - name: Set up Aspect CLI
-        uses: aspect-build/setup-aspect@60664fabf0aa15152c69d0ee72c9a660416c7a36 # 2026.38
+        uses: aspect-build/setup-aspect@6067df673a334c103489b12d582a3ba4133997de # 2026.38
         with:
           bazelisk-cache: false
           disk-cache: false
@@ -125,7 +125,7 @@ jobs:
             common --config=ci
 
       - name: Set up Aspect CLI
-        uses: aspect-build/setup-aspect@60664fabf0aa15152c69d0ee72c9a660416c7a36 # 2026.38
+        uses: aspect-build/setup-aspect@6067df673a334c103489b12d582a3ba4133997de # 2026.38
         with:
           bazelisk-cache: false
           disk-cache: false
@@ -172,7 +172,7 @@ jobs:
             common --config=ci
 
       - name: Set up Aspect CLI
-        uses: aspect-build/setup-aspect@60664fabf0aa15152c69d0ee72c9a660416c7a36 # 2026.38
+        uses: aspect-build/setup-aspect@6067df673a334c103489b12d582a3ba4133997de # 2026.38
         with:
           bazelisk-cache: false
           disk-cache: false

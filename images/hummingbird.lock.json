@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1790189841",
-    "repomd_sha256": "0ad1bcdf596b30f67f24a279b6eb487785c33299323414a6cfcc3c4443915114"
+    "revision": "1790271981",
+    "repomd_sha256": "106b165dcd656636c1d57bd334810e32b1dc5324a2138a6a83caf9b2dfb09f18"
   },
   "packages": {
     "audit-libs": {
@@ -146,20 +146,20 @@
     },
     "expat": {
       "aarch64": {
-        "version": "2.8.4-0.1.hum1",
-        "sha256": "1a30ea103852ead9b30deb3c8538dd928d454d4f7afb4460415a19261ec4250d",
-        "path": "aarch64/Packages/e/expat-2.8.4-0.1.hum1.aarch64.rpm",
-        "size": 136856,
+        "version": "2.8.4-0.2.hum1",
+        "sha256": "2f206aa0ce7dc5074408d90c42829f293a253372795e4f6cd9a97808c2f55624",
+        "path": "aarch64/Packages/e/expat-2.8.4-0.2.hum1.aarch64.rpm",
+        "size": 136897,
         "license": "MIT",
-        "upstream": "expat-2.8.4-0.1.hum1.src.rpm"
+        "upstream": "expat-2.8.4-0.2.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.8.4-0.1.hum1",
-        "sha256": "b41ca1ce9f857caf18b3b63952bae7ea76635ff0b417eafb0c2246c6124d9fbc",
-        "path": "x86_64/Packages/e/expat-2.8.4-0.1.hum1.x86_64.rpm",
-        "size": 141629,
+        "version": "2.8.4-0.2.hum1",
+        "sha256": "ce5a42a559dbab6c574f234a73555bace50b73c99f27073dc1f8e9f38cfc7012",
+        "path": "x86_64/Packages/e/expat-2.8.4-0.2.hum1.x86_64.rpm",
+        "size": 141509,
         "license": "MIT",
-        "upstream": "expat-2.8.4-0.1.hum1.src.rpm"
+        "upstream": "expat-2.8.4-0.2.hum1.src.rpm"
       }
     },
     "filesystem": {

@@ -1216,7 +1216,7 @@
         "bzlTransitiveDigest": "Ejfjy33K5VpYVQEZSw2Gsdzop00Gz4CvTAQ9F6nlFQk=",
         "usagesDigest": "Z2SQlaz/7d3bNMDLd1ezK0cWHwQUEjNzRFZeq5337Xo=",
         "recordedInputs": [
-          "FILE:@@//images/hummingbird.lock.json 37c65cbfad1e31fd48734a2f609b4932f666f7eccdbe28ec2498bc6771bff1cd",
+          "FILE:@@//images/hummingbird.lock.json 7429fabbf20bfd35af032fe7086c9c1720b2b1062838453cd252813b388c0124",
           "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json 46eb3fb7efbbc8ba7d383691c2525ff449f3a986808fc0fe5ef45d5e0d9c48b0",
           "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json c2b04b77a6233164c732c6a8ffb231e6eedb2a2932e0feaf1f9d730aba1bd7de"
         ],
@@ -1451,12 +1451,12 @@
             "attributes": {
               "package": "expat",
               "arch": "aarch64",
-              "version": "2.8.4-0.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/e/expat-2.8.4-0.1.hum1.aarch64.rpm",
-              "sha256": "1a30ea103852ead9b30deb3c8538dd928d454d4f7afb4460415a19261ec4250d",
+              "version": "2.8.4-0.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/e/expat-2.8.4-0.2.hum1.aarch64.rpm",
+              "sha256": "2f206aa0ce7dc5074408d90c42829f293a253372795e4f6cd9a97808c2f55624",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "expat-2.8.4-0.1.hum1.src.rpm",
+              "upstream": "expat-2.8.4-0.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1466,12 +1466,12 @@
             "attributes": {
               "package": "expat",
               "arch": "x86_64",
-              "version": "2.8.4-0.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/e/expat-2.8.4-0.1.hum1.x86_64.rpm",
-              "sha256": "b41ca1ce9f857caf18b3b63952bae7ea76635ff0b417eafb0c2246c6124d9fbc",
+              "version": "2.8.4-0.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/e/expat-2.8.4-0.2.hum1.x86_64.rpm",
+              "sha256": "ce5a42a559dbab6c574f234a73555bace50b73c99f27073dc1f8e9f38cfc7012",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "expat-2.8.4-0.1.hum1.src.rpm",
+              "upstream": "expat-2.8.4-0.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }

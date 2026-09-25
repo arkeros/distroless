@@ -36,7 +36,7 @@
     "binaries": [
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_linux_arm64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.119.0/grype_0.118.0_linux_arm64.tar.gz",
         "file": "grype",
         "sha256": "32aceeb8ee837244775fcb522372c8b3a47914986385f3148f4ee2c930482a84",
         "os": "linux",
@@ -44,7 +44,7 @@
       },
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_linux_amd64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.119.0/grype_0.118.0_linux_amd64.tar.gz",
         "file": "grype",
         "sha256": "1d444c5e7360471815f7158f71935fcecc68a3c417d85c7344f770854300bba2",
         "os": "linux",
@@ -52,7 +52,7 @@
       },
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_darwin_arm64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.119.0/grype_0.118.0_darwin_arm64.tar.gz",
         "file": "grype",
         "sha256": "938f050bb5076c8aa761867b39843abad2414dfe4cc82b7d36886e634f49c640",
         "os": "macos",
@@ -60,7 +60,7 @@
       },
       {
         "kind": "archive",
-        "url": "https://github.com/anchore/grype/releases/download/v0.118.0/grype_0.118.0_darwin_amd64.tar.gz",
+        "url": "https://github.com/anchore/grype/releases/download/v0.119.0/grype_0.118.0_darwin_amd64.tar.gz",
         "file": "grype",
         "sha256": "cfeecf3462321c37ec4bd37dcd8a7f6630cc6c0c9997a07ff34002c5d7ef9bb3",
         "os": "macos",

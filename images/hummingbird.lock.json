@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1790271981",
-    "repomd_sha256": "106b165dcd656636c1d57bd334810e32b1dc5324a2138a6a83caf9b2dfb09f18"
+    "revision": "1790364907",
+    "repomd_sha256": "e927160bfa3997c04996fe2a494c10b21e89ce4dc8fcd55fbf0ca88bed8fb544"
   },
   "packages": {
     "audit-libs": {
@@ -44,20 +44,20 @@
     },
     "busybox": {
       "aarch64": {
-        "version": "1:1.37.0-9.hum1",
-        "sha256": "98bc49636e1e40c3f476fe81aee3ac58005c7cc0c08be312834c64893fee27f6",
-        "path": "aarch64/Packages/b/busybox-1.37.0-9.hum1.aarch64.rpm",
-        "size": 820502,
+        "version": "1:1.37.0-9.1.hum1",
+        "sha256": "cf7865f4e5aac8715a0d44f1ad18a3c802b932c219600de829b3d8047badd2a8",
+        "path": "aarch64/Packages/b/busybox-1.37.0-9.1.hum1.aarch64.rpm",
+        "size": 820609,
         "license": "GPL-2.0-only",
-        "upstream": "busybox-1.37.0-9.hum1.src.rpm"
+        "upstream": "busybox-1.37.0-9.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "1:1.37.0-9.hum1",
-        "sha256": "6d70f578d3aadda5b5abe3f375475349700d2b3a1aa66b3226b27d1d60feefea",
-        "path": "x86_64/Packages/b/busybox-1.37.0-9.hum1.x86_64.rpm",
-        "size": 812106,
+        "version": "1:1.37.0-9.1.hum1",
+        "sha256": "10306588df1f4417b83cae87f1b8433deef5aa4f332a558780a415c9067b75e2",
+        "path": "x86_64/Packages/b/busybox-1.37.0-9.1.hum1.x86_64.rpm",
+        "size": 812307,
         "license": "GPL-2.0-only",
-        "upstream": "busybox-1.37.0-9.hum1.src.rpm"
+        "upstream": "busybox-1.37.0-9.1.hum1.src.rpm"
       }
     },
     "bzip2-libs": {

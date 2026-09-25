@@ -1216,7 +1216,7 @@
         "bzlTransitiveDigest": "Ejfjy33K5VpYVQEZSw2Gsdzop00Gz4CvTAQ9F6nlFQk=",
         "usagesDigest": "Z2SQlaz/7d3bNMDLd1ezK0cWHwQUEjNzRFZeq5337Xo=",
         "recordedInputs": [
-          "FILE:@@//images/hummingbird.lock.json 7429fabbf20bfd35af032fe7086c9c1720b2b1062838453cd252813b388c0124",
+          "FILE:@@//images/hummingbird.lock.json 34ca0e7da148633b6c82d4a8bbbd9a281df28131b8f1da897d9bd2253660a490",
           "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json 46eb3fb7efbbc8ba7d383691c2525ff449f3a986808fc0fe5ef45d5e0d9c48b0",
           "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json c2b04b77a6233164c732c6a8ffb231e6eedb2a2932e0feaf1f9d730aba1bd7de"
         ],
@@ -1286,12 +1286,12 @@
             "attributes": {
               "package": "busybox",
               "arch": "aarch64",
-              "version": "1:1.37.0-9.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/b/busybox-1.37.0-9.hum1.aarch64.rpm",
-              "sha256": "98bc49636e1e40c3f476fe81aee3ac58005c7cc0c08be312834c64893fee27f6",
+              "version": "1:1.37.0-9.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/b/busybox-1.37.0-9.1.hum1.aarch64.rpm",
+              "sha256": "cf7865f4e5aac8715a0d44f1ad18a3c802b932c219600de829b3d8047badd2a8",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "busybox-1.37.0-9.hum1.src.rpm",
+              "upstream": "busybox-1.37.0-9.1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1301,12 +1301,12 @@
             "attributes": {
               "package": "busybox",
               "arch": "x86_64",
-              "version": "1:1.37.0-9.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/b/busybox-1.37.0-9.hum1.x86_64.rpm",
-              "sha256": "6d70f578d3aadda5b5abe3f375475349700d2b3a1aa66b3226b27d1d60feefea",
+              "version": "1:1.37.0-9.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/b/busybox-1.37.0-9.1.hum1.x86_64.rpm",
+              "sha256": "10306588df1f4417b83cae87f1b8433deef5aa4f332a558780a415c9067b75e2",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "busybox-1.37.0-9.hum1.src.rpm",
+              "upstream": "busybox-1.37.0-9.1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }

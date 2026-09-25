@@ -4,7 +4,7 @@ go 1.27.1
 
 require (
 	github.com/ProtonMail/go-crypto v1.5.1
-	github.com/klauspost/compress v1.20.0
+	github.com/klauspost/compress v1.20.1
 	github.com/sassoftware/go-rpmutils v0.4.0
 	modernc.org/sqlite v1.59.0
 )

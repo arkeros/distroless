@@ -947,7 +947,7 @@ jobs:
       # by version: what appends to the tag ledger is the binary the lockfile
       # names, whether or not the action has heard of that release yet.
       - name: Install oras
-        uses: oras-project/setup-oras@v2.0.1
+        uses: oras-project/setup-oras@v2.0.2
         with:
           url: ${{ needs.publish.outputs.oras_url }}
           checksum: ${{ needs.publish.outputs.oras_sha256 }}

@@ -18,7 +18,7 @@ pinned in //images/nodejs:nodejs.lock.json and refreshed by
 dropping a release line is a hand edit of that lockfile.
 """
 
-bazel_dep(name = "aspect_rules_js", version = "3.5.0")
+bazel_dep(name = "aspect_rules_js", version = "3.5.1")
 bazel_dep(name = "aspect_rules_esbuild", version = "0.27.1")
 
 esbuild = use_extension("@aspect_rules_esbuild//esbuild:extensions.bzl", "esbuild")

@@ -12,8 +12,8 @@ sources:
     url: https://nginx.org/packages/mainline/debian
   - channel: unstable main contrib
     urls:
-      - https://snapshot.debian.org/archive/debian/20261001T203503Z
-      - https://snapshot-cloudflare.debian.org/archive/debian/20261001T203503Z
+      - https://snapshot.debian.org/archive/debian/20261003T143013Z
+      - https://snapshot-cloudflare.debian.org/archive/debian/20261003T143013Z
 archs:
   - amd64
   - arm64

@@ -1,6 +1,6 @@
 module github.com/arkeros/distroless
 
-go 1.27.1
+go 1.27.2
 
 require (
 	github.com/CAFxX/httpcompression v0.0.9

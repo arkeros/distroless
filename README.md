@@ -51,6 +51,7 @@ Publicly mirrored:
 | `java` | Temurin JRE 17, 21 and 25, with the JDK on `-debug` tags |
 | `node` | Node 20, 24 and 26 |
 | `nginx` | nginx stable and mainline, serving a webroot as nonroot |
+| `envoy` | Envoy 1.36, 1.37, 1.38 and 1.39, one tag per line, with no bootstrap of its own |
 | `python` | Python 3.11, 3.12, 3.13 and 3.14, one tag per line |
 | `static` | Certificates, time zones and a nonroot user: the base for Go, Rust and static binaries |
 | `cc` | `static` plus glibc, libstdc++ and OpenSSL, for dynamically linked programs |

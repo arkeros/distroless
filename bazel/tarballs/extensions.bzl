@@ -1,24 +1,32 @@
-"""Module extension `tarballs`: upstream prebuilt runtime tarballs pinned by a lockfile.
+"""Module extension `tarballs`: upstream prebuilt runtimes pinned by a lockfile.
 
 One `lock(...)` tag reads a JSON lockfile written by `knife tarballs update`
-and declares one `http_archive` per entry of every line's `archives`, named
-by the entry's key, so image BUILD files reference e.g. `@nodejs_24_amd64`.
+and declares one repo per entry of every line's `archives`, named by the
+entry's key, so image BUILD files reference e.g. `@nodejs_24_amd64`.
 It also generates a hub repo (the tag's `name`) exporting `versions.bzl`
 with the lines' versions, which the image's config.bzl loads to build the
 SBOM identity (purl + CPE) without repeating the version by hand.
+
+An entry is either an archive to unpack or a bare file to download. Every
+entry sets exactly one of the two, and both shapes yield the same label
+shape — the tag's `build_file_content` names what the image consumes, so
+`@nodejs_24_amd64//:bin/node` and `@envoy_139_amd64//:envoy` read alike.
 
 Lockfile schema (`<runtime>.lock.json`):
 
     {
       "schema_version": 1,
-      "source": "nodejs" | "temurin",   # resolver knife uses to refresh it
+      "source": "nodejs" | "temurin" | "envoy",  # resolver knife refreshes it with
       "lines": [
         {
           "major": "24",
           "version": "24.19.0",
           "build": "8",                 # upstream build counter; absent for nodejs
           "archives": {
-            "<repo name>": {"url": "...", "sha256": "...", "strip_prefix": "..."}
+            # an archive: unpacked, `strip_prefix` dropped
+            "<repo name>": {"url": "...", "sha256": "...", "strip_prefix": "..."},
+            # or a bare file: downloaded to `file`, marked executable, not extracted
+            "<repo name>": {"url": "...", "sha256": "...", "file": "envoy"}
           }
         }
       ]
@@ -43,8 +51,31 @@ _lock = tag_class(
         ),
         "build_file_content": attr.string(
             mandatory = True,
-            doc = "BUILD file content for every archive of this lockfile.",
+            doc = "BUILD file content for every repo of this lockfile.",
         ),
+    },
+)
+
+def _binary_repo_impl(rctx):
+    # `executable`, because the whole point of a bare-file entry is an
+    # upstream that publishes the program itself rather than an archive
+    # holding it; downloads are 0644 otherwise and the tar rule that lays
+    # it into a layer would carry that mode into the image.
+    rctx.download(
+        url = rctx.attr.url,
+        output = rctx.attr.file,
+        sha256 = rctx.attr.sha256,
+        executable = True,
+    )
+    rctx.file("BUILD.bazel", rctx.attr.build_file_content)
+
+_binary_repo = repository_rule(
+    implementation = _binary_repo_impl,
+    attrs = {
+        "url": attr.string(mandatory = True),
+        "sha256": attr.string(mandatory = True),
+        "file": attr.string(mandatory = True),
+        "build_file_content": attr.string(mandatory = True),
     },
 )
 
@@ -73,13 +104,26 @@ def _tarballs_impl(mctx):
                 fail("tarballs: {} has unsupported schema_version {}".format(lock.lockfile, parsed.get("schema_version")))
             for line in parsed["lines"]:
                 for repo_name, archive in line["archives"].items():
-                    http_archive(
-                        name = repo_name,
-                        url = archive["url"],
-                        sha256 = archive["sha256"],
-                        strip_prefix = archive["strip_prefix"],
-                        build_file_content = lock.build_file_content,
-                    )
+                    file = archive.get("file", "")
+                    strip_prefix = archive.get("strip_prefix", "")
+                    if (file == "") == (strip_prefix == ""):
+                        fail("tarballs: {} entry {} must set exactly one of `file` and `strip_prefix`".format(lock.lockfile, repo_name))
+                    if file:
+                        _binary_repo(
+                            name = repo_name,
+                            url = archive["url"],
+                            sha256 = archive["sha256"],
+                            file = file,
+                            build_file_content = lock.build_file_content,
+                        )
+                    else:
+                        http_archive(
+                            name = repo_name,
+                            url = archive["url"],
+                            sha256 = archive["sha256"],
+                            strip_prefix = strip_prefix,
+                            build_file_content = lock.build_file_content,
+                        )
             _versions_repo(
                 name = lock.name,
                 versions_json = json.encode([{

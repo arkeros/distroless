@@ -15,10 +15,16 @@ import (
 // file and small next to the job's schedule.
 var httpClient = &http.Client{Timeout: time.Minute}
 
-func get(ctx context.Context, url string) (io.ReadCloser, error) {
+// get fetches url. Each decorate function is applied to the request before
+// it is sent — how the GitHub helper attaches its token without every
+// caller having to know about one.
+func get(ctx context.Context, url string, decorate ...func(*http.Request)) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
+	}
+	for _, d := range decorate {
+		d(req)
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
@@ -31,8 +37,8 @@ func get(ctx context.Context, url string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-func getJSON(ctx context.Context, url string, v any) error {
-	body, err := get(ctx, url)
+func getJSON(ctx context.Context, url string, v any, decorate ...func(*http.Request)) error {
+	body, err := get(ctx, url, decorate...)
 	if err != nil {
 		return err
 	}

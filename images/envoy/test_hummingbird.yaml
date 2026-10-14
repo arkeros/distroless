@@ -1,0 +1,111 @@
+schemaVersion: 2.0.0
+metadataTest:
+  entrypoint: ['/usr/bin/envoy']
+  workdir: '/home/nonroot'
+  user: '65532'
+  envVars:
+    - key: SSL_CERT_FILE
+      value: /etc/ssl/certs/ca-certificates.crt
+fileExistenceTests:
+  - name: 'envoy binary'
+    path: '/usr/bin/envoy'
+    shouldExist: true
+  # Upstream's image ships a demo bootstrap that proxies to
+  # www.envoyproxy.io. A base image has no business deciding where traffic
+  # goes, so there is none here and the caller must pass one.
+  - name: 'no default bootstrap'
+    path: '/etc/envoy/envoy.yaml'
+    shouldExist: false
+  # Inherited cc/static surface. Re-checked here so a regression in any
+  # inherit step fails this image's tests too.
+  - name: 'glibc dynamic linker'
+    path: '/usr/lib64/ld-linux-x86-64.so.2'
+    shouldExist: true
+  - name: 'CA bundle'
+    path: '/etc/ssl/certs/ca-certificates.crt'
+    shouldExist: true
+  - name: 'os-release canonical'
+    path: '/usr/lib/os-release'
+    shouldExist: true
+  - name: 'rpmdb sqlite'
+    path: '/usr/lib/sysimage/rpm/rpmdb.sqlite'
+    shouldExist: true
+  - name: 'no shell'
+    path: '/bin/sh'
+    shouldExist: false
+fileContentTests:
+  - name: 'os-release has ID=hummingbird'
+    path: '/usr/lib/os-release'
+    expectedContents: ['(?m)^ID="hummingbird"$']
+commandTests:
+  # The real proto registry and extension factories, not a file-existence
+  # check: `--mode validate` builds every listener, filter chain and cluster
+  # in the config and exits. This one exercises the HTTP connection manager,
+  # the router, grpc_web, ext_authz and the TLS transport socket, and makes
+  # BoringSSL parse the CA bundle the image actually ships — every extension
+  # that made the plain build, rather than envoy-contrib, the one to take.
+  # The config comes in on the command line because a base image carries
+  # none and a structure test cannot mount one.
+  - name: 'envoy validates an HTTP + TLS config'
+    command: '/usr/bin/envoy'
+    args:
+      - '--mode'
+      - 'validate'
+      - '--config-yaml'
+      - |
+        static_resources:
+          listeners:
+          - name: ingress
+            address:
+              socket_address: {address: 0.0.0.0, port_value: 10000}
+            filter_chains:
+            - filters:
+              - name: envoy.filters.network.http_connection_manager
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                  stat_prefix: ingress_http
+                  route_config:
+                    name: local
+                    virtual_hosts:
+                    - name: all
+                      domains: ["*"]
+                      routes:
+                      - match: {prefix: "/"}
+                        route: {cluster: upstream}
+                  http_filters:
+                  - name: envoy.filters.http.grpc_web
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb
+                  - name: envoy.filters.http.ext_authz
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                      transport_api_version: V3
+                      grpc_service:
+                        envoy_grpc: {cluster_name: upstream}
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+          clusters:
+          - name: upstream
+            type: STATIC
+            load_assignment:
+              cluster_name: upstream
+              endpoints:
+              - lb_endpoints:
+                - endpoint:
+                    address:
+                      socket_address: {address: 127.0.0.1, port_value: 8443}
+            transport_socket:
+              name: envoy.transport_sockets.tls
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+                common_tls_context:
+                  validation_context:
+                    trusted_ca: {filename: /etc/ssl/certs/ca-certificates.crt}
+    exitCode: 0
+  # Without a config envoy says so itself, rather than starting on someone
+  # else's opinion of where traffic should go.
+  - name: 'envoy refuses to start without a config'
+    command: '/usr/bin/envoy'
+    args: []
+    exitCode: 1

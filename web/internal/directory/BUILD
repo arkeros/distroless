@@ -100,6 +100,7 @@ go_library(
         "templates/versions.html",
         "templates/vulnerabilities.html",
         "static/logos/python.svg",
+        "static/logos/envoy.svg",
     ],
     importpath = "github.com/arkeros/distroless/web/internal/directory",
 )

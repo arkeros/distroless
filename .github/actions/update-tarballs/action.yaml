@@ -23,6 +23,12 @@ runs:
     - name: Update tarballs
       id: update
       shell: bash
+      # The envoy resolver reads api.github.com, which allows 60 requests an
+      # hour unauthenticated — shared across everything on the runner's
+      # address, so in practice none. The workflow's own read-only token is
+      # all it needs; nodejs.org and the Adoptium API ignore it.
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         # knife rewrites the lockfile and runs `bazel mod tidy` itself. Its
         # stdout lists the moved lines as `<major>: <from> -> <to>`; keep
@@ -40,7 +46,7 @@ runs:
 
         {
           echo 'changes<<EOF'
-          grep -E '^  [0-9]+: ' /tmp/knife.out | sed 's/^  /- /'
+          grep -E '^  [0-9]+(\.[0-9]+)*: ' /tmp/knife.out | sed 's/^  /- /'
           echo 'EOF'
         } >> $GITHUB_OUTPUT
         echo "update_needed=true" >> $GITHUB_OUTPUT

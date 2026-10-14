@@ -7,7 +7,7 @@ import (
 func NewCmdTarballs() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tarballs",
-		Short: "Manage upstream prebuilt runtime tarballs (nodejs.org, Temurin)",
+		Short: "Manage upstream prebuilt runtimes (nodejs.org, Temurin, envoy)",
 	}
 
 	cmd.AddCommand(newCmdUpdate())

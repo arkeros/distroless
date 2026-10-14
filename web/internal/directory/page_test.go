@@ -1284,7 +1284,7 @@ func TestIndexListsEveryPublishedFamily(t *testing.T) {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
 	}
 	body := response.Body.String()
-	for _, family := range []string{"bash", "java", "node", "nginx", "python", "static", "cc"} {
+	for _, family := range []string{"bash", "java", "node", "nginx", "envoy", "python", "static", "cc"} {
 		if !strings.Contains(body, `href="/directory/image/`+family+`/versions"`) {
 			t.Errorf("index does not link %s to its versions page:\n%s", family, body)
 		}
@@ -1458,7 +1458,7 @@ func TestPagesSearchEveryFamily(t *testing.T) {
 		if home > heading || search > heading {
 			t.Errorf("GET %s puts the topbar (home=%d search=%d) after the heading at %d, want it above", target, home, search, heading)
 		}
-		for _, family := range []string{"bash", "java", "node", "nginx", "python", "static", "cc"} {
+		for _, family := range []string{"bash", "java", "node", "nginx", "envoy", "python", "static", "cc"} {
 			if !strings.Contains(body, `<span class="name">`+family+`</span></a>`) {
 				t.Errorf("GET %s does not offer %s in the search:\n%s", target, family, body)
 			}
@@ -1506,7 +1506,7 @@ func TestSearchLeadsToTheSameViewOfAnotherFamily(t *testing.T) {
 func TestSearchDrawsEachFamilyWithItsLogo(t *testing.T) {
 	body := get(t, &fakeSource{}, "/directory", nil).Body.String()
 
-	for _, family := range []string{"bash", "java", "node", "nginx", "python", "static", "cc"} {
+	for _, family := range []string{"bash", "java", "node", "nginx", "envoy", "python", "static", "cc"} {
 		want := `<a href="/directory/image/` + family + `/versions"><span class="logo"><svg`
 		if !strings.Contains(body, want) {
 			t.Errorf("the search does not draw the %s logo (%s):\n%s", family, want, body)

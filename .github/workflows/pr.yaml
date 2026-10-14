@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
+        uses: bazel-contrib/setup-bazel@0.19.1
         with:
           bazelisk-version: v1.27.0
           # Action results rather than downloaded archives; ci.yaml's `test`
@@ -113,7 +113,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
+        uses: bazel-contrib/setup-bazel@0.19.1
         with:
           bazelisk-version: v1.27.0
           # Its own key. This job builds //tools/format and nothing else, so
@@ -163,7 +163,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y lcov
 
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
+        uses: bazel-contrib/setup-bazel@0.19.1
         with:
           bazelisk-version: v1.27.0
           disk-cache: true
@@ -253,7 +253,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
+        uses: bazel-contrib/setup-bazel@0.19.1
         with:
           bazelisk-version: v1.27.0
           disk-cache: true

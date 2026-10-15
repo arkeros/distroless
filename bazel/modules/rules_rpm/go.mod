@@ -1,6 +1,6 @@
 module github.com/arkeros/distroless/bazel/modules/rules_rpm
 
-go 1.27.1
+go 1.27.2
 
 require (
 	github.com/ProtonMail/go-crypto v1.5.2
@@ -19,8 +19,8 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/ulikunitz/xz v0.5.17 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/crypto v0.57.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 	modernc.org/libc v1.77.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect

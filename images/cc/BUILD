@@ -7,7 +7,8 @@ load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "ARCHITECTURE_PLATFORMS")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS")
 load("//images/common:debian_unfixed_vex.bzl", "ZLIB_UNFIXED_VEX_STATEMENTS")
-load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
+load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "GCC_WONTFIX_CVES", "OPENSSL_WONTFIX_CVES")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load(":config.bzl", "CC_ARCHITECTURES", "CC_DISTROS", "cc_layers")
@@ -39,12 +40,12 @@ vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/cc/BUILD#hummingbird",
-    statements = [],
+    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-15T00:00:00Z",
 )
 
 _IGNORE_CVES = {
-    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES,
+    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES + GCC_WONTFIX_CVES,
     "hummingbird": [],
 }
 

@@ -330,3 +330,11 @@ What it buys is a second reading of the same question. The two images are compos
 - [[images/common/variables.bzl]] — `DEBIAN_WONTFIX_CVES` (to be renamed `WONTFIX_CVES[distro]` keyed map)
 - [[images/matrix.bzl]] — the distro-agnostic image composition factory
 - [ADR 0006](0006-bazel-native-cosign-mirror-signing.md) — cosign signing chain (unchanged by this decision)
+
+## Amendment (2026-10-15): `static`, `cc` and `bash` publish both distros, Hummingbird on the unsuffixed tags
+
+The 2026-09-06 amendment published a Debian python beside the Hummingbird one and noted that `static`, `cc` and `bash` already built both distros but published only Debian — on the unsuffixed tags, which for python are Hummingbird's. That was the one place the surface did not ship the identity this decision chose.
+
+Both now publish, and the tag namespace is python's: `static:latest`, `cc:latest`, `bash:latest` / `bash:5.3` and their `-debug` name the Hummingbird build; the Debian build is `static:debian`, `cc:debian`, `bash:debian` / `bash:5.3-debian`, with `-debug` variants. A consumer who pulled `bash:latest` before this date got Debian and gets Hummingbird after it: a different package base, the same `mirror_push` supply chain, and the same version of bash. Consumers who want Debian ask for it by name, as python's do.
+
+What forced the timing: the 2026-10-14 grype database flags two gcc CVEs (CVE-2026-102010, CVE-2026-95619) in sid's gcc-16 runtime that Debian has fixed only in gcc-13 and gcc-14, while Hummingbird's gcc carries both fixes (one of them visible to the scanner only through a `fixed` VEX statement, see `GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS`). The first downstream consumer, a Bun service base in astrograde, needed a `bash` whose libstdc++ was fixed, and publishing it under the identity this ADR already claimed was the honest shape.

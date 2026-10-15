@@ -235,17 +235,34 @@ container_structure_test(
     image = ":cc_nonroot_amd64_hummingbird.tar",
 )
 
-# Published as cc publishes on the mirror: the nonroot Debian index, with
-# the debug build under its own tag. No version tags — nothing here has an
-# upstream version to name.
+# The unsuffixed tags are Hummingbird's, the surface's identity per ADR
+# 0007 (amended 2026-10-15); the Debian build publishes beside it under
+# `debian` / `debian-debug`, as python has done since 2026-09-06. Moved
+# over on 2026-10-15: Debian held `latest` until then.
 [
     mirror_push(
         name = "cc" + mode,
+        image = ":cc" + mode + "_nonroot_hummingbird",
+        repository = "cc",
+        sbom = ":cc" + mode + "_nonroot_hummingbird_sbom",
+        tag_list = [
+            "debug" if mode else "latest",
+        ],
+        tags = ["manual"],
+        vex = ":cc" + mode + "_nonroot_hummingbird_vex",
+        vulnerabilities = ":cc" + mode + "_nonroot_hummingbird_vuln",
+    )
+    for mode in DEBUG_MODE
+]
+
+[
+    mirror_push(
+        name = "cc" + mode + "_debian",
         image = ":cc" + mode + "_nonroot_debian",
         repository = "cc",
         sbom = ":cc" + mode + "_nonroot_debian_sbom",
         tag_list = [
-            "debug" if mode else "latest",
+            "debian" + mode.replace("_", "-"),
         ],
         tags = ["manual"],
         vex = ":cc" + mode + "_nonroot_debian_vex",

@@ -260,17 +260,37 @@ bzl_library(
     ],
 )
 
-# Published as static publishes on the mirror: the nonroot Debian index, with
-# the debug build under its own tag. No version tags — nothing here has an
-# upstream version to name.
+# Published as static publishes on the mirror: the nonroot index, with the
+# debug build under its own tag. No version tags — nothing here has an
+# upstream version to name. The unsuffixed tags are Hummingbird's, the
+# surface's identity per ADR 0007 (amended 2026-10-15); the Debian build
+# publishes beside it under `debian` / `debian-debug`, as python has done
+# since 2026-09-06. Moved over on 2026-10-15: Debian held `latest` until
+# then.
 [
     mirror_push(
         name = "static" + mode,
+        image = ":static" + mode + "_nonroot_hummingbird",
+        repository = "static",
+        sbom = ":static" + mode + "_nonroot_hummingbird_sbom",
+        tag_list = [
+            "debug" if mode else "latest",
+        ],
+        tags = ["manual"],
+        vex = ":static" + mode + "_nonroot_hummingbird_vex",
+        vulnerabilities = ":static" + mode + "_nonroot_hummingbird_vuln",
+    )
+    for mode in DEBUG_MODE
+]
+
+[
+    mirror_push(
+        name = "static" + mode + "_debian",
         image = ":static" + mode + "_nonroot_debian",
         repository = "static",
         sbom = ":static" + mode + "_nonroot_debian_sbom",
         tag_list = [
-            "debug" if mode else "latest",
+            "debian" + mode.replace("_", "-"),
         ],
         tags = ["manual"],
         vex = ":static" + mode + "_nonroot_debian_vex",

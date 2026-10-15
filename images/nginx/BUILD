@@ -294,17 +294,44 @@ _NGINX_RPM_REPO = {
     for distro in NGINX_CHANNEL_DISTROS["mainline"]
 ]
 
+# The unsuffixed tags are Hummingbird's, the surface's identity per ADR
+# 0007 (amended 2026-10-15 for static, cc and bash, and here); the Debian
+# build publishes beside it under `-debian` (`stable-debian`,
+# `1.30-debian`, `debian`, `debian-debug`), as python has done since
+# 2026-09-06. Moved over on 2026-10-15: Debian held `latest` until then.
+# Both distros ship the same nginx.org upstream per channel, so the
+# version tags mean the same thing on either side.
 [
     mirror_push(
         name = "nginx_" + version_label + mode,
-        image = ":nginx_" + version_label + mode + "_nonroot_debian",
+        image = ":nginx_" + version_label + mode + "_nonroot_hummingbird",
         repository = "nginx",
-        sbom = ":nginx_" + version_label + mode + "_nonroot_debian_sbom",
+        sbom = ":nginx_" + version_label + mode + "_nonroot_hummingbird_sbom",
         tag_list = [
             version_label + ("-debug" if mode else ""),
             short_version + ("-debug" if mode else ""),
         ] + ([
             "debug" if mode else "latest",
+        ] if version_label == NGINX_LATEST_CHANNEL else []),
+        tags = ["manual"],
+        vex = ":nginx_" + version_label + mode + "_nonroot_hummingbird_vex",
+        vulnerabilities = ":nginx_" + version_label + mode + "_nonroot_hummingbird_vuln",
+    )
+    for version_label, short_version in NGINX_TAGS.items()
+    for mode in DEBUG_MODE
+]
+
+[
+    mirror_push(
+        name = "nginx_" + version_label + mode + "_debian",
+        image = ":nginx_" + version_label + mode + "_nonroot_debian",
+        repository = "nginx",
+        sbom = ":nginx_" + version_label + mode + "_nonroot_debian_sbom",
+        tag_list = [
+            version_label + "-debian" + ("-debug" if mode else ""),
+            short_version + "-debian" + ("-debug" if mode else ""),
+        ] + ([
+            "debian" + ("-debug" if mode else ""),
         ] if version_label == NGINX_LATEST_CHANNEL else []),
         tags = ["manual"],
         vex = ":nginx_" + version_label + mode + "_nonroot_debian_vex",

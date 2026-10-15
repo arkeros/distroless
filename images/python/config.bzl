@@ -28,14 +28,14 @@ PYTHON_ARCHITECTURES = {
 # here after `bazel run @hummingbird//:pin` or `bazel run @debian//:lock`.
 PYTHON_VERSIONS = {
     "hummingbird": {
-        "3.11": ("python3.11", "3.11.16"),
-        "3.12": ("python3.12", "3.12.14"),
-        "3.13": ("python3.13", "3.13.15"),
-        "3.14": ("python3", "3.14.7"),
+        "3.11": ("python3.11", "3.11.17"),
+        "3.12": ("python3.12", "3.12.15"),
+        "3.13": ("python3.13", "3.13.16"),
+        "3.14": ("python3", "3.14.8"),
     },
     "debian": {
         "3.13": ("python3.13", "3.13.15"),
-        "3.14": ("python3.14", "3.14.7"),
+        "3.14": ("python3.14", "3.14.8"),
     },
 }
 

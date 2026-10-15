@@ -6,6 +6,7 @@ load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("@tar.bzl", "tar")
 load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
+load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
 load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
@@ -30,7 +31,7 @@ vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/nodejs/BUILD#hummingbird",
-    statements = [],
+    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-16T00:00:00Z",
 )
 

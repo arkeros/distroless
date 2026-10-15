@@ -190,15 +190,38 @@ _VEX = {
     for arch in BASH_ARCHITECTURES["hummingbird"]
 ]
 
+# The unsuffixed tags are Hummingbird's, the surface's identity per ADR
+# 0007 (amended 2026-10-15); the Debian build publishes beside it under
+# `debian` / `5.3-debian` / `debian-debug`, as python has done since
+# 2026-09-06. Moved over on 2026-10-15: Debian held `latest` until then.
+# Both distros ship bash 5.3: `bash_lock_version_test` holds the Debian
+# lock to BASH_VERSION and the Hummingbird structure test asserts the
+# version the image answers with.
 [
     mirror_push(
         name = "bash" + mode,
+        image = ":bash" + mode + "_nonroot_hummingbird",
+        repository = "bash",
+        sbom = ":bash" + mode + "_nonroot_hummingbird_sbom",
+        tag_list = [
+            "debug" if mode else "latest",
+        ] + [version + mode.replace("_", "-") for version in BASH_TAGS],
+        tags = ["manual"],
+        vex = ":bash" + mode + "_nonroot_hummingbird_vex",
+        vulnerabilities = ":bash" + mode + "_nonroot_hummingbird_vuln",
+    )
+    for mode in DEBUG_MODE
+]
+
+[
+    mirror_push(
+        name = "bash" + mode + "_debian",
         image = ":bash" + mode + "_nonroot_debian",
         repository = "bash",
         sbom = ":bash" + mode + "_nonroot_debian_sbom",
         tag_list = [
-            "debug" if mode else "latest",
-        ] + [version + mode.replace("_", "-") for version in BASH_TAGS],
+            "debian" + mode.replace("_", "-"),
+        ] + [version + "-debian" + mode.replace("_", "-") for version in BASH_TAGS],
         tags = ["manual"],
         vex = ":bash" + mode + "_nonroot_debian_vex",
         vulnerabilities = ":bash" + mode + "_nonroot_debian_vuln",

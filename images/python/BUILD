@@ -9,7 +9,8 @@ load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NCURSES_FIXED_VEX_STATEMENTS")
 load("//images/common:debian_unfixed_vex.bzl", "ZLIB_UNFIXED_VEX_STATEMENTS")
-load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "OPENSSL_WONTFIX_CVES")
+load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "GCC_WONTFIX_CVES", "OPENSSL_WONTFIX_CVES")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load(":config.bzl", "PYTHON_ARCHITECTURES", "PYTHON_DISTROS", "PYTHON_SYMLINK_MINOR_VERSIONS", "python_interpreter_package", "python_latest", "python_layers", "python_minor_versions", "python_version")
@@ -66,7 +67,7 @@ _VEX_STATEMENTS = {
         name = "vex_hummingbird_" + minor,
         author = "rafael@arquero.cat",
         id = "https://github.com/arkeros/distroless/blob/main/images/python/BUILD#hummingbird-" + minor,
-        statements = _VEX_STATEMENTS.get(minor, []),
+        statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS + _VEX_STATEMENTS.get(minor, []),
         timestamp = "2026-09-06T00:00:00Z",
     )
     for minor in _HUMMINGBIRD_MINOR_VERSIONS
@@ -335,7 +336,7 @@ vex_document(
 # bash pass, since a Debian python is built on the same libc and libssl.
 _IGNORE_CVES = {
     "hummingbird": [],
-    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES,
+    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES + GCC_WONTFIX_CVES,
 }
 
 # Suppressions that belong to one line rather than to the whole distro, so
@@ -376,7 +377,21 @@ _LINE_IGNORE_CVES = {
         #
         # `_cve_test_stale_ignores` turns red the day sid ships the fixed
         # package, which is the signal to delete this.
-        "3.13": ["CVE-2026-82049"],
+        #
+        # The two ssl ones arrived with python3.14 3.14.8-1, which fixes
+        # them on the 3.14 line, while 3.13.15-1 still carries both:
+        # CVE-2026-19445, a server crash or use-after-free when an
+        # `sni_callback` swaps `SSLSocket.context` mid-handshake, and
+        # CVE-2026-19553, `wrap_bio()` skipping hostname verification when
+        # `server_hostname` is None. Same reasoning as the tarfile entry:
+        # the ssl module is in libpython3.13-stdlib and a python image is
+        # where it gets used, so a bare ignore, not a VEX claim. Debian
+        # tracks both as unfixed for python3.13 alone.
+        "3.13": [
+            "CVE-2026-82049",
+            "CVE-2026-19445",
+            "CVE-2026-19553",
+        ],
     },
 }
 

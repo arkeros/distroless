@@ -20,6 +20,37 @@ Statement-name conventions (`<package>_HUMMINGBIRD_FIXED_VEX_STATEMENTS`)
 mirror the Debian module's `<package>_FIXED_VEX_STATEMENTS`.
 """
 
+load("//oci:vex.bzl", "vex_statement")
+
+# gcc runtime: libstdc++ / libgcc / libgomp / libatomic 16.2.1-3.1.hum1.
+# CVE-2026-95619 (integer overflow in libstdc++'s aligned `operator new`)
+# is fixed in Hummingbird's gcc 16.2.1-2.hum1 — RHSA-2026:58503, and Red
+# Hat's CVE page lists `gcc-main-16.2.1-2.hum1` as the released fix — and
+# grype's own Hummingbird record for the `gcc` source package says the
+# same: `< 16.2.1-2.hum1`, state fixed. But the feed carries a second
+# record for the same CVE and source package with no version range at
+# all, and that one matches every binary built from gcc, whatever its
+# version, as "affected, no fix". Its sibling CVE-2026-102010 has only the
+# well-formed record (`< 16.2.1-3.hum1`) and stopped matching the moment
+# the lockfile moved to 16.2.1-3. Expires the way every statement here
+# does: re-check the feed, and delete this when the rangeless record is
+# gone. Shared by every Hummingbird image built on cc; static has no C++
+# runtime and gets no copy.
+GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS = [
+    vex_statement(
+        expires = "2027-01-10",
+        impact_statement = "Fixed in Hummingbird gcc 16.2.1-2.hum1 (RHSA-2026:58503); the image ships 16.2.1-3.1.hum1. grype matches a rangeless Hummingbird record for the gcc source package that contradicts the feed's own fixed-at-16.2.1-2.hum1 record for the same CVE.",
+        products = [
+            "pkg:rpm/hummingbird/libstdc++",
+            "pkg:rpm/hummingbird/libgcc",
+            "pkg:rpm/hummingbird/libgomp",
+            "pkg:rpm/hummingbird/libatomic",
+        ],
+        status = "fixed",
+        vulnerability = "CVE-2026-95619",
+    ),
+]
+
 # nginx, per channel. Empty: nginx.org's rpm is identified by its upstream
 # version and an f5:nginx CPE (`upstream_identities` on its rpm.install in
 # //bazel/include/oci.MODULE.bazel), in the attested SBOM and on the image

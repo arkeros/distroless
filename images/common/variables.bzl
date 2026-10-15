@@ -97,18 +97,54 @@ DEBIAN_WONTFIX_CVES = []
 # `ignore_cves`), so the next unfixed openssl finding is one line.
 OPENSSL_WONTFIX_CVES = []
 
+# gcc runtime (libstdc++6 / libgcc-s1 / gcc-16-base) CVEs Debian has fixed
+# only in the gcc-13 and gcc-14 source packages (13.5.0-3, 14.4.0-3), while
+# sid's libstdc++6 is built from gcc-16, which the tracker still lists as
+# vulnerable at 16.2.0-3 — so, like the OpenSSL list above, nothing a
+# lockfile bump can ride in on. Both are flaws in libstdc++ itself:
+# CVE-2026-102010 is `erase_if` on a `priority_queue` leaving a dangling
+# entry pointer (header-only template code, nothing of it is in the shared
+# object), CVE-2026-95619 an integer overflow in aligned `operator new`.
+# Neither bash nor cc ships a binary that imports aligned `operator new`
+# (checked with `nm -D --undefined-only` over every ELF object in the
+# images), but a python or nginx consumer may, so this is an ignore, not a
+# `not_affected` VEX statement. Apply to every image built on cc — it is the
+# cc layer that ships libstdc++ — and never to static, which has no C++
+# runtime and would fail its `_cve_test_stale_ignores` on an entry that
+# never matches. `_cve_test_stale_ignores` prunes these the day sid's
+# gcc-16 carries the fix.
+GCC_WONTFIX_CVES = [
+    "CVE-2026-102010",
+    "CVE-2026-95619",
+]
+
 # Busybox: only present in `*_debug_*` variants via `static_debug_layers`.
 # Apply via `distroless_matrix(debug_ignore_cves = BUSYBOX_WONTFIX_CVES[distro])`.
 # Keyed by distro because the distros patch independently: Hummingbird
 # shipped busybox 1:1.37.0-7.3.hum1 with the fix, Debian hasn't yet.
 BUSYBOX_WONTFIX_CVES = {
     "debian": [
-        # Debian busybox-static 1:1.37.0-10.1 — High, no fix shipped yet.
+        # Debian busybox-static 1:1.38.0-3+b1 — High, no fix shipped yet.
         # Busybox is the canonical debug-image toolbox (same choice as Google
         # distroless `:debug` and Chainguard `:latest-dev`); accept the CVE
         # tax until a patched build ships. `_cve_test_stale_ignores` will fail
         # when this stops matching, forcing the entry to be removed.
         "CVE-2026-29004",
+        # Same package, the 2026-10 batch: a pre-authentication heap overflow
+        # in the TLS client's Montgomery reduction (CVE-2026-88830) and an
+        # unbounded strlen over a romfs volume id (CVE-2026-88832). Neither
+        # has a Debian fix at 1:1.38.0-3+b1; the debug image's busybox is
+        # a shell for a human at a terminal, not a TLS client or a mount
+        # helper, but that is the same argument the entry above makes.
+        "CVE-2026-88830",
+        "CVE-2026-88832",
     ],
-    "hummingbird": [],
+    "hummingbird": [
+        # Hummingbird busybox 1:1.37.0-9.4.hum1 — the same TLS Montgomery
+        # overflow (CVE-2026-88830) is the one of the batch Red Hat has not
+        # shipped a build for; grype's Hummingbird secdb lists it with no
+        # fixed version. The other 2026-10 busybox CVEs are fixed in
+        # 1.37.0-9.1 to 9.4 and no longer match.
+        "CVE-2026-88830",
+    ],
 }

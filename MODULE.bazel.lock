@@ -1220,7 +1220,7 @@
         "bzlTransitiveDigest": "Ejfjy33K5VpYVQEZSw2Gsdzop00Gz4CvTAQ9F6nlFQk=",
         "usagesDigest": "Z2SQlaz/7d3bNMDLd1ezK0cWHwQUEjNzRFZeq5337Xo=",
         "recordedInputs": [
-          "FILE:@@//images/hummingbird.lock.json 0a8e7b5b453a5614c44d443206824ff200929845968ab40018c2cb626cf91454",
+          "FILE:@@//images/hummingbird.lock.json 964a6760065039b8dce0c1031c1dcedc09527314b1128ac367242f1c2520d953",
           "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json 50ad7a76f1ab2038de72a1baf7c4cccef33651129d9bce7f1022a1761e971f42",
           "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json f84a00750db7b6a8a7210d599c48b6fe6866becda17c2506c4ea3752a30b49ea"
         ],
@@ -3075,12 +3075,12 @@
             "attributes": {
               "package": "sqlite-libs",
               "arch": "aarch64",
-              "version": "3.54.0-0.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/s/sqlite-libs-3.54.0-0.1.hum1.aarch64.rpm",
-              "sha256": "9bbde7e8515815e873dc50bbb387737d92b6d8e97dc3b108cbd1c9e436ddb668",
+              "version": "3.54.1-0.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/s/sqlite-libs-3.54.1-0.1.hum1.aarch64.rpm",
+              "sha256": "0707cc8540ec05a183546adc5b638483f0b44b71846adf026674040f5331687c",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "sqlite-3.54.0-0.1.hum1.src.rpm",
+              "upstream": "sqlite-3.54.1-0.1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -3090,12 +3090,12 @@
             "attributes": {
               "package": "sqlite-libs",
               "arch": "x86_64",
-              "version": "3.54.0-0.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/s/sqlite-libs-3.54.0-0.1.hum1.x86_64.rpm",
-              "sha256": "9f514c4e3db9e70e7f79a1cb014d3d93cd73561161b0e263354746f898e9f269",
+              "version": "3.54.1-0.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/s/sqlite-libs-3.54.1-0.1.hum1.x86_64.rpm",
+              "sha256": "042e67f7f09db3182d332111b054f38a97f9dc48d1d176b3c8928c7dc5fb4afa",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "sqlite-3.54.0-0.1.hum1.src.rpm",
+              "upstream": "sqlite-3.54.1-0.1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }

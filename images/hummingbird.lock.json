@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1792336569",
-    "repomd_sha256": "5b0b203492eb9918911de674b2d29a151bc6c75de5e632b0ab4bd714a125ff60"
+    "revision": "1792523520",
+    "repomd_sha256": "30a91f5b7524eb04b288db2edeaa0113bbc5c02ed105a56449275f4bd4496395"
   },
   "packages": {
     "audit-libs": {
@@ -146,20 +146,20 @@
     },
     "expat": {
       "aarch64": {
-        "version": "2.8.5-1.2.hum1",
-        "sha256": "2cb30f566c4d6c19ac6429ded036c579e2baa396a1bbfb47494cf68420940b75",
-        "path": "aarch64/Packages/e/expat-2.8.5-1.2.hum1.aarch64.rpm",
-        "size": 137896,
+        "version": "2.9.0-1.hum1",
+        "sha256": "3e37d513ed0d78afcd0341165a0719e79468ebda14f03581334fd12096f44e86",
+        "path": "aarch64/Packages/e/expat-2.9.0-1.hum1.aarch64.rpm",
+        "size": 139239,
         "license": "MIT",
-        "upstream": "expat-2.8.5-1.2.hum1.src.rpm"
+        "upstream": "expat-2.9.0-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.8.5-1.2.hum1",
-        "sha256": "3d22eafee862b57e509a95a518b7e6d82ff62642758fdc468b4e906fdd8a89fd",
-        "path": "x86_64/Packages/e/expat-2.8.5-1.2.hum1.x86_64.rpm",
-        "size": 142994,
+        "version": "2.9.0-1.hum1",
+        "sha256": "f5c308e55e2bf6f822d12213cdd5cd728a70dc4675cdeaa130cb15e203ef3b27",
+        "path": "x86_64/Packages/e/expat-2.9.0-1.hum1.x86_64.rpm",
+        "size": 144452,
         "license": "MIT",
-        "upstream": "expat-2.8.5-1.2.hum1.src.rpm"
+        "upstream": "expat-2.9.0-1.hum1.src.rpm"
       }
     },
     "filesystem": {
@@ -1132,20 +1132,20 @@
     },
     "sqlite-libs": {
       "aarch64": {
-        "version": "3.54.1-0.1.hum1",
-        "sha256": "0707cc8540ec05a183546adc5b638483f0b44b71846adf026674040f5331687c",
-        "path": "aarch64/Packages/s/sqlite-libs-3.54.1-0.1.hum1.aarch64.rpm",
-        "size": 799948,
+        "version": "3.54.1-1.hum1",
+        "sha256": "8d536b1ab5d83874a7993514d4f5d6a248fe74853307d73ed8734eac6162d935",
+        "path": "aarch64/Packages/s/sqlite-libs-3.54.1-1.hum1.aarch64.rpm",
+        "size": 799847,
         "license": "blessing",
-        "upstream": "sqlite-3.54.1-0.1.hum1.src.rpm"
+        "upstream": "sqlite-3.54.1-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.54.1-0.1.hum1",
-        "sha256": "042e67f7f09db3182d332111b054f38a97f9dc48d1d176b3c8928c7dc5fb4afa",
-        "path": "x86_64/Packages/s/sqlite-libs-3.54.1-0.1.hum1.x86_64.rpm",
-        "size": 850644,
+        "version": "3.54.1-1.hum1",
+        "sha256": "d746023d97d0be78360f54ef3737c4e7b62a65a7811ecb523ee9494f00783980",
+        "path": "x86_64/Packages/s/sqlite-libs-3.54.1-1.hum1.x86_64.rpm",
+        "size": 850478,
         "license": "blessing",
-        "upstream": "sqlite-3.54.1-0.1.hum1.src.rpm"
+        "upstream": "sqlite-3.54.1-1.hum1.src.rpm"
       }
     },
     "systemd-libs": {

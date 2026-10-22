@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1792523520",
-    "repomd_sha256": "30a91f5b7524eb04b288db2edeaa0113bbc5c02ed105a56449275f4bd4496395"
+    "revision": "1792683778",
+    "repomd_sha256": "faad2b2996fc399d3bdea8186869d5b2fa23809c569a1e2d0dfe071e8fa6a7e2"
   },
   "packages": {
     "audit-libs": {
@@ -80,12 +80,12 @@
     },
     "ca-certificates": {
       "noarch": {
-        "version": "2026.2.90_v9.0.317-1.1.hum1",
-        "sha256": "dff3a5a565e46d01be5067cb5b2a965531191c021719fb82eac194e42cebe72d",
-        "path": "x86_64/Packages/c/ca-certificates-2026.2.90_v9.0.317-1.1.hum1.noarch.rpm",
-        "size": 1166700,
+        "version": "2026.2.92_v9.0.319-2.hum1",
+        "sha256": "ffab6a36dc08ddbe56bd4b67ed41233d09c43097261792d6aac9511b750e6cdc",
+        "path": "x86_64/Packages/c/ca-certificates-2026.2.92_v9.0.319-2.hum1.noarch.rpm",
+        "size": 1168974,
         "license": "MIT AND GPL-2.0-or-later",
-        "upstream": "ca-certificates-2026.2.90_v9.0.317-1.1.hum1.src.rpm"
+        "upstream": "ca-certificates-2026.2.92_v9.0.319-2.hum1.src.rpm"
       }
     },
     "coreutils": {

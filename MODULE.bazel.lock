@@ -1222,9 +1222,9 @@
         "bzlTransitiveDigest": "Ejfjy33K5VpYVQEZSw2Gsdzop00Gz4CvTAQ9F6nlFQk=",
         "usagesDigest": "Z2SQlaz/7d3bNMDLd1ezK0cWHwQUEjNzRFZeq5337Xo=",
         "recordedInputs": [
-          "FILE:@@//images/hummingbird.lock.json 85a334af4b4cd2f282d774d745263ceb05927f9b4429599baae330a33cc4e9a7",
+          "FILE:@@//images/hummingbird.lock.json a04fec9d872c8d938c9981e1c248eda6454ce23de3324f486bc8373b281adfd3",
           "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json 50ad7a76f1ab2038de72a1baf7c4cccef33651129d9bce7f1022a1761e971f42",
-          "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json f84a00750db7b6a8a7210d599c48b6fe6866becda17c2506c4ea3752a30b49ea"
+          "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json 354af3e140959a98af4157981152f0a41ac562a8e84ea61df75b6ef972ef26e5"
         ],
         "generatedRepoSpecs": {
           "hummingbird__audit-libs__aarch64": {
@@ -1352,12 +1352,12 @@
             "attributes": {
               "package": "ca-certificates",
               "arch": "noarch",
-              "version": "2026.2.90_v9.0.317-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/ca-certificates-2026.2.90_v9.0.317-1.1.hum1.noarch.rpm",
-              "sha256": "dff3a5a565e46d01be5067cb5b2a965531191c021719fb82eac194e42cebe72d",
+              "version": "2026.2.92_v9.0.319-2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/c/ca-certificates-2026.2.92_v9.0.319-2.hum1.noarch.rpm",
+              "sha256": "ffab6a36dc08ddbe56bd4b67ed41233d09c43097261792d6aac9511b750e6cdc",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "ca-certificates-2026.2.90_v9.0.317-1.1.hum1.src.rpm",
+              "upstream": "ca-certificates-2026.2.92_v9.0.319-2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -3397,12 +3397,12 @@
             "attributes": {
               "package": "nginx",
               "arch": "aarch64",
-              "version": "2:1.31.7-1.el10.ngx",
-              "url": "https://nginx.org/packages/mainline/rhel/10/aarch64/RPMS/nginx-1.31.7-1.el10.ngx.aarch64.rpm",
-              "sha256": "cb9e4208ee921db8889757c388a9b202983aad06007ad23d27aa9b50083590bd",
+              "version": "2:1.31.8-1.el10.ngx",
+              "url": "https://nginx.org/packages/mainline/rhel/10/aarch64/RPMS/nginx-1.31.8-1.el10.ngx.aarch64.rpm",
+              "sha256": "fb776f85b627dd5e0ee9bb3bfcb12ea13797ac0f2cb5c776ff789fb02db815b1",
               "gpg_key": "@@//images/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.31.7-1.el10.ngx.src.rpm",
+              "upstream": "nginx-1.31.8-1.el10.ngx.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": "f5:nginx"
             }
@@ -3412,12 +3412,12 @@
             "attributes": {
               "package": "nginx",
               "arch": "x86_64",
-              "version": "2:1.31.7-1.el10.ngx",
-              "url": "https://nginx.org/packages/mainline/rhel/10/x86_64/RPMS/nginx-1.31.7-1.el10.ngx.x86_64.rpm",
-              "sha256": "a459989c3fd28e006b6989558c785b09fc51f950fb2c2ccb2eaf01db211b9f25",
+              "version": "2:1.31.8-1.el10.ngx",
+              "url": "https://nginx.org/packages/mainline/rhel/10/x86_64/RPMS/nginx-1.31.8-1.el10.ngx.x86_64.rpm",
+              "sha256": "e3678563528c86a12604aca5ce08fa498386846bcae777f9cf09c4ae1a42cd2b",
               "gpg_key": "@@//images/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.31.7-1.el10.ngx.src.rpm",
+              "upstream": "nginx-1.31.8-1.el10.ngx.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": "f5:nginx"
             }

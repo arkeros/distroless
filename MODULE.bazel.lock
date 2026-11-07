@@ -1222,7 +1222,7 @@
         "bzlTransitiveDigest": "Ejfjy33K5VpYVQEZSw2Gsdzop00Gz4CvTAQ9F6nlFQk=",
         "usagesDigest": "Z2SQlaz/7d3bNMDLd1ezK0cWHwQUEjNzRFZeq5337Xo=",
         "recordedInputs": [
-          "FILE:@@//images/hummingbird.lock.json a04fec9d872c8d938c9981e1c248eda6454ce23de3324f486bc8373b281adfd3",
+          "FILE:@@//images/hummingbird.lock.json 99ec4b9a8907251230bca0fb6c1f389b2832939abc4c292f7664aae3c3f9064d",
           "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json 50ad7a76f1ab2038de72a1baf7c4cccef33651129d9bce7f1022a1761e971f42",
           "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json 354af3e140959a98af4157981152f0a41ac562a8e84ea61df75b6ef972ef26e5"
         ],
@@ -1262,12 +1262,12 @@
             "attributes": {
               "package": "bash",
               "arch": "aarch64",
-              "version": "5.3.20-1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/b/bash-5.3.20-1.hum1.aarch64.rpm",
-              "sha256": "ca6c50fe8a07f66ce06a7e3454422909258feec0b1bcac31e6fc97fe4c40c8c8",
+              "version": "5.3.20-2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/b/bash-5.3.20-2.hum1.aarch64.rpm",
+              "sha256": "a421089d36b9a23f0730ef440a123679ad089b957c7476770f1983cecc84bac4",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "bash-5.3.20-1.hum1.src.rpm",
+              "upstream": "bash-5.3.20-2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1277,12 +1277,12 @@
             "attributes": {
               "package": "bash",
               "arch": "x86_64",
-              "version": "5.3.20-1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/b/bash-5.3.20-1.hum1.x86_64.rpm",
-              "sha256": "8bb8f23dac2dd793b1cddb8e7d5a68a53013a36a4aff3d923372dd2c390ee259",
+              "version": "5.3.20-2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/b/bash-5.3.20-2.hum1.x86_64.rpm",
+              "sha256": "a643c515f0a8a31c0b03924b3fad469eb3435b124b15fe791957fee8a27532e2",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "bash-5.3.20-1.hum1.src.rpm",
+              "upstream": "bash-5.3.20-2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1457,12 +1457,12 @@
             "attributes": {
               "package": "expat",
               "arch": "aarch64",
-              "version": "2.9.0-1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/e/expat-2.9.0-1.hum1.aarch64.rpm",
-              "sha256": "3e37d513ed0d78afcd0341165a0719e79468ebda14f03581334fd12096f44e86",
+              "version": "2.10.0-0.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/e/expat-2.10.0-0.1.hum1.aarch64.rpm",
+              "sha256": "d7863ae6c8095929deab280ccda42c213b52790026a4406753a4163655ae0af8",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "expat-2.9.0-1.hum1.src.rpm",
+              "upstream": "expat-2.10.0-0.1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1472,12 +1472,12 @@
             "attributes": {
               "package": "expat",
               "arch": "x86_64",
-              "version": "2.9.0-1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/e/expat-2.9.0-1.hum1.x86_64.rpm",
-              "sha256": "f5c308e55e2bf6f822d12213cdd5cd728a70dc4675cdeaa130cb15e203ef3b27",
+              "version": "2.10.0-0.1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/e/expat-2.10.0-0.1.hum1.x86_64.rpm",
+              "sha256": "010ce7a359c972a854dc0c10fc441cc0fb6c6285d0ed18d60792fc6c5b1c1178",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "expat-2.9.0-1.hum1.src.rpm",
+              "upstream": "expat-2.10.0-0.1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1722,51 +1722,6 @@
               "upstream_cpe": ""
             }
           },
-          "hummingbird__hummingbird-gpg-keys__noarch": {
-            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
-            "attributes": {
-              "package": "hummingbird-gpg-keys",
-              "arch": "noarch",
-              "version": "20251124-1.17.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-gpg-keys-20251124-1.17.hum1.noarch.rpm",
-              "sha256": "2f46084a76b6c6db78e302e0ca11662b8703a1e39314beeea31fa99f45e7561c",
-              "gpg_key": "@@//images:hummingbird-release.pgp",
-              "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.17.hum1.src.rpm",
-              "purl_distro": "hummingbird-1",
-              "upstream_cpe": ""
-            }
-          },
-          "hummingbird__hummingbird-release__noarch": {
-            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
-            "attributes": {
-              "package": "hummingbird-release",
-              "arch": "noarch",
-              "version": "20251124-1.17.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-release-20251124-1.17.hum1.noarch.rpm",
-              "sha256": "471de1a5502bd6a6da13edd32c5062c19d52c5ee934c8727693f7a1814c8c751",
-              "gpg_key": "@@//images:hummingbird-release.pgp",
-              "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.17.hum1.src.rpm",
-              "purl_distro": "hummingbird-1",
-              "upstream_cpe": ""
-            }
-          },
-          "hummingbird__hummingbird-repos__noarch": {
-            "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
-            "attributes": {
-              "package": "hummingbird-repos",
-              "arch": "noarch",
-              "version": "20251124-1.17.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/h/hummingbird-repos-20251124-1.17.hum1.noarch.rpm",
-              "sha256": "5aada4252590224e575e97e3c99f4b2b00b3f9f974296a133f8dfdcf3a928f5b",
-              "gpg_key": "@@//images:hummingbird-release.pgp",
-              "purl_namespace": "hummingbird",
-              "upstream": "hummingbird-release-20251124-1.17.hum1.src.rpm",
-              "purl_distro": "hummingbird-1",
-              "upstream_cpe": ""
-            }
-          },
           "hummingbird__keyutils-libs__aarch64": {
             "repoRuleId": "@@rules_rpm+//rpm/private:install.bzl%rpm_package_repo",
             "attributes": {
@@ -1802,12 +1757,12 @@
             "attributes": {
               "package": "krb5-libs",
               "arch": "aarch64",
-              "version": "1.22.2-10.3.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/k/krb5-libs-1.22.2-10.3.hum1.aarch64.rpm",
-              "sha256": "7d59fb2883db9bc30193dbdc29fcaa97f2d14c8a94701a6a1125222c918919ae",
+              "version": "1.22.2-11.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/k/krb5-libs-1.22.2-11.hum1.aarch64.rpm",
+              "sha256": "1c5a1a200f41e543565c71e36e0f3fef6c5e34e248e5f7a10d57360e7e87400b",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "krb5-1.22.2-10.3.hum1.src.rpm",
+              "upstream": "krb5-1.22.2-11.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1817,12 +1772,12 @@
             "attributes": {
               "package": "krb5-libs",
               "arch": "x86_64",
-              "version": "1.22.2-10.3.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/k/krb5-libs-1.22.2-10.3.hum1.x86_64.rpm",
-              "sha256": "5e448bf90055e5be74a2f35c92f97b97f99d0344797fd313142683e846a2a15e",
+              "version": "1.22.2-11.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/k/krb5-libs-1.22.2-11.hum1.x86_64.rpm",
+              "sha256": "9a273554f67bba101bbd6364130e6d2b23fc95fe70e9c6223e1dc91801a35620",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "krb5-1.22.2-10.3.hum1.src.rpm",
+              "upstream": "krb5-1.22.2-11.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1862,12 +1817,12 @@
             "attributes": {
               "package": "libatomic",
               "arch": "aarch64",
-              "version": "16.2.1-3.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libatomic-16.2.1-3.1.hum1.aarch64.rpm",
-              "sha256": "5a583db2bdb27fd0595089eae43ab184a23b7d5e35276acbe2bcc51c03d4c711",
+              "version": "16.2.1-3.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libatomic-16.2.1-3.2.hum1.aarch64.rpm",
+              "sha256": "7a21de05a77240bc6ad482b4d185be2c5c9edc2e2d0133a4d17c2a297ae12e2b",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-16.2.1-3.1.hum1.src.rpm",
+              "upstream": "gcc-16.2.1-3.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -1877,12 +1832,12 @@
             "attributes": {
               "package": "libatomic",
               "arch": "x86_64",
-              "version": "16.2.1-3.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libatomic-16.2.1-3.1.hum1.x86_64.rpm",
-              "sha256": "295d4980cf7bd84c14937f60d42b635610949acf0f52c84211c825ff3bc70824",
+              "version": "16.2.1-3.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libatomic-16.2.1-3.2.hum1.x86_64.rpm",
+              "sha256": "cf3ce232a97ac732f08757e3384b8154f5cecd37fc595a4c9b09156e03db9013",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-16.2.1-3.1.hum1.src.rpm",
+              "upstream": "gcc-16.2.1-3.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2102,12 +2057,12 @@
             "attributes": {
               "package": "libgcc",
               "arch": "aarch64",
-              "version": "16.2.1-3.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libgcc-16.2.1-3.1.hum1.aarch64.rpm",
-              "sha256": "6919f69faa9aff910324da185a08d5a82e5fa5d9111e39e70b32bd0061505e8a",
+              "version": "16.2.1-3.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libgcc-16.2.1-3.2.hum1.aarch64.rpm",
+              "sha256": "a16399c6f2d9081e3d267340524e9b8beb8e3d8f6b1b53bd827ce2103886c777",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-16.2.1-3.1.hum1.src.rpm",
+              "upstream": "gcc-16.2.1-3.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2117,12 +2072,12 @@
             "attributes": {
               "package": "libgcc",
               "arch": "x86_64",
-              "version": "16.2.1-3.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libgcc-16.2.1-3.1.hum1.x86_64.rpm",
-              "sha256": "4bf8e865965d2c8451a0925f29ad1dee062c4c174ee6a8220f5f8a9ad23d8e23",
+              "version": "16.2.1-3.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libgcc-16.2.1-3.2.hum1.x86_64.rpm",
+              "sha256": "f3f0f7a72b511a1574aa9f8685b35cc966fa26ff91e531fe57969ef9b1ec5965",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-16.2.1-3.1.hum1.src.rpm",
+              "upstream": "gcc-16.2.1-3.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2132,12 +2087,12 @@
             "attributes": {
               "package": "libgomp",
               "arch": "aarch64",
-              "version": "16.2.1-3.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libgomp-16.2.1-3.1.hum1.aarch64.rpm",
-              "sha256": "4411bad9b15f3eb4f1881d0b8b55845df52fee87387480c915f17af99d30280c",
+              "version": "16.2.1-3.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libgomp-16.2.1-3.2.hum1.aarch64.rpm",
+              "sha256": "e574b903b4be9c961a6563aeaecf3862c427ce448f76665742a2b4d1220214a3",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-16.2.1-3.1.hum1.src.rpm",
+              "upstream": "gcc-16.2.1-3.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2147,12 +2102,12 @@
             "attributes": {
               "package": "libgomp",
               "arch": "x86_64",
-              "version": "16.2.1-3.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libgomp-16.2.1-3.1.hum1.x86_64.rpm",
-              "sha256": "331708b0acff06a33f9974a91c576c7730b88698661b01b5af11f1a232206a95",
+              "version": "16.2.1-3.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libgomp-16.2.1-3.2.hum1.x86_64.rpm",
+              "sha256": "3c263e208c71bd64eb871fe34d95d512b5f00b59fc42df2d2f1d78de1b4ca8da",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-16.2.1-3.1.hum1.src.rpm",
+              "upstream": "gcc-16.2.1-3.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2252,12 +2207,12 @@
             "attributes": {
               "package": "libstdc++",
               "arch": "aarch64",
-              "version": "16.2.1-3.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libstdc++-16.2.1-3.1.hum1.aarch64.rpm",
-              "sha256": "ef4db16fa7daf47c73673defe6d0413c439430c46bc7f41d1f684425092a7d5c",
+              "version": "16.2.1-3.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/l/libstdc++-16.2.1-3.2.hum1.aarch64.rpm",
+              "sha256": "f4979b5a78b2874f8f6c1016b832f0caa382f7b3f7608816ad09418059874135",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-16.2.1-3.1.hum1.src.rpm",
+              "upstream": "gcc-16.2.1-3.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2267,12 +2222,12 @@
             "attributes": {
               "package": "libstdc++",
               "arch": "x86_64",
-              "version": "16.2.1-3.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libstdc++-16.2.1-3.1.hum1.x86_64.rpm",
-              "sha256": "c78098a5ff411ee128229dbf1929fa9e1cb5d1c1c6be23e919afa26b36109fd0",
+              "version": "16.2.1-3.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/l/libstdc++-16.2.1-3.2.hum1.x86_64.rpm",
+              "sha256": "b42ea2725283b85266bbdf9ad872291d41ed4e3fc1b01cab76f7bf4157ffa36d",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "gcc-16.2.1-3.1.hum1.src.rpm",
+              "upstream": "gcc-16.2.1-3.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2687,12 +2642,12 @@
             "attributes": {
               "package": "pcre2",
               "arch": "aarch64",
-              "version": "10.49-0.2.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/pcre2-10.49-0.2.hum1.aarch64.rpm",
-              "sha256": "ca71ac7d44fb26b39120256e8104a7a21fdd5a0d2127d152c3e09d44abdaf3dc",
+              "version": "10.49-1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/pcre2-10.49-1.hum1.aarch64.rpm",
+              "sha256": "e45b1d0425e14a74603fc97fde9b7b8b519a7a023281af4d940305a668a1168d",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "pcre2-10.49-0.2.hum1.src.rpm",
+              "upstream": "pcre2-10.49-1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2702,12 +2657,12 @@
             "attributes": {
               "package": "pcre2",
               "arch": "x86_64",
-              "version": "10.49-0.2.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/pcre2-10.49-0.2.hum1.x86_64.rpm",
-              "sha256": "9d1b261c6262f6a896e66e37014fcdbf76c7db4ced3eab23245a9d0bf1bbd43a",
+              "version": "10.49-1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/pcre2-10.49-1.hum1.x86_64.rpm",
+              "sha256": "a1525ed78f910cb31999e569e0251b03895d06a9b39208fee339b5a6a422c6f7",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "pcre2-10.49-0.2.hum1.src.rpm",
+              "upstream": "pcre2-10.49-1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2717,12 +2672,12 @@
             "attributes": {
               "package": "pcre2-syntax",
               "arch": "noarch",
-              "version": "10.49-0.2.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/pcre2-syntax-10.49-0.2.hum1.noarch.rpm",
-              "sha256": "871036c4853a498bd3d37083e1d5cda45a40ca370f18735512409223e1d941e9",
+              "version": "10.49-1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/pcre2-syntax-10.49-1.hum1.noarch.rpm",
+              "sha256": "85986f0689fdae9e7e3a60903a2df92e2f617cb9899665ffd7eb888a0efd1295",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "pcre2-10.49-0.2.hum1.src.rpm",
+              "upstream": "pcre2-10.49-1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2762,12 +2717,12 @@
             "attributes": {
               "package": "python3",
               "arch": "aarch64",
-              "version": "3.14.8-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3-3.14.8-1.1.hum1.aarch64.rpm",
-              "sha256": "084f51ea02d35dddeec1e920712e149b7a280eb5b65be79bfe16d9c06125e0e3",
+              "version": "3.14.10-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3-3.14.10-1.2.hum1.aarch64.rpm",
+              "sha256": "dd1f04a470b4e787ff31b685baea52b5a665500d15b1cdd276ed02480fa8e2a6",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.14-3.14.8-1.1.hum1.src.rpm",
+              "upstream": "python3.14-3.14.10-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2777,12 +2732,12 @@
             "attributes": {
               "package": "python3",
               "arch": "x86_64",
-              "version": "3.14.8-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3-3.14.8-1.1.hum1.x86_64.rpm",
-              "sha256": "0115a7b477d790493ff396c9e9ca73433554930339ca31456425fdf52b5b5394",
+              "version": "3.14.10-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3-3.14.10-1.2.hum1.x86_64.rpm",
+              "sha256": "32bc2fe28074c753ade2e41156e10f75a56f67c9366ebca00985a0873c4016a1",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.14-3.14.8-1.1.hum1.src.rpm",
+              "upstream": "python3.14-3.14.10-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2792,12 +2747,12 @@
             "attributes": {
               "package": "python3-libs",
               "arch": "aarch64",
-              "version": "3.14.8-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3-libs-3.14.8-1.1.hum1.aarch64.rpm",
-              "sha256": "a9049780ed8e6a776116b6e99cf0f6f16bd5b0131f80fc989fb234e5a0d35b4f",
+              "version": "3.14.10-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3-libs-3.14.10-1.2.hum1.aarch64.rpm",
+              "sha256": "bcd1a3da0ea50dd338a2f5c9ca78e0656b7db392aa6b30a5fd93de3b8d3f1292",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.14-3.14.8-1.1.hum1.src.rpm",
+              "upstream": "python3.14-3.14.10-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2807,12 +2762,12 @@
             "attributes": {
               "package": "python3-libs",
               "arch": "x86_64",
-              "version": "3.14.8-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3-libs-3.14.8-1.1.hum1.x86_64.rpm",
-              "sha256": "d260712ef9bd7093999588178e824bccdbfb88071ee7f43f6e569e101cdf04c2",
+              "version": "3.14.10-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3-libs-3.14.10-1.2.hum1.x86_64.rpm",
+              "sha256": "8f06153cff7d731eebd6a9bfe7fa2c5334500ab489b45d2d305a1c6244cfd2a8",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.14-3.14.8-1.1.hum1.src.rpm",
+              "upstream": "python3.14-3.14.10-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2822,12 +2777,12 @@
             "attributes": {
               "package": "python3.11",
               "arch": "aarch64",
-              "version": "3.11.17-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.11-3.11.17-1.1.hum1.aarch64.rpm",
-              "sha256": "7f0062b602124b3fd00bcf7062a4cbc4bcfdf484dc1604aacd1c77e8808b1228",
+              "version": "3.11.18-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.11-3.11.18-1.2.hum1.aarch64.rpm",
+              "sha256": "5742d712dc3423166d7390f39cdf8d2e476afab9d00c0f0b680ae26ce11ed1e2",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.11-3.11.17-1.1.hum1.src.rpm",
+              "upstream": "python3.11-3.11.18-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2837,12 +2792,12 @@
             "attributes": {
               "package": "python3.11",
               "arch": "x86_64",
-              "version": "3.11.17-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.11-3.11.17-1.1.hum1.x86_64.rpm",
-              "sha256": "cbca518a30ee6cbd70a8138a30861dd5387ce99391aef40c10707e911ecb3882",
+              "version": "3.11.18-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.11-3.11.18-1.2.hum1.x86_64.rpm",
+              "sha256": "18adc0f69308eb4f22a985c69c4c9ddf5c50528215babec06db58baa5e89f49d",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.11-3.11.17-1.1.hum1.src.rpm",
+              "upstream": "python3.11-3.11.18-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2852,12 +2807,12 @@
             "attributes": {
               "package": "python3.11-libs",
               "arch": "aarch64",
-              "version": "3.11.17-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.11-libs-3.11.17-1.1.hum1.aarch64.rpm",
-              "sha256": "8803fbdf322926fe7df19036cc4c08eecb6dfb08166a06672e3cc0eb16739165",
+              "version": "3.11.18-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.11-libs-3.11.18-1.2.hum1.aarch64.rpm",
+              "sha256": "e46607c1b96d9a94e16ce9a08c0b92706b4336a32e273dd9606ff622d0cc011c",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.11-3.11.17-1.1.hum1.src.rpm",
+              "upstream": "python3.11-3.11.18-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2867,12 +2822,12 @@
             "attributes": {
               "package": "python3.11-libs",
               "arch": "x86_64",
-              "version": "3.11.17-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.11-libs-3.11.17-1.1.hum1.x86_64.rpm",
-              "sha256": "dd86b724a25619cdfdb8fcd1e5dd51dd4e372b1a4c841330f3118d90d642467d",
+              "version": "3.11.18-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.11-libs-3.11.18-1.2.hum1.x86_64.rpm",
+              "sha256": "40d8d653fd02800be148c6da63200486100c6f79e9ae03061b78db8f287070eb",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.11-3.11.17-1.1.hum1.src.rpm",
+              "upstream": "python3.11-3.11.18-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2882,12 +2837,12 @@
             "attributes": {
               "package": "python3.12",
               "arch": "aarch64",
-              "version": "3.12.15-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.12-3.12.15-1.1.hum1.aarch64.rpm",
-              "sha256": "1434e8a911d9269f8c1b4d16e6581e06a7e6d2825e6e0771cc6a16fa9f87a7fd",
+              "version": "3.12.16-2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.12-3.12.16-2.hum1.aarch64.rpm",
+              "sha256": "ec6ef7217cb4041c7edac368195ce4cdaf9b773113216d88c99dd1ee94176c54",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.12-3.12.15-1.1.hum1.src.rpm",
+              "upstream": "python3.12-3.12.16-2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2897,12 +2852,12 @@
             "attributes": {
               "package": "python3.12",
               "arch": "x86_64",
-              "version": "3.12.15-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.12-3.12.15-1.1.hum1.x86_64.rpm",
-              "sha256": "e8a858fcbeeaa3829cd08e21326659fea64e7d7390df9709a9e5175acbed147c",
+              "version": "3.12.16-2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.12-3.12.16-2.hum1.x86_64.rpm",
+              "sha256": "b0723ce4bcd41d6f2b5d8eb83c34cc1483da7c762f9fe6122f031480b8069401",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.12-3.12.15-1.1.hum1.src.rpm",
+              "upstream": "python3.12-3.12.16-2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2912,12 +2867,12 @@
             "attributes": {
               "package": "python3.12-libs",
               "arch": "aarch64",
-              "version": "3.12.15-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.12-libs-3.12.15-1.1.hum1.aarch64.rpm",
-              "sha256": "93c2f06b555e3d39d7fe0b9d865add7e36b53dfd5524b9a442baf11004f5691f",
+              "version": "3.12.16-2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.12-libs-3.12.16-2.hum1.aarch64.rpm",
+              "sha256": "aed5d66df232b0a3300921f6c4c87c62b0537cf4828f8bfe8ac4d225fc14b9dd",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.12-3.12.15-1.1.hum1.src.rpm",
+              "upstream": "python3.12-3.12.16-2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2927,12 +2882,12 @@
             "attributes": {
               "package": "python3.12-libs",
               "arch": "x86_64",
-              "version": "3.12.15-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.12-libs-3.12.15-1.1.hum1.x86_64.rpm",
-              "sha256": "0438e915817871f4bbe4ff54f7656629b82eb5b7064a502d0d04c062b5a64194",
+              "version": "3.12.16-2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.12-libs-3.12.16-2.hum1.x86_64.rpm",
+              "sha256": "c100f9e4337fbf2b5e3ea5e70d0575d32ef709a513a91091854f424718997be7",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.12-3.12.15-1.1.hum1.src.rpm",
+              "upstream": "python3.12-3.12.16-2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2942,12 +2897,12 @@
             "attributes": {
               "package": "python3.13",
               "arch": "aarch64",
-              "version": "3.13.16-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.13-3.13.16-1.1.hum1.aarch64.rpm",
-              "sha256": "8bf23f5e6e3e6b28b510d721adca76642ba4a8dfdb0f10721e670cf967080eab",
+              "version": "3.13.18-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.13-3.13.18-1.2.hum1.aarch64.rpm",
+              "sha256": "c46fef787a3ae6e8fedc276674518875690ee969136c61e342be4d47e2c52389",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.13-3.13.16-1.1.hum1.src.rpm",
+              "upstream": "python3.13-3.13.18-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2957,12 +2912,12 @@
             "attributes": {
               "package": "python3.13",
               "arch": "x86_64",
-              "version": "3.13.16-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.13-3.13.16-1.1.hum1.x86_64.rpm",
-              "sha256": "d0c37a974d1e136d8be6aae5d8c531f9dc6c2fb93d67771290a2fe5361501de7",
+              "version": "3.13.18-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.13-3.13.18-1.2.hum1.x86_64.rpm",
+              "sha256": "db6e60868f3403e1806815a0b2173f5aa2de4a2dd414a34f7241dc906d83f26d",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.13-3.13.16-1.1.hum1.src.rpm",
+              "upstream": "python3.13-3.13.18-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2972,12 +2927,12 @@
             "attributes": {
               "package": "python3.13-libs",
               "arch": "aarch64",
-              "version": "3.13.16-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.13-libs-3.13.16-1.1.hum1.aarch64.rpm",
-              "sha256": "60c83c0797ee8a052fecebeafca6a062a3b8f31c011517a5baf1d0597af545c6",
+              "version": "3.13.18-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/p/python3.13-libs-3.13.18-1.2.hum1.aarch64.rpm",
+              "sha256": "ff172da9acc1c62c8717561a632ba55a07a88ec5ea9cdc4b4c4e1a8e52914967",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.13-3.13.16-1.1.hum1.src.rpm",
+              "upstream": "python3.13-3.13.18-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -2987,12 +2942,12 @@
             "attributes": {
               "package": "python3.13-libs",
               "arch": "x86_64",
-              "version": "3.13.16-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.13-libs-3.13.16-1.1.hum1.x86_64.rpm",
-              "sha256": "187ae86312fe21bec9a361f428f8a5c03645a64aa1d1392a8ddd9aa88b78f19b",
+              "version": "3.13.18-1.2.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/p/python3.13-libs-3.13.18-1.2.hum1.x86_64.rpm",
+              "sha256": "d1c2559da144c29406d35b6e5810f61096605666575cd56e890ee55f18b220a0",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "python3.13-3.13.16-1.1.hum1.src.rpm",
+              "upstream": "python3.13-3.13.18-1.2.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -3062,12 +3017,12 @@
             "attributes": {
               "package": "setup",
               "arch": "noarch",
-              "version": "2.15.1-2.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/s/setup-2.15.1-2.1.hum1.noarch.rpm",
-              "sha256": "c522b073bcca7ca587570c8b843a0aea3623290bb6fbbfbac87c3c35ae35739a",
+              "version": "2.15.1-5.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/s/setup-2.15.1-5.hum1.noarch.rpm",
+              "sha256": "a3a2f9c7790421529659310ca48d4c5b2db6205ac66c93a22c974898765026a1",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "setup-2.15.1-2.1.hum1.src.rpm",
+              "upstream": "setup-2.15.1-5.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -3137,12 +3092,12 @@
             "attributes": {
               "package": "tzdata",
               "arch": "noarch",
-              "version": "2026e-1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/t/tzdata-2026e-1.hum1.noarch.rpm",
-              "sha256": "cc263241b7e21d598c99b98c2ee42e95912cddc2689108e9033eb4d177ded87d",
+              "version": "2026f-1.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/t/tzdata-2026f-1.hum1.noarch.rpm",
+              "sha256": "72f44b029dc09ace625f6b51f4596105448786119bbf9af632275b893050d22b",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "tzdata-2026e-1.hum1.src.rpm",
+              "upstream": "tzdata-2026f-1.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -3152,12 +3107,12 @@
             "attributes": {
               "package": "xz-libs",
               "arch": "aarch64",
-              "version": "1:5.8.4-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/x/xz-libs-5.8.4-1.1.hum1.aarch64.rpm",
-              "sha256": "0647b937d3dfcd3b7d6e3ca5b0b294f77b3388dae4462a175b628651fddae251",
+              "version": "1:5.8.4-3.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/aarch64/Packages/x/xz-libs-5.8.4-3.hum1.aarch64.rpm",
+              "sha256": "b1a62e3ac439c4607f4d23757df96f357df433e45550db8ed1980dcdfe59d952",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "xz-5.8.4-1.1.hum1.src.rpm",
+              "upstream": "xz-5.8.4-3.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -3167,12 +3122,12 @@
             "attributes": {
               "package": "xz-libs",
               "arch": "x86_64",
-              "version": "1:5.8.4-1.1.hum1",
-              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/x/xz-libs-5.8.4-1.1.hum1.x86_64.rpm",
-              "sha256": "d0417fe9cba60a9720ae27f7da3bdd38e5e621e5ebf71727d7556bf6cb4a7ed3",
+              "version": "1:5.8.4-3.hum1",
+              "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird/x86_64/Packages/x/xz-libs-5.8.4-3.hum1.x86_64.rpm",
+              "sha256": "2e94a48724f8569e186691cc5d36078f36ab94c33a48aeee985d2980dc7a1cf0",
               "gpg_key": "@@//images:hummingbird-release.pgp",
               "purl_namespace": "hummingbird",
-              "upstream": "xz-5.8.4-1.1.hum1.src.rpm",
+              "upstream": "xz-5.8.4-3.hum1.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": ""
             }
@@ -3230,9 +3185,6 @@
                 "gmp",
                 "gnulib-l10n",
                 "grep",
-                "hummingbird-gpg-keys",
-                "hummingbird-release",
-                "hummingbird-repos",
                 "keyutils-libs",
                 "krb5-libs",
                 "libacl",

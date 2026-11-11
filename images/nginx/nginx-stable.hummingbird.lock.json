@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://nginx.org/packages/rhel/10",
-    "revision": "1790966205",
-    "repomd_sha256": "82bd26ad3cf76ef141f09ac0447c17f14810d337146a7ac5b656caa7f5e37306"
+    "revision": "1794354777",
+    "repomd_sha256": "a6c1a60cf02ea580b4d5ca14b2b9578a86fa33a4f927c407baa4d60fa5104063"
   },
   "packages": {
     "nginx": {

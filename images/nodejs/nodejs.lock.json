@@ -4,33 +4,33 @@
   "lines": [
     {
       "major": "24",
-      "version": "24.22.2",
+      "version": "24.22.3",
       "archives": {
         "nodejs_24_amd64": {
-          "url": "https://nodejs.org/dist/v24.22.2/node-v24.22.2-linux-x64.tar.xz",
-          "sha256": "48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75",
-          "strip_prefix": "node-v24.22.2-linux-x64"
+          "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3-linux-x64.tar.xz",
+          "sha256": "4f2b175a6d53a5c617a80dba2676238a0688cef28c6da4eba35c7d844e66fcfb",
+          "strip_prefix": "node-v24.22.3-linux-x64"
         },
         "nodejs_24_arm64": {
-          "url": "https://nodejs.org/dist/v24.22.2/node-v24.22.2-linux-arm64.tar.xz",
-          "sha256": "eb187837a2230d4047161ac0be008584e16b46f726e9c9490ee35dc6b17d9ba8",
-          "strip_prefix": "node-v24.22.2-linux-arm64"
+          "url": "https://nodejs.org/dist/v24.22.3/node-v24.22.3-linux-arm64.tar.xz",
+          "sha256": "6e51a2ada00f0011cc266f65d98922b403d7ad88f809ca2aa615a5fe1ce6e86c",
+          "strip_prefix": "node-v24.22.3-linux-arm64"
         }
       }
     },
     {
       "major": "26",
-      "version": "26.13.0",
+      "version": "26.13.1",
       "archives": {
         "nodejs_26_amd64": {
-          "url": "https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-x64.tar.xz",
-          "sha256": "d28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997",
-          "strip_prefix": "node-v26.13.0-linux-x64"
+          "url": "https://nodejs.org/dist/v26.13.1/node-v26.13.1-linux-x64.tar.xz",
+          "sha256": "5c063e46bab0fbc1c17cc445d7ff129cbdcd0471be6ed83b6ab864f8143bc864",
+          "strip_prefix": "node-v26.13.1-linux-x64"
         },
         "nodejs_26_arm64": {
-          "url": "https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-arm64.tar.xz",
-          "sha256": "406fe3fbde1c054adff8b297c16fdb5af6659db327c1ac8acd46b56ef1af9a92",
-          "strip_prefix": "node-v26.13.0-linux-arm64"
+          "url": "https://nodejs.org/dist/v26.13.1/node-v26.13.1-linux-arm64.tar.xz",
+          "sha256": "89e1853138db51e8b82d3e98ba9c0d3f2956a28e5e55ea1b7e12d25aae92d5dd",
+          "strip_prefix": "node-v26.13.1-linux-arm64"
         }
       }
     }

@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1794437977",
-    "repomd_sha256": "1b4bc87ab0f7f4b2f53f561136a3fd1bf7d9f978514be86fce611b064bc2340d"
+    "revision": "1794517889",
+    "repomd_sha256": "68a82030478b7699bcb0bdc8f7027ec693ae79a5e6da91f17d47d327b7bc59b2"
   },
   "packages": {
     "audit-libs": {
@@ -44,20 +44,20 @@
     },
     "busybox": {
       "aarch64": {
-        "version": "1:1.37.0-9.4.hum1",
-        "sha256": "832e87d45cfab9ca76ba74f1f52f10411e4fe5d813ce0aa2daca66f3d708fc1b",
-        "path": "aarch64/Packages/b/busybox-1.37.0-9.4.hum1.aarch64.rpm",
-        "size": 820556,
+        "version": "1:1.37.0-9.5.hum1",
+        "sha256": "c816ec58a5d6ac3770371fe2ee4f7915fe20291a5d714da1d3ef1c1d52d411b3",
+        "path": "aarch64/Packages/b/busybox-1.37.0-9.5.hum1.aarch64.rpm",
+        "size": 820688,
         "license": "GPL-2.0-only",
-        "upstream": "busybox-1.37.0-9.4.hum1.src.rpm"
+        "upstream": "busybox-1.37.0-9.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "1:1.37.0-9.4.hum1",
-        "sha256": "4f95dd028e93fe55bc7444c07573c767fbf42c7758aea58eaaac62e8500e5dd1",
-        "path": "x86_64/Packages/b/busybox-1.37.0-9.4.hum1.x86_64.rpm",
-        "size": 812230,
+        "version": "1:1.37.0-9.5.hum1",
+        "sha256": "c69c7c7aa9b138727fe2ce5c373725207894352e8ca712ee4bbe539e0ca11346",
+        "path": "x86_64/Packages/b/busybox-1.37.0-9.5.hum1.x86_64.rpm",
+        "size": 812401,
         "license": "GPL-2.0-only",
-        "upstream": "busybox-1.37.0-9.4.hum1.src.rpm"
+        "upstream": "busybox-1.37.0-9.5.hum1.src.rpm"
       }
     },
     "bzip2-libs": {
@@ -912,146 +912,146 @@
     },
     "python3": {
       "aarch64": {
-        "version": "3.14.10-1.3.hum1",
-        "sha256": "cef6f748d1696f70946516f0056083428c09cc864dc2ed99eb89edb9fb835bd2",
-        "path": "aarch64/Packages/p/python3-3.14.10-1.3.hum1.aarch64.rpm",
-        "size": 36807,
+        "version": "3.14.10-1.5.hum1",
+        "sha256": "369e22e4c7e1ee13f4a4d8cb0c62171fda95b6b86365e79b2399a3bddf7d5d35",
+        "path": "aarch64/Packages/p/python3-3.14.10-1.5.hum1.aarch64.rpm",
+        "size": 36811,
         "license": "Python-2.0.1",
-        "upstream": "python3.14-3.14.10-1.3.hum1.src.rpm"
+        "upstream": "python3.14-3.14.10-1.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.14.10-1.3.hum1",
-        "sha256": "67c2d15721e0739bf9ce43863d641b1c1ab30f68bd29517eaa5b662975bc4f9a",
-        "path": "x86_64/Packages/p/python3-3.14.10-1.3.hum1.x86_64.rpm",
-        "size": 36562,
+        "version": "3.14.10-1.5.hum1",
+        "sha256": "c094be861095c3f457c2a8dc9e8eacf633ad6215971ffb3b9a6f8781b3c4ed93",
+        "path": "x86_64/Packages/p/python3-3.14.10-1.5.hum1.x86_64.rpm",
+        "size": 36560,
         "license": "Python-2.0.1",
-        "upstream": "python3.14-3.14.10-1.3.hum1.src.rpm"
+        "upstream": "python3.14-3.14.10-1.5.hum1.src.rpm"
       }
     },
     "python3-libs": {
       "aarch64": {
-        "version": "3.14.10-1.3.hum1",
-        "sha256": "e20c2c961347c47f875da8b0cef6bee122ad62c82ea6a5a7486af449f6f041e9",
-        "path": "aarch64/Packages/p/python3-libs-3.14.10-1.3.hum1.aarch64.rpm",
-        "size": 10519700,
+        "version": "3.14.10-1.5.hum1",
+        "sha256": "448d77242dd440f5bf70cb58b067ffd313143bc32c2ede29abde48a1f441c508",
+        "path": "aarch64/Packages/p/python3-libs-3.14.10-1.5.hum1.aarch64.rpm",
+        "size": 10522904,
         "license": "Python-2.0.1 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
-        "upstream": "python3.14-3.14.10-1.3.hum1.src.rpm"
+        "upstream": "python3.14-3.14.10-1.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.14.10-1.3.hum1",
-        "sha256": "dbb22bd4d80d8ddd03a67db9e34d53520321d981c610feecb84bb63f93737c0d",
-        "path": "x86_64/Packages/p/python3-libs-3.14.10-1.3.hum1.x86_64.rpm",
-        "size": 10778749,
+        "version": "3.14.10-1.5.hum1",
+        "sha256": "cc91f3b29dba99e2e9b742113b9524064037375d0b3c8fe7a0b6d469ace89f17",
+        "path": "x86_64/Packages/p/python3-libs-3.14.10-1.5.hum1.x86_64.rpm",
+        "size": 10778536,
         "license": "Python-2.0.1 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
-        "upstream": "python3.14-3.14.10-1.3.hum1.src.rpm"
+        "upstream": "python3.14-3.14.10-1.5.hum1.src.rpm"
       }
     },
     "python3.11": {
       "aarch64": {
-        "version": "3.11.18-1.3.hum1",
-        "sha256": "8cd9ae7628ab79e0726548b2c9278bffcb0d68c9c3df02a756b270c6cd51be00",
-        "path": "aarch64/Packages/p/python3.11-3.11.18-1.3.hum1.aarch64.rpm",
-        "size": 33356,
+        "version": "3.11.18-1.4.hum1",
+        "sha256": "db40ec214332c89fbd50346554a5da2b3b861ecbd7f90aa2618c8dca8b420371",
+        "path": "aarch64/Packages/p/python3.11-3.11.18-1.4.hum1.aarch64.rpm",
+        "size": 33340,
         "license": "Python-2.0.1",
-        "upstream": "python3.11-3.11.18-1.3.hum1.src.rpm"
+        "upstream": "python3.11-3.11.18-1.4.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.11.18-1.3.hum1",
-        "sha256": "a49a8815d46da60ee3f9e509f5b34f358d43e56083a0fccbbfee2fef49d03de4",
-        "path": "x86_64/Packages/p/python3.11-3.11.18-1.3.hum1.x86_64.rpm",
-        "size": 33129,
+        "version": "3.11.18-1.4.hum1",
+        "sha256": "f2dd60ebbdaae834774d835df874eadc921b0ca852f470cba335eedd0a7ed414",
+        "path": "x86_64/Packages/p/python3.11-3.11.18-1.4.hum1.x86_64.rpm",
+        "size": 33143,
         "license": "Python-2.0.1",
-        "upstream": "python3.11-3.11.18-1.3.hum1.src.rpm"
+        "upstream": "python3.11-3.11.18-1.4.hum1.src.rpm"
       }
     },
     "python3.11-libs": {
       "aarch64": {
-        "version": "3.11.18-1.3.hum1",
-        "sha256": "e08712e199659a448ceac988edea52a3d637019b0cf6ea8516a42ca114ff4e6b",
-        "path": "aarch64/Packages/p/python3.11-libs-3.11.18-1.3.hum1.aarch64.rpm",
-        "size": 10207478,
+        "version": "3.11.18-1.4.hum1",
+        "sha256": "694620738373387591d26596d69f334b23163a82dcb31a7f5469a21acb838f1e",
+        "path": "aarch64/Packages/p/python3.11-libs-3.11.18-1.4.hum1.aarch64.rpm",
+        "size": 10208429,
         "license": "Python-2.0.1 AND CC0-1.0",
-        "upstream": "python3.11-3.11.18-1.3.hum1.src.rpm"
+        "upstream": "python3.11-3.11.18-1.4.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.11.18-1.3.hum1",
-        "sha256": "cc01b4ee871c5c612dd2d8ec5822a39e50b4dd85b999e60dbfc6061bafb92dc2",
-        "path": "x86_64/Packages/p/python3.11-libs-3.11.18-1.3.hum1.x86_64.rpm",
-        "size": 10425420,
+        "version": "3.11.18-1.4.hum1",
+        "sha256": "7d505caef98243f95a69db4b9ffc69d87d85eeebe882e8ac66a884c1c530847d",
+        "path": "x86_64/Packages/p/python3.11-libs-3.11.18-1.4.hum1.x86_64.rpm",
+        "size": 10427837,
         "license": "Python-2.0.1 AND CC0-1.0",
-        "upstream": "python3.11-3.11.18-1.3.hum1.src.rpm"
+        "upstream": "python3.11-3.11.18-1.4.hum1.src.rpm"
       }
     },
     "python3.12": {
       "aarch64": {
-        "version": "3.12.16-2.1.hum1",
-        "sha256": "635aaaa6998646ab8c2a656897722fbb7e8e683d14cd865764c10a137c89ea60",
-        "path": "aarch64/Packages/p/python3.12-3.12.16-2.1.hum1.aarch64.rpm",
-        "size": 33820,
+        "version": "3.12.16-2.2.hum1",
+        "sha256": "9c5fd1ae52095d17db0fe47231afb4603b54c54320f66e2126d5d15f8767afb8",
+        "path": "aarch64/Packages/p/python3.12-3.12.16-2.2.hum1.aarch64.rpm",
+        "size": 33819,
         "license": "Python-2.0.1",
-        "upstream": "python3.12-3.12.16-2.1.hum1.src.rpm"
+        "upstream": "python3.12-3.12.16-2.2.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.12.16-2.1.hum1",
-        "sha256": "ee881f557fe6d0298583db27ca0cbd22e2a34fea2959aee29d1cafa04aa28819",
-        "path": "x86_64/Packages/p/python3.12-3.12.16-2.1.hum1.x86_64.rpm",
-        "size": 33593,
+        "version": "3.12.16-2.2.hum1",
+        "sha256": "3ad84d2888d753ebc481b775e405cc8dbdc3fb68745c89e2f068d0dce88cfc70",
+        "path": "x86_64/Packages/p/python3.12-3.12.16-2.2.hum1.x86_64.rpm",
+        "size": 33602,
         "license": "Python-2.0.1",
-        "upstream": "python3.12-3.12.16-2.1.hum1.src.rpm"
+        "upstream": "python3.12-3.12.16-2.2.hum1.src.rpm"
       }
     },
     "python3.12-libs": {
       "aarch64": {
-        "version": "3.12.16-2.1.hum1",
-        "sha256": "b6f1ea61179a99a81e94db7be49661214bbf6171b1fc151ee456c8c8259f859f",
-        "path": "aarch64/Packages/p/python3.12-libs-3.12.16-2.1.hum1.aarch64.rpm",
-        "size": 9699819,
+        "version": "3.12.16-2.2.hum1",
+        "sha256": "896e1a7cddc1bfa443bf07ad6599052e4fd74cd5facf80c75e30a1ad0ce3dfe5",
+        "path": "aarch64/Packages/p/python3.12-libs-3.12.16-2.2.hum1.aarch64.rpm",
+        "size": 9702891,
         "license": "Python-2.0.1 AND CC0-1.0",
-        "upstream": "python3.12-3.12.16-2.1.hum1.src.rpm"
+        "upstream": "python3.12-3.12.16-2.2.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.12.16-2.1.hum1",
-        "sha256": "45ca77cae199353d1410029d214ecd14ff7e438261dbac7b2d9910bd7367a82a",
-        "path": "x86_64/Packages/p/python3.12-libs-3.12.16-2.1.hum1.x86_64.rpm",
-        "size": 9930743,
+        "version": "3.12.16-2.2.hum1",
+        "sha256": "7502ababcec2d3c044aa2926f895d5322b94a2325190d6b7f1f3e3179b724636",
+        "path": "x86_64/Packages/p/python3.12-libs-3.12.16-2.2.hum1.x86_64.rpm",
+        "size": 9935368,
         "license": "Python-2.0.1 AND CC0-1.0",
-        "upstream": "python3.12-3.12.16-2.1.hum1.src.rpm"
+        "upstream": "python3.12-3.12.16-2.2.hum1.src.rpm"
       }
     },
     "python3.13": {
       "aarch64": {
-        "version": "3.13.18-1.3.hum1",
-        "sha256": "e010f985191b1029a47ea844157ce6f3ed85b995c6f0e3d909853d16317d3b56",
-        "path": "aarch64/Packages/p/python3.13-3.13.18-1.3.hum1.aarch64.rpm",
-        "size": 35710,
+        "version": "3.13.18-1.5.hum1",
+        "sha256": "7ff613eec3f6350260b60ee128ce193ead2823fe127732b74124f72fbb1b5fdf",
+        "path": "aarch64/Packages/p/python3.13-3.13.18-1.5.hum1.aarch64.rpm",
+        "size": 35717,
         "license": "Python-2.0.1",
-        "upstream": "python3.13-3.13.18-1.3.hum1.src.rpm"
+        "upstream": "python3.13-3.13.18-1.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.13.18-1.3.hum1",
-        "sha256": "da91854106b5bc0fe7265415f30f6ec8a3f435c356646bc3e2c0c1be1e48e81b",
-        "path": "x86_64/Packages/p/python3.13-3.13.18-1.3.hum1.x86_64.rpm",
-        "size": 35469,
+        "version": "3.13.18-1.5.hum1",
+        "sha256": "f2741b65ba6215596b1a9b3f10e3d447ea73a8e414781df6281acec755f2e3c1",
+        "path": "x86_64/Packages/p/python3.13-3.13.18-1.5.hum1.x86_64.rpm",
+        "size": 35475,
         "license": "Python-2.0.1",
-        "upstream": "python3.13-3.13.18-1.3.hum1.src.rpm"
+        "upstream": "python3.13-3.13.18-1.5.hum1.src.rpm"
       }
     },
     "python3.13-libs": {
       "aarch64": {
-        "version": "3.13.18-1.3.hum1",
-        "sha256": "f2315df1388fe66221b6120637be362860891bfdc858b90d1435efaa4de0f1a3",
-        "path": "aarch64/Packages/p/python3.13-libs-3.13.18-1.3.hum1.aarch64.rpm",
-        "size": 9895710,
+        "version": "3.13.18-1.5.hum1",
+        "sha256": "ed14090d7772ae6e50b100e967d4c175aaa014fe5c06dd52bf4b215540fc4044",
+        "path": "aarch64/Packages/p/python3.13-libs-3.13.18-1.5.hum1.aarch64.rpm",
+        "size": 9898074,
         "license": "Python-2.0.1 AND CC0-1.0 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
-        "upstream": "python3.13-3.13.18-1.3.hum1.src.rpm"
+        "upstream": "python3.13-3.13.18-1.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.13.18-1.3.hum1",
-        "sha256": "90802588097a24ba5acf083433999005f4f6fe68a6cc1faaddbd59ae2fa0a3a2",
-        "path": "x86_64/Packages/p/python3.13-libs-3.13.18-1.3.hum1.x86_64.rpm",
-        "size": 10147694,
+        "version": "3.13.18-1.5.hum1",
+        "sha256": "73cb8d01aff207df4447bc0a94c3fe330677afd017283d39063276fdded38382",
+        "path": "x86_64/Packages/p/python3.13-libs-3.13.18-1.5.hum1.x86_64.rpm",
+        "size": 10145280,
         "license": "Python-2.0.1 AND CC0-1.0 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
-        "upstream": "python3.13-3.13.18-1.3.hum1.src.rpm"
+        "upstream": "python3.13-3.13.18-1.5.hum1.src.rpm"
       }
     },
     "readline": {

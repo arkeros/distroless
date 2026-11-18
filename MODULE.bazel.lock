@@ -1222,9 +1222,9 @@
         "bzlTransitiveDigest": "Ejfjy33K5VpYVQEZSw2Gsdzop00Gz4CvTAQ9F6nlFQk=",
         "usagesDigest": "Z2SQlaz/7d3bNMDLd1ezK0cWHwQUEjNzRFZeq5337Xo=",
         "recordedInputs": [
-          "FILE:@@//images/hummingbird.lock.json d833ddf3f86d422d8a27fadf9585a6aa4ddc6bce32d0a15fe78ff4f45d191a75",
-          "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json fc1c0437c955e6b6129f292c3fe32f32b30030e19ff0f6365ad8d865280c60c4",
-          "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json c82547554720da45ab76035853617d7f224b898f8f4f0c8f84a7d37edda7960e"
+          "FILE:@@//images/hummingbird.lock.json a595c66b9b179d62337b1770dda7197e921a0d3f9efe1204b9dc7de411e96ecc",
+          "FILE:@@//images/nginx/nginx-stable.hummingbird.lock.json 3d16683e62409c35a107ded178ade74f8b506f5f177ab2fa24eae1e3bc529047",
+          "FILE:@@//images/nginx/nginx-mainline.hummingbird.lock.json 3ea1da848482244a27de0d7603c0671ae7a244a0d8f870688b761d1c2d5250dd"
         ],
         "generatedRepoSpecs": {
           "hummingbird__audit-libs__aarch64": {
@@ -3300,12 +3300,12 @@
             "attributes": {
               "package": "nginx",
               "arch": "aarch64",
-              "version": "2:1.30.6-1.el10.ngx",
-              "url": "https://nginx.org/packages/rhel/10/aarch64/RPMS/nginx-1.30.6-1.el10.ngx.aarch64.rpm",
-              "sha256": "7b296f45ce0a54c0712cc4673638491bf6e214fae3bbb2ecf6e89dd1e8d58151",
+              "version": "2:1.30.7-1.el10.ngx",
+              "url": "https://nginx.org/packages/rhel/10/aarch64/RPMS/nginx-1.30.7-1.el10.ngx.aarch64.rpm",
+              "sha256": "0a340d82af8d3d4d15b6eaaba9c12ffa10750d963a6eb524e0bbdb9adb191d91",
               "gpg_key": "@@//images/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.30.6-1.el10.ngx.src.rpm",
+              "upstream": "nginx-1.30.7-1.el10.ngx.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": "f5:nginx"
             }
@@ -3315,12 +3315,12 @@
             "attributes": {
               "package": "nginx",
               "arch": "x86_64",
-              "version": "2:1.30.6-1.el10.ngx",
-              "url": "https://nginx.org/packages/rhel/10/x86_64/RPMS/nginx-1.30.6-1.el10.ngx.x86_64.rpm",
-              "sha256": "a916aad69c623b856de29bbd59d881fb7821ae4fb663aeb30c7e3a46509584f1",
+              "version": "2:1.30.7-1.el10.ngx",
+              "url": "https://nginx.org/packages/rhel/10/x86_64/RPMS/nginx-1.30.7-1.el10.ngx.x86_64.rpm",
+              "sha256": "8f27396b98828e27067829369c2cbfbca7f6914bc639db7473a29ca1e349a080",
               "gpg_key": "@@//images/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.30.6-1.el10.ngx.src.rpm",
+              "upstream": "nginx-1.30.7-1.el10.ngx.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": "f5:nginx"
             }
@@ -3349,12 +3349,12 @@
             "attributes": {
               "package": "nginx",
               "arch": "aarch64",
-              "version": "2:1.31.8-1.el10.ngx",
-              "url": "https://nginx.org/packages/mainline/rhel/10/aarch64/RPMS/nginx-1.31.8-1.el10.ngx.aarch64.rpm",
-              "sha256": "fb776f85b627dd5e0ee9bb3bfcb12ea13797ac0f2cb5c776ff789fb02db815b1",
+              "version": "2:1.31.9-1.el10.ngx",
+              "url": "https://nginx.org/packages/mainline/rhel/10/aarch64/RPMS/nginx-1.31.9-1.el10.ngx.aarch64.rpm",
+              "sha256": "5d863739fd011d5001774a1352e69c52be48902fc9130d52b24d214aed5d987a",
               "gpg_key": "@@//images/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.31.8-1.el10.ngx.src.rpm",
+              "upstream": "nginx-1.31.9-1.el10.ngx.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": "f5:nginx"
             }
@@ -3364,12 +3364,12 @@
             "attributes": {
               "package": "nginx",
               "arch": "x86_64",
-              "version": "2:1.31.8-1.el10.ngx",
-              "url": "https://nginx.org/packages/mainline/rhel/10/x86_64/RPMS/nginx-1.31.8-1.el10.ngx.x86_64.rpm",
-              "sha256": "e3678563528c86a12604aca5ce08fa498386846bcae777f9cf09c4ae1a42cd2b",
+              "version": "2:1.31.9-1.el10.ngx",
+              "url": "https://nginx.org/packages/mainline/rhel/10/x86_64/RPMS/nginx-1.31.9-1.el10.ngx.x86_64.rpm",
+              "sha256": "b4c902b4c66bb65905ab1ec24157017bd999e543578d384635e4d155d7beba75",
               "gpg_key": "@@//images/nginx:nginx_signing.key",
               "purl_namespace": "nginx.org",
-              "upstream": "nginx-1.31.8-1.el10.ngx.src.rpm",
+              "upstream": "nginx-1.31.9-1.el10.ngx.src.rpm",
               "purl_distro": "hummingbird-1",
               "upstream_cpe": "f5:nginx"
             }

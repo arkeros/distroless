@@ -1,0 +1,8 @@
+schemaVersion: 2.0.0
+commandTests:
+  # The version banner is the string a scanner reads out of the binary, so
+  # pinning it here is pinning what syft's envoy-binary classifier will find.
+  - name: 'envoy --version reports 1.38'
+    command: '/usr/bin/envoy'
+    args: ['--version']
+    expectedOutput: ['/1\.38\.[0-9]+/']

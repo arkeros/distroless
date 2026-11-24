@@ -6,8 +6,8 @@ load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("@tar.bzl", "mutate", "tar")
 load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
-load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
-load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
+load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS", "OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "HUMMINGBIRD_OPENSSL_WONTFIX_CVES")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load(":config.bzl", "JAVA_ARCHITECTURES", "JAVA_DISTROS", "JAVA_LATEST", "JAVA_MAJOR_VERSIONS", "JAVA_VERSIONS", "java_layers")
@@ -33,7 +33,7 @@ vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/java/BUILD#hummingbird",
-    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS,
+    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS + OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-17T00:00:00Z",
 )
 
@@ -197,7 +197,7 @@ _ELF_NEEDS_ALLOW = {
             "-jar",
         ],
         env = DEFAULT_ENV,
-        ignore_cves = [],
+        ignore_cves = HUMMINGBIRD_OPENSSL_WONTFIX_CVES,
         index_annotations = {
             "org.opencontainers.image.description": "Distroless Java {} (Temurin) image".format(major),
             "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/java/BUILD",

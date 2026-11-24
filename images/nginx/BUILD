@@ -11,8 +11,8 @@ load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NGINX_FIXED_VEX_STATEMENTS")
 load("//images/common:debian_unfixed_vex.bzl", "ZLIB_UNFIXED_VEX_STATEMENTS")
-load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS", "NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
-load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "GCC_WONTFIX_CVES", "OPENSSL_WONTFIX_CVES")
+load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS", "NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS", "OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "GCC_WONTFIX_CVES", "GLIBC_WONTFIX_CVES", "HUMMINGBIRD_OPENSSL_WONTFIX_CVES", "OPENSSL_WONTFIX_CVES")
 load("//oci:created_timestamp.bzl", "hummingbird_created_timestamp")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
@@ -92,7 +92,7 @@ vex_document(
     name = "vex_hummingbird_mainline",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#hummingbird-mainline",
-    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS,
+    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS + OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS,
     timestamp = "2026-07-10T00:00:00Z",
     version = 3,
 )
@@ -101,14 +101,14 @@ vex_document(
     name = "vex_hummingbird_stable",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/nginx/BUILD#hummingbird-stable",
-    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS + NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS["stable"],
+    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS + OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS + NGINX_HUMMINGBIRD_FIXED_VEX_STATEMENTS["stable"],
     timestamp = "2026-09-05T00:00:00Z",
     version = 7,
 )
 
 _IGNORE_CVES_BY_DISTRO = {
-    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES + GCC_WONTFIX_CVES,
-    "hummingbird": [],
+    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES + GCC_WONTFIX_CVES + GLIBC_WONTFIX_CVES,
+    "hummingbird": HUMMINGBIRD_OPENSSL_WONTFIX_CVES,
 }
 
 # Per (channel, distro), each document keyed by channel as its statements are.

@@ -9,8 +9,8 @@ load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
 load("//images/common:debian_fixed_vex.bzl", "BUSYBOX_FIXED_VEX_STATEMENTS", "GLIBC_FIXED_VEX_STATEMENTS", "NCURSES_FIXED_VEX_STATEMENTS")
 load("//images/common:debian_unfixed_vex.bzl", "ZLIB_UNFIXED_VEX_STATEMENTS")
-load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
-load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "GCC_WONTFIX_CVES", "OPENSSL_WONTFIX_CVES")
+load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS", "OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBIAN_WONTFIX_CVES", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "GCC_WONTFIX_CVES", "GLIBC_WONTFIX_CVES", "HUMMINGBIRD_OPENSSL_WONTFIX_CVES", "OPENSSL_WONTFIX_CVES")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document", "vex_statement")
 load(":config.bzl", "PYTHON_ARCHITECTURES", "PYTHON_DISTROS", "PYTHON_SYMLINK_MINOR_VERSIONS", "python_interpreter_package", "python_latest", "python_layers", "python_minor_versions", "python_version")
@@ -67,7 +67,7 @@ _VEX_STATEMENTS = {
         name = "vex_hummingbird_" + minor,
         author = "rafael@arquero.cat",
         id = "https://github.com/arkeros/distroless/blob/main/images/python/BUILD#hummingbird-" + minor,
-        statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS + _VEX_STATEMENTS.get(minor, []),
+        statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS + OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS + _VEX_STATEMENTS.get(minor, []),
         timestamp = "2026-09-06T00:00:00Z",
     )
     for minor in _HUMMINGBIRD_MINOR_VERSIONS
@@ -331,12 +331,23 @@ vex_document(
     timestamp = "2026-09-06T00:00:00Z",
 )
 
-# Hummingbird's suppression list is empty by design — that a glibc-bearing
-# image needs none is ADR 0007's thesis. Debian's is the same list cc and
-# bash pass, since a Debian python is built on the same libc and libssl.
+# Hummingbird's suppression list aims to stay empty — that a glibc-bearing
+# image needs none is ADR 0007's thesis — and holds only what Red Hat has
+# not shipped a build for yet. Debian's is the same list cc and bash pass,
+# since a Debian python is built on the same libc and libssl.
+#
+# CVE-2026-53615: integer overflow in libblkid's DOS extended-partition
+# parser (`parse_dos_extended()`). Red Hat lists Hummingbird's util-linux as
+# Affected with no fixed build, and grype's Hummingbird record has no fixed
+# version, so it matches every binary of the util-linux source package —
+# here libuuid 2.42.4-2.1.hum1, the `_uuid` module's dependency. libuuid
+# generates UUIDs and has no partition parser, and libblkid is in no image
+# (it is absent from images/hummingbird.lock.json), so the flawed code is
+# not shipped. Every Hummingbird line matches. Drops when Red Hat ships a
+# fixed util-linux.
 _IGNORE_CVES = {
-    "hummingbird": [],
-    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES + GCC_WONTFIX_CVES,
+    "hummingbird": HUMMINGBIRD_OPENSSL_WONTFIX_CVES + ["CVE-2026-53615"],
+    "debian": DEBIAN_WONTFIX_CVES + OPENSSL_WONTFIX_CVES + GCC_WONTFIX_CVES + GLIBC_WONTFIX_CVES,
 }
 
 # Suppressions that belong to one line rather than to the whole distro, so
@@ -351,47 +362,30 @@ _IGNORE_CVES = {
 # justifications is true here, and `affected` would silence the gate while
 # claiming the opposite. A bare ignore says what this is: a known-vulnerable
 # package we ship because the distro has nothing better yet.
+#
+# Earlier entries, all on Debian's 3.13 line (the tarfile hard-link escape
+# CVE-2026-82049 and the ssl flaws CVE-2026-19445 / CVE-2026-19553), stopped
+# matching with the 2026-11-24 grype database.
 _LINE_IGNORE_CVES = {
     "debian": {
-        # python3.13 3.13.15-1 — High, unfixed in sid, and no upstream
-        # release carries the fix either: tarfile's `data`/`tar` extraction
-        # filters mishandle a hard link pointing at a symlink, so a crafted
-        # archive can touch permissions and mtimes outside the destination
-        # directory. Landed on CPython's 3.13 branch on 2026-09-10, after
-        # 3.13.15 was tagged, so the next 3.13 point release is what clears
-        # it — Debian tracks it as unfixed for python3.13 alone.
-        #
-        # Scoped to 3.13 because that is the only line a scanner flags,
-        # which is not the same as the only line that carries the flaw:
-        # Debian's python3.14 3.14.7-4 ships the identical unpatched
-        # `os.link(tarinfo._link_target, ...)`, and so does Hummingbird's
-        # 3.14 rpm. Upstream backported to `main` and 3.13 only, and Debian
-        # filed against the python3.13 source package alone, so nothing
-        # routes it to 3.14. Listing it there would fail that line's
-        # `_cve_test_stale_ignores`; tracked in #145 instead.
-        #
-        # Hummingbird needs no entry on any line. Its 3.11, 3.12 and 3.13
-        # rpms carry the distro's backport — the patch names this CVE in
-        # `/usr/lib64/python3.NN/tarfile.py` — so those gates are green on
-        # merit, not for want of an advisory.
-        #
-        # `_cve_test_stale_ignores` turns red the day sid ships the fixed
-        # package, which is the signal to delete this.
-        #
-        # The two ssl ones arrived with python3.14 3.14.8-1, which fixes
-        # them on the 3.14 line, while 3.13.15-1 still carries both:
-        # CVE-2026-19445, a server crash or use-after-free when an
-        # `sni_callback` swaps `SSLSocket.context` mid-handshake, and
-        # CVE-2026-19553, `wrap_bio()` skipping hostname verification when
-        # `server_hostname` is None. Same reasoning as the tarfile entry:
-        # the ssl module is in libpython3.13-stdlib and a python image is
-        # where it gets used, so a bare ignore, not a VEX claim. Debian
-        # tracks both as unfixed for python3.13 alone.
-        "3.13": [
-            "CVE-2026-82049",
-            "CVE-2026-19445",
-            "CVE-2026-19553",
-        ],
+        # python3.14 3.14.10-1 — CVE-2026-119170, a regression in how hashlib
+        # enforces FIPS-approved algorithms. Only 3.14.10 is affected, and
+        # only when OpenSSL runs in FIPS mode; Debian's openssl does not
+        # enable it and nothing in the image does. Fixed on CPython's 3.14
+        # branch (7d9da920); Debian tracks it as unfixed in sid. A bare
+        # ignore rather than a `not_affected` VEX claim because a consumer
+        # can switch FIPS mode on.
+        "3.14": ["CVE-2026-119170"],
+    },
+    "hummingbird": {
+        # python3.13 3.13.18-1.6.hum1 — CVE-2026-115791: the tarfile and
+        # zipfile command-line interfaces (`python -m tarfile -e ...`)
+        # extract into the current directory, which `-m` puts on sys.path,
+        # so an archive that plants e.g. `traceback.py` and then fails on
+        # the next member gets that file imported and run. Only the CLI is
+        # affected, not the modules' APIs. No Hummingbird 3.13 build carries
+        # the fix yet; the other lines already do.
+        "3.13": ["CVE-2026-115791"],
     },
 }
 

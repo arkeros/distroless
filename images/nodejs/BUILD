@@ -6,8 +6,8 @@ load("@rules_rpm//rpm:defs.bzl", "rpmdb_merge")
 load("@tar.bzl", "tar")
 load("//images:matrix.bzl", "distroless_matrix")
 load("//images:platforms.bzl", "HUMMINGBIRD_ARCH_MAP")
-load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
-load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV")
+load("//images/common:hummingbird_fixed_vex.bzl", "GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS", "OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS")
+load("//images/common:variables.bzl", "BUSYBOX_WONTFIX_CVES", "COMPRESSION", "DEBUG_MODE", "DEFAULT_DEBUG_ENV", "DEFAULT_ENV", "HUMMINGBIRD_OPENSSL_WONTFIX_CVES")
 load("//oci:mirror_push.bzl", "mirror_push")
 load("//oci:vex.bzl", "vex_document")
 load(":config.bzl", "NODEJS_ARCHITECTURES", "NODEJS_DISTROS", "NODEJS_LATEST", "NODEJS_MAJOR_VERSIONS", "NODEJS_VERSIONS", "nodejs_layers")
@@ -31,7 +31,7 @@ vex_document(
     name = "vex_hummingbird",
     author = "rafael@arquero.cat",
     id = "https://github.com/arkeros/distroless/blob/main/images/nodejs/BUILD#hummingbird",
-    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS,
+    statements = GCC_HUMMINGBIRD_FIXED_VEX_STATEMENTS + OPENSSL_HUMMINGBIRD_FIXED_VEX_STATEMENTS,
     timestamp = "2026-05-16T00:00:00Z",
 )
 
@@ -143,7 +143,7 @@ vex_document(
             DEFAULT_ENV,
             NODE_ENV = "production",
         ),
-        ignore_cves = [],
+        ignore_cves = HUMMINGBIRD_OPENSSL_WONTFIX_CVES,
         index_annotations = {
             "org.opencontainers.image.description": "Distroless Node.js {} image".format(major),
             "org.opencontainers.image.source": "https://github.com/arkeros/distroless/blob/main/images/nodejs/BUILD",

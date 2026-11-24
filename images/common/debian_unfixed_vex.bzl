@@ -12,40 +12,9 @@ moment the scanner stops flagging the CVE (Debian ships the fix, or the
 package drops out of the image), and the statement gets deleted.
 """
 
-load("//oci:vex.bzl", "vex_statement")
-
-# zlib1g 1:1.3.dfsg+really1.3.2-3 — CVE-2026-85091, High, unfixed in sid.
-# Heap buffer overflow in gz_vacate() when gzprintf()/gzvprintf() run after
-# a stalled non-blocking gzwrite(): the gzFile write API.
-#
-# zlib1g is in every Debian image built on cc because openssl 3.6.4-1's
-# libcrypto.so.3 has DT_NEEDED entries for libz.so.1 and libzstd.so.1
-# (Debian enabled zlib and zstd compression), and the cc layer ships both so
-# libcrypto can load — see //images/cc:test_tls.yaml. bash reaches libcrypto
-# through rust-coreutils; nginx links libcrypto and libz itself; Debian's
-# python links it for the `zlib` and `zipfile` modules.
-#
-# Only three ELF objects in any of these images import zlib, and all three
-# use the streaming API alone (read off DT_DYNSYM of the .debs;
-# dpkg-shlibdeps confirms nothing else Depends on zlib1g directly):
-#   libcrypto.so.3  deflateInit_/deflate/deflateEnd,
-#                   inflateInit_/inflate/inflateEnd
-#   nginx           deflateInit2_/deflate/deflateEnd,
-#                   inflateInit2_/inflate/inflateReset/inflateEnd
-#                   (ngx_http_gzip_filter_module, ngx_http_gunzip_filter_module)
-#   python3.NN      deflateInit2_/deflate/deflateCopy/deflateSetDictionary/
-#                   deflateEnd, the inflate* mirror of it, adler32/crc32
-#                   (zlibmodule.c; `gzip` and `tarfile` are Python built on
-#                   top of it, not on gzFile). Checked on 3.13 and 3.14.
-# No gz* symbol anywhere, so gz_vacate() is unreachable. Drops when Debian
-# ships upstream fix madler/zlib e3dc0a85.
-ZLIB_UNFIXED_VEX_STATEMENTS = [
-    vex_statement(
-        expires = "2026-12-01",
-        impact_statement = "Only libcrypto.so.3, nginx and the python interpreter import zlib, and all three use the streaming deflate/inflate API exclusively; no gz* (gzFile) symbol is imported anywhere in the image, so the gz_vacate() path is never reached.",
-        justification = "vulnerable_code_not_in_execute_path",
-        products = ["pkg:deb/debian/zlib1g"],
-        status = "not_affected",
-        vulnerability = "CVE-2026-85091",
-    ),
-]
+# zlib1g. Empty: the last statement, CVE-2026-85091 (heap overflow in
+# gz_vacate() on the gzFile write API, which no binary in these images
+# imports), stopped matching with the 2026-11-24 grype database. The
+# threading stays in place, so the next unreachable zlib finding is one
+# statement.
+ZLIB_UNFIXED_VEX_STATEMENTS = []

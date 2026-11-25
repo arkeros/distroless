@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1795474829",
-    "repomd_sha256": "c2882b6c8189f7cd4ab656ce20c044ba389832c2e3c8ffcc619bc0bd79b8f9e8"
+    "revision": "1795560514",
+    "repomd_sha256": "dac1d87f8ec5b6aeb29efb0f044ff9ec0e90bb672041e066afa4c944b4add859"
   },
   "packages": {
     "audit-libs": {
@@ -210,56 +210,56 @@
     },
     "glibc": {
       "aarch64": {
-        "version": "2.43-9.3.hum1",
-        "sha256": "1520f1e23409b2a6b74c337b1318e1f21977ea338e80bd8def1b6685255cd02a",
-        "path": "aarch64/Packages/g/glibc-2.43-9.3.hum1.aarch64.rpm",
-        "size": 2065790,
+        "version": "2.43-9.4.hum1",
+        "sha256": "7d48fe93a73d26adcbca3193aecfe73e7275c0d3d5e0de230e9bb7b08ffd2d50",
+        "path": "aarch64/Packages/g/glibc-2.43-9.4.hum1.aarch64.rpm",
+        "size": 2065726,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.3.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.43-9.3.hum1",
-        "sha256": "19af6c43328c2155c1673652fa394ccc69ede73ae71fc5294a97b8aa2b02b130",
-        "path": "x86_64/Packages/g/glibc-2.43-9.3.hum1.x86_64.rpm",
-        "size": 2507003,
+        "version": "2.43-9.4.hum1",
+        "sha256": "8beb3cf86a3b1f7f80ade60167c3d7da2b0807e51fbb4c9275f5fa5622c79ca0",
+        "path": "x86_64/Packages/g/glibc-2.43-9.4.hum1.x86_64.rpm",
+        "size": 2506764,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.3.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
       }
     },
     "glibc-all-langpacks": {
       "aarch64": {
-        "version": "2.43-9.3.hum1",
-        "sha256": "0888dd918f8fc0ac3efc2ca2e12baaf52c3b964198cb633333f4ab1fc305c20f",
-        "path": "aarch64/Packages/g/glibc-all-langpacks-2.43-9.3.hum1.aarch64.rpm",
-        "size": 18420151,
+        "version": "2.43-9.4.hum1",
+        "sha256": "8d068afe60d4ec3e0d55fbadcc760dbddbd2e1507d9569addbe992ba6cbf601b",
+        "path": "aarch64/Packages/g/glibc-all-langpacks-2.43-9.4.hum1.aarch64.rpm",
+        "size": 18420143,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.3.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.43-9.3.hum1",
-        "sha256": "20b13d5dd2fc76f04edc146709e1124821d71ea9fa355360f6c49326bf2b0695",
-        "path": "x86_64/Packages/g/glibc-all-langpacks-2.43-9.3.hum1.x86_64.rpm",
-        "size": 18420179,
+        "version": "2.43-9.4.hum1",
+        "sha256": "8e7f2ea8f247a31dfb20ae6e4bbc3864a43ee2365837ac6145b457f19399f64b",
+        "path": "x86_64/Packages/g/glibc-all-langpacks-2.43-9.4.hum1.x86_64.rpm",
+        "size": 18420171,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.3.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
       }
     },
     "glibc-common": {
       "aarch64": {
-        "version": "2.43-9.3.hum1",
-        "sha256": "d1fb4fffc6144ceb6d225dac90d7f8aca6e058baf63e125cd93a05cbe990b987",
-        "path": "aarch64/Packages/g/glibc-common-2.43-9.3.hum1.aarch64.rpm",
-        "size": 379090,
+        "version": "2.43-9.4.hum1",
+        "sha256": "0984c0105e7725de80bf279f17d3d610316443d0c29331f4ae741046f7efb315",
+        "path": "aarch64/Packages/g/glibc-common-2.43-9.4.hum1.aarch64.rpm",
+        "size": 379024,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.3.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.43-9.3.hum1",
-        "sha256": "956d31c7d0e4ffcc8344ca92199ef21472fc6e197fb63b8ccb058a77e62d834a",
-        "path": "x86_64/Packages/g/glibc-common-2.43-9.3.hum1.x86_64.rpm",
-        "size": 394488,
+        "version": "2.43-9.4.hum1",
+        "sha256": "684ccb99a47d72a861bd56818a168c20484e0cbf5b87cc69ffade2d391902aca",
+        "path": "x86_64/Packages/g/glibc-common-2.43-9.4.hum1.x86_64.rpm",
+        "size": 394411,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.3.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
       }
     },
     "gmp": {
@@ -912,38 +912,38 @@
     },
     "python3": {
       "aarch64": {
-        "version": "3.14.10-2.hum1",
-        "sha256": "d268d699b73d7c762fb164eac5094ea807a52df89f5a8eca358878057932e8d3",
-        "path": "aarch64/Packages/p/python3-3.14.10-2.hum1.aarch64.rpm",
-        "size": 36929,
+        "version": "3.14.10-2.1.hum1",
+        "sha256": "9a15c308bbf8bc72f860b895f342b04c976f60b6556633ba5effb6cb99039e00",
+        "path": "aarch64/Packages/p/python3-3.14.10-2.1.hum1.aarch64.rpm",
+        "size": 36956,
         "license": "Python-2.0.1",
-        "upstream": "python3.14-3.14.10-2.hum1.src.rpm"
+        "upstream": "python3.14-3.14.10-2.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.14.10-2.hum1",
-        "sha256": "83d93128fbd4def27a2f7ffabdc469a7ed53439b501627f3ad316d173c31c37c",
-        "path": "x86_64/Packages/p/python3-3.14.10-2.hum1.x86_64.rpm",
-        "size": 36695,
+        "version": "3.14.10-2.1.hum1",
+        "sha256": "c92874925069e580f43c90bc8dcfb92b82947b3b7b6869436a6aea7a2a596186",
+        "path": "x86_64/Packages/p/python3-3.14.10-2.1.hum1.x86_64.rpm",
+        "size": 36717,
         "license": "Python-2.0.1",
-        "upstream": "python3.14-3.14.10-2.hum1.src.rpm"
+        "upstream": "python3.14-3.14.10-2.1.hum1.src.rpm"
       }
     },
     "python3-libs": {
       "aarch64": {
-        "version": "3.14.10-2.hum1",
-        "sha256": "e4da4e9a1fccf85c99b49229a723955fc1fc2c9b716e88250aa6665acb181730",
-        "path": "aarch64/Packages/p/python3-libs-3.14.10-2.hum1.aarch64.rpm",
-        "size": 10526703,
+        "version": "3.14.10-2.1.hum1",
+        "sha256": "ce63ecf2128ebbaee63d79da03276be5c124b0548494d7a5c7cd322ef30c09a5",
+        "path": "aarch64/Packages/p/python3-libs-3.14.10-2.1.hum1.aarch64.rpm",
+        "size": 10524551,
         "license": "Python-2.0.1 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
-        "upstream": "python3.14-3.14.10-2.hum1.src.rpm"
+        "upstream": "python3.14-3.14.10-2.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.14.10-2.hum1",
-        "sha256": "fd1d3f2384053b045b5dd1ccf38fbfefd3dd66d31aa57f4c1d1510b81ece9455",
-        "path": "x86_64/Packages/p/python3-libs-3.14.10-2.hum1.x86_64.rpm",
-        "size": 10778970,
+        "version": "3.14.10-2.1.hum1",
+        "sha256": "e5a81fbd3c462b66dda1c880d92c2d9babde15692242b8d2b4f830ba4cade005",
+        "path": "x86_64/Packages/p/python3-libs-3.14.10-2.1.hum1.x86_64.rpm",
+        "size": 10778832,
         "license": "Python-2.0.1 AND MIT AND BSD-3-Clause AND MIT-CMU AND HPND-SMC AND BSD-2-Clause AND dtoa AND Unicode-3.0",
-        "upstream": "python3.14-3.14.10-2.hum1.src.rpm"
+        "upstream": "python3.14-3.14.10-2.1.hum1.src.rpm"
       }
     },
     "python3.11": {

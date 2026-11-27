@@ -2,8 +2,8 @@
   "schema_version": 1,
   "repo": {
     "url": "https://koji-s3-cache.hummingbird-project.io/packages.redhat.com/api/pulp-content/public-hummingbird",
-    "revision": "1795651800",
-    "repomd_sha256": "941d403da88658f6c6267f0866b19145bedbf96a8d3e1ee2a187503e9079b0e6"
+    "revision": "1795724416",
+    "repomd_sha256": "1010d5374e26cee7d72c1f60fbdb8911acbbbee12d70366f76958cd6d9aa61fa"
   },
   "packages": {
     "audit-libs": {
@@ -146,20 +146,20 @@
     },
     "expat": {
       "aarch64": {
-        "version": "2.10.0-0.3.hum1",
-        "sha256": "458de73a6c5fc3bd7585a8d9eee9943c0d2abb8bcb39ecb3cf2a9455f175fc5d",
-        "path": "aarch64/Packages/e/expat-2.10.0-0.3.hum1.aarch64.rpm",
-        "size": 142236,
+        "version": "2.11.0-0.1.hum1",
+        "sha256": "43bfef85f55c8b2ed8f31bf59a2af1dc85e7c568cda13d1b0d2d9bbfaa158e02",
+        "path": "aarch64/Packages/e/expat-2.11.0-0.1.hum1.aarch64.rpm",
+        "size": 147601,
         "license": "MIT",
-        "upstream": "expat-2.10.0-0.3.hum1.src.rpm"
+        "upstream": "expat-2.11.0-0.1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.10.0-0.3.hum1",
-        "sha256": "4f96eec175fa4c202c75e6f107b32746842ae2b7484d902ca3156e8b120d3d1a",
-        "path": "x86_64/Packages/e/expat-2.10.0-0.3.hum1.x86_64.rpm",
-        "size": 147258,
+        "version": "2.11.0-0.1.hum1",
+        "sha256": "de1727dc9018a322eb9bb643dfa0b184c315fc81dfea5aeef469e589762a8684",
+        "path": "x86_64/Packages/e/expat-2.11.0-0.1.hum1.x86_64.rpm",
+        "size": 154584,
         "license": "MIT",
-        "upstream": "expat-2.10.0-0.3.hum1.src.rpm"
+        "upstream": "expat-2.11.0-0.1.hum1.src.rpm"
       }
     },
     "filesystem": {
@@ -210,56 +210,56 @@
     },
     "glibc": {
       "aarch64": {
-        "version": "2.43-9.4.hum1",
-        "sha256": "7d48fe93a73d26adcbca3193aecfe73e7275c0d3d5e0de230e9bb7b08ffd2d50",
-        "path": "aarch64/Packages/g/glibc-2.43-9.4.hum1.aarch64.rpm",
-        "size": 2065726,
+        "version": "2.43-9.5.hum1",
+        "sha256": "3262e535b85e8b504b3ae5edd67a43458ab3bdc73a02958f61e43dc2f7b82171",
+        "path": "aarch64/Packages/g/glibc-2.43-9.5.hum1.aarch64.rpm",
+        "size": 2065373,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.43-9.4.hum1",
-        "sha256": "8beb3cf86a3b1f7f80ade60167c3d7da2b0807e51fbb4c9275f5fa5622c79ca0",
-        "path": "x86_64/Packages/g/glibc-2.43-9.4.hum1.x86_64.rpm",
-        "size": 2506764,
+        "version": "2.43-9.5.hum1",
+        "sha256": "8f145ca1a49cd24f36fe2dd7f0146ce6f70803a1ea68d99d4f806027e55a0188",
+        "path": "x86_64/Packages/g/glibc-2.43-9.5.hum1.x86_64.rpm",
+        "size": 2507070,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.5.hum1.src.rpm"
       }
     },
     "glibc-all-langpacks": {
       "aarch64": {
-        "version": "2.43-9.4.hum1",
-        "sha256": "8d068afe60d4ec3e0d55fbadcc760dbddbd2e1507d9569addbe992ba6cbf601b",
-        "path": "aarch64/Packages/g/glibc-all-langpacks-2.43-9.4.hum1.aarch64.rpm",
-        "size": 18420143,
+        "version": "2.43-9.5.hum1",
+        "sha256": "0c0085913c13550336be4a868390242da2be126bfbfe6372f5918f1233c369a5",
+        "path": "aarch64/Packages/g/glibc-all-langpacks-2.43-9.5.hum1.aarch64.rpm",
+        "size": 18420135,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.43-9.4.hum1",
-        "sha256": "8e7f2ea8f247a31dfb20ae6e4bbc3864a43ee2365837ac6145b457f19399f64b",
-        "path": "x86_64/Packages/g/glibc-all-langpacks-2.43-9.4.hum1.x86_64.rpm",
-        "size": 18420171,
+        "version": "2.43-9.5.hum1",
+        "sha256": "2be2672860c6c11d4a9d4f819b643c7db51c752b74a8f35df7c2084a7b16db75",
+        "path": "x86_64/Packages/g/glibc-all-langpacks-2.43-9.5.hum1.x86_64.rpm",
+        "size": 18420163,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.5.hum1.src.rpm"
       }
     },
     "glibc-common": {
       "aarch64": {
-        "version": "2.43-9.4.hum1",
-        "sha256": "0984c0105e7725de80bf279f17d3d610316443d0c29331f4ae741046f7efb315",
-        "path": "aarch64/Packages/g/glibc-common-2.43-9.4.hum1.aarch64.rpm",
-        "size": 379024,
+        "version": "2.43-9.5.hum1",
+        "sha256": "7fb6f0b8bf194e6c18c9cb7254c4bf0b72c72a09690afdfacb85f3f15ae49046",
+        "path": "aarch64/Packages/g/glibc-common-2.43-9.5.hum1.aarch64.rpm",
+        "size": 379125,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "2.43-9.4.hum1",
-        "sha256": "684ccb99a47d72a861bd56818a168c20484e0cbf5b87cc69ffade2d391902aca",
-        "path": "x86_64/Packages/g/glibc-common-2.43-9.4.hum1.x86_64.rpm",
-        "size": 394411,
+        "version": "2.43-9.5.hum1",
+        "sha256": "f19d2b52dba7531bab296047b1fc9cdaa64b95bda14bd8c130d3ad9e7b21b170",
+        "path": "x86_64/Packages/g/glibc-common-2.43-9.5.hum1.x86_64.rpm",
+        "size": 394520,
         "license": "LGPL-2.1-or-later AND SunPro AND LGPL-2.1-or-later WITH GCC-exception-2.0 AND BSD-3-Clause AND GPL-2.0-or-later AND LGPL-2.1-or-later WITH GNU-compiler-exception AND GPL-2.0-only AND ISC AND LicenseRef-Fedora-Public-Domain AND HPND AND CMU-Mach AND LGPL-2.0-or-later AND Unicode-3.0 AND GFDL-1.1-or-later AND GPL-1.0-or-later AND FSFUL AND MIT AND Inner-Net-2.0 AND X11 AND GPL-2.0-or-later WITH GCC-exception-2.0 AND GFDL-1.3-only AND GFDL-1.1-only AND GPL-3.0-or-later AND GPL-3.0-or-later WITH Autoconf-exception-generic-3.0 AND GPL-3.0-or-later WITH Texinfo-exception",
-        "upstream": "glibc-2.43-9.4.hum1.src.rpm"
+        "upstream": "glibc-2.43-9.5.hum1.src.rpm"
       }
     },
     "gmp": {
@@ -282,30 +282,30 @@
     },
     "gnulib-l10n": {
       "noarch": {
-        "version": "20241231-4.1.hum1",
-        "sha256": "d6672d472bf8d9eb52f077f07a8930883e8be75b5c1195ef5212da8c9adf4607",
-        "path": "x86_64/Packages/g/gnulib-l10n-20241231-4.1.hum1.noarch.rpm",
-        "size": 160090,
+        "version": "20241231-5.hum1",
+        "sha256": "1e951c045d955e320c57bad0851a28d6125e58814ce3fed987276655b7938dd2",
+        "path": "x86_64/Packages/g/gnulib-l10n-20241231-5.hum1.noarch.rpm",
+        "size": 160228,
         "license": "LGPL-2.1-or-later",
-        "upstream": "gnulib-l10n-20241231-4.1.hum1.src.rpm"
+        "upstream": "gnulib-l10n-20241231-5.hum1.src.rpm"
       }
     },
     "grep": {
       "aarch64": {
-        "version": "3.12-4.1.hum1",
-        "sha256": "bb89d49d6ad686a221df4c5ce0098445e366d6ebcaecd972173d91e12fb9f728",
-        "path": "aarch64/Packages/g/grep-3.12-4.1.hum1.aarch64.rpm",
-        "size": 310948,
+        "version": "3.12-5.hum1",
+        "sha256": "5c50be09ef1166ef28ead0cea1b7762dc26e2d6951d3ceb3b2eab76844b9a652",
+        "path": "aarch64/Packages/g/grep-3.12-5.hum1.aarch64.rpm",
+        "size": 310793,
         "license": "GPL-3.0-or-later AND LGPL-3.0-or-later AND LGPL-2.1-or-later AND GPL-2.0-or-later AND LGPL-2.0-or-later AND GFDL-1.3-no-invariants-or-later",
-        "upstream": "grep-3.12-4.1.hum1.src.rpm"
+        "upstream": "grep-3.12-5.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "3.12-4.1.hum1",
-        "sha256": "604c2612d840df1e309363ca3a98ccbd1f7e5ae4a48159726e22cfb3ab995b9e",
-        "path": "x86_64/Packages/g/grep-3.12-4.1.hum1.x86_64.rpm",
-        "size": 316119,
+        "version": "3.12-5.hum1",
+        "sha256": "bf71682b182351f8931137dec0868a30afbd51b0f7116320385b79cd79707d8c",
+        "path": "x86_64/Packages/g/grep-3.12-5.hum1.x86_64.rpm",
+        "size": 315817,
         "license": "GPL-3.0-or-later AND LGPL-3.0-or-later AND LGPL-2.1-or-later AND GPL-2.0-or-later AND LGPL-2.0-or-later AND GFDL-1.3-no-invariants-or-later",
-        "upstream": "grep-3.12-4.1.hum1.src.rpm"
+        "upstream": "grep-3.12-5.hum1.src.rpm"
       }
     },
     "keyutils-libs": {
@@ -680,38 +680,38 @@
     },
     "libxcrypt": {
       "aarch64": {
-        "version": "4.5.2-4.1.hum1",
-        "sha256": "12d87e36230e8671078007923b22cec248a7a13265dcc8c64f06c92825650108",
-        "path": "aarch64/Packages/l/libxcrypt-4.5.2-4.1.hum1.aarch64.rpm",
-        "size": 135714,
+        "version": "4.5.2-8.hum1",
+        "sha256": "0a0737d7d2e99abdc0e38c7fb636c5ff3fb6af42beb8a363b9d0a56164f2eee6",
+        "path": "aarch64/Packages/l/libxcrypt-4.5.2-8.hum1.aarch64.rpm",
+        "size": 131968,
         "license": "LGPL-2.1-or-later AND BSD-3-Clause AND BSD-2-Clause AND BSD-2-Clause-FreeBSD AND 0BSD AND CC0-1.0 AND LicenseRef-Fedora-Public-Domain",
-        "upstream": "libxcrypt-4.5.2-4.1.hum1.src.rpm"
+        "upstream": "libxcrypt-4.5.2-8.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "4.5.2-4.1.hum1",
-        "sha256": "a74261efab91e5f56cba16923bed2dd52c8a64d53da2be92bb947dff05ac0c87",
-        "path": "x86_64/Packages/l/libxcrypt-4.5.2-4.1.hum1.x86_64.rpm",
-        "size": 141726,
+        "version": "4.5.2-8.hum1",
+        "sha256": "4cc1d28e576ff5aafeda989738c67764fd33f7c09784ca0db38cbac1f6370af3",
+        "path": "x86_64/Packages/l/libxcrypt-4.5.2-8.hum1.x86_64.rpm",
+        "size": 137940,
         "license": "LGPL-2.1-or-later AND BSD-3-Clause AND BSD-2-Clause AND BSD-2-Clause-FreeBSD AND 0BSD AND CC0-1.0 AND LicenseRef-Fedora-Public-Domain",
-        "upstream": "libxcrypt-4.5.2-4.1.hum1.src.rpm"
+        "upstream": "libxcrypt-4.5.2-8.hum1.src.rpm"
       }
     },
     "libzstd": {
       "aarch64": {
-        "version": "1.5.7-6.2.hum1",
-        "sha256": "a7cf7af7a462e7b7b124485b8bf8d45e7da16eab512be01a85ad5493772c1375",
-        "path": "aarch64/Packages/l/libzstd-1.5.7-6.2.hum1.aarch64.rpm",
-        "size": 344024,
+        "version": "1.6.0-1.hum1",
+        "sha256": "2d920d5eacd612b52c63dccf8328813c156ff71faad9b38eb334ff764fdf4a1c",
+        "path": "aarch64/Packages/l/libzstd-1.6.0-1.hum1.aarch64.rpm",
+        "size": 276717,
         "license": "BSD-3-Clause OR GPL-2.0-only",
-        "upstream": "zstd-1.5.7-6.2.hum1.src.rpm"
+        "upstream": "zstd-1.6.0-1.hum1.src.rpm"
       },
       "x86_64": {
-        "version": "1.5.7-6.2.hum1",
-        "sha256": "9970b59c38a1a4ad70c07c6f4a33fa5ad5e6e28b35f6477fc95e4c303c3e1ed6",
-        "path": "x86_64/Packages/l/libzstd-1.5.7-6.2.hum1.x86_64.rpm",
-        "size": 378858,
+        "version": "1.6.0-1.hum1",
+        "sha256": "63cebf0ab914d765481f9b24d4995c15eddafc021ee1c85a95e388a0698a7087",
+        "path": "x86_64/Packages/l/libzstd-1.6.0-1.hum1.x86_64.rpm",
+        "size": 302001,
         "license": "BSD-3-Clause OR GPL-2.0-only",
-        "upstream": "zstd-1.5.7-6.2.hum1.src.rpm"
+        "upstream": "zstd-1.6.0-1.hum1.src.rpm"
       }
     },
     "mailcap": {
